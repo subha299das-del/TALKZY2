@@ -1,9 +1,10 @@
 import React, {useEffect,useState} from 'react';
-import {SafeAreaView,View,Text,TextInput,TouchableOpacity,ScrollView,StatusBar,Alert} from 'react-native';
+import {SafeAreaView,View,Text,TextInput,TouchableOpacity,ScrollView,StatusBar,Alert,Image} from 'react-native';
 import {StatusBar as ExpoStatusBar} from 'expo-status-bar';
 
 const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || '').replace(/\/+$/, '');
-const defaults = {appName:'TALKZY',tagline:'Talk • Connect • Earn',primary:'#8B5CF6',background:'#0B0812',card:'#171225',bannerTitle:'Your voice. Your community.',bannerText:'Join conversations and meet new people.',announcement:'Welcome to TALKZY!'};
+const defaults = {appName:'TALKZY',tagline:'Talk • Connect • Earn',primary:'#8B5CF6',background:'#0B0812',card:'#171225',bannerTitle:'Your voice. Your community.',bannerText:'Join conversations and meet new people.',announcement:'Welcome to TALKZY!',logoUrl:''};
+
 function apiUrl(path) {
  if (!API_BASE_URL) throw new Error('The app API address is not configured. Set EXPO_PUBLIC_API_BASE_URL before building the APK.');
  if (!API_BASE_URL.startsWith('https://') && !(__DEV__ && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(API_BASE_URL))) {
@@ -41,10 +42,20 @@ export default function App(){
  const bg=config.background||defaults.background;
  return <SafeAreaView style={{flex:1,backgroundColor:bg}}>
   <StatusBar barStyle="light-content"/><ExpoStatusBar style="light"/>
-  <View style={{padding:18,flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
-   <View><Text style={{color:config.primary,fontWeight:'900',letterSpacing:3}}>{config.appName}</Text><Text style={{color:'#B9AEC8',fontSize:11}}>{config.tagline}</Text></View>
-   <TouchableOpacity onPress={()=>setScreen('ownerLogin')}><Text style={{color:'#BCA5E8',fontSize:11}}>Owner</Text></TouchableOpacity>
+  
+<View style={{padding:18,flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
+   <View style={{flexDirection:'row',alignItems:'center'}}>
+    {config.logoUrl ? <Image source={{uri:config.logoUrl}} style={{width:48,height:48,resizeMode:'contain',marginRight:12}} /> : null}
+    <View>
+     <Text style={{color:config.primary,fontWeight:'900',letterSpacing:3}}>{config.appName}</Text>
+     <Text style={{color:'#B9AEC8',fontSize:11}}>{config.tagline}</Text>
+    </View>
+   </View>
+   <TouchableOpacity onPress={()=>setScreen('ownerLogin')}>
+    <Text style={{color:'#BCA5E8',fontSize:11}}>Owner</Text>
+   </TouchableOpacity>
   </View>
+
   {screen==='home'&&<ScrollView contentContainerStyle={{padding:18}}>
    <View style={{backgroundColor:config.card,padding:22,borderRadius:20,borderWidth:1,borderColor:'#45305F'}}>
     <Text style={{color:config.primary,fontWeight:'800'}}>WELCOME</Text><Text style={{color:'white',fontSize:27,fontWeight:'900',marginTop:12}}>{config.bannerTitle}</Text>
@@ -66,7 +77,9 @@ export default function App(){
   {screen==='admin'&&<ScrollView contentContainerStyle={{padding:20}}>
    <Text style={{color:'white',fontSize:23,fontWeight:'900'}}>Interface control</Text><Text style={{color:'#B8ADC6',marginBottom:12}}>Changes are published through your HTTPS backend.</Text>
    {[
-    ['appName','App name'],['tagline','Tagline'],['primary','Accent colour (hex)'],['background','Background colour (hex)'],['card','Card colour (hex)'],['bannerTitle','Home banner title'],['bannerText','Home banner text'],['announcement','Announcement']
+    
+['appName','App name'],['tagline','Tagline'],['logoUrl','Logo image URL (HTTPS)'],['primary','Accent colour (hex)'],['background','Background colour (hex)'],['card','Card colour (hex)'],['bannerTitle','Home banner title'],['bannerText','Home banner text'],['announcement','Announcement']
+
    ].map(([key,label])=><View key={key} style={{marginTop:10}}>
     <Text style={{color:'#CFC3DE',marginBottom:5,fontWeight:'700'}}>{label}</Text>
     <TextInput value={String(draft[key]??'')} onChangeText={v=>setDraft(p=>({...p,[key]:v}))} placeholder={label} placeholderTextColor="#82768F" style={{backgroundColor:'#171225',color:'white',padding:12,borderRadius:11,borderWidth:1,borderColor:'#38294A'}}/>
