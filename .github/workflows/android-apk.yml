@@ -27,14 +27,14 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-            - name: Build Android APK
+      - name: Install dependencies
         working-directory: mobile
-        env:
-          EXPO_PUBLIC_API_BASE_URL: https://talkzy2.onrender.com
         run: npm install
 
       - name: Build Android APK
         working-directory: mobile
+        env:
+          EXPO_PUBLIC_API_BASE_URL: https://talkzy2.onrender.com
         run: |
           npx expo prebuild --platform android --no-install
           cd android
