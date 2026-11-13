@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "TALKZY",
+    "slug": "talkzy",
+    "version": "1.2.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "android": { "package": "com.talkzy.app" },
+    "ios": { "bundleIdentifier": "com.talkzy.app" }
+  }
+}
