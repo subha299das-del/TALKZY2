@@ -1,10 +1,10 @@
-
 const express = require('express');
 const crypto = require('crypto');
 const path = require('path');
 const helmet = require('helmet');
 const jwt = require('jsonwebtoken');
 const { rateLimit } = require('express-rate-limit');
+const { promisify } = require('util');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
@@ -15,6 +15,7 @@ const JWT_SECRET = String(process.env.JWT_SECRET || '');
 const SUPABASE_URL = String(process.env.SUPABASE_URL || '').trim();
 const SUPABASE_SECRET_KEY = String(process.env.SUPABASE_SECRET_KEY || '').trim();
 const production = process.env.NODE_ENV === 'production';
+const scryptAsync = promisify(crypto.scrypt);
 
 if (process.env.RENDER === 'true' || process.env.TRUST_PROXY === '1') {
   app.set('trust proxy', 1);
@@ -25,7 +26,9 @@ if (
   OWNER_PASSWORD.length < 16 ||
   Buffer.byteLength(JWT_SECRET, 'utf8') < 32
 ) {
-  throw new Error('Set OWNER_EMAIL, OWNER_PASSWORD (16+ characters), and JWT_SECRET (32+ bytes).');
+  throw new Error(
+    'Set OWNER_EMAIL, OWNER_PASSWORD (16+ characters), and JWT_SECRET (32+ bytes).'
+  );
 }
 
 if (!SUPABASE_URL || !SUPABASE_SECRET_KEY) {
@@ -71,17 +74,13 @@ async function readConfig() {
     .single();
 
   if (error) throw error;
-
   return { ...initial, ...(data.settings || {}) };
 }
 
 async function writeConfig(config) {
   const { error } = await supabase
     .from('talkzy_config')
-    .upsert(
-      { id: 1, settings: config },
-      { onConflict: 'id' }
-    );
+    .upsert({ id: 1, settings: config }, { onConflict: 'id' });
 
   if (error) throw error;
 }
@@ -90,6 +89,25 @@ function constantTimeEqual(left, right) {
   const a = crypto.createHash('sha256').update(String(left)).digest();
   const b = crypto.createHash('sha256').update(String(right)).digest();
   return crypto.timingSafeEqual(a, b);
+}
+
+async function makePasswordHash(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const derived = await scryptAsync(password, salt, 64);
+  return `${salt}:${derived.toString('hex')}`;
+}
+
+async function checkPassword(password, storedHash) {
+  if (typeof storedHash !== 'string' || !storedHash.includes(':')) return false;
+
+  const [salt, expectedHex] = storedHash.split(':');
+  if (!salt || !/^[a-f0-9]{128}$/i.test(expectedHex || '')) return false;
+
+  const actual = await scryptAsync(password, salt, 64);
+  const expected = Buffer.from(expectedHex, 'hex');
+
+  return expected.length === actual.length &&
+    crypto.timingSafeEqual(actual, expected);
 }
 
 app.disable('x-powered-by');
@@ -131,6 +149,14 @@ const loginLimiter = rateLimit({
   message: { error: 'Too many sign-in attempts. Wait 15 minutes and try again.' }
 });
 
+const roomCreateLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: 5,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { error: 'Too many room creation attempts. Please wait and try again.' }
+});
+
 function ownerAuth(req, res, next) {
   const header = req.get('authorization') || '';
   const match = /^Bearer\s+(.+)$/i.exec(header);
@@ -157,6 +183,78 @@ function ownerAuth(req, res, next) {
   }
 }
 
+async function userAuth(req, res, next) {
+  const header = req.get('authorization') || '';
+  const match = /^Bearer\s+(.+)$/i.exec(header);
+
+  if (!match) {
+    return res.status(401).json({ error: 'Please sign in first.' });
+  }
+
+  try {
+    const { data, error } = await supabase.auth.getUser(match[1]);
+
+    if (error || !data.user) {
+      return res.status(401).json({ error: 'Invalid or expired session.' });
+    }
+
+    req.talkzyUser = data.user;
+    next();
+  } catch {
+    return res.status(401).json({ error: 'Authentication failed.' });
+  }
+}
+
+async function getRoom(roomId) {
+  const { data, error } = await supabase
+    .from('talkzy_rooms')
+    .select('id, owner_id, room_name, description, room_type, status, created_at, closed_at')
+    .eq('id', roomId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
+async function isRoomAdmin(roomId, userId) {
+  const { data, error } = await supabase
+    .from('talkzy_room_admins')
+    .select('room_id')
+    .eq('room_id', roomId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return Boolean(data);
+}
+
+async function isRoomMember(roomId, userId) {
+  const { data, error } = await supabase
+    .from('talkzy_room_members')
+    .select('room_id')
+    .eq('room_id', roomId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return Boolean(data);
+}
+
+async function canManageRoom(room, userId) {
+  return room.owner_id === userId || await isRoomAdmin(room.id, userId);
+}
+
+async function requireRoom(req, res) {
+  const room = await getRoom(req.params.roomId);
+
+  if (!room) {
+    res.status(404).json({ error: 'Room not found.' });
+    return null;
+  }
+
+  return room;
+}
+
 app.get('/api/health', (req, res) =>
   res.set('Cache-Control', 'no-store').json({
     ok: true,
@@ -178,7 +276,8 @@ app.post('/api/admin/login', loginLimiter, (req, res) => {
   const email = String(req.body?.email || '').trim().toLowerCase();
   const password = String(req.body?.password || '');
 
-  if (!constantTimeEqual(email, OWNER_EMAIL) || !constantTimeEqual(password, OWNER_PASSWORD)) {
+  if (!constantTimeEqual(email, OWNER_EMAIL) ||
+      !constantTimeEqual(password, OWNER_PASSWORD)) {
     return res.status(401).json({ error: 'Invalid owner email or password.' });
   }
 
@@ -209,10 +308,9 @@ app.put('/api/config', ownerAuth, async (req, res) => {
           });
         }
 
-        if (key === 'logoUrl' && req.body[key] !== '' && !/^https:\/\/\S+$/i.test(req.body[key])) {
-          return res.status(400).json({
-            error: 'Logo URL must start with https://.'
-          });
+        if (key === 'logoUrl' && req.body[key] !== '' &&
+            !/^https:\/\/\S+$/i.test(req.body[key])) {
+          return res.status(400).json({ error: 'Logo URL must start with https://.' });
         }
 
         next[key] = req.body[key];
@@ -221,7 +319,8 @@ app.put('/api/config', ownerAuth, async (req, res) => {
 
     for (const key of colourFields) {
       if (req.body[key] !== undefined) {
-        if (typeof req.body[key] !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(req.body[key])) {
+        if (typeof req.body[key] !== 'string' ||
+            !/^#[0-9a-fA-F]{6}$/.test(req.body[key])) {
           return res.status(400).json({
             error: `${key} must be a six-digit hex colour, such as #8B5CF6.`
           });
@@ -232,7 +331,6 @@ app.put('/api/config', ownerAuth, async (req, res) => {
     }
 
     await writeConfig(next);
-
     res.set('Cache-Control', 'no-store').json(next);
   } catch (error) {
     console.error('Could not save interface config:', error.message);
@@ -241,46 +339,43 @@ app.put('/api/config', ownerAuth, async (req, res) => {
     });
   }
 });
-// TALKZY USER AUTHENTICATION
-async function userAuth(req, res, next) {
-  const header = req.get('authorization') || '';
-  const match = /^Bearer\s+(.+)$/i.exec(header);
 
-  if (!match) {
-    return res.status(401).json({ error: 'Please sign in first.' });
-  }
-
+// List active public rooms. Locked rooms are never listed here.
+app.get('/api/rooms', async (req, res) => {
   try {
-    const { data, error } = await supabase.auth.getUser(match[1]);
+    const { data, error } = await supabase
+      .from('talkzy_rooms')
+      .select('id, room_name, description, room_type, status, created_at')
+      .eq('status', 'active')
+      .eq('room_type', 'public')
+      .order('created_at', { ascending: false })
+      .limit(50);
 
-    if (error || !data.user) {
-      return res.status(401).json({ error: 'Invalid or expired session.' });
-    }
+    if (error) throw error;
 
-    req.talkzyUser = data.user;
-    next();
+    res.set('Cache-Control', 'no-store').json({
+      rooms: data || [],
+      count: data?.length || 0
+    });
   } catch (error) {
-    return res.status(401).json({ error: 'Authentication failed.' });
+    console.error('Could not load public rooms:', error.message);
+    res.status(500).json({ error: 'Could not load public rooms.' });
   }
-}
+});
 
-// CREATE A VOICE ROOM
-app.post('/api/rooms', userAuth, async (req, res) => {
+// Create a public or password-locked room.
+app.post('/api/rooms', userAuth, roomCreateLimiter, async (req, res) => {
   const roomName = String(req.body?.roomName || '').trim();
   const description = String(req.body?.description || '').trim();
   const roomType = String(req.body?.roomType || 'public');
   const password = String(req.body?.password || '');
 
   if (roomName.length < 3 || roomName.length > 40) {
-    return res.status(400).json({
-      error: 'Room name must be between 3 and 40 characters.'
-    });
+    return res.status(400).json({ error: 'Room name must be between 3 and 40 characters.' });
   }
 
   if (description.length > 200) {
-    return res.status(400).json({
-      error: 'Description cannot exceed 200 characters.'
-    });
+    return res.status(400).json({ error: 'Description cannot exceed 200 characters.' });
   }
 
   if (!['public', 'locked'].includes(roomType)) {
@@ -294,19 +389,9 @@ app.post('/api/rooms', userAuth, async (req, res) => {
   }
 
   try {
-    let passwordHash = null;
-
-    if (roomType === 'locked') {
-      const salt = crypto.randomBytes(16).toString('hex');
-      const derived = await new Promise((resolve, reject) => {
-        crypto.scrypt(password, salt, 64, (error, key) => {
-          if (error) reject(error);
-          else resolve(key.toString('hex'));
-        });
-      });
-
-      passwordHash = `${salt}:${derived}`;
-    }
+    const passwordHash = roomType === 'locked'
+      ? await makePasswordHash(password)
+      : null;
 
     const { data, error } = await supabase
       .from('talkzy_rooms')
@@ -335,6 +420,340 @@ app.post('/api/rooms', userAuth, async (req, res) => {
     return res.status(500).json({ error: 'Could not create room.' });
   }
 });
+
+// Read a room's details. A locked room requires membership or management permission.
+app.get('/api/rooms/:roomId', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+
+    const userId = req.talkzyUser.id;
+    const allowed = room.room_type === 'public' ||
+      room.owner_id === userId ||
+      await isRoomAdmin(room.id, userId) ||
+      await isRoomMember(room.id, userId);
+
+    if (!allowed) {
+      return res.status(403).json({ error: 'You need the room password or an invitation.' });
+    }
+
+    res.set('Cache-Control', 'no-store').json({ room });
+  } catch (error) {
+    console.error('Could not load room:', error.message);
+    res.status(500).json({ error: 'Could not load this room.' });
+  }
+});
+
+// Join a public room, or join a locked room with its password.
+app.post('/api/rooms/:roomId/join', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+
+    if (room.status !== 'active') {
+      return res.status(409).json({ error: 'This room is closed.' });
+    }
+
+    const userId = req.talkzyUser.id;
+    const manager = await canManageRoom(room, userId);
+    const alreadyMember = await isRoomMember(room.id, userId);
+
+    if (room.room_type === 'locked' && !manager && !alreadyMember) {
+      const password = String(req.body?.password || '');
+      const { data, error } = await supabase
+        .from('talkzy_rooms')
+        .select('password_hash')
+        .eq('id', room.id)
+        .single();
+
+      if (error) throw error;
+
+      const valid = await checkPassword(password, data.password_hash);
+      if (!valid) {
+        return res.status(403).json({ error: 'Incorrect room password.' });
+      }
+    }
+
+    const { error } = await supabase
+      .from('talkzy_room_members')
+      .upsert(
+        { room_id: room.id, user_id: userId, role: 'listener' },
+        { onConflict: 'room_id,user_id', ignoreDuplicates: true }
+      );
+
+    if (error) throw error;
+
+    return res.status(200).json({ joined: true, roomId: room.id });
+  } catch (error) {
+    console.error('Could not join room:', error.message);
+    res.status(500).json({ error: 'Could not join this room.' });
+  }
+});
+
+// Leave a room. The owner must close their room instead.
+app.post('/api/rooms/:roomId/leave', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+
+    if (room.owner_id === req.talkzyUser.id) {
+      return res.status(400).json({ error: 'Room owners must close their room.' });
+    }
+
+    const { error } = await supabase
+      .from('talkzy_room_members')
+      .delete()
+      .eq('room_id', room.id)
+      .eq('user_id', req.talkzyUser.id);
+
+    if (error) throw error;
+
+    res.json({ left: true, roomId: room.id });
+  } catch (error) {
+    console.error('Could not leave room:', error.message);
+    res.status(500).json({ error: 'Could not leave this room.' });
+  }
+});
+
+// Close a room. Only its owner can close it.
+app.post('/api/rooms/:roomId/close', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+
+    if (room.owner_id !== req.talkzyUser.id) {
+      return res.status(403).json({ error: 'Only the room owner can close this room.' });
+    }
+
+    const { error } = await supabase
+      .from('talkzy_rooms')
+      .update({ status: 'closed', closed_at: new Date().toISOString() })
+      .eq('id', room.id)
+      .eq('status', 'active');
+
+    if (error) throw error;
+
+    await supabase.from('talkzy_room_members').delete().eq('room_id', room.id);
+    await supabase.from('talkzy_room_admins').delete().eq('room_id', room.id);
+
+    res.json({ closed: true, roomId: room.id });
+  } catch (error) {
+    console.error('Could not close room:', error.message);
+    res.status(500).json({ error: 'Could not close this room.' });
+  }
+});
+
+// Change a room between public and locked. Only the owner can change this.
+app.patch('/api/rooms/:roomId/type', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+
+    if (room.owner_id !== req.talkzyUser.id) {
+      return res.status(403).json({ error: 'Only the room owner can change room privacy.' });
+    }
+
+    if (room.status !== 'active') {
+      return res.status(409).json({ error: 'This room is closed.' });
+    }
+
+    const roomType = String(req.body?.roomType || '');
+    const password = String(req.body?.password || '');
+
+    if (!['public', 'locked'].includes(roomType)) {
+      return res.status(400).json({ error: 'Room type must be public or locked.' });
+    }
+
+    if (roomType === 'locked' && (password.length < 4 || password.length > 64)) {
+      return res.status(400).json({
+        error: 'A new locked-room password must be 4 to 64 characters.'
+      });
+    }
+
+    const passwordHash = roomType === 'locked'
+      ? await makePasswordHash(password)
+      : null;
+
+    const { data, error } = await supabase
+      .from('talkzy_rooms')
+      .update({ room_type: roomType, password_hash: passwordHash })
+      .eq('id', room.id)
+      .select('id, room_name, description, room_type, status')
+      .single();
+
+    if (error) throw error;
+
+    res.json({ room: data });
+  } catch (error) {
+    console.error('Could not change room privacy:', error.message);
+    res.status(500).json({ error: 'Could not change room privacy.' });
+  }
+});
+
+// Add a room admin. The target user must already be a room member.
+app.post('/api/rooms/:roomId/admins', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+
+    if (room.owner_id !== req.talkzyUser.id) {
+      return res.status(403).json({ error: 'Only the room owner can appoint admins.' });
+    }
+
+    const userId = String(req.body?.userId || '').trim();
+
+    if (!userId || userId === room.owner_id) {
+      return res.status(400).json({ error: 'Enter a valid member user ID.' });
+    }
+
+    if (!await isRoomMember(room.id, userId)) {
+      return res.status(400).json({ error: 'That user must join the room before becoming an admin.' });
+    }
+
+    const { error } = await supabase
+      .from('talkzy_room_admins')
+      .upsert(
+        { room_id: room.id, user_id: userId },
+        { onConflict: 'room_id,user_id' }
+      );
+
+    if (error) throw error;
+
+    res.status(201).json({ adminAdded: true, userId });
+  } catch (error) {
+    console.error('Could not add room admin:', error.message);
+    res.status(500).json({ error: 'Could not add this room admin.' });
+  }
+});
+
+// Remove a room admin. Only the owner can do this.
+app.delete('/api/rooms/:roomId/admins/:userId', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+
+    if (room.owner_id !== req.talkzyUser.id) {
+      return res.status(403).json({ error: 'Only the room owner can remove admins.' });
+    }
+
+    const { error } = await supabase
+      .from('talkzy_room_admins')
+      .delete()
+      .eq('room_id', room.id)
+      .eq('user_id', req.params.userId);
+
+    if (error) throw error;
+
+    res.json({ adminRemoved: true });
+  } catch (error) {
+    console.error('Could not remove room admin:', error.message);
+    res.status(500).json({ error: 'Could not remove this room admin.' });
+  }
+});
+
+// Promote a member to speaker or return them to listener. Owner/admin only.
+app.patch('/api/rooms/:roomId/members/:userId/role', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+
+    if (!await canManageRoom(room, req.talkzyUser.id)) {
+      return res.status(403).json({ error: 'Only the owner or a room admin can manage speakers.' });
+    }
+
+    const role = String(req.body?.role || '');
+    if (!['listener', 'speaker'].includes(role)) {
+      return res.status(400).json({ error: 'Role must be listener or speaker.' });
+    }
+
+    if (req.params.userId === room.owner_id) {
+      return res.status(400).json({ error: 'The room owner role cannot be changed here.' });
+    }
+
+    const { data, error } = await supabase
+      .from('talkzy_room_members')
+      .update({ role })
+      .eq('room_id', room.id)
+      .eq('user_id', req.params.userId)
+      .select('room_id, user_id, role')
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) return res.status(404).json({ error: 'Room member not found.' });
+
+    res.json({ member: data });
+  } catch (error) {
+    console.error('Could not change member role:', error.message);
+    res.status(500).json({ error: 'Could not change this member role.' });
+  }
+});
+
+// Remove a member from a room. Owner/admin only.
+app.delete('/api/rooms/:roomId/members/:userId', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+
+    if (!await canManageRoom(room, req.talkzyUser.id)) {
+      return res.status(403).json({ error: 'Only the owner or a room admin can remove members.' });
+    }
+
+    if (req.params.userId === room.owner_id) {
+      return res.status(400).json({ error: 'The room owner cannot be removed.' });
+    }
+
+    const { error } = await supabase
+      .from('talkzy_room_members')
+      .delete()
+      .eq('room_id', room.id)
+      .eq('user_id', req.params.userId);
+
+    if (error) throw error;
+
+    await supabase
+      .from('talkzy_room_admins')
+      .delete()
+      .eq('room_id', room.id)
+      .eq('user_id', req.params.userId);
+
+    res.json({ removed: true, userId: req.params.userId });
+  } catch (error) {
+    console.error('Could not remove room member:', error.message);
+    res.status(500).json({ error: 'Could not remove this room member.' });
+  }
+});
+
+// List room members. Only people inside the room and its managers can view this list.
+app.get('/api/rooms/:roomId/members', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+
+    const userId = req.talkzyUser.id;
+    const allowed = room.owner_id === userId ||
+      await isRoomAdmin(room.id, userId) ||
+      await isRoomMember(room.id, userId);
+
+    if (!allowed) {
+      return res.status(403).json({ error: 'Join the room to view its members.' });
+    }
+
+    const { data, error } = await supabase
+      .from('talkzy_room_members')
+      .select('user_id, role, joined_at')
+      .eq('room_id', room.id)
+      .order('joined_at', { ascending: true });
+
+    if (error) throw error;
+
+    res.json({ members: data || [] });
+  } catch (error) {
+    console.error('Could not load room members:', error.message);
+    res.status(500).json({ error: 'Could not load room members.' });
+  }
+});
+
+// Keep this error handler after every route.
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && 'body' in err) {
     return res.status(400).json({ error: 'Invalid JSON request.' });
@@ -347,4 +766,3 @@ app.use((err, req, res, next) => {
 app.listen(PORT, '0.0.0.0', () =>
   console.log(`TALKZY owner backend listening on port ${PORT}`)
 );
-         
