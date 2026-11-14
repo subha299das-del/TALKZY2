@@ -671,3 +671,98 @@ app.patch('/api/rooms/:roomId/members/:userId/role', userAuth, async (req, res) 
     error: 'The room owner role cannot be changed.'
   });
 }
+    
+    const { data, error } = await supabase
+      .from('talkzy_room_members')
+      .update({ role })
+      .eq('room_id', room.id)
+      .eq('user_id', req.params.userId)
+      .select('room_id, user_id, role')
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) {
+      return res.status(404).json({ error: 'Room member not found.' });
+    }
+
+    res.json({ member: data });
+  } catch (error) {
+    console.error('Could not change member role:', error.message);
+    res.status(500).json({ error: 'Could not change member role.' });
+  }
+});
+
+// Remove a member from a room. Owner or admin only.
+app.delete('/api/rooms/:roomId/members/:userId', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+
+    if (!await canManageRoom(room, req.talkzyUser.id)) {
+      return res.status(403).json({ error: 'Only the owner or a room admin can remove members.' });
+    }
+
+    if (req.params.userId === room.owner_id) {
+      return res.status(400).json({ error: 'The room owner cannot be removed.' });
+    }
+
+    const { error } = await supabase
+      .from('talkzy_room_members')
+      .delete()
+      .eq('room_id', room.id)
+      .eq('user_id', req.params.userId);
+
+    if (error) throw error;
+
+    await supabase
+      .from('talkzy_room_admins')
+      .delete()
+      .eq('room_id', room.id)
+      .eq('user_id', req.params.userId);
+
+    res.json({ removed: true });
+  } catch (error) {
+    console.error('Could not remove room member:', error.message);
+    res.status(500).json({ error: 'Could not remove room member.' });
+  }
+});
+
+// List room members.
+app.get('/api/rooms/:roomId/members', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+
+    const userId = req.talkzyUser.id;
+    const allowed = await canManageRoom(room, userId) ||
+      await isRoomMember(room.id, userId);
+
+    if (!allowed) {
+      return res.status(403).json({ error: 'Join the room to view its members.' });
+    }
+
+    const { data, error } = await supabase
+      .from('talkzy_room_members')
+      .select('user_id, role')
+      .eq('room_id', room.id);
+
+    if (error) throw error;
+
+    res.json({ members: data || [] });
+  } catch (error) {
+    console.error('Could not load room members:', error.message);
+    res.status(500).json({ error: 'Could not load room members.' });
+  }
+});
+
+// Handle unexpected errors.
+app.use((error, req, res, next) => {
+  console.error('Unexpected server error:', error.message);
+  if (res.headersSent) return next(error);
+  res.status(500).json({ error: 'An unexpected server error occurred.' });
+});
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`TALKZY owner backend listening on port ${PORT}`);
+});
+
