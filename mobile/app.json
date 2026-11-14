@@ -7,20 +7,25 @@
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "scheme": "talkzy",
-    "icon": "./assets/icon.png",
-    "splash": {
-      "resizeMode": "contain",
-      "backgroundColor": "#090D18"
-    },
+    "newArchEnabled": true,
     "android": {
       "package": "com.talkzy.app",
       "versionCode": 5,
-      "adaptiveIcon": {
-        "backgroundColor": "#090D18"
-      }
+      "permissions": [
+        "INTERNET",
+        "CAMERA",
+        "READ_MEDIA_IMAGES"
+      ]
     },
     "plugins": [
-      "expo-image-picker"
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "TALKZY needs access to your photos so you can upload a profile picture.",
+          "cameraPermission": "TALKZY needs camera access so you can take a profile picture.",
+          "microphonePermission": false
+        }
+      ]
     ]
   }
 }
