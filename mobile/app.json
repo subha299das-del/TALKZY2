@@ -1,3 +1,4 @@
+
 {
   "expo": {
     "name": "TALKZY",
@@ -5,7 +6,16 @@
     "version": "1.2.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
-    "android": { "package": "com.talkzy.app" },
-    "ios": { "bundleIdentifier": "com.talkzy.app" }
+    "icon": "./assets/talkzy-icon.png",
+    "android": {
+      "package": "com.talkzy.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/talkzy-icon.png",
+        "backgroundColor": "#0B0812"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.talkzy.app"
+    }
   }
 }
