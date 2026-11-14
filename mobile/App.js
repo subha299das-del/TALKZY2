@@ -100,7 +100,8 @@ export default function App() {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [displayName, setDisplayName] = useState('');
-  const [age, setAge] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [country, setCountry] = useState('India');
   const [gender, setGender] = useState('');
   const [avatarUri, setAvatarUri] = useState('');
   const [loading, setLoading] = useState(false);
@@ -148,7 +149,7 @@ export default function App() {
     try {
       const { data, error } = await supabase
         .from('talkzy_profiles')
-        .select('talkzy_id, display_name, age, gender, avatar_url')
+        .select('talkzy_id, display_name, date_of_birth, country, gender, avatar_url')
         .eq('id', activeSession.user.id)
         .maybeSingle();
 
@@ -160,11 +161,12 @@ export default function App() {
 
       setProfile(data);
       setDisplayName(data.display_name || activeSession.user.user_metadata?.display_name || '');
-      setAge(data.age ? String(data.age) : '');
+      setDateOfBirth(data.date_of_birth || '');
+      setCountry(data.country || 'India');
       setGender(data.gender || '');
       setAvatarUri(data.avatar_url || '');
 
-      if (!data.display_name || !data.age || !data.gender) {
+      if (!data.display_name || !data.date_of_birth || !data.country || !data.gender) {
         setScreen('profile');
       } else {
         setScreen('home');
@@ -275,9 +277,10 @@ export default function App() {
   }
 
   async function saveProfile() {
-    const numericAge = Number(age);
-    if (!displayName.trim() || !Number.isInteger(numericAge) || numericAge < 13 || numericAge > 120) {
-      Alert.alert('Profile details', 'Enter a display name and a valid age between 13 and 120.');
+    const dob = dateOfBirth.trim();
+    const validDob = /^\d{4}-\d{2}-\d{2}$/.test(dob) && !Number.isNaN(Date.parse(dob + 'T00:00:00')) && new Date(dob + 'T00:00:00').toISOString().slice(0, 10) === dob && dob < new Date().toISOString().slice(0, 10);
+    if (!displayName.trim() || !validDob || !country.trim()) {
+      Alert.alert('Profile details', 'Enter your display name, a valid date of birth (YYYY-MM-DD), and country.');
       return;
     }
     if (!['Male', 'Female', 'Other', 'Prefer not to say'].includes(gender)) {
@@ -311,12 +314,13 @@ export default function App() {
         .from('talkzy_profiles')
         .update({
           display_name: displayName.trim(),
-          age: numericAge,
+          date_of_birth: dob,
+          country: country.trim(),
           gender,
           avatar_url: publicAvatarUrl
         })
         .eq('id', session.user.id)
-        .select('talkzy_id, display_name, age, gender, avatar_url')
+        .select('talkzy_id, display_name, date_of_birth, country, gender, avatar_url')
         .single();
 
       if (error) throw error;
@@ -472,7 +476,8 @@ export default function App() {
           </TouchableOpacity>
           <Button outline title="Choose profile picture" onPress={choosePhoto} />
           <Field label="Display name" value={displayName} onChangeText={setDisplayName} />
-          <Field label="Age (13–120)" value={age} onChangeText={setAge} keyboardType="number-pad" />
+          <Field label="Date of birth (YYYY-MM-DD)" value={dateOfBirth} onChangeText={setDateOfBirth} placeholder="2000-05-21" keyboardType="numbers-and-punctuation" />
+          <Field label="Country" value={country} onChangeText={setCountry} placeholder="Enter your country" />
           <Text style={{ color: '#CFC3DE', fontWeight: '700', marginTop: 16 }}>Gender</Text>
           {['Male', 'Female', 'Other', 'Prefer not to say'].map(option => (
             <TouchableOpacity key={option} onPress={() => setGender(option)} style={{ padding: 13, borderRadius: 11, marginTop: 8, backgroundColor: gender === option ? '#49316B' : card, borderWidth: 1, borderColor: gender === option ? config.primary : '#38294A' }}>
@@ -490,6 +495,7 @@ export default function App() {
             <Text style={{ color: config.primary, fontWeight: '800' }}>WELCOME TO TALKZY</Text>
             <Text style={{ color: 'white', fontSize: 25, fontWeight: '900', marginTop: 8 }}>{profile?.display_name || 'TALKZY Member'}</Text>
             <Text style={{ color: '#C3B8D1', marginTop: 8 }}>Your TALKZY ID: {profile?.talkzy_id || 'Loading…'}</Text>
+            <Text style={{ color: '#C3B8D1', marginTop: 5 }}>Country: {profile?.country || 'Not set'}</Text>
             {profile?.avatar_url ? <Image source={{ uri: profile.avatar_url }} style={{ width: 76, height: 76, borderRadius: 38, marginTop: 14 }} /> : null}
             <Button title="Edit profile" onPress={() => setScreen('profile')} />
           </View>
