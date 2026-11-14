@@ -496,4 +496,79 @@ export default function App() {
           <Text style={{ color: 'white', fontSize: 20, fontWeight: '900', marginTop: 22 }}>{config.bannerTitle}</Text>
           <Text style={{ color: '#C3B8D1', marginTop: 6 }}>{config.bannerText}</Text>
           <View style={{ backgroundColor: card, padding: 15, borderRadius: 14, marginTop: 16 }}>
-            <Text style={{ color: config.primary, fontWeight: '800' }}>ANNOUN
+            <Text style={{ color: config.primary, fontWeight: '800' }}>ANNOUNCEMENT</Text>
+            <Text style={{ color: '#D8CDEA', marginTop: 6 }}>{config.announcement}</Text>
+          </View>
+          <Button title="Explore public rooms" onPress={() => { setScreen('rooms'); loadRooms(); }} />
+          <Button outline title="Create a voice room" onPress={() => setScreen('createRoom')} />
+          <Button outline title="Refresh home" onPress={refreshConfig} />
+          <Button outline title="Sign out" onPress={signOut} />
+          <Text style={{ color: '#81758F', fontSize: 11, marginTop: 16 }}>
+            Room creation and discovery connect to your server. Live audio streaming is not yet integrated.
+          </Text>
+        </ScrollView>
+      )}
+
+      {screen === 'rooms' && (
+        <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 40 }}>
+          <Text style={{ color: 'white', fontSize: 24, fontWeight: '900' }}>Public voice rooms</Text>
+          <Button title="Refresh rooms" onPress={loadRooms} />
+          <Button outline title="Create a room" onPress={() => setScreen('createRoom')} />
+          {rooms.length === 0 ? <Text style={{ color: '#B9AEC8', marginTop: 20 }}>No public rooms found. Refresh to check again.</Text> :
+            rooms.map(room => (
+              <View key={room.id} style={{ backgroundColor: card, padding: 15, borderRadius: 14, marginTop: 12 }}>
+                <Text style={{ color: 'white', fontWeight: '900', fontSize: 17 }}>{room.room_name}</Text>
+                <Text style={{ color: '#B9AEC8', marginTop: 5 }}>{room.description || 'No description'}</Text>
+                <Text style={{ color: config.primary, marginTop: 7 }}>Public • Active</Text>
+                <Text style={{ color: '#81758F', fontSize: 11, marginTop: 6 }}>Voice connection is not available yet.</Text>
+              </View>
+            ))
+          }
+          <Button outline title="Back home" onPress={() => setScreen('home')} />
+        </ScrollView>
+      )}
+
+      {screen === 'createRoom' && (
+        <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+          <Text style={{ color: 'white', fontSize: 24, fontWeight: '900' }}>Create a voice room</Text>
+          <Field label="Room name" value={roomName} onChangeText={setRoomName} />
+          <Field label="Description (optional)" value={roomDescription} onChangeText={setRoomDescription} multiline />
+          <Text style={{ color: '#CFC3DE', fontWeight: '700', marginTop: 16 }}>Room type</Text>
+          {['public', 'locked'].map(option => (
+            <TouchableOpacity key={option} onPress={() => setRoomType(option)} style={{ padding: 13, borderRadius: 11, marginTop: 8, backgroundColor: roomType === option ? '#49316B' : card, borderWidth: 1, borderColor: roomType === option ? config.primary : '#38294A' }}>
+              <Text style={{ color: 'white' }}>{roomType === option ? '●  ' : '○  '}{option === 'public' ? 'Public' : 'Locked (password required)'}</Text>
+            </TouchableOpacity>
+          ))}
+          {roomType === 'locked' && <Field label="Room password (minimum 4 characters)" value={roomPassword} onChangeText={setRoomPassword} secureTextEntry />}
+          <Button disabled={loading} title={loading ? 'Creating…' : 'Create room'} onPress={createRoom} />
+          <Button outline title="Cancel" onPress={() => setScreen('home')} />
+        </ScrollView>
+      )}
+
+      {screen === 'ownerLogin' && (
+        <ScrollView contentContainerStyle={{ padding: 20 }}>
+          <Text style={{ color: 'white', fontSize: 24, fontWeight: '900' }}>Owner sign in</Text>
+          <Field label="Owner email" value={ownerEmail} onChangeText={setOwnerEmail} keyboardType="email-address" />
+          <Field label="Owner password" value={ownerPassword} onChangeText={setOwnerPassword} secureTextEntry />
+          <Button disabled={loading} title={loading ? 'Please wait…' : 'Sign in as owner'} onPress={ownerLogin} />
+          <Button outline title="Back" onPress={() => setScreen(session ? 'home' : 'auth')} />
+        </ScrollView>
+      )}
+
+      {screen === 'admin' && (
+        <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+          <Text style={{ color: 'white', fontSize: 24, fontWeight: '900' }}>TALKZY interface control</Text>
+          {[
+            ['appName', 'App name'], ['tagline', 'Tagline'], ['primary', 'Accent colour (#RRGGBB)'],
+            ['background', 'Background colour (#RRGGBB)'], ['card', 'Card colour (#RRGGBB)'],
+            ['bannerTitle', 'Home banner title'], ['bannerText', 'Home banner text'], ['announcement', 'Announcement']
+          ].map(([key, label]) => (
+            <Field key={key} label={label} value={String(draft[key] ?? '')} onChangeText={value => setDraft(old => ({ ...old, [key]: value }))} />
+          ))}
+          <Button disabled={loading} title={loading ? 'Publishing…' : 'Publish changes'} onPress={saveSettings} />
+          <Button outline title="Back" onPress={() => setScreen(session ? 'home' : 'auth')} />
+        </ScrollView>
+      )}
+    </SafeAreaView>
+  );
+}
