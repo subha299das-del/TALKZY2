@@ -3,20 +3,24 @@
   "expo": {
     "name": "TALKZY",
     "slug": "talkzy",
-    "scheme": "talkzy",
-    "version": "1.2.1",
+    "version": "1.5.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
-    "icon": "./assets/talkzy-icon.png",
+    "scheme": "talkzy",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#090D18"
+    },
     "android": {
       "package": "com.talkzy.app",
+      "versionCode": 5,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/talkzy-icon.png",
-        "backgroundColor": "#0B0812"
+        "backgroundColor": "#090D18"
       }
     },
-    "ios": {
-      "bundleIdentifier": "com.talkzy.app"
-    }
+    "plugins": [
+      "expo-image-picker"
+    ]
   }
 }
