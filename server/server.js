@@ -241,7 +241,100 @@ app.put('/api/config', ownerAuth, async (req, res) => {
     });
   }
 });
+// TALKZY USER AUTHENTICATION
+async function userAuth(req, res, next) {
+  const header = req.get('authorization') || '';
+  const match = /^Bearer\s+(.+)$/i.exec(header);
 
+  if (!match) {
+    return res.status(401).json({ error: 'Please sign in first.' });
+  }
+
+  try {
+    const { data, error } = await supabase.auth.getUser(match[1]);
+
+    if (error || !data.user) {
+      return res.status(401).json({ error: 'Invalid or expired session.' });
+    }
+
+    req.talkzyUser = data.user;
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: 'Authentication failed.' });
+  }
+}
+
+// CREATE A VOICE ROOM
+app.post('/api/rooms', userAuth, async (req, res) => {
+  const roomName = String(req.body?.roomName || '').trim();
+  const description = String(req.body?.description || '').trim();
+  const roomType = String(req.body?.roomType || 'public');
+  const password = String(req.body?.password || '');
+
+  if (roomName.length < 3 || roomName.length > 40) {
+    return res.status(400).json({
+      error: 'Room name must be between 3 and 40 characters.'
+    });
+  }
+
+  if (description.length > 200) {
+    return res.status(400).json({
+      error: 'Description cannot exceed 200 characters.'
+    });
+  }
+
+  if (!['public', 'locked'].includes(roomType)) {
+    return res.status(400).json({ error: 'Invalid room type.' });
+  }
+
+  if (roomType === 'locked' && (password.length < 4 || password.length > 64)) {
+    return res.status(400).json({
+      error: 'Locked room password must be 4 to 64 characters.'
+    });
+  }
+
+  try {
+    let passwordHash = null;
+
+    if (roomType === 'locked') {
+      const salt = crypto.randomBytes(16).toString('hex');
+      const derived = await new Promise((resolve, reject) => {
+        crypto.scrypt(password, salt, 64, (error, key) => {
+          if (error) reject(error);
+          else resolve(key.toString('hex'));
+        });
+      });
+
+      passwordHash = `${salt}:${derived}`;
+    }
+
+    const { data, error } = await supabase
+      .from('talkzy_rooms')
+      .insert({
+        owner_id: req.talkzyUser.id,
+        room_name: roomName,
+        description,
+        room_type: roomType,
+        password_hash: passwordHash
+      })
+      .select('id, room_name, description, room_type, status, created_at')
+      .single();
+
+    if (error) {
+      if (error.code === '23505') {
+        return res.status(409).json({
+          error: 'You already own an active room. Close it before creating another.'
+        });
+      }
+      throw error;
+    }
+
+    return res.status(201).json({ room: data });
+  } catch (error) {
+    console.error('Room creation failed:', error.message);
+    return res.status(500).json({ error: 'Could not create room.' });
+  }
+});
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && 'body' in err) {
     return res.status(400).json({ error: 'Invalid JSON request.' });
