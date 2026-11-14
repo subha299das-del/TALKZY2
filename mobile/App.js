@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   SafeAreaView, View, Text, TextInput, TouchableOpacity, ScrollView,
-  StatusBar, Alert, Image, ActivityIndicator
+  StatusBar, Alert, Image
 } from 'react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -101,7 +101,7 @@ export default function App() {
   const [profile, setProfile] = useState(null);
   const [displayName, setDisplayName] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
-  const [country, setCountry] = useState('India');
+  const [country, setCountry] = useState('');
   const [gender, setGender] = useState('');
   const [avatarUri, setAvatarUri] = useState('');
   const [loading, setLoading] = useState(false);
@@ -162,7 +162,7 @@ export default function App() {
       setProfile(data);
       setDisplayName(data.display_name || activeSession.user.user_metadata?.display_name || '');
       setDateOfBirth(data.date_of_birth || '');
-      setCountry(data.country || 'India');
+      setCountry(data.country || '');
       setGender(data.gender || '');
       setAvatarUri(data.avatar_url || '');
 
@@ -277,10 +277,18 @@ export default function App() {
   }
 
   async function saveProfile() {
-    const dob = dateOfBirth.trim();
-    const validDob = /^\d{4}-\d{2}-\d{2}$/.test(dob) && !Number.isNaN(Date.parse(dob + 'T00:00:00')) && new Date(dob + 'T00:00:00').toISOString().slice(0, 10) === dob && dob < new Date().toISOString().slice(0, 10);
+    const dobMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateOfBirth.trim());
+    let validDob = false;
+    if (dobMatch) {
+      const year = Number(dobMatch[1]), month = Number(dobMatch[2]), day = Number(dobMatch[3]);
+      const testDate = new Date(Date.UTC(year, month - 1, day));
+      const now = new Date();
+      let years = now.getUTCFullYear() - year;
+      if (now.getUTCMonth() + 1 < month || (now.getUTCMonth() + 1 === month && now.getUTCDate() < day)) years--;
+      validDob = testDate.getUTCFullYear() === year && testDate.getUTCMonth() === month - 1 && testDate.getUTCDate() === day && years >= 13 && years <= 120;
+    }
     if (!displayName.trim() || !validDob || !country.trim()) {
-      Alert.alert('Profile details', 'Enter your display name, a valid date of birth (YYYY-MM-DD), and country.');
+      Alert.alert('Profile details', 'Enter your display name, a valid date of birth (YYYY-MM-DD), and country. You must be at least 13 years old.');
       return;
     }
     if (!['Male', 'Female', 'Other', 'Prefer not to say'].includes(gender)) {
@@ -314,7 +322,7 @@ export default function App() {
         .from('talkzy_profiles')
         .update({
           display_name: displayName.trim(),
-          date_of_birth: dob,
+          date_of_birth: dateOfBirth.trim(),
           country: country.trim(),
           gender,
           avatar_url: publicAvatarUrl
@@ -435,10 +443,13 @@ export default function App() {
     <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
       <StatusBar barStyle="light-content" />
       <ExpoStatusBar style="light" />
-      <View style={{ paddingHorizontal: 18, paddingVertical: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <View>
-          <Text style={{ color: config.primary, fontWeight: '900', letterSpacing: 3, fontSize: 19 }}>{config.appName}</Text>
-          <Text style={{ color: '#B9AEC8', fontSize: 11 }}>{config.tagline}</Text>
+      <View style={{ paddingHorizontal: 14, paddingVertical: 9, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Image source={require('./assets/talkzy-logo.jpg')} resizeMode="contain" style={{ width: 58, height: 58, borderRadius: 12 }} />
+          <View style={{ marginLeft: 9 }}>
+            <Text style={{ color: config.primary, fontWeight: '900', letterSpacing: 2, fontSize: 17 }}>{config.appName}</Text>
+            <Text style={{ color: '#B9AEC8', fontSize: 10 }}>{config.tagline}</Text>
+          </View>
         </View>
         <TouchableOpacity onPress={() => setScreen('ownerLogin')}>
           <Text style={{ color: '#BCA5E8', fontWeight: '700' }}>Owner</Text>
@@ -447,7 +458,8 @@ export default function App() {
 
       {screen === 'auth' && (
         <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-          <View style={{ backgroundColor: card, padding: 22, borderRadius: 20, borderWidth: 1, borderColor: '#45305F' }}>
+          <View style={{ backgroundColor: card, padding: 22, borderRadius: 20, borderWidth: 1, borderColor: '#45305F', alignItems: 'stretch' }}>
+            <Image source={require('./assets/talkzy-logo.jpg')} resizeMode="contain" style={{ width: 190, height: 190, alignSelf: 'center', marginBottom: 8 }} />
             <Text style={{ color: 'white', fontSize: 27, fontWeight: '900' }}>
               {mode === 'login' ? 'Welcome back' : 'Create your account'}
             </Text>
@@ -469,14 +481,15 @@ export default function App() {
 
       {screen === 'profile' && (
         <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-          <Text style={{ color: 'white', fontSize: 25, fontWeight: '900' }}>Set up your profile</Text>
+          <Image source={require('./assets/talkzy-logo.jpg')} resizeMode="contain" style={{ width: 145, height: 145, alignSelf: 'center', marginBottom: 8 }} />
+          <Text style={{ color: 'white', fontSize: 25, fontWeight: '900', textAlign: 'center' }}>Set up your profile</Text>
           <Text style={{ color: '#B9AEC8', marginTop: 6 }}>Choose how other TALKZY members will see you.</Text>
           <TouchableOpacity onPress={choosePhoto} style={{ alignSelf: 'center', marginVertical: 20, width: 112, height: 112, borderRadius: 56, backgroundColor: card, borderWidth: 2, borderColor: config.primary, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
             {avatarUri ? <Image source={{ uri: avatarUri }} style={{ width: 112, height: 112 }} /> : <Text style={{ color: 'white', textAlign: 'center' }}>Choose photo</Text>}
           </TouchableOpacity>
           <Button outline title="Choose profile picture" onPress={choosePhoto} />
           <Field label="Display name" value={displayName} onChangeText={setDisplayName} />
-          <Field label="Date of birth (YYYY-MM-DD)" value={dateOfBirth} onChangeText={setDateOfBirth} placeholder="2000-05-21" keyboardType="numbers-and-punctuation" />
+          <Field label="Date of birth (YYYY-MM-DD)" value={dateOfBirth} onChangeText={setDateOfBirth} placeholder="1998-05-21" keyboardType="numbers-and-punctuation" />
           <Field label="Country" value={country} onChangeText={setCountry} placeholder="Enter your country" />
           <Text style={{ color: '#CFC3DE', fontWeight: '700', marginTop: 16 }}>Gender</Text>
           {['Male', 'Female', 'Other', 'Prefer not to say'].map(option => (
@@ -491,11 +504,11 @@ export default function App() {
 
       {screen === 'home' && (
         <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 40 }}>
-          <View style={{ backgroundColor: card, padding: 20, borderRadius: 20, borderWidth: 1, borderColor: '#45305F' }}>
+          <View style={{ backgroundColor: card, padding: 20, borderRadius: 20, borderWidth: 1, borderColor: '#45305F', alignItems: 'center' }}>
+            <Image source={require('./assets/talkzy-logo.jpg')} resizeMode="contain" style={{ width: 170, height: 170, marginBottom: 6 }} />
             <Text style={{ color: config.primary, fontWeight: '800' }}>WELCOME TO TALKZY</Text>
             <Text style={{ color: 'white', fontSize: 25, fontWeight: '900', marginTop: 8 }}>{profile?.display_name || 'TALKZY Member'}</Text>
             <Text style={{ color: '#C3B8D1', marginTop: 8 }}>Your TALKZY ID: {profile?.talkzy_id || 'Loading…'}</Text>
-            <Text style={{ color: '#C3B8D1', marginTop: 5 }}>Country: {profile?.country || 'Not set'}</Text>
             {profile?.avatar_url ? <Image source={{ uri: profile.avatar_url }} style={{ width: 76, height: 76, borderRadius: 38, marginTop: 14 }} /> : null}
             <Button title="Edit profile" onPress={() => setScreen('profile')} />
           </View>
