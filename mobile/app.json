@@ -3,6 +3,7 @@
   "expo": {
     "name": "TALKZY",
     "slug": "talkzy",
+     "scheme": "talkzy",
     "version": "1.2.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
