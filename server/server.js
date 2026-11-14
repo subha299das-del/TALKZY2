@@ -667,4 +667,7 @@ app.patch('/api/rooms/:roomId/members/:userId/role', userAuth, async (req, res) 
     }
 
     if (req.params.userId === room.owner_id) {
-      return res.status(400).json({ error: 'The room owner role cannot 
+  return res.status(400).json({
+    error: 'The room owner role cannot be changed.'
+  });
+}
