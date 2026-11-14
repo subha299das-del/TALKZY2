@@ -1,9 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
 import {
-  SafeAreaView, View, Text, TextInput, TouchableOpacity, ScrollView,
-  StatusBar, Alert, Image
+  SafeAreaView, View, Text, TextInput, TouchableOpacity,
+  ScrollView, StatusBar, Alert, Image, ActivityIndicator
 } from 'react-native';
-import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import 'react-native-url-polyfill/auto';
@@ -15,76 +15,122 @@ WebBrowser.maybeCompleteAuthSession();
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
 const SUPABASE_KEY = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
-const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || '').replace(/\/+$/, '');
+const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || 'https://talkzy2.onrender.com').replace(/\/+$/, '');
 const BUCKET = 'talkzy-profiles';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: {
-    storage: AsyncStorage,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false
-  }
-});
-
-const defaults = {
-  appName: 'TALKZY',
-  tagline: 'Talk • Connect • Earn',
-  primary: '#8B5CF6',
-  background: '#0B0812',
-  card: '#171225',
-  bannerTitle: 'Your voice. Your community.',
-  bannerText: 'Join conversations and meet new people.',
-  announcement: 'Welcome to TALKZY!'
+const C = {
+  bg: '#090D18',
+  panel: '#141B2B',
+  panel2: '#1B2538',
+  text: '#F4F7FF',
+  muted: '#9AA8C0',
+  accent: '#7C5CFC',
+  line: '#29344A',
+  danger: '#FF6B78',
+  green: '#42D6A4'
 };
 
-function apiUrl(path) {
-  if (!API_BASE_URL) throw new Error('TALKZY server address is not configured.');
-  if (!API_BASE_URL.startsWith('https://')) throw new Error('TALKZY server address must use HTTPS.');
-  return `${API_BASE_URL}${path}`;
-}
+const supabase = createClient(
+  SUPABASE_URL || 'https://placeholder.supabase.co',
+  SUPABASE_KEY || 'placeholder-key',
+  {
+    auth: {
+      storage: AsyncStorage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false
+    }
+  }
+);
 
-async function readResponse(response) {
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || `Request failed (${response.status})`);
+async function api(path, options = {}) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers || {})
+    }
+  });
+
+  const raw = await response.text();
+  let data = {};
+
+  try {
+    data = raw ? JSON.parse(raw) : {};
+  } catch {
+    data = { message: raw };
+  }
+
+  if (!response.ok) {
+    throw new Error(data.error || data.message || `Request failed (${response.status})`);
+  }
+
   return data;
 }
 
-function Button({ title, onPress, outline = false, disabled = false }) {
+function Brand({ small = false }) {
+  return (
+    <View style={{ alignItems: 'center', marginBottom: small ? 10 : 22 }}>
+      <View style={{
+        width: small ? 48 : 66,
+        height: small ? 48 : 66,
+        borderRadius: 20,
+        backgroundColor: C.accent,
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <Text style={{ color: '#fff', fontSize: small ? 25 : 34, fontWeight: '900' }}>T</Text>
+      </View>
+      <Text style={{
+        color: C.text,
+        fontSize: small ? 22 : 30,
+        fontWeight: '900',
+        letterSpacing: 3,
+        marginTop: 8
+      }}>TALKZY</Text>
+      {!small && <Text style={{ color: C.muted, marginTop: 4 }}>Talk. Connect. Belong.</Text>}
+    </View>
+  );
+}
+
+function Btn({ title, onPress, secondary = false, danger = false, disabled = false }) {
   return (
     <TouchableOpacity
       disabled={disabled}
       onPress={onPress}
       style={{
-        backgroundColor: outline ? '#21182F' : '#8B5CF6',
-        borderColor: '#63458B',
-        borderWidth: outline ? 1 : 0,
-        padding: 14, borderRadius: 13, alignItems: 'center',
-        marginTop: 10, opacity: disabled ? 0.55 : 1
-      }}
-    >
-      <Text style={{ color: 'white', fontWeight: '800' }}>{title}</Text>
+        backgroundColor: secondary ? C.panel2 : danger ? '#632B3A' : C.accent,
+        padding: 14,
+        borderRadius: 13,
+        alignItems: 'center',
+        marginTop: 10,
+        opacity: disabled ? 0.55 : 1
+      }}>
+      <Text style={{ color: C.text, fontWeight: '800', fontSize: 15 }}>{title}</Text>
     </TouchableOpacity>
   );
 }
 
-function Field({ label, value, onChangeText, placeholder, secureTextEntry, keyboardType, multiline }) {
+function Input({ label, value, onChangeText, placeholder, secureTextEntry, keyboardType }) {
   return (
     <View style={{ marginTop: 12 }}>
-      <Text style={{ color: '#CFC3DE', fontWeight: '700', marginBottom: 6 }}>{label}</Text>
+      <Text style={{ color: C.muted, marginBottom: 6, fontSize: 13 }}>{label}</Text>
       <TextInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder || label}
-        placeholderTextColor="#82768F"
+        placeholderTextColor="#71809A"
         secureTextEntry={secureTextEntry}
         keyboardType={keyboardType}
-        multiline={multiline}
-        autoCapitalize={keyboardType === 'email-address' ? 'none' : 'sentences'}
+        autoCapitalize="none"
         style={{
-          backgroundColor: '#171225', color: 'white', padding: 14,
-          borderRadius: 12, borderWidth: 1, borderColor: '#38294A',
-          minHeight: multiline ? 82 : 48, textAlignVertical: multiline ? 'top' : 'center'
+          backgroundColor: C.panel2,
+          color: C.text,
+          borderWidth: 1,
+          borderColor: C.line,
+          borderRadius: 12,
+          paddingHorizontal: 14,
+          paddingVertical: 13
         }}
       />
     </View>
@@ -92,254 +138,408 @@ function Field({ label, value, onChangeText, placeholder, secureTextEntry, keybo
 }
 
 export default function App() {
-  const [config, setConfig] = useState(defaults);
+  const [session, setSession] = useState(null);
   const [screen, setScreen] = useState('auth');
   const [mode, setMode] = useState('login');
+  const [busy, setBusy] = useState(false);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [session, setSession] = useState(null);
+
   const [profile, setProfile] = useState(null);
   const [displayName, setDisplayName] = useState('');
-  const [dateOfBirth, setDateOfBirth] = useState('');
-  const [country, setCountry] = useState('');
   const [gender, setGender] = useState('');
-  const [avatarUri, setAvatarUri] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [dob, setDob] = useState('');
+  const [country, setCountry] = useState('');
+  const [avatar, setAvatar] = useState('');
+
   const [rooms, setRooms] = useState([]);
   const [roomName, setRoomName] = useState('');
   const [roomDescription, setRoomDescription] = useState('');
-  const [roomType, setRoomType] = useState('public');
-  const [roomPassword, setRoomPassword] = useState('');
-  const [ownerToken, setOwnerToken] = useState('');
+
   const [ownerEmail, setOwnerEmail] = useState('');
   const [ownerPassword, setOwnerPassword] = useState('');
-  const [draft, setDraft] = useState(defaults);
+  const [settingsText, setSettingsText] = useState('');
+
+  const [config, setConfig] = useState({
+    appName: 'TALKZY',
+    maintenanceMode: false
+  });
 
   useEffect(() => {
-    refreshConfig();
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
-        setSession(data.session);
-        loadProfile(data.session);
-      }
+      setSession(data.session);
+      if (data.session) setScreen('home');
     });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-      if (nextSession) {
-        loadProfile(nextSession);
-      } else {
-        setProfile(null);
-        setScreen('auth');
+
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, nextSession) => {
+        setSession(nextSession);
+        if (nextSession) {
+          setScreen(current => current === 'auth' ? 'home' : current);
+        } else {
+          setProfile(null);
+          setScreen('auth');
+        }
       }
-    });
+    );
+
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  async function refreshConfig() {
+  useEffect(() => {
+    if (session?.user?.id) {
+      loadProfile();
+      loadRooms();
+      loadConfig();
+    }
+  }, [session?.user?.id]);
+
+  async function loadConfig() {
     try {
-      const c = await readResponse(await fetch(apiUrl('/api/config')));
-      setConfig({ ...defaults, ...c });
-      setDraft({ ...defaults, ...c });
-    } catch (_) {
-      // The app can still open with its built-in design if the server is asleep.
+      const data = await api('/api/config');
+      setConfig(data.config || data || {});
+    } catch (error) {
+      console.log('Config:', error.message);
     }
   }
 
-  async function loadProfile(activeSession) {
+  async function loadProfile() {
     try {
       const { data, error } = await supabase
         .from('talkzy_profiles')
-        .select('talkzy_id, display_name, date_of_birth, country, gender, avatar_url')
-        .eq('id', activeSession.user.id)
+        .select('*')
+        .eq('id', session.user.id)
         .maybeSingle();
 
       if (error) throw error;
-      if (!data) {
-        Alert.alert('Profile setup', 'Your profile record was not found. Please contact TALKZY support.');
-        return;
-      }
 
-      setProfile(data);
-      setDisplayName(data.display_name || activeSession.user.user_metadata?.display_name || '');
-      setDateOfBirth(data.date_of_birth || '');
-      setCountry(data.country || '');
-      setGender(data.gender || '');
-      setAvatarUri(data.avatar_url || '');
+      const p = data || {};
+      setProfile(p);
+      setDisplayName(p.display_name || '');
+      setGender(p.gender || '');
+      setDob(p.date_of_birth || '');
+      setCountry(p.country || '');
+      setAvatar(p.avatar_url || '');
 
-      if (!data.display_name || !data.date_of_birth || !data.country || !data.gender) {
-        setScreen('profile');
-      } else {
-        setScreen('home');
-      }
+      if (!data) setScreen('profile');
     } catch (error) {
       Alert.alert('Profile', error.message);
     }
   }
 
-  async function signUp() {
-    if (!displayName.trim() || !email.trim() || password.length < 8) {
-      Alert.alert('Check details', 'Enter your name, email and a password with at least 8 characters.');
+  async function authenticate() {
+    if (!SUPABASE_URL.startsWith('https://') || !SUPABASE_KEY) {
+      Alert.alert('Setup needed', 'Configure your Supabase URL and publishable key in your build environment.');
       return;
     }
+
+    if (!email.trim() || !password) {
+      Alert.alert('Missing details', 'Enter your email and password.');
+      return;
+    }
+
+    setBusy(true);
+
     try {
-      setLoading(true);
-      const { data, error } = await supabase.auth.signUp({
-        email: email.trim().toLowerCase(),
-        password,
-        options: { data: { display_name: displayName.trim() } }
-      });
-      if (error) throw error;
-      if (data.session) {
-        setSession(data.session);
-        await loadProfile(data.session);
+      if (mode === 'signup') {
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password
+        });
+
+        if (error) throw error;
+
+        if (data.session) {
+          setSession(data.session);
+        } else {
+          Alert.alert('Check your email', 'Confirm your email, then sign in.');
+        }
       } else {
-        Alert.alert('Verify your email', 'Check your email inbox, verify your address, then return and sign in.');
-        setMode('login');
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password
+        });
+
+        if (error) throw error;
+        setSession(data.session);
       }
     } catch (error) {
-      Alert.alert('Sign up failed', error.message);
+      Alert.alert('Account', error.message);
     } finally {
-      setLoading(false);
-    }
-  }
-
-  async function signIn() {
-    if (!email.trim() || !password) {
-      Alert.alert('Enter details', 'Enter your email and password.');
-      return;
-    }
-    try {
-      setLoading(true);
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(), password
-      });
-      if (error) throw error;
-      setSession(data.session);
-      await loadProfile(data.session);
-    } catch (error) {
-      Alert.alert('Sign in failed', error.message);
-    } finally {
-      setLoading(false);
+      setBusy(false);
     }
   }
 
   async function googleSignIn() {
     try {
-      setLoading(true);
       const redirectTo = Linking.createURL('auth/callback');
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo, skipBrowserRedirect: true }
       });
+
       if (error) throw error;
+      if (!data?.url) throw new Error('Google sign-in URL was not returned.');
+
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+
       if (result.type === 'success' && result.url) {
-        const parsed = Linking.parse(result.url);
-        const code = parsed.queryParams?.code;
-        if (code) {
-          const { data: sessionData, error: exchangeError } =
-            await supabase.auth.exchangeCodeForSession(String(code));
-          if (exchangeError) throw exchangeError;
-          if (sessionData.session) {
-            setSession(sessionData.session);
-            await loadProfile(sessionData.session);
-          }
+        const fragment = result.url.split('#')[1] || '';
+        const params = {};
+
+        fragment.split('&').forEach(pair => {
+          const [key, value] = pair.split('=');
+          if (key) params[decodeURIComponent(key)] = decodeURIComponent(value || '');
+        });
+
+        if (params.access_token && params.refresh_token) {
+          const { data: authData, error: authError } = await supabase.auth.setSession({
+            access_token: params.access_token,
+            refresh_token: params.refresh_token
+          });
+
+          if (authError) throw authError;
+          setSession(authData.session);
         } else {
-          const hash = result.url.split('#')[1] || '';
-          const params = new URLSearchParams(hash);
-          const access_token = params.get('access_token');
-          const refresh_token = params.get('refresh_token');
-          if (access_token && refresh_token) {
-            const { data: sessionData, error: setError } =
-              await supabase.auth.setSession({ access_token, refresh_token });
-            if (setError) throw setError;
-            if (sessionData.session) await loadProfile(sessionData.session);
+          const parsed = Linking.parse(result.url);
+
+          if (parsed.queryParams?.code) {
+            const { data: authData, error: authError } =
+              await supabase.auth.exchangeCodeForSession(String(parsed.queryParams.code));
+
+            if (authError) throw authError;
+            setSession(authData.session);
           }
         }
       }
     } catch (error) {
-      Alert.alert('Google sign in', error.message);
-    } finally {
-      setLoading(false);
+      Alert.alert('Google sign-in', error.message);
     }
   }
-
   async function choosePhoto() {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const permission =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+
     if (!permission.granted) {
-      Alert.alert('Permission needed', 'Allow photo library access to choose a profile picture.');
+      Alert.alert(
+        'Permission',
+        'Allow photo-library access to choose your profile picture.'
+      );
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.8
-    });
-    if (!result.canceled && result.assets?.[0]?.uri) setAvatarUri(result.assets[0].uri);
+
+    const result =
+      await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8
+      });
+
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      setAvatar(result.assets[0].uri);
+    }
   }
 
   async function saveProfile() {
-    const dobMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateOfBirth.trim());
-    let validDob = false;
-    if (dobMatch) {
-      const year = Number(dobMatch[1]), month = Number(dobMatch[2]), day = Number(dobMatch[3]);
-      const testDate = new Date(Date.UTC(year, month - 1, day));
-      const now = new Date();
-      let years = now.getUTCFullYear() - year;
-      if (now.getUTCMonth() + 1 < month || (now.getUTCMonth() + 1 === month && now.getUTCDate() < day)) years--;
-      validDob = testDate.getUTCFullYear() === year && testDate.getUTCMonth() === month - 1 && testDate.getUTCDate() === day && years >= 13 && years <= 120;
-    }
-    if (!displayName.trim() || !validDob || !country.trim()) {
-      Alert.alert('Profile details', 'Enter your display name, a valid date of birth (YYYY-MM-DD), and country. You must be at least 13 years old.');
+    if (!displayName.trim()) {
+      Alert.alert('Profile', 'Enter your display name.');
       return;
     }
-    if (!['Male', 'Female', 'Other', 'Prefer not to say'].includes(gender)) {
-      Alert.alert('Choose gender', 'Please select a gender option.');
+
+    if (dob && !/^\d{4}-\d{2}-\d{2}$/.test(dob)) {
+      Alert.alert(
+        'Date of birth',
+        'Use YYYY-MM-DD format, for example 2000-05-21.'
+      );
       return;
     }
-    if (!session?.user?.id) return;
+
+    setBusy(true);
 
     try {
-      setLoading(true);
-      let publicAvatarUrl = profile?.avatar_url || null;
+      let avatarUrl = avatar;
 
-      if (avatarUri && !avatarUri.startsWith('http')) {
-        const response = await fetch(avatarUri);
+      if (avatar && avatar.startsWith('file://')) {
+        const response = await fetch(avatar);
         const blob = await response.blob();
-        const extension = (avatarUri.split('.').pop() || 'jpg').split('?')[0].toLowerCase();
-        const safeExtension = ['jpg', 'jpeg', 'png', 'webp'].includes(extension) ? extension : 'jpg';
-        const filePath = `${session.user.id}/${Date.now()}.${safeExtension}`;
-        const { error: uploadError } = await supabase.storage
-          .from(BUCKET)
-          .upload(filePath, blob, {
-            contentType: safeExtension === 'jpg' ? 'image/jpeg' : `image/${safeExtension}`,
-            upsert: true
-          });
+
+        const ext =
+          avatar.split('.').pop()?.split('?')[0] || 'jpg';
+
+        const path =
+          `${session.user.id}/profile-${Date.now()}.${ext}`;
+
+        const { error: uploadError } =
+          await supabase.storage
+            .from(BUCKET)
+            .upload(path, blob, {
+              contentType: blob.type || 'image/jpeg',
+              upsert: true
+            });
+
         if (uploadError) throw uploadError;
-        const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
-        publicAvatarUrl = urlData.publicUrl;
+
+        const { data } =
+          supabase.storage
+            .from(BUCKET)
+            .getPublicUrl(path);
+
+        avatarUrl = data.publicUrl;
       }
 
-      const { data, error } = await supabase
-        .from('talkzy_profiles')
-        .update({
-          display_name: displayName.trim(),
-          date_of_birth: dateOfBirth.trim(),
-          country: country.trim(),
-          gender,
-          avatar_url: publicAvatarUrl
-        })
-        .eq('id', session.user.id)
-        .select('talkzy_id, display_name, date_of_birth, country, gender, avatar_url')
-        .single();
+      const payload = {
+        id: session.user.id,
+        display_name: displayName.trim(),
+        gender: gender || null,
+        date_of_birth: dob || null,
+        country: country.trim() || null,
+        avatar_url: avatarUrl || null
+      };
+
+      const { data, error } =
+        await supabase
+          .from('talkzy_profiles')
+          .upsert(payload, { onConflict: 'id' })
+          .select()
+          .single();
 
       if (error) throw error;
+
       setProfile(data);
-      setAvatarUri(data.avatar_url || '');
+      setAvatar(data.avatar_url || '');
       setScreen('home');
-      Alert.alert('Profile saved', 'Your TALKZY profile has been saved.');
+
+      Alert.alert(
+        'Saved',
+        'Your TALKZY profile has been saved.'
+      );
     } catch (error) {
-      Alert.alert('Could not save profile', error.message);
+      Alert.alert('Save profile', error.message);
     } finally {
-      setLoading(false);
+      setBusy(false);
+    }
+  }
+
+  async function loadRooms() {
+    try {
+      const data = await api('/api/rooms');
+      setRooms(data.rooms || []);
+    } catch (error) {
+      Alert.alert('Rooms', error.message);
+    }
+  }
+
+  async function createRoom() {
+    if (roomName.trim().length < 3) {
+      Alert.alert(
+        'Room name',
+        'Enter at least 3 characters.'
+      );
+      return;
+    }
+
+    setBusy(true);
+
+    try {
+      const { data } = await supabase.auth.getSession();
+
+      const result = await api('/api/rooms', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${data.session?.access_token || ''}`
+        },
+        body: JSON.stringify({
+          name: roomName.trim(),
+          description: roomDescription.trim()
+        })
+      });
+
+      setRoomName('');
+      setRoomDescription('');
+
+      await loadRooms();
+
+      Alert.alert(
+        'Room',
+        result.message || 'Room created.'
+      );
+    } catch (error) {
+      Alert.alert('Create room', error.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function ownerLogin() {
+    setBusy(true);
+
+    try {
+      const result = await api('/api/admin/login', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: ownerEmail.trim(),
+          password: ownerPassword
+        })
+      });
+
+      const token = result.token || result.accessToken;
+
+      if (!token) {
+        throw new Error('The server did not return an owner token.');
+      }
+
+      await AsyncStorage.setItem('talkzy_owner_token', token);
+
+      setSettingsText(
+        JSON.stringify(result.settings || config, null, 2)
+      );
+
+      setScreen('owner');
+    } catch (error) {
+      Alert.alert('Owner login', error.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveSettings() {
+    let parsed;
+
+    try {
+      parsed = JSON.parse(settingsText);
+    } catch {
+      Alert.alert('Settings', 'Enter valid JSON.');
+      return;
+    }
+
+    setBusy(true);
+
+    try {
+      const token =
+        await AsyncStorage.getItem('talkzy_owner_token');
+
+      const result = await api('/api/admin/settings', {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token || ''}`
+        },
+        body: JSON.stringify(parsed)
+      });
+
+      setConfig(result.settings || parsed);
+
+      Alert.alert('Settings', 'Settings saved.');
+    } catch (error) {
+      Alert.alert(
+        'Settings',
+        error.message +
+        ' Your backend must support PUT /api/admin/settings.'
+      );
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -348,246 +548,534 @@ export default function App() {
     setSession(null);
     setProfile(null);
     setScreen('auth');
-  }
+}
+                  
+  const page = {
+    flex: 1,
+    backgroundColor: C.bg,
+    padding: 20
+  };
 
-  async function loadRooms() {
-    try {
-      const data = await readResponse(await fetch(apiUrl('/api/rooms')));
-      setRooms(data.rooms || []);
-    } catch (error) {
-      Alert.alert('Rooms', error.message);
-    }
-  }
+  const heading = {
+    color: C.text,
+    fontSize: 23,
+    fontWeight: '900',
+    marginBottom: 8
+  };
 
-  async function createRoom() {
-    if (!roomName.trim() || roomName.trim().length < 3) {
-      Alert.alert('Room name', 'Enter a room name with at least 3 characters.');
-      return;
-    }
-    if (roomType === 'locked' && roomPassword.length < 4) {
-      Alert.alert('Room password', 'Set a room password with at least 4 characters.');
-      return;
-    }
-    try {
-      setLoading(true);
-      const data = await readResponse(await fetch(apiUrl('/api/rooms'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({
-          roomName: roomName.trim(),
-          description: roomDescription.trim(),
-          roomType,
-          password: roomType === 'locked' ? roomPassword : ''
-        })
-      }));
-      Alert.alert('Room created', `Your room "${data.room?.room_name || roomName}" has been created. Voice streaming is not connected yet.`);
-      setRoomName('');
-      setRoomDescription('');
-      setRoomPassword('');
-      setScreen('rooms');
-      loadRooms();
-    } catch (error) {
-      Alert.alert('Could not create room', error.message);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const note = {
+    color: C.muted,
+    lineHeight: 20,
+    marginBottom: 12
+  };
 
-  async function ownerLogin() {
-    try {
-      setLoading(true);
-      const data = await readResponse(await fetch(apiUrl('/api/admin/login'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: ownerEmail, password: ownerPassword })
-      }));
-      setOwnerToken(data.token);
-      setDraft({ ...config });
-      setOwnerPassword('');
-      setScreen('admin');
-    } catch (error) {
-      Alert.alert('Owner sign in', error.message);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const card = {
+    backgroundColor: C.panel,
+    borderColor: C.line,
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 16,
+    marginTop: 14
+  };
 
-  async function saveSettings() {
-    try {
-      setLoading(true);
-      const data = await readResponse(await fetch(apiUrl('/api/config'), {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${ownerToken}`
-        },
-        body: JSON.stringify(draft)
-      }));
-      setConfig({ ...defaults, ...data });
-      Alert.alert('Published', 'TALKZY interface settings have been saved.');
-      setScreen(session ? 'home' : 'auth');
-    } catch (error) {
-      Alert.alert('Could not publish', error.message);
-    } finally {
-      setLoading(false);
-    }
+  if (busy && !session) {
+    return (
+      <SafeAreaView
+        style={[page, { justifyContent: 'center' }]}
+      >
+        <ActivityIndicator
+          color={C.accent}
+          size="large"
+        />
+      </SafeAreaView>
+    );
   }
-
-  const bg = config.background || defaults.background;
-  const card = config.card || defaults.card;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
-      <StatusBar barStyle="light-content" />
-      <ExpoStatusBar style="light" />
-      <View style={{ paddingHorizontal: 14, paddingVertical: 9, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Image source={require('./assets/talkzy-logo.jpg')} resizeMode="contain" style={{ width: 58, height: 58, borderRadius: 12 }} />
-          <View style={{ marginLeft: 9 }}>
-            <Text style={{ color: config.primary, fontWeight: '900', letterSpacing: 2, fontSize: 17 }}>{config.appName}</Text>
-            <Text style={{ color: '#B9AEC8', fontSize: 10 }}>{config.tagline}</Text>
-          </View>
-        </View>
-        <TouchableOpacity onPress={() => setScreen('ownerLogin')}>
-          <Text style={{ color: '#BCA5E8', fontWeight: '700' }}>Owner</Text>
-        </TouchableOpacity>
-      </View>
+    <SafeAreaView style={page}>
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={C.bg}
+      />
+
+      {/* LOGIN AND SIGNUP */}
 
       {screen === 'auth' && (
-        <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-          <View style={{ backgroundColor: card, padding: 22, borderRadius: 20, borderWidth: 1, borderColor: '#45305F', alignItems: 'stretch' }}>
-            <Image source={require('./assets/talkzy-logo.jpg')} resizeMode="contain" style={{ width: 190, height: 190, alignSelf: 'center', marginBottom: 8 }} />
-            <Text style={{ color: 'white', fontSize: 27, fontWeight: '900' }}>
-              {mode === 'login' ? 'Welcome back' : 'Create your account'}
-            </Text>
-            <Text style={{ color: '#C3B8D1', marginTop: 7 }}>Talk • Connect • Make new friends</Text>
-            {mode === 'signup' && (
-              <Field label="Your display name" value={displayName} onChangeText={setDisplayName} />
-            )}
-            <Field label="Email address" value={email} onChangeText={setEmail} keyboardType="email-address" />
-            <Field label="Password (minimum 8 characters)" value={password} onChangeText={setPassword} secureTextEntry />
-            <Button disabled={loading} title={loading ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create account'} onPress={mode === 'login' ? signIn : signUp} />
-            <Button disabled={loading} outline title="Continue with Google" onPress={googleSignIn} />
-            <Button outline title={mode === 'login' ? 'Create a new account' : 'I already have an account'} onPress={() => setMode(mode === 'login' ? 'signup' : 'login')} />
-          </View>
-          <Text style={{ color: '#81758F', fontSize: 11, marginTop: 18, textAlign: 'center' }}>
-            TALKZY uses email and Google sign-in. No mobile-number OTP is required.
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: 'center'
+          }}
+        >
+          <Brand />
+
+          <Text style={[heading, { textAlign: 'center' }]}>
+            {mode === 'login'
+              ? 'Welcome back'
+              : 'Create your account'}
           </Text>
+
+          <Text style={[note, { textAlign: 'center' }]}>
+            Sign in with email or continue with Google.
+          </Text>
+
+          <View style={card}>
+            <Input
+              label="Email address"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+            />
+
+            <Input
+              label="Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+
+            <Btn
+              title={
+                busy
+                  ? 'Please wait…'
+                  : mode === 'login'
+                  ? 'Sign In'
+                  : 'Create Account'
+              }
+              onPress={authenticate}
+              disabled={busy}
+            />
+
+            <Btn
+              title="Continue with Google"
+              onPress={googleSignIn}
+              secondary
+            />
+
+            <Btn
+              title={
+                mode === 'login'
+                  ? 'Create a new account'
+                  : 'I already have an account'
+              }
+              onPress={() =>
+                setMode(
+                  mode === 'login'
+                    ? 'signup'
+                    : 'login'
+                )
+              }
+              secondary
+            />
+          </View>
         </ScrollView>
       )}
+
+      {/* PROFILE */}
 
       {screen === 'profile' && (
-        <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-          <Image source={require('./assets/talkzy-logo.jpg')} resizeMode="contain" style={{ width: 145, height: 145, alignSelf: 'center', marginBottom: 8 }} />
-          <Text style={{ color: 'white', fontSize: 25, fontWeight: '900', textAlign: 'center' }}>Set up your profile</Text>
-          <Text style={{ color: '#B9AEC8', marginTop: 6 }}>Choose how other TALKZY members will see you.</Text>
-          <TouchableOpacity onPress={choosePhoto} style={{ alignSelf: 'center', marginVertical: 20, width: 112, height: 112, borderRadius: 56, backgroundColor: card, borderWidth: 2, borderColor: config.primary, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-            {avatarUri ? <Image source={{ uri: avatarUri }} style={{ width: 112, height: 112 }} /> : <Text style={{ color: 'white', textAlign: 'center' }}>Choose photo</Text>}
-          </TouchableOpacity>
-          <Button outline title="Choose profile picture" onPress={choosePhoto} />
-          <Field label="Display name" value={displayName} onChangeText={setDisplayName} />
-          <Field label="Date of birth (YYYY-MM-DD)" value={dateOfBirth} onChangeText={setDateOfBirth} placeholder="1998-05-21" keyboardType="numbers-and-punctuation" />
-          <Field label="Country" value={country} onChangeText={setCountry} placeholder="Enter your country" />
-          <Text style={{ color: '#CFC3DE', fontWeight: '700', marginTop: 16 }}>Gender</Text>
-          {['Male', 'Female', 'Other', 'Prefer not to say'].map(option => (
-            <TouchableOpacity key={option} onPress={() => setGender(option)} style={{ padding: 13, borderRadius: 11, marginTop: 8, backgroundColor: gender === option ? '#49316B' : card, borderWidth: 1, borderColor: gender === option ? config.primary : '#38294A' }}>
-              <Text style={{ color: 'white' }}>{gender === option ? '●  ' : '○  '}{option}</Text>
-            </TouchableOpacity>
-          ))}
-          <Button disabled={loading} title={loading ? 'Saving…' : 'Save profile'} onPress={saveProfile} />
-          <Button outline title="Sign out" onPress={signOut} />
+        <ScrollView>
+          <Brand small />
+
+          <Text style={heading}>
+            Complete your profile
+          </Text>
+
+          <Text style={note}>
+            Add your details to continue to TALKZY.
+          </Text>
+
+          <View
+            style={{
+              alignItems: 'center',
+              marginVertical: 12
+            }}
+          >
+            {avatar ? (
+              <Image
+                source={{ uri: avatar }}
+                style={{
+                  width: 104,
+                  height: 104,
+                  borderRadius: 52
+                }}
+              />
+            ) : (
+              <View
+                style={{
+                  width: 104,
+                  height: 104,
+                  borderRadius: 52,
+                  backgroundColor: C.panel2,
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <Text style={{ color: C.text, fontSize: 36 }}>
+                  +
+                </Text>
+              </View>
+            )}
+
+            <Btn
+              title="Choose profile picture"
+              onPress={choosePhoto}
+              secondary
+            />
+          </View>
+
+          <Input
+            label="Display name"
+            value={displayName}
+            onChangeText={setDisplayName}
+          />
+
+          <Text style={{ color: C.muted, marginTop: 14 }}>
+            Gender
+          </Text>
+
+          <View
+            style={{
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              gap: 8
+            }}
+          >
+            {[
+              'Male',
+              'Female',
+              'Other',
+              'Prefer not to say'
+            ].map(g => (
+              <TouchableOpacity
+                key={g}
+                onPress={() => setGender(g)}
+                style={{
+                  padding: 10,
+                  marginTop: 8,
+                  borderRadius: 10,
+                  backgroundColor:
+                    gender === g ? C.accent : C.panel2
+                }}
+              >
+                <Text
+                  style={{
+                    color: C.text,
+                    fontSize: 12
+                  }}
+                >
+                  {g}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <Input
+            label="Date of birth (YYYY-MM-DD)"
+            value={dob}
+            onChangeText={setDob}
+            placeholder="2000-05-21"
+          />
+
+          <Input
+            label="Country"
+            value={country}
+            onChangeText={setCountry}
+            placeholder="India"
+          />
+
+          <Btn
+            title={busy ? 'Saving…' : 'Save Profile'}
+            onPress={saveProfile}
+            disabled={busy}
+          />
+
+          <Btn
+            title="Sign Out"
+            onPress={signOut}
+            secondary
+          />
         </ScrollView>
       )}
+
+      {/* HOME */}
 
       {screen === 'home' && (
-        <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 40 }}>
-          <View style={{ backgroundColor: card, padding: 20, borderRadius: 20, borderWidth: 1, borderColor: '#45305F', alignItems: 'center' }}>
-            <Image source={require('./assets/talkzy-logo.jpg')} resizeMode="contain" style={{ width: 170, height: 170, marginBottom: 6 }} />
-            <Text style={{ color: config.primary, fontWeight: '800' }}>WELCOME TO TALKZY</Text>
-            <Text style={{ color: 'white', fontSize: 25, fontWeight: '900', marginTop: 8 }}>{profile?.display_name || 'TALKZY Member'}</Text>
-            <Text style={{ color: '#C3B8D1', marginTop: 8 }}>Your TALKZY ID: {profile?.talkzy_id || 'Loading…'}</Text>
-            {profile?.avatar_url ? <Image source={{ uri: profile.avatar_url }} style={{ width: 76, height: 76, borderRadius: 38, marginTop: 14 }} /> : null}
-            <Button title="Edit profile" onPress={() => setScreen('profile')} />
-          </View>
-          <Text style={{ color: 'white', fontSize: 20, fontWeight: '900', marginTop: 22 }}>{config.bannerTitle}</Text>
-          <Text style={{ color: '#C3B8D1', marginTop: 6 }}>{config.bannerText}</Text>
-          <View style={{ backgroundColor: card, padding: 15, borderRadius: 14, marginTop: 16 }}>
-            <Text style={{ color: config.primary, fontWeight: '800' }}>ANNOUNCEMENT</Text>
-            <Text style={{ color: '#D8CDEA', marginTop: 6 }}>{config.announcement}</Text>
-          </View>
-          <Button title="Explore public rooms" onPress={() => { setScreen('rooms'); loadRooms(); }} />
-          <Button outline title="Create a voice room" onPress={() => setScreen('createRoom')} />
-          <Button outline title="Refresh home" onPress={refreshConfig} />
-          <Button outline title="Sign out" onPress={signOut} />
-          <Text style={{ color: '#81758F', fontSize: 11, marginTop: 16 }}>
-            Room creation and discovery connect to your server. Live audio streaming is not yet integrated.
-          </Text>
-        </ScrollView>
-      )}
+        <ScrollView>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}
+          >
+            <Brand small />
 
-      {screen === 'rooms' && (
-        <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 40 }}>
-          <Text style={{ color: 'white', fontSize: 24, fontWeight: '900' }}>Public voice rooms</Text>
-          <Button title="Refresh rooms" onPress={loadRooms} />
-          <Button outline title="Create a room" onPress={() => setScreen('createRoom')} />
-          {rooms.length === 0 ? <Text style={{ color: '#B9AEC8', marginTop: 20 }}>No public rooms found. Refresh to check again.</Text> :
-            rooms.map(room => (
-              <View key={room.id} style={{ backgroundColor: card, padding: 15, borderRadius: 14, marginTop: 12 }}>
-                <Text style={{ color: 'white', fontWeight: '900', fontSize: 17 }}>{room.room_name}</Text>
-                <Text style={{ color: '#B9AEC8', marginTop: 5 }}>{room.description || 'No description'}</Text>
-                <Text style={{ color: config.primary, marginTop: 7 }}>Public • Active</Text>
-                <Text style={{ color: '#81758F', fontSize: 11, marginTop: 6 }}>Voice connection is not available yet.</Text>
+            <TouchableOpacity
+              onPress={() => setScreen('profile')}
+            >
+              <Text
+                style={{
+                  color: C.accent,
+                  fontWeight: '800'
+                }}
+              >
+                My Profile
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <Text style={heading}>
+            Hello, {
+              profile?.display_name ||
+              session?.user?.email?.split('@')[0] ||
+              'there'
+            } 👋
+          </Text>
+
+          <Text style={note}>
+            Find a room and start connecting.
+          </Text>
+
+          <View style={card}>
+            <Text
+              style={{
+                color: C.text,
+                fontSize: 18,
+                fontWeight: '800'
+              }}
+            >
+              Your TALKZY ID
+            </Text>
+
+            <Text
+              style={{
+                color: C.accent,
+                fontSize: 24,
+                fontWeight: '900',
+                marginTop: 8
+              }}
+            >
+              {profile?.talkzy_id || 'Being assigned'}
+            </Text>
+
+            <Text
+              style={{
+                color: C.muted,
+                fontSize: 12,
+                marginTop: 5
+              }}
+            >
+              Your unique account ID appears here
+              when assigned by the database.
+            </Text>
+          </View>
+
+          <View style={card}>
+            <Text
+              style={{
+                color: C.text,
+                fontSize: 18,
+                fontWeight: '800'
+              }}
+            >
+              Create a room
+            </Text>
+
+            <Input
+              label="Room name"
+              value={roomName}
+              onChangeText={setRoomName}
+            />
+
+            <Input
+              label="Description (optional)"
+              value={roomDescription}
+              onChangeText={setRoomDescription}
+            />
+
+            <Btn
+              title="Create Room"
+              onPress={createRoom}
+              disabled={busy}
+            />
+          </View>
+
+          <View
+            style={{
+              marginTop: 22,
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}
+          >
+            <Text style={heading}>
+              Discover rooms
+            </Text>
+
+            <TouchableOpacity onPress={loadRooms}>
+              <Text
+                style={{
+                  color: C.accent,
+                  fontWeight: '800'
+                }}
+              >
+                Refresh
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {rooms.length === 0 ? (
+            <Text style={note}>
+              No rooms found yet. Create the first room.
+            </Text>
+          ) : (
+            rooms.map((room, index) => (
+              <View
+                key={String(room.id || index)}
+                style={card}
+              >
+                <Text
+                  style={{
+                    color: C.text,
+                    fontSize: 17,
+                    fontWeight: '800'
+                  }}
+                >
+                  {room.name ||
+                    room.room_name ||
+                    'Untitled room'}
+                </Text>
+
+                <Text
+                  style={{
+                    color: C.muted,
+                    marginTop: 5
+                  }}
+                >
+                  {room.description ||
+                    'Come in and say hello.'}
+                </Text>
+
+                <Text
+                  style={{
+                    color: C.green,
+                    fontSize: 12,
+                    marginTop: 8
+                  }}
+                >
+                  {room.member_count ??
+                    room.members_count ??
+                    0} members
+                </Text>
               </View>
             ))
-          }
-          <Button outline title="Back home" onPress={() => setScreen('home')} />
+          )}
+
+          <Btn
+            title="Owner / Admin"
+            onPress={() => setScreen('ownerLogin')}
+            secondary
+          />
+
+          <Btn
+            title="Sign Out"
+            onPress={signOut}
+            danger
+          />
         </ScrollView>
       )}
 
-      {screen === 'createRoom' && (
-        <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-          <Text style={{ color: 'white', fontSize: 24, fontWeight: '900' }}>Create a voice room</Text>
-          <Field label="Room name" value={roomName} onChangeText={setRoomName} />
-          <Field label="Description (optional)" value={roomDescription} onChangeText={setRoomDescription} multiline />
-          <Text style={{ color: '#CFC3DE', fontWeight: '700', marginTop: 16 }}>Room type</Text>
-          {['public', 'locked'].map(option => (
-            <TouchableOpacity key={option} onPress={() => setRoomType(option)} style={{ padding: 13, borderRadius: 11, marginTop: 8, backgroundColor: roomType === option ? '#49316B' : card, borderWidth: 1, borderColor: roomType === option ? config.primary : '#38294A' }}>
-              <Text style={{ color: 'white' }}>{roomType === option ? '●  ' : '○  '}{option === 'public' ? 'Public' : 'Locked (password required)'}</Text>
-            </TouchableOpacity>
-          ))}
-          {roomType === 'locked' && <Field label="Room password (minimum 4 characters)" value={roomPassword} onChangeText={setRoomPassword} secureTextEntry />}
-          <Button disabled={loading} title={loading ? 'Creating…' : 'Create room'} onPress={createRoom} />
-          <Button outline title="Cancel" onPress={() => setScreen('home')} />
-        </ScrollView>
-      )}
+      {/* OWNER LOGIN */}
 
       {screen === 'ownerLogin' && (
-        <ScrollView contentContainerStyle={{ padding: 20 }}>
-          <Text style={{ color: 'white', fontSize: 24, fontWeight: '900' }}>Owner sign in</Text>
-          <Field label="Owner email" value={ownerEmail} onChangeText={setOwnerEmail} keyboardType="email-address" />
-          <Field label="Owner password" value={ownerPassword} onChangeText={setOwnerPassword} secureTextEntry />
-          <Button disabled={loading} title={loading ? 'Please wait…' : 'Sign in as owner'} onPress={ownerLogin} />
-          <Button outline title="Back" onPress={() => setScreen(session ? 'home' : 'auth')} />
+        <ScrollView>
+          <Brand small />
+
+          <Text style={heading}>
+            Owner access
+          </Text>
+
+          <Text style={note}>
+            Sign in using the owner credentials
+            configured on your backend.
+          </Text>
+
+          <Input
+            label="Owner email"
+            value={ownerEmail}
+            onChangeText={setOwnerEmail}
+            keyboardType="email-address"
+          />
+
+          <Input
+            label="Owner password"
+            value={ownerPassword}
+            onChangeText={setOwnerPassword}
+            secureTextEntry
+          />
+
+          <Btn
+            title="Sign In as Owner"
+            onPress={ownerLogin}
+            disabled={busy}
+          />
+
+          <Btn
+            title="Back"
+            onPress={() => setScreen('home')}
+            secondary
+          />
         </ScrollView>
       )}
 
-      {screen === 'admin' && (
-        <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-          <Text style={{ color: 'white', fontSize: 24, fontWeight: '900' }}>TALKZY interface control</Text>
-          {[
-            ['appName', 'App name'], ['tagline', 'Tagline'], ['primary', 'Accent colour (#RRGGBB)'],
-            ['background', 'Background colour (#RRGGBB)'], ['card', 'Card colour (#RRGGBB)'],
-            ['bannerTitle', 'Home banner title'], ['bannerText', 'Home banner text'], ['announcement', 'Announcement']
-          ].map(([key, label]) => (
-            <Field key={key} label={label} value={String(draft[key] ?? '')} onChangeText={value => setDraft(old => ({ ...old, [key]: value }))} />
-          ))}
-          <Button disabled={loading} title={loading ? 'Publishing…' : 'Publish changes'} onPress={saveSettings} />
-          <Button outline title="Back" onPress={() => setScreen(session ? 'home' : 'auth')} />
+      {/* OWNER SETTINGS */}
+
+      {screen === 'owner' && (
+        <ScrollView>
+          <Brand small />
+
+          <Text style={heading}>
+            Owner settings
+          </Text>
+
+          <Text style={note}>
+            Edit the JSON settings supported by your backend.
+            Keep the JSON valid.
+          </Text>
+
+          <TextInput
+            multiline
+            value={settingsText}
+            onChangeText={setSettingsText}
+            autoCapitalize="none"
+            style={{
+              minHeight: 260,
+              textAlignVertical: 'top',
+              backgroundColor: C.panel2,
+              color: C.text,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: C.line,
+              padding: 14,
+              fontFamily: 'monospace'
+            }}
+          />
+
+          <Btn
+            title="Save Settings"
+            onPress={saveSettings}
+            disabled={busy}
+          />
+
+          <Btn
+            title="Back to TALKZY"
+            onPress={() => setScreen('home')}
+            secondary
+          />
         </ScrollView>
       )}
     </SafeAreaView>
   );
 }
+  
