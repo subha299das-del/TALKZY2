@@ -1974,78 +1974,242 @@ function renderNewRooms() {
   // ROOM: DISCOVER
   // =========================================
 
-  function renderDiscover() {
-    return (
-      <>
-        <SectionTitle>🏆 History Big Win</SectionTitle>
+function renderDiscover() {
+  const countries = [
+    ['🇮🇳', 'India'],
+    ['🇧🇩', 'Bangladesh'],
+    ['🇳🇵', 'Nepal'],
+    ['🇵🇰', 'Pakistan'],
+    ['🇱🇰', 'Sri Lanka'],
+    ['🇦🇪', 'United Arab Emirates'],
+    ['🇸🇦', 'Saudi Arabia'],
+    ['🇶🇦', 'Qatar'],
+    ['🇰🇼', 'Kuwait'],
+    ['🇧🇭', 'Bahrain'],
+    ['🇴🇲', 'Oman'],
+    ['🇮🇷', 'Iran'],
+    ['🇮🇶', 'Iraq'],
+    ['🇮🇱', 'Israel'],
+    ['🇯🇴', 'Jordan'],
+    ['🇱🇧', 'Lebanon'],
+    ['🇹🇷', 'Turkey'],
+    ['🇹🇭', 'Thailand'],
+    ['🇻🇳', 'Vietnam'],
+    ['🇲🇾', 'Malaysia'],
+    ['🇸🇬', 'Singapore'],
+    ['🇮🇩', 'Indonesia'],
+    ['🇵🇭', 'Philippines'],
+    ['🇯🇵', 'Japan'],
+    ['🇰🇷', 'South Korea'],
+    ['🇲🇳', 'Mongolia'],
+    ['🇰🇭', 'Cambodia'],
+    ['🇱🇦', 'Laos'],
+    ['🇲🇲', 'Myanmar'],
+    ['🇧🇹', 'Bhutan'],
+    ['🇲🇻', 'Maldives'],
+    ['🇰🇿', 'Kazakhstan'],
+    ['🇺🇿', 'Uzbekistan'],
+    ['🇹🇲', 'Turkmenistan'],
+    ['🇰🇬', 'Kyrgyzstan'],
+    ['🇹🇯', 'Tajikistan'],
+    ['🇦🇿', 'Azerbaijan'],
+    ['🇦🇲', 'Armenia'],
+    ['🇬🇪', 'Georgia'],
+    ['🇨🇾', 'Cyprus'],
+    ['🇷🇺', 'Russia'],
+    ['🇦🇫', 'Afghanistan'],
+    ['🇵🇸', 'Palestine'],
+    ['🇺🇸', 'United States'],
+    ['🇨🇦', 'Canada'],
+    ['🇲🇽', 'Mexico'],
+    ['🇬🇹', 'Guatemala'],
+    ['🇧🇿', 'Belize'],
+    ['🇭🇳', 'Honduras'],
+    ['🇸🇻', 'El Salvador'],
+    ['🇳🇮', 'Nicaragua'],
+    ['🇨🇷', 'Costa Rica'],
+    ['🇵🇦', 'Panama'],
+    ['🇨🇺', 'Cuba'],
+    ['🇯🇲', 'Jamaica'],
+    ['🇭🇹', 'Haiti'],
+    ['🇩🇴', 'Dominican Republic'],
+    ['🇧🇸', 'Bahamas'],
+    ['🇧🇧', 'Barbados'],
+    ['🇹🇹', 'Trinidad and Tobago'],
+    ['🇦🇬', 'Antigua and Barbuda'],
+    ['🇩🇲', 'Dominica'],
+    ['🇬🇩', 'Grenada'],
+    ['🇰🇳', 'Saint Kitts and Nevis'],
+    ['🇱🇨', 'Saint Lucia'],
+    ['🇻🇨', 'Saint Vincent and the Grenadines'],
+    ['🇦🇷', 'Argentina'],
+    ['🇧🇷', 'Brazil'],
+    ['🇨🇱', 'Chile'],
+    ['🇨🇴', 'Colombia'],
+    ['🇵🇪', 'Peru'],
+    ['🇻🇪', 'Venezuela'],
+    ['🇪🇨', 'Ecuador'],
+    ['🇧🇴', 'Bolivia'],
+    ['🇵🇾', 'Paraguay'],
+    ['🇺🇾', 'Uruguay'],
+    ['🇬🇾', 'Guyana'],
+    ['🇸🇷', 'Suriname'],
+    ['🇬🇧', 'United Kingdom'],
+    ['🇮🇪', 'Ireland'],
+    ['🇫🇷', 'France'],
+    ['🇩🇪', 'Germany'],
+    ['🇮🇹', 'Italy'],
+    ['🇪🇸', 'Spain'],
+    ['🇵🇹', 'Portugal'],
+    ['🇳🇱', 'Netherlands'],
+    ['🇧🇪', 'Belgium'],
+    ['🇱🇺', 'Luxembourg'],
+    ['🇨🇭', 'Switzerland'],
+    ['🇦🇹', 'Austria'],
+    ['🇩🇰', 'Denmark'],
+    ['🇸🇪', 'Sweden'],
+    ['🇳🇴', 'Norway'],
+    ['🇫🇮', 'Finland'],
+    ['🇮🇸', 'Iceland'],
+    ['🇵🇱', 'Poland'],
+    ['🇨🇿', 'Czechia'],
+    ['🇸🇰', 'Slovakia'],
+    ['🇭🇺', 'Hungary'],
+    ['🇷🇴', 'Romania'],
+    ['🇧🇬', 'Bulgaria'],
+    ['🇬🇷', 'Greece'],
+    ['🇺🇦', 'Ukraine'],
+    ['🇧🇾', 'Belarus'],
+    ['🇲🇩', 'Moldova'],
+    ['🇱🇹', 'Lithuania'],
+    ['🇱🇻', 'Latvia'],
+    ['🇪🇪', 'Estonia'],
+    ['🇭🇷', 'Croatia'],
+    ['🇸🇮', 'Slovenia'],
+    ['🇷🇸', 'Serbia'],
+    ['🇲🇪', 'Montenegro'],
+    ['🇧🇦', 'Bosnia and Herzegovina'],
+    ['🇲🇰', 'North Macedonia'],
+    ['🇦🇱', 'Albania'],
+    ['🇽🇰', 'Kosovo'],
+    ['🇲🇹', 'Malta'],
+    ['🇦🇩', 'Andorra'],
+    ['🇲🇨', 'Monaco'],
+    ['🇱🇮', 'Liechtenstein'],
+    ['🇸🇲', 'San Marino'],
+    ['🇻🇦', 'Vatican City'],
+    ['🇲🇽', 'Mexico'],
+    ['🇦🇺', 'Australia'],
+    ['🇳🇿', 'New Zealand'],
+    ['🇫🇯', 'Fiji'],
+    ['🇵🇬', 'Papua New Guinea'],
+    ['🇼🇸', 'Samoa'],
+    ['🇹🇴', 'Tonga'],
+    ['🇻🇺', 'Vanuatu'],
+    ['🇸🇧', 'Solomon Islands'],
+    ['🇰🇮', 'Kiribati'],
+    ['🇹🇻', 'Tuvalu'],
+    ['🇳🇷', 'Nauru'],
+    ['🇵🇼', 'Palau'],
+    ['🇲🇭', 'Marshall Islands'],
+    ['🇫🇲', 'Micronesia'],
+    ['🇿🇦', 'South Africa']
+  ];
 
-        <ComingSoon
-          title="Greedy Game Big Winner"
-          description="The player with the highest Greedy game coin win will appear here once game history and coin records are connected."
-        />
+  const filteredCountries = countries.filter(item =>
+    item[1].toLowerCase().includes(countrySearch.toLowerCase())
+  );
 
-        <SectionTitle>🌟 TALKZY Rankings</SectionTitle>
+  return (
+    <>
+      <SectionTitle>🏆 History Big Win</SectionTitle>
 
-        <ComingSoon
-          title="Discover Top Users"
-          description="Explore top users and community rankings."
-        />
+      <ComingSoon
+        title="Greedy Game Big Winner"
+        description="The player with the highest Greedy game coin win will appear here once game history and coin records are connected."
+      />
 
-        <SectionTitle>🌍 Recommended Countries</SectionTitle>
+      <SectionTitle>🌟 TALKZY Rankings</SectionTitle>
 
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-          {[
-            '🇮🇳 India',
-            '🇧🇩 Bangladesh',
-            '🇳🇵 Nepal',
-            '🇵🇰 Pakistan',
-            '🇱🇰 Sri Lanka',
-            '🇦🇪 UAE'
-          ].map(item => (
-            <View
-              key={item}
-              style={{
-                width: '48%',
-                marginRight: '2%'
-              }}
-            >
-              <Card>
-                <Text style={{ color: C.text, fontWeight: '800' }}>
-                  {item}
-                </Text>
-              </Card>
-            </View>
-          ))}
-        </View>
+      <ComingSoon
+        title="Discover Top Users"
+        description="Explore top users and community rankings."
+      />
 
-        <SectionTitle>Community</SectionTitle>
+      <SectionTitle>🌍 Recommended Countries</SectionTitle>
 
-        <View style={{ flexDirection: 'row' }}>
-          <View style={{ flex: 1, marginRight: 5 }}>
-            <Card style={{ alignItems: 'center' }}>
-              <Text style={{ color: C.text, fontWeight: '900' }}>
-                📊 Activity
-              </Text>
-              <Text style={{ color: C.muted, marginTop: 8 }}>
-                Coming soon
+      <TextInput
+        value={countrySearch}
+        onChangeText={setCountrySearch}
+        placeholder="Search country..."
+        placeholderTextColor={C.muted}
+        style={{
+          backgroundColor: C.panel,
+          color: C.text,
+          borderWidth: 1,
+          borderColor: C.line,
+          borderRadius: 12,
+          paddingHorizontal: 14,
+          paddingVertical: 12,
+          marginBottom: 12
+        }}
+      />
+
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+        {filteredCountries.map((item, index) => (
+          <View
+            key={item[1]}
+            style={{
+              width: '48%',
+              marginRight: index % 2 === 0 ? '2%' : 0,
+              marginBottom: 8
+            }}
+          >
+            <Card style={{ padding: 12 }}>
+              <Text style={{ color: C.text, fontWeight: '800' }}>
+                {item[0]} {item[1]}
               </Text>
             </Card>
           </View>
+        ))}
+      </View>
 
-          <View style={{ flex: 1, marginLeft: 5 }}>
-            <Card style={{ alignItems: 'center' }}>
-              <Text style={{ color: C.text, fontWeight: '900' }}>
-                💎 My Subscription
-              </Text>
-              <Text style={{ color: C.muted, marginTop: 8 }}>
-                Coming soon
-              </Text>
-            </Card>
-          </View>
+      {filteredCountries.length === 0 && (
+        <ComingSoon
+          title="No country found"
+          description="Try searching with another country name."
+        />
+      )}
+
+      <SectionTitle>Community</SectionTitle>
+
+      <View style={{ flexDirection: 'row' }}>
+        <View style={{ flex: 1, marginRight: 5 }}>
+          <Card style={{ alignItems: 'center' }}>
+            <Text style={{ color: C.text, fontWeight: '900' }}>
+              📊 Activity
+            </Text>
+            <Text style={{ color: C.muted, marginTop: 8 }}>
+              Coming soon
+            </Text>
+          </Card>
         </View>
-      </>
-    );
-  }
+
+        <View style={{ flex: 1, marginLeft: 5 }}>
+          <Card style={{ alignItems: 'center' }}>
+            <Text style={{ color: C.text, fontWeight: '900' }}>
+              💎 My Subscription
+            </Text>
+            <Text style={{ color: C.muted, marginTop: 8 }}>
+              Coming soon
+            </Text>
+          </Card>
+        </View>
+      </View>
+    </>
+  );
+}
+
 
   // =========================================
   // ROOM: EVENTS
