@@ -2744,7 +2744,7 @@ function renderCreateRoom() {
         </ScrollView>
       </View>
 
-      {screen !== 'roomSettings' && renderBottomNavigation()}
+      {!['roomSettings', 'createRoom'].includes(screen) && renderBottomNavigation()}
 <Modal
   visible={showJoinPassword}
   transparent
