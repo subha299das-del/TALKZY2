@@ -1229,7 +1229,9 @@ function renderCreateRoom() {
     setRoomDpUri(null);
     setRoomName('');
     setRoomDescription('');
-    setScreen('main');
+setRoomType('public');
+setRoomPassword('');
+setScreen('main');
   }}
 />
     </Card>
