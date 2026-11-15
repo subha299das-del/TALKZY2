@@ -650,6 +650,38 @@ const [roomDpUploading, setRoomDpUploading] = useState(false);
         );
         return;
       }
+      
+async function chooseRoomDp() {
+  try {
+    const permission =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert(
+        'Permission required',
+        'Please allow photo access to select your room picture.'
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8
+    });
+
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      setRoomDpUri(result.assets[0].uri);
+    }
+  } catch (error) {
+    Alert.alert(
+      'Picture error',
+      'Could not select the room picture.'
+    );
+  }
+}
+      
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
