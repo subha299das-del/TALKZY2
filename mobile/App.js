@@ -361,6 +361,8 @@ export default function App() {
   const [roomPassword, setRoomPassword] = useState('');
 
   const [showCreateRoom, setShowCreateRoom] = useState(false);
+  const [roomDpUri, setRoomDpUri] = useState(null);
+const [roomDpUploading, setRoomDpUploading] = useState(false);
   const [loadingRooms, setLoadingRooms] = useState(false);
 
   // ---------------------------------
