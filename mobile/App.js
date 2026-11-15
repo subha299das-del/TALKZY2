@@ -2474,14 +2474,18 @@ function renderRoomCard(room, showJoin = true) {
   // =========================================
 
   function renderMainContent() {
-    if (activeTab === 'Room') return renderRoom();
-    if (activeTab === 'Games') return renderGames();
-    if (activeTab === 'Moment') return renderMoment();
-    if (activeTab === 'Message') return renderMessage();
-    if (activeTab === 'Me') return renderProfile();
-
-    return renderRoom();
+  if (screen === 'roomSettings') {
+    return renderRoomSettings();
   }
+
+  if (activeTab === 'Room') return renderRoom();
+  if (activeTab === 'Games') return renderGames();
+  if (activeTab === 'Moment') return renderMoment();
+  if (activeTab === 'Message') return renderMessage();
+  if (activeTab === 'Me') return renderProfile();
+
+  return renderRoom();
+}
 
   // =========================================
   // LOADING SCREEN
