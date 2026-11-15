@@ -2745,7 +2745,98 @@ function renderCreateRoom() {
       </View>
 
       {screen !== 'roomSettings' && renderBottomNavigation()}
-    </SafeAreaView>
+<Modal
+  visible={showJoinPassword}
+  transparent
+  animationType="fade"
+  onRequestClose={() => {
+    setShowJoinPassword(false);
+    setJoinPassword('');
+    setJoinTargetRoom(null);
+  }}
+>
+  <View
+    style={{
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.75)',
+      justifyContent: 'center',
+      padding: 22
+    }}
+  >
+    <View
+      style={{
+        backgroundColor: C.card,
+        padding: 22,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: C.gold
+      }}
+    >
+      <Text
+        style={{
+          color: C.text,
+          fontSize: 21,
+          fontWeight: '900',
+          textAlign: 'center',
+          marginBottom: 10
+        }}
+      >
+        🔒 Private Room
+      </Text>
+
+      <Text
+        style={{
+          color: C.muted,
+          textAlign: 'center',
+          marginBottom: 18
+        }}
+      >
+        Enter the password to join
+        {joinTargetRoom
+          ? ` ${joinTargetRoom.room_name}`
+          : ' this room'}.
+      </Text>
+
+      <TextInput
+        value={joinPassword}
+        onChangeText={setJoinPassword}
+        placeholder="Enter room password"
+        placeholderTextColor={C.muted}
+        secureTextEntry
+        autoCapitalize="none"
+        style={{
+          color: C.text,
+          backgroundColor: C.bg,
+          borderWidth: 1,
+          borderColor: C.gold,
+          borderRadius: 12,
+          padding: 14,
+          marginBottom: 18
+        }}
+      />
+
+      <Button
+        title={joiningRoom ? 'Joining...' : 'Join Room'}
+        onPress={() =>
+          submitRoomJoin(joinTargetRoom, joinPassword)
+        }
+        disabled={joiningRoom || !joinPassword.trim()}
+      />
+
+      <Button
+        title="Cancel"
+        secondary
+        onPress={() => {
+          setShowJoinPassword(false);
+          setJoinPassword('');
+          setJoinTargetRoom(null);
+        }}
+      />
+    </View>
+  </View>
+</Modal>
+      
+          </SafeAreaView>
   );
             }
             
