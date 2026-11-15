@@ -513,6 +513,57 @@ app.post('/api/rooms/:roomId/join', userAuth, async (req, res) => {
   }
 });
 
+
+// =========================================
+// GET MY JOINED ROOMS
+// =========================================
+
+app.get('/api/rooms/joined', userAuth, async (req, res) => {
+  try {
+    const userId = req.talkzyUser.id;
+
+    // Find rooms this user has joined.
+    const { data: memberships, error: memberError } = await supabase
+      .from('talkzy_room_members')
+      .select('room_id')
+      .eq('user_id', userId);
+
+    if (memberError) throw memberError;
+
+    const roomIds = (memberships || []).map(item => item.room_id);
+
+    if (roomIds.length === 0) {
+      return res.json({
+        rooms: [],
+        count: 0
+      });
+    }
+
+    // Get the active rooms from those memberships.
+    const { data: rooms, error: roomError } = await supabase
+      .from('talkzy_rooms')
+      .select('id, owner_id, room_name, description, room_dp_url, room_type, status, created_at')
+      .in('id', roomIds)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false });
+
+    if (roomError) throw roomError;
+
+    return res.json({
+      rooms: rooms || [],
+      count: rooms?.length || 0
+    });
+
+  } catch (error) {
+    console.error('Could not load joined rooms:', error.message);
+
+    return res.status(500).json({
+      error: 'Could not load joined rooms.'
+    });
+  }
+});
+
+
 // Leave a room. The owner must close their room instead.
 app.post('/api/rooms/:roomId/leave', userAuth, async (req, res) => {
   try {
