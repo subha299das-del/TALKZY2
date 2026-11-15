@@ -1598,11 +1598,27 @@ setScreen('main');
         )}
 
         {mineTab === 'Joined' && (
-          <ComingSoon
-            title="Joined Rooms"
-            description="Your joined room history will appear here when membership history is connected."
-          />
-        )}
+  <>
+    <SectionTitle>My Joined Rooms</SectionTitle>
+
+    {joinedRooms.length === 0 ? (
+      <ComingSoon
+        title="No joined rooms"
+        description="Rooms you join will appear here."
+      />
+    ) : (
+      joinedRooms.map(room =>
+        renderRoomCard(room, false)
+      )
+    )}
+
+    <Button
+      title="Refresh Joined Rooms"
+      secondary
+      onPress={loadJoinedRooms}
+    />
+  </>
+)}
 
         {mineTab === 'Follow' && (
           <ComingSoon
