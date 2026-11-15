@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+hiimport React, { useEffect, useState } from 'react';
 import {
   SafeAreaView,
   View,
@@ -1154,13 +1154,15 @@ function renderCreateRoom() {
       />
 
       <Button
-        title="Cancel"
-        secondary
-        onPress={() => {
-          setShowCreateRoom(false);
-          setRoomDpUri(null);
-        }}
-      />
+  title="Cancel"
+  secondary
+  onPress={() => {
+    setRoomDpUri(null);
+    setRoomName('');
+    setRoomDescription('');
+    setScreen('main');
+  }}
+/>
     </Card>
   );
           }
