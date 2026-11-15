@@ -2916,7 +2916,7 @@ if (item === 'Follow') {
         </ScrollView>
       </View>
 
-      {!['roomSettings', 'createRoom'].includes(screen) && renderBottomNavigation()}
+      {!['roomSettings', 'createRoom', 'hotRooms', 'newRooms'].includes(screen) && renderBottomNavigation()}
 <Modal
   visible={showJoinPassword}
   transparent
