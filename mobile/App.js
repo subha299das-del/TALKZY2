@@ -483,6 +483,8 @@ const [joiningRoom, setJoiningRoom] = useState(false);
 
       loadPublicRooms();
       loadMyRooms(currentSession);
+      loadJoinedRooms(currentSession);
+loadFollowedRooms(currentSession);
     } catch (error) {
       console.log('Profile loading error:', error.message);
 
