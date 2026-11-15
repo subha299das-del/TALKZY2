@@ -467,9 +467,6 @@ app.post('/api/rooms', userAuth, roomCreateLimiter, async (req, res) => {
 });
 
 
-  }
-});
-
 // Join a public room, or join a locked room with its password.
 app.post('/api/rooms/:roomId/join', userAuth, async (req, res) => {
   try {
