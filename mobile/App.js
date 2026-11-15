@@ -1687,11 +1687,35 @@ setScreen('main');
 )}
 
         {mineTab === 'Follow' && (
-          <ComingSoon
-            title="Followed Rooms"
-            description="Your favourite rooms will appear here when room following is implemented."
+  <>
+    <SectionTitle>My Followed Rooms</SectionTitle>
+
+    {followedRooms.length === 0 ? (
+      <ComingSoon
+        title="No followed rooms"
+        description="Follow your favourite rooms and they will appear here."
+      />
+    ) : (
+      followedRooms.map(room => (
+        <View key={room.id}>
+          {renderRoomCard(room, false)}
+
+          <Button
+            title="Unfollow"
+            secondary
+            onPress={() => toggleFollowRoom(room)}
           />
-        )}
+        </View>
+      ))
+    )}
+
+    <Button
+      title="Refresh Followed Rooms"
+      secondary
+      onPress={loadFollowedRooms}
+    />
+  </>
+)}
       </>
     );
   }
