@@ -907,14 +907,6 @@ async function createRoom() {
     return;
   }
 
-  if (roomType === 'locked' && !roomPassword.trim()) {
-    Alert.alert(
-      'Password required',
-      'Please enter a password for your locked room.'
-    );
-    return;
-  }
-
   try {
     setSaving(true);
 
@@ -958,10 +950,7 @@ async function createRoom() {
       body: JSON.stringify({
         roomName: roomName.trim(),
         description: roomDescription.trim(),
-        roomType,
-        password: roomType === 'locked'
-          ? roomPassword
-          : undefined,
+        roomType: 'public',
         roomDpUrl
       })
     });
