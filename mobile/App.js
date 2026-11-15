@@ -1922,6 +1922,51 @@ function renderHotRooms() {
   );
 }
 
+function renderNewRooms() {
+  const newRooms = rooms
+    .slice()
+    .sort((a, b) =>
+      new Date(b.created_at || 0) -
+      new Date(a.created_at || 0)
+    );
+
+  return (
+    <>
+      <TouchableOpacity
+        onPress={() => setScreen('main')}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          marginBottom: 18
+        }}
+      >
+        <Text style={{ color: C.text, fontSize: 23 }}>‹</Text>
+        <Text style={{ color: C.text, fontSize: 17, fontWeight: '900', marginLeft: 10 }}>
+          New Rooms
+        </Text>
+      </TouchableOpacity>
+
+      {loadingRooms ? (
+        <ActivityIndicator color={C.accent} />
+      ) : newRooms.length === 0 ? (
+        <ComingSoon
+          title="No new rooms yet"
+          description="Recently created public rooms will appear here."
+        />
+      ) : (
+        newRooms.map(room => renderRoomCard(room))
+      )}
+
+      <Button
+        title="Refresh New Rooms"
+        secondary
+        onPress={loadPublicRooms}
+      />
+    </>
+  );
+}
+
+
 
 
   // =========================================
