@@ -895,98 +895,170 @@ async function chooseRoomDp() {
     }
   }
 
+  
   // =========================================
   // ROOM: CREATE ROOM
   // =========================================
 
-async function createRoom() {
-  if (!roomName.trim()) {
-    Alert.alert('Room name', 'Please enter a room name.');
-    return;
-  }
-
-  if (!session?.access_token) {
-    Alert.alert('Login required', 'Please sign in again.');
-    return;
-  }
-
-  try {
-    setSaving(true);
-
-    let roomDpUrl = null;
-
-    // STEP A: Upload the selected room picture.
-    if (roomDpUri) {
-      setRoomDpUploading(true);
-
-      const response = await fetch(roomDpUri);
-      const blob = await response.blob();
-
-      const filePath =
-        `${session.user.id}/${Date.now()}.jpg`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('talkzy-rooms')
-        .upload(filePath, blob, {
-          contentType: 'image/jpeg',
-          upsert: false
-        });
-
-      if (uploadError) {
-        throw uploadError;
-      }
-
-      // STEP B: Get the public picture URL.
-      const { data: publicData } = supabase.storage
-        .from('talkzy-rooms')
-        .getPublicUrl(filePath);
-
-      roomDpUrl = publicData.publicUrl;
+  async function createRoom() {
+    if (!roomName.trim()) {
+      Alert.alert('Room name', 'Please enter a room name.');
+      return;
     }
 
-    // STEP C: Create the room using the backend.
-    const result = await api('/api/rooms', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${session.access_token}`
-      },
-      body: JSON.stringify({
-        roomName: roomName.trim(),
-        description: roomDescription.trim(),
-        roomType: 'public',
-        roomDpUrl
-      })
-    });
+    if (!session?.access_token) {
+      Alert.alert('Login required', 'Please sign in again.');
+      return;
+    }
 
-    // STEP D: Clear the form after success.
-    Alert.alert(
-      'Success',
-      'Your room has been created successfully.'
-    );
+    try {
+      setSaving(true);
 
-    setRoomName('');
-    setRoomDescription('');
-    setRoomPassword('');
-    setRoomType('public');
-    setRoomDpUri(null);
-    setShowCreateRoom(false);
+      let roomDpUrl = null;
 
-    // STEP E: Refresh room lists.
-    await loadPublicRooms();
-    await loadMyRooms();
+      // Upload room picture
+      if (roomDpUri) {
+        setRoomDpUploading(true);
 
-  } catch (error) {
-    Alert.alert(
-      'Room creation failed',
-      error.message || 'Something went wrong.'
-    );
-  } finally {
-    setRoomDpUploading(false);
-    setSaving(false);
+        const response = await fetch(roomDpUri);
+        const blob = await response.blob();
+
+        const filePath =
+          `${session.user.id}/${Date.now()}.jpg`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('talkzy-rooms')
+          .upload(filePath, blob, {
+            contentType: 'image/jpeg',
+            upsert: false
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data: publicData } = supabase.storage
+          .from('talkzy-rooms')
+          .getPublicUrl(filePath);
+
+        roomDpUrl = publicData.publicUrl;
+      }
+
+      // Create room
+      await api('/api/rooms', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          roomName: roomName.trim(),
+          description: roomDescription.trim(),
+          roomType: 'public',
+          roomDpUrl
+        })
+      });
+
+      Alert.alert(
+        'Success',
+        'Your room has been created successfully.'
+      );
+
+      setRoomName('');
+      setRoomDescription('');
+      setRoomPassword('');
+      setRoomType('public');
+      setRoomDpUri(null);
+      setShowCreateRoom(false);
+
+      await loadPublicRooms();
+      await loadMyRooms();
+
+    } catch (error) {
+      Alert.alert(
+        'Room creation failed',
+        error.message || 'Something went wrong.'
+      );
+    } finally {
+      setRoomDpUploading(false);
+      setSaving(false);
+    }
   }
-}
-  
 
+  // =========================================
+  // ROOM: SAVE ROOM SETTINGS
+  // =========================================
+
+  async function saveRoomSettings() {
+    if (!selectedRoom) {
+      Alert.alert('Error', 'No room selected.');
+      return;
+    }
+
+    if (!session?.access_token) {
+      Alert.alert('Login required', 'Please sign in again.');
+      return;
+    }
+
+    if (
+      roomSettingsType === 'locked' &&
+      (
+        roomSettingsPassword.length < 4 ||
+        roomSettingsPassword.length > 64
+      )
+    ) {
+      Alert.alert(
+        'Password required',
+        'Room password must be 4 to 64 characters.'
+      );
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      const result = await api(
+        `/api/rooms/${selectedRoom.id}/type`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({
+            roomType: roomSettingsType,
+            password:
+              roomSettingsType === 'locked'
+                ? roomSettingsPassword
+                : undefined
+          })
+        }
+      );
+
+      setSelectedRoom({
+        ...selectedRoom,
+        ...result.room
+      });
+
+      setRoomSettingsPassword('');
+
+      await loadPublicRooms();
+      await loadMyRooms();
+
+      Alert.alert(
+        'Success',
+        'Room privacy settings updated.'
+      );
+
+      setScreen('main');
+
+    } catch (error) {
+      Alert.alert(
+        'Update failed',
+        error.message || 'Could not update room settings.'
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  
   // =========================================
   // ROOM: JOIN ROOM
   // =========================================
