@@ -2564,6 +2564,10 @@ function renderCreateRoom() {
     return renderRoomSettings();
   }
 
+  if (screen === 'createRoom') {
+    return renderCreateRoom();
+  }
+
   if (activeTab === 'Room') return renderRoom();
   if (activeTab === 'Games') return renderGames();
   if (activeTab === 'Moment') return renderMoment();
@@ -2571,8 +2575,7 @@ function renderCreateRoom() {
   if (activeTab === 'Me') return renderProfile();
 
   return renderRoom();
-}
-
+  }
   // =========================================
   // LOADING SCREEN
   // =========================================
