@@ -1342,121 +1342,153 @@ setScreen('main');
   // ROOM: ROOM CARD
   // =========================================
 
-  function renderRoomCard(room, showJoin = true) {
-    const isOwner =
-      room.owner_id === session?.user?.id;
-    const isFollowing = followedRooms.some(
-  item => item.id === room.id
-);
+  
+function renderRoomCard(room, showJoin = true) {
+  const isOwner =
+    room.owner_id === session?.user?.id;
 
-    return (
-      <Card key={room.id}>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}
-        >
-          <View style={{ flex: 1 }}>
-            {room.room_dp_url ? (
-              <Image
-                source={{ uri: room.room_dp_url }}
-                style={{
-                  width: 65,
-                  height: 65,
-                  borderRadius: 33,
-                  marginBottom: 10
-                }}
-              />
-            ) : null}
+  return (
+    <Card
+      key={room.id}
+      style={{
+        padding: 10,
+        marginBottom: 9,
+        borderRadius: 12
+      }}
+    >
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center'
+        }}
+      >
+        {/* ROOM DP */}
+        {room.room_dp_url ? (
+          <Image
+            source={{ uri: room.room_dp_url }}
+            style={{
+              width: 62,
+              height: 62,
+              borderRadius: 10,
+              marginRight: 11
+            }}
+          />
+        ) : (
+          <View
+            style={{
+              width: 62,
+              height: 62,
+              borderRadius: 10,
+              backgroundColor: C.line,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: 11
+            }}
+          >
+            <Text style={{ fontSize: 25 }}>🎙️</Text>
+          </View>
+        )}
 
+        {/* ROOM INFORMATION */}
+        <View style={{ flex: 1 }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center'
+            }}
+          >
             <Text
+              numberOfLines={1}
               style={{
                 color: C.text,
+                fontSize: 14,
                 fontWeight: '900',
-                fontSize: 16
+                flexShrink: 1
               }}
             >
-              🎙️ {room.room_name}
+              {room.room_name}
             </Text>
 
-            <Text style={{ color: C.muted, marginTop: 6 }}>
-              {room.description || 'Welcome to TALKZY room'}
-            </Text>
-
-            <Text
+            <View
               style={{
-                color: C.gold,
-                fontSize: 12,
-                marginTop: 7
+                backgroundColor: C.accent,
+                paddingHorizontal: 5,
+                paddingVertical: 2,
+                borderRadius: 4,
+                marginLeft: 6
               }}
             >
-              {room.room_type === 'locked'
-                ? '🔒 Private room'
-                : '🌍 Public room'}
-            </Text>
-          </View>
+              <Text
+                style={{
+                  color: 'white',
+                  fontSize: 8,
+                  fontWeight: '900'
+                }}
+              >
+                FAMILY
+              </Text>
+            </View>
 
-          <View style={{ alignItems: 'flex-end' }}>
             {isOwner && (
               <TouchableOpacity
                 onPress={() => {
                   setSelectedRoom(room);
-                  setRoomSettingsType(room.room_type || 'public');
+                  setRoomSettingsType(
+                    room.room_type || 'public'
+                  );
                   setRoomSettingsPassword('');
                   setScreen('roomSettings');
                 }}
-                style={{
-                  backgroundColor: C.gold,
-                  paddingHorizontal: 12,
-                  paddingVertical: 9,
-                  borderRadius: 10,
-                  marginBottom: 8
-                }}
+                style={{ marginLeft: 7 }}
               >
-                <Text style={{ color: '#000000', fontWeight: '800' }}>
-                  Settings
+                <Text style={{ color: C.gold, fontSize: 16 }}>
+                  ⚙
                 </Text>
               </TouchableOpacity>
             )}
-
-            {showJoin && (
-              <TouchableOpacity
-                onPress={() => joinRoom(room)}
-                style={{
-                  backgroundColor: C.accent,
-                  paddingHorizontal: 15,
-                  paddingVertical: 10,
-                  borderRadius: 10
-                }}
-              >
-                <Text style={{ color: 'white', fontWeight: '800' }}>
-                  Join
-                </Text>
-              </TouchableOpacity>
-            )}
-              {!isOwner && !isFollowing && (
-  <TouchableOpacity
-    onPress={() => toggleFollowRoom(room)}
-    style={{
-      backgroundColor: C.panel,
-      paddingHorizontal: 15,
-      paddingVertical: 9,
-      borderRadius: 10,
-      marginTop: 8
-    }}
-  >
-    <Text style={{ color: C.gold, fontWeight: '800' }}>
-      + Follow
-    </Text>
-  </TouchableOpacity>
-)}
           </View>
+
+          <Text
+            numberOfLines={1}
+            style={{
+              color: C.muted,
+              fontSize: 10,
+              marginTop: 5
+            }}
+          >
+            {room.country_flag || '🌍'} {room.country_name || 'Country not set'}
+            {room.medals ? `  ${room.medals}` : ''}
+          </Text>
+
+          <Text
+            numberOfLines={1}
+            style={{
+              color: C.muted,
+              fontSize: 11,
+              marginTop: 5
+            }}
+          >
+            {room.description || 'Welcome to TALKZY'}
+          </Text>
         </View>
-      </Card>
-    );
-  }
+
+        {/* CURRENT ACTIVE USERS */}
+        {typeof room.active_users === 'number' && (
+          <Text
+            style={{
+              color: C.muted,
+              fontSize: 11,
+              marginLeft: 7
+            }}
+          >
+            {room.active_users}
+          </Text>
+        )}
+      </View>
+    </Card>
+  );
+                    }
+
 
   // =========================================
   // ROOM: SETTINGS SCREEN
