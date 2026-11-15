@@ -563,6 +563,114 @@ app.get('/api/rooms/joined', userAuth, async (req, res) => {
   }
 });
 
+ // =========================================
+ // GET MY FOLLOWED ROOMS
+ // =========================================
+
+app.get('/api/rooms/followed', userAuth, async (req, res) => {
+  try {
+    const userId = req.talkzyUser.id;
+
+    const { data: follows, error: followError } = await supabase
+      .from('talkzy_room_follows')
+      .select('room_id')
+      .eq('user_id', userId);
+
+    if (followError) throw followError;
+
+    const roomIds = (follows || []).map(item => item.room_id);
+
+    if (roomIds.length === 0) {
+      return res.json({ rooms: [], count: 0 });
+    }
+
+    const { data: rooms, error: roomError } = await supabase
+      .from('talkzy_rooms')
+      .select('id, owner_id, room_name, description, room_dp_url, room_type, status, created_at')
+      .in('id', roomIds)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false });
+
+    if (roomError) throw roomError;
+
+    return res.json({
+      rooms: rooms || [],
+      count: rooms?.length || 0
+    });
+
+  } catch (error) {
+    console.error('Could not load followed rooms:', error.message);
+    return res.status(500).json({
+      error: 'Could not load followed rooms.'
+    });
+  }
+});
+
+
+// =========================================
+// FOLLOW A ROOM
+// =========================================
+
+app.post('/api/rooms/:roomId/follow', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+
+    if (room.status !== 'active') {
+      return res.status(409).json({ error: 'This room is closed.' });
+    }
+
+    const { error } = await supabase
+      .from('talkzy_room_follows')
+      .upsert(
+        {
+          user_id: req.talkzyUser.id,
+          room_id: room.id
+        },
+        {
+          onConflict: 'user_id,room_id',
+          ignoreDuplicates: true
+        }
+      );
+
+    if (error) throw error;
+
+    return res.json({ followed: true, roomId: room.id });
+
+  } catch (error) {
+    console.error('Could not follow room:', error.message);
+    return res.status(500).json({
+      error: 'Could not follow this room.'
+    });
+  }
+});
+
+
+// =========================================
+// UNFOLLOW A ROOM
+// =========================================
+
+app.delete('/api/rooms/:roomId/follow', userAuth, async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from('talkzy_room_follows')
+      .delete()
+      .eq('user_id', req.talkzyUser.id)
+      .eq('room_id', req.params.roomId);
+
+    if (error) throw error;
+
+    return res.json({ followed: false });
+
+  } catch (error) {
+    console.error('Could not unfollow room:', error.message);
+    return res.status(500).json({
+      error: 'Could not unfollow this room.'
+    });
+  }
+});
+
+
 
 // Leave a room. The owner must close their room instead.
 app.post('/api/rooms/:roomId/leave', userAuth, async (req, res) => {
