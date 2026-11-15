@@ -2765,7 +2765,7 @@ function renderCreateRoom() {
   >
     <View
       style={{
-        backgroundColor: C.card,
+        backgroundColor: C.panel,
         padding: 22,
         borderRadius: 18,
         borderWidth: 1,
