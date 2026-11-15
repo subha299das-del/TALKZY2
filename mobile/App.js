@@ -999,36 +999,140 @@ async function createRoom() {
   // ROOM: JOIN ROOM
   // =========================================
 
-  async function joinRoom(room) {
-    if (!session?.access_token) {
-      Alert.alert('Login required', 'Please sign in again.');
-      return;
-    }
 
-    try {
-      const result = await api(
-        `/api/rooms/${room.id}/join`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${session.access_token}`
-          },
-          body: JSON.stringify({})
+function renderCreateRoom() {
+  if (!showCreateRoom) return null;
+
+  return (
+    <Card>
+      <Heading>Create your room</Heading>
+
+      <Text
+        style={{
+          color: '#FFFFFF',
+          fontSize: 14,
+          fontWeight: '600',
+          marginBottom: 10
+        }}
+      >
+        Room Display Picture
+      </Text>
+
+      <TouchableOpacity
+        onPress={chooseRoomDp}
+        disabled={saving}
+        style={{
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: 20,
+          padding: 15,
+          borderWidth: 1,
+          borderColor: '#777777',
+          borderStyle: 'dashed',
+          borderRadius: 14
+        }}
+      >
+        {roomDpUri ? (
+          <Image
+            source={{ uri: roomDpUri }}
+            style={{
+              width: 110,
+              height: 110,
+              borderRadius: 55
+            }}
+          />
+        ) : (
+          <View
+            style={{
+              width: 110,
+              height: 110,
+              borderRadius: 55,
+              backgroundColor: '#252535',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <Text style={{ fontSize: 35, color: '#FFFFFF' }}>
+              +
+            </Text>
+          </View>
+        )}
+
+        <Text
+          style={{
+            color: '#FFFFFF',
+            marginTop: 10,
+            fontSize: 14
+          }}
+        >
+          {roomDpUri ? 'Change Room Picture' : 'Choose Room Picture'}
+        </Text>
+      </TouchableOpacity>
+
+      <Field
+        label="Room name"
+        value={roomName}
+        onChangeText={setRoomName}
+        placeholder="Enter room name"
+      />
+
+      <Field
+        label="Room description"
+        value={roomDescription}
+        onChangeText={setRoomDescription}
+        placeholder="Write something about your room"
+      />
+
+      <SectionTitle>Room type</SectionTitle>
+
+      <View style={{ flexDirection: 'row' }}>
+        <Chip
+          title="Public"
+          active={roomType === 'public'}
+          onPress={() => setRoomType('public')}
+        />
+
+        <Chip
+          title="Locked"
+          active={roomType === 'locked'}
+          onPress={() => setRoomType('locked')}
+        />
+      </View>
+
+      {roomType === 'locked' && (
+        <Field
+          label="Room password"
+          value={roomPassword}
+          onChangeText={setRoomPassword}
+          placeholder="Create a password"
+          secureTextEntry
+        />
+      )}
+
+      <Button
+        title={
+          saving
+            ? roomDpUploading
+              ? 'Uploading picture...'
+              : 'Creating...'
+            : 'Create Room'
         }
-      );
+        onPress={createRoom}
+        disabled={saving}
+      />
 
-      Alert.alert(
-        'Joined',
-        `You joined ${room.room_name || 'the room'}.`
-      );
-
-      await loadPublicRooms();
-      await loadMyRooms();
-    } catch (error) {
-      Alert.alert('Unable to join', error.message);
-    }
-  }
-
+      <Button
+        title="Cancel"
+        secondary
+        onPress={() => {
+          setShowCreateRoom(false);
+          setRoomDpUri(null);
+        }}
+      />
+    </Card>
+  );
+          }
+          
   // =========================================
   // ROOM: ROOM CARD
   // =========================================
