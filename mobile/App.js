@@ -806,10 +806,14 @@ async function chooseRoomDp() {
 
       setProfile(data);
 setAvatarUri(data.avatar_url || null);
+
 setScreen('main');
 
 loadPublicRooms();
 loadMyRooms(session);
+loadJoinedRooms(session);
+loadFollowedRooms(session);
+
 
       Alert.alert(
         'Welcome to TALKZY!',
