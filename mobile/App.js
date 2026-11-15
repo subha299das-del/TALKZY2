@@ -964,7 +964,8 @@ async function loadJoinedRooms(currentSession = session) {
         },
         body: JSON.stringify({ password })
       });
-
+      await loadJoinedRooms();
+      
       setShowJoinPassword(false);
       setJoinPassword('');
       setJoinTargetRoom(null);
