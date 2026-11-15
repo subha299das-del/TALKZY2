@@ -1000,6 +1000,7 @@ async function createRoom() {
   // =========================================
 
 
+
 function renderCreateRoom() {
   if (!showCreateRoom) return null;
 
@@ -1058,13 +1059,7 @@ function renderCreateRoom() {
           </View>
         )}
 
-        <Text
-          style={{
-            color: '#FFFFFF',
-            marginTop: 10,
-            fontSize: 14
-          }}
-        >
+        <Text style={{ color: '#FFFFFF', marginTop: 10 }}>
           {roomDpUri ? 'Change Room Picture' : 'Choose Room Picture'}
         </Text>
       </TouchableOpacity>
@@ -1077,37 +1072,11 @@ function renderCreateRoom() {
       />
 
       <Field
-        label="Room description"
+        label="Room announcement"
         value={roomDescription}
         onChangeText={setRoomDescription}
-        placeholder="Write something about your room"
+        placeholder="Write your room announcement"
       />
-
-      <SectionTitle>Room type</SectionTitle>
-
-      <View style={{ flexDirection: 'row' }}>
-        <Chip
-          title="Public"
-          active={roomType === 'public'}
-          onPress={() => setRoomType('public')}
-        />
-
-        <Chip
-          title="Locked"
-          active={roomType === 'locked'}
-          onPress={() => setRoomType('locked')}
-        />
-      </View>
-
-      {roomType === 'locked' && (
-        <Field
-          label="Room password"
-          value={roomPassword}
-          onChangeText={setRoomPassword}
-          placeholder="Create a password"
-          secureTextEntry
-        />
-      )}
 
       <Button
         title={
@@ -1132,6 +1101,8 @@ function renderCreateRoom() {
     </Card>
   );
           }
+
+
           
   // =========================================
   // ROOM: ROOM CARD
