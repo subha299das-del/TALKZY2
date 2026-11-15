@@ -1428,6 +1428,22 @@ setScreen('main');
                 </Text>
               </TouchableOpacity>
             )}
+              {!isOwner && !isFollowing && (
+  <TouchableOpacity
+    onPress={() => toggleFollowRoom(room)}
+    style={{
+      backgroundColor: C.panel,
+      paddingHorizontal: 15,
+      paddingVertical: 9,
+      borderRadius: 10,
+      marginTop: 8
+    }}
+  >
+    <Text style={{ color: C.gold, fontWeight: '800' }}>
+      + Follow
+    </Text>
+  </TouchableOpacity>
+)}
           </View>
         </View>
       </Card>
