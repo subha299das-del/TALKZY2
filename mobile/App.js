@@ -478,6 +478,9 @@ const [joiningRoom, setJoiningRoom] = useState(false);
       setAvatarUri(data.avatar_url || null);
 
       setScreen('main');
+
+      loadPublicRooms();
+      loadMyRooms(currentSession);
     } catch (error) {
       console.log('Profile loading error:', error.message);
 
@@ -877,13 +880,13 @@ async function chooseRoomDp() {
   // =========================================
 
   
-async function loadMyRooms() {
+async function loadMyRooms(currentSession = session) {
   try {
-    if (!session?.access_token) return;
+    if (!currentSession?.access_token) return;
 
     const result = await api('/api/rooms/mine', {
       headers: {
-        Authorization: `Bearer ${session.access_token}`
+        Authorization: `Bearer ${currentSession.access_token}`
       }
     });
 
