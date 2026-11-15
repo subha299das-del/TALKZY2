@@ -356,6 +356,7 @@ const [roomSettingsPassword, setRoomSettingsPassword] = useState('');
 
   const [rooms, setRooms] = useState([]);
   const [joinedRooms, setJoinedRooms] = useState([]);
+  const [followedRooms, setFollowedRooms] = useState([]);
   const [myRooms, setMyRooms] = useState([]);
 
   const [roomName, setRoomName] = useState('');
