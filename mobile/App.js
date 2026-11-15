@@ -2799,13 +2799,22 @@ if (item === 'Follow') {
   // MAIN SCREEN CONTENT
   // =========================================
 
-  function renderMainContent() {
+  
+function renderMainContent() {
   if (screen === 'roomSettings') {
     return renderRoomSettings();
   }
 
   if (screen === 'createRoom') {
     return renderCreateRoom();
+  }
+
+  if (screen === 'hotRooms') {
+    return renderHotRooms();
+  }
+
+  if (screen === 'newRooms') {
+    return renderNewRooms();
   }
 
   if (activeTab === 'Room') return renderRoom();
@@ -2815,7 +2824,8 @@ if (item === 'Follow') {
   if (activeTab === 'Me') return renderProfile();
 
   return renderRoom();
-  }
+}
+
   // =========================================
   // LOADING SCREEN
   // =========================================
