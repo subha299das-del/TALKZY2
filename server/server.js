@@ -363,6 +363,33 @@ app.get('/api/rooms', async (req, res) => {
   }
 });
 
+// =========================================
+// GET MY ROOMS (PUBLIC + LOCKED)
+// =========================================
+
+app.get('/api/rooms/mine', userAuth, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('talkzy_rooms')
+      .select('id, owner_id, room_name, description, room_dp_url, room_type, status, created_at')
+      .eq('owner_id', req.talkzyUser.id)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.set('Cache-Control', 'no-store').json({
+      rooms: data || [],
+      count: data?.length || 0
+    });
+  } catch (error) {
+    console.error('Could not load owner rooms:', error.message);
+    res.status(500).json({
+      error: 'Could not load your rooms.'
+    });
+  }
+});
+
 // Create a public or password-locked room.
 app.post('/api/rooms', userAuth, roomCreateLimiter, async (req, res) => {
   const roomName = String(req.body?.roomName || '').trim();
