@@ -1434,7 +1434,7 @@ function renderCreateRoom() {
     return (
       <>
         <TouchableOpacity
-          onPress={() => setShowCreateRoom(!showCreateRoom)}
+          onPress={() => setScreen('createRoom')}
           style={{
             backgroundColor: C.accent,
             padding: 17,
