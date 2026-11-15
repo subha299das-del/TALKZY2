@@ -355,6 +355,7 @@ const [roomSettingsPassword, setRoomSettingsPassword] = useState('');
   const [roomTab, setRoomTab] = useState('Mine');
   const [popularPage, setPopularPage] = useState('main');
   const [mineTab, setMineTab] = useState('Recent');
+  const [countrySearch, setCountrySearch] = useState('');
 
   const [rooms, setRooms] = useState([]);
   const [joinedRooms, setJoinedRooms] = useState([]);
