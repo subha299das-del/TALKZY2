@@ -1337,6 +1337,9 @@ setScreen('main');
   function renderRoomCard(room, showJoin = true) {
     const isOwner =
       room.owner_id === session?.user?.id;
+    const isFollowing = followedRooms.some(
+  item => item.id === room.id
+);
 
     return (
       <Card key={room.id}>
