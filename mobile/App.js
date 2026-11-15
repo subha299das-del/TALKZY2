@@ -1097,48 +1097,85 @@ function renderCreateRoom() {
   // ROOM: ROOM CARD
   // =========================================
 
-  function renderRoomCard(room, showJoin = true) {
-    return (
-      <Card key={room.id}>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}
-        >
-          <View style={{ flex: 1 }}>
-            <Text
-              style={{
-                color: C.text,
-                fontWeight: '900',
-                fontSize: 16
-              }}
-            >
-              🎙️ {room.room_name}
-            </Text>
+  
+function renderRoomCard(room, showJoin = true) {
+  const isOwner =
+    room.owner_id === session?.user?.id;
 
-            <Text
+  return (
+    <Card key={room.id}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}
+      >
+        <View style={{ flex: 1 }}>
+          {room.room_dp_url ? (
+            <Image
+              source={{ uri: room.room_dp_url }}
               style={{
-                color: C.muted,
-                marginTop: 6
+                width: 65,
+                height: 65,
+                borderRadius: 33,
+                marginBottom: 10
               }}
-            >
-              {room.description || 'Welcome to TALKZY room'}
-            </Text>
+            />
+          ) : null}
 
-            <Text
+          <Text
+            style={{
+              color: C.text,
+              fontWeight: '900',
+              fontSize: 16
+            }}
+          >
+            🎙️ {room.room_name}
+          </Text>
+
+          <Text
+            style={{
+              color: C.muted,
+              marginTop: 6
+            }}
+          >
+            {room.description || 'Welcome to TALKZY room'}
+          </Text>
+
+          <Text
+            style={{
+              color: C.gold,
+              fontSize: 12,
+              marginTop: 7
+            }}
+          >
+            {room.room_type === 'locked'
+              ? '🔒 Private room'
+              : '🌍 Public room'}
+          </Text>
+        </View>
+
+        <View style={{ alignItems: 'flex-end' }}>
+          {isOwner && (
+            <TouchableOpacity
+              onPress={() => {
+                setSelectedRoom(room);
+                setScreen('roomSettings');
+              }}
               style={{
-                color: C.gold,
-                fontSize: 12,
-                marginTop: 7
+                backgroundColor: C.gold,
+                paddingHorizontal: 12,
+                paddingVertical: 9,
+                borderRadius: 10,
+                marginBottom: 8
               }}
             >
-              {room.room_type === 'locked'
-                ? '🔒 Private room'
-                : '🌍 Public room'}
-            </Text>
-          </View>
+              <Text style={{ color: '#000000', fontWeight: '800' }}>
+                Settings
+              </Text>
+            </TouchableOpacity>
+          )}
 
           {showJoin && (
             <TouchableOpacity
@@ -1156,9 +1193,11 @@ function renderCreateRoom() {
             </TouchableOpacity>
           )}
         </View>
-      </Card>
-    );
-  }
+      </View>
+    </Card>
+  );
+}
+
 
   // =========================================
   // ROOM: CREATE ROOM FORM
