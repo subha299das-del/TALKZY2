@@ -2671,7 +2671,7 @@ function renderCreateRoom() {
         </ScrollView>
       </View>
 
-      {renderBottomNavigation()}
+      {screen !== 'roomSettings' && renderBottomNavigation()}
     </SafeAreaView>
   );
             }
