@@ -1171,106 +1171,193 @@ function renderCreateRoom() {
   // ROOM: ROOM CARD
   // =========================================
 
-  
-function renderRoomCard(room, showJoin = true) {
-  const isOwner =
-    room.owner_id === session?.user?.id;
+  function renderRoomCard(room, showJoin = true) {
+    const isOwner =
+      room.owner_id === session?.user?.id;
 
-  return (
-    <Card key={room.id}>
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}
-      >
-        <View style={{ flex: 1 }}>
-          {room.room_dp_url ? (
-            <Image
-              source={{ uri: room.room_dp_url }}
+    return (
+      <Card key={room.id}>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}
+        >
+          <View style={{ flex: 1 }}>
+            {room.room_dp_url ? (
+              <Image
+                source={{ uri: room.room_dp_url }}
+                style={{
+                  width: 65,
+                  height: 65,
+                  borderRadius: 33,
+                  marginBottom: 10
+                }}
+              />
+            ) : null}
+
+            <Text
               style={{
-                width: 65,
-                height: 65,
-                borderRadius: 33,
-                marginBottom: 10
-              }}
-            />
-          ) : null}
-
-          <Text
-            style={{
-              color: C.text,
-              fontWeight: '900',
-              fontSize: 16
-            }}
-          >
-            🎙️ {room.room_name}
-          </Text>
-
-          <Text
-            style={{
-              color: C.muted,
-              marginTop: 6
-            }}
-          >
-            {room.description || 'Welcome to TALKZY room'}
-          </Text>
-
-          <Text
-            style={{
-              color: C.gold,
-              fontSize: 12,
-              marginTop: 7
-            }}
-          >
-            {room.room_type === 'locked'
-              ? '🔒 Private room'
-              : '🌍 Public room'}
-          </Text>
-        </View>
-
-        <View style={{ alignItems: 'flex-end' }}>
-          {isOwner && (
-            <TouchableOpacity
-              onPress={() => {
-                setSelectedRoom(room);
-                setScreen('roomSettings');
-              }}
-              style={{
-                backgroundColor: C.gold,
-                paddingHorizontal: 12,
-                paddingVertical: 9,
-                borderRadius: 10,
-                marginBottom: 8
+                color: C.text,
+                fontWeight: '900',
+                fontSize: 16
               }}
             >
-              <Text style={{ color: '#000000', fontWeight: '800' }}>
-                Settings
-              </Text>
-            </TouchableOpacity>
-          )}
+              🎙️ {room.room_name}
+            </Text>
 
-          {showJoin && (
-            <TouchableOpacity
-              onPress={() => joinRoom(room)}
+            <Text style={{ color: C.muted, marginTop: 6 }}>
+              {room.description || 'Welcome to TALKZY room'}
+            </Text>
+
+            <Text
               style={{
-                backgroundColor: C.accent,
-                paddingHorizontal: 15,
-                paddingVertical: 10,
-                borderRadius: 10
+                color: C.gold,
+                fontSize: 12,
+                marginTop: 7
               }}
             >
-              <Text style={{ color: 'white', fontWeight: '800' }}>
-                Join
-              </Text>
-            </TouchableOpacity>
-          )}
+              {room.room_type === 'locked'
+                ? '🔒 Private room'
+                : '🌍 Public room'}
+            </Text>
+          </View>
+
+          <View style={{ alignItems: 'flex-end' }}>
+            {isOwner && (
+              <TouchableOpacity
+                onPress={() => {
+                  setSelectedRoom(room);
+                  setRoomSettingsType(room.room_type || 'public');
+                  setRoomSettingsPassword('');
+                  setScreen('roomSettings');
+                }}
+                style={{
+                  backgroundColor: C.gold,
+                  paddingHorizontal: 12,
+                  paddingVertical: 9,
+                  borderRadius: 10,
+                  marginBottom: 8
+                }}
+              >
+                <Text style={{ color: '#000000', fontWeight: '800' }}>
+                  Settings
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {showJoin && (
+              <TouchableOpacity
+                onPress={() => joinRoom(room)}
+                style={{
+                  backgroundColor: C.accent,
+                  paddingHorizontal: 15,
+                  paddingVertical: 10,
+                  borderRadius: 10
+                }}
+              >
+                <Text style={{ color: 'white', fontWeight: '800' }}>
+                  Join
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
-      </View>
-    </Card>
-  );
-}
+      </Card>
+    );
+  }
+
+  // =========================================
+  // ROOM: SETTINGS SCREEN
+  // =========================================
+
+  function renderRoomSettings() {
+    if (!selectedRoom) {
+      return (
+        <Card>
+          <Heading>Room not selected</Heading>
+          <Button
+            title="Back to Rooms"
+            onPress={() => setScreen('main')}
+          />
+        </Card>
+      );
+    }
+
+    return (
+      <Card>
+        <Heading>Room Settings</Heading>
+
+        {selectedRoom.room_dp_url ? (
+          <Image
+            source={{ uri: selectedRoom.room_dp_url }}
+            style={{
+              width: 100,
+              height: 100,
+              borderRadius: 50,
+              alignSelf: 'center',
+              marginVertical: 15
+            }}
+          />
+        ) : null}
+
+        <Text
+          style={{
+            color: C.text,
+            fontSize: 18,
+            fontWeight: '900',
+            textAlign: 'center',
+            marginBottom: 20
+          }}
+        >
+          {selectedRoom.room_name}
+        </Text>
+
+        <SectionTitle>Room Privacy</SectionTitle>
+
+        <View style={{ flexDirection: 'row', marginBottom: 18 }}>
+          <Chip
+            title="Public"
+            active={roomSettingsType === 'public'}
+            onPress={() => {
+              setRoomSettingsType('public');
+              setRoomSettingsPassword('');
+            }}
+          />
+
+          <Chip
+            title="Locked"
+            active={roomSettingsType === 'locked'}
+            onPress={() => setRoomSettingsType('locked')}
+          />
+        </View>
+
+        {roomSettingsType === 'locked' && (
+          <Field
+            label="Room Password"
+            value={roomSettingsPassword}
+            onChangeText={setRoomSettingsPassword}
+            placeholder="Enter a new password (4–64 characters)"
+            secureTextEntry
+          />
+        )}
+
+        <Button
+          title={saving ? 'Saving...' : 'Save Settings'}
+          onPress={saveRoomSettings}
+          disabled={saving}
+        />
+
+        <Button
+          title="Back to Rooms"
+          secondary
+          onPress={() => setScreen('main')}
+        />
+      </Card>
+    );
+          }
+
 
 
   // =========================================
