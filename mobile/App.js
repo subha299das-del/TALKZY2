@@ -1454,7 +1454,6 @@ function renderCreateRoom() {
           </Text>
         </TouchableOpacity>
 
-        {renderCreateRoom()}
 
         <View style={{ flexDirection: 'row', marginBottom: 15 }}>
           {['Recent', 'Joined', 'Follow'].map(item => (
