@@ -68,30 +68,47 @@ async function api(path, options = {}) {
   return data;
 }
 
+
 function Brand({ small = false }) {
+  const logoSize = small ? 58 : 100;
+
   return (
-    <View style={{ alignItems: 'center', marginBottom: small ? 10 : 22 }}>
-      <View style={{
-        width: small ? 48 : 66,
-        height: small ? 48 : 66,
-        borderRadius: 20,
-        backgroundColor: C.accent,
+    <View
+      style={{
         alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <Text style={{ color: '#fff', fontSize: small ? 25 : 34, fontWeight: '900' }}>T</Text>
-      </View>
-      <Text style={{
-        color: C.text,
-        fontSize: small ? 22 : 30,
-        fontWeight: '900',
-        letterSpacing: 3,
-        marginTop: 8
-      }}>TALKZY</Text>
-      {!small && <Text style={{ color: C.muted, marginTop: 4 }}>Talk. Connect. Belong.</Text>}
+        marginBottom: small ? 10 : 22
+      }}
+    >
+      <Image
+        source={require('./assets/talkzy-icon.png')}
+        style={{
+          width: logoSize,
+          height: logoSize,
+          resizeMode: 'contain'
+        }}
+      />
+
+      <Text
+        style={{
+          color: C.text,
+          fontSize: small ? 22 : 30,
+          fontWeight: '900',
+          letterSpacing: 3,
+          marginTop: 8
+        }}
+      >
+        TALKZY
+      </Text>
+
+      {!small && (
+        <Text style={{ color: C.muted, marginTop: 4 }}>
+          Talk. Connect. Belong.
+        </Text>
+      )}
     </View>
   );
 }
+
 
 function Btn({ title, onPress, secondary = false, danger = false, disabled = false }) {
   return (
