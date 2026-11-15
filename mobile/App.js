@@ -924,14 +924,15 @@ async function chooseRoomDp() {
           Authorization: `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
-          roomName: roomName.trim(),
-          description: roomDescription.trim(),
-          roomType,
-          password: roomType === 'locked'
-            ? roomPassword
-            : undefined
-        })
-      });
+  roomName: roomName.trim(),
+  description: roomDescription.trim(),
+  roomType,
+  password: roomType === 'locked'
+    ? roomPassword
+    : undefined,
+  roomDpUrl: roomDpUrl
+})
+});
 
       Alert.alert(
         'Success',
