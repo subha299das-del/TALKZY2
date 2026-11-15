@@ -928,6 +928,27 @@ async function loadJoinedRooms(currentSession = session) {
   }
 }
   
+async function loadFollowedRooms(currentSession = session) {
+  try {
+    if (!currentSession?.access_token) return;
+
+    const result = await api('/api/rooms/followed', {
+      headers: {
+        Authorization: `Bearer ${currentSession.access_token}`
+      }
+    });
+
+    const allRooms = Array.isArray(result.rooms)
+      ? result.rooms
+      : [];
+
+    setFollowedRooms(allRooms);
+
+  } catch (error) {
+    console.log('Followed rooms:', error.message);
+  }
+}
+
 
   // =========================================
   // ROOM: JOIN ROOM
