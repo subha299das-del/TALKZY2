@@ -456,41 +456,6 @@ app.post('/api/rooms', userAuth, roomCreateLimiter, async (req, res) => {
   }
 });
 
-  }
-
-  try {
-    const passwordHash = roomType === 'locked'
-      ? await makePasswordHash(password)
-      : null;
-
-    const { data, error } = await supabase
-      .from('talkzy_rooms')
-      .insert({
-        owner_id: req.talkzyUser.id,
-        room_name: roomName,
-        description,
-        room_type: roomType,
-        password_hash: passwordHash
-      })
-      .select('id, room_name, description, room_type, status, created_at')
-      .single();
-
-    if (error) {
-      if (error.code === '23505') {
-        return res.status(409).json({
-          error: 'You already own an active room. Close it before creating another.'
-        });
-      }
-      throw error;
-    }
-
-    return res.status(201).json({ room: data });
-  } catch (error) {
-    console.error('Room creation failed:', error.message);
-    return res.status(500).json({ error: 'Could not create room.' });
-  }
-});
-
 // Read a room's details. A locked room requires membership or management permission.
 app.get('/api/rooms/:roomId', userAuth, async (req, res) => {
   try {
