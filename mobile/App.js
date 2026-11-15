@@ -323,6 +323,8 @@ export default function App() {
 
   const [screen, setScreen] = useState('login');
   const [activeTab, setActiveTab] = useState('Room');
+  const [roomSettingsType, setRoomSettingsType] = useState('public');
+const [roomSettingsPassword, setRoomSettingsPassword] = useState('');
 
   // ---------------------------------
   // LOGIN / SIGNUP STATES
