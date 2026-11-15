@@ -1065,7 +1065,7 @@ async function loadMyRooms() {
 
 
 function renderCreateRoom() {
-  if (!showCreateRoom) return null;
+  
 
   return (
     <Card>
