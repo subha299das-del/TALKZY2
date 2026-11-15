@@ -1789,71 +1789,102 @@ if (item === 'Follow') {
   // ROOM: POPULAR
   // =========================================
 
-  function renderPopular() {
-    return (
-      <>
-        <SectionTitle>Special Events</SectionTitle>
+  
+function renderPopular() {
+  return (
+    <>
+      <SectionTitle>🔥 Hot Events</SectionTitle>
 
-        <ComingSoon
-          title="Special Events"
-          description="Discover special TALKZY activities and exclusive events."
-        />
-
-        <SectionTitle>Community Rankings</SectionTitle>
-
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-          {['🎁 Gifting Rank', '❤️ CP Rank', '👑 Family Rank'].map(item => (
-            <View
-              key={item}
-              style={{
-                width: '48%',
-                marginRight: '2%',
-                marginBottom: 10
-              }}
-            >
-              <Card style={{ alignItems: 'center' }}>
-                <Text style={{ color: C.text, fontWeight: '800' }}>
-                  {item}
-                </Text>
-                <Text style={{ color: C.gold, marginTop: 7 }}>
-                  Coming soon
-                </Text>
-              </Card>
-            </View>
-          ))}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={{ marginBottom: 18 }}
+      >
+        <View
+          style={{
+            width: 260,
+            height: 115,
+            backgroundColor: C.accent,
+            borderRadius: 15,
+            padding: 15,
+            justifyContent: 'center',
+            marginRight: 10
+          }}
+        >
+          <Text style={{ color: 'white', fontSize: 19, fontWeight: '900' }}>
+            🔥 Hot Events
+          </Text>
+          <Text style={{ color: 'white', fontSize: 12, marginTop: 7 }}>
+            Discover exciting TALKZY events
+          </Text>
         </View>
 
-        <SectionTitle>Hot Rooms</SectionTitle>
+        <View
+          style={{
+            width: 260,
+            height: 115,
+            backgroundColor: C.gold,
+            borderRadius: 15,
+            padding: 15,
+            justifyContent: 'center'
+          }}
+        >
+          <Text style={{ color: '#000', fontSize: 19, fontWeight: '900' }}>
+            🎁 Upcoming Events
+          </Text>
+          <Text style={{ color: '#000', fontSize: 12, marginTop: 7 }}>
+            New activities and rewards
+          </Text>
+        </View>
+      </ScrollView>
 
-        {loadingRooms ? (
-          <ActivityIndicator color={C.accent} />
-        ) : (
-          rooms.slice(0, 10).map(room =>
-            renderRoomCard(room)
-          )
-        )}
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        <TouchableOpacity
+          onPress={() => {
+            loadPublicRooms();
+            setScreen('hotRooms');
+          }}
+          style={{
+            flex: 1,
+            backgroundColor: C.panel,
+            borderWidth: 1,
+            borderColor: C.line,
+            borderRadius: 13,
+            padding: 18,
+            alignItems: 'center'
+          }}
+        >
+          <Text style={{ fontSize: 25 }}>🔥</Text>
+          <Text style={{ color: C.text, fontWeight: '900', marginTop: 6 }}>
+            Hot Rooms
+          </Text>
+        </TouchableOpacity>
 
-        <SectionTitle>New Rooms</SectionTitle>
+        <TouchableOpacity
+          onPress={() => {
+            loadPublicRooms();
+            setScreen('newRooms');
+          }}
+          style={{
+            flex: 1,
+            backgroundColor: C.panel,
+            borderWidth: 1,
+            borderColor: C.line,
+            borderRadius: 13,
+            padding: 18,
+            alignItems: 'center'
+          }}
+        >
+          <Text style={{ fontSize: 25 }}>✨</Text>
+          <Text style={{ color: C.text, fontWeight: '900', marginTop: 6 }}>
+            New Rooms
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </>
+  );
+}
 
-        {rooms.length === 0 ? (
-          <ComingSoon
-            title="New rooms"
-            description="Newly created rooms will appear here."
-          />
-        ) : (
-          rooms.slice().reverse().slice(0, 10).map(room =>
-            renderRoomCard(room)
-          )
-        )}
-
-        <Button
-          title="Refresh Rooms"
-          secondary
-          onPress={loadPublicRooms}
-        />
-      </>
-    );
-  }
 
   // =========================================
   // ROOM: DISCOVER
