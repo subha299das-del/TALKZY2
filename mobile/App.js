@@ -364,6 +364,7 @@ export default function App() {
   const [roomDpUri, setRoomDpUri] = useState(null);
 const [roomDpUploading, setRoomDpUploading] = useState(false);
   const [loadingRooms, setLoadingRooms] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState(null);
 
   // ---------------------------------
   // OTHER TAB STATES
