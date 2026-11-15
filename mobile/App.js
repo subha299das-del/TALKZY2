@@ -904,7 +904,29 @@ async function loadMyRooms(currentSession = session) {
     console.log('My rooms:', error.message);
   }
 }
+   // ADD THE NEW FUNCTION HERE
 
+async function loadJoinedRooms(currentSession = session) {
+  try {
+    if (!currentSession?.access_token) return;
+
+    const result = await api('/api/rooms/joined', {
+      headers: {
+        Authorization: `Bearer ${currentSession.access_token}`
+      }
+    });
+
+    const allRooms = Array.isArray(result.rooms)
+      ? result.rooms
+      : [];
+
+    setJoinedRooms(allRooms);
+
+  } catch (error) {
+    console.log('Joined rooms:', error.message);
+  }
+}
+  
 
   // =========================================
   // ROOM: JOIN ROOM
