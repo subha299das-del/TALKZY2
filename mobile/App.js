@@ -368,6 +368,10 @@ const [roomSettingsPassword, setRoomSettingsPassword] = useState('');
 const [roomDpUploading, setRoomDpUploading] = useState(false);
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
+  const [showJoinPassword, setShowJoinPassword] = useState(false);
+const [joinPassword, setJoinPassword] = useState('');
+const [joiningRoom, setJoiningRoom] = useState(false);
+  const [joinTargetRoom, setJoinTargetRoom] = useState(null);
 
   // ---------------------------------
   // OTHER TAB STATES
@@ -895,6 +899,62 @@ async function loadMyRooms() {
 }
 
 
+  // =========================================
+  // ROOM: JOIN ROOM
+  // =========================================
+
+  async function joinRoom(room) {
+    if (!session?.access_token) {
+      Alert.alert('Login required', 'Please sign in again.');
+      return;
+    }
+
+    if (room.room_type === 'locked') {
+      setJoinTargetRoom(room);
+      setJoinPassword('');
+      setShowJoinPassword(true);
+      return;
+    }
+
+    await submitRoomJoin(room, '');
+  }
+
+  async function submitRoomJoin(room, password) {
+    if (!room || !session?.access_token) {
+      Alert.alert('Error', 'Please sign in again.');
+      return;
+    }
+
+    try {
+      setJoiningRoom(true);
+
+      await api(`/api/rooms/${room.id}/join`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ password })
+      });
+
+      setShowJoinPassword(false);
+      setJoinPassword('');
+      setJoinTargetRoom(null);
+
+      Alert.alert(
+        'Success',
+        `You have joined ${room.room_name}.`
+      );
+
+    } catch (error) {
+      Alert.alert(
+        'Unable to join',
+        error.message || 'Could not join this room.'
+      );
+    } finally {
+      setJoiningRoom(false);
+    }
+  }
+  
   
   // =========================================
   // ROOM: CREATE ROOM
