@@ -1625,12 +1625,18 @@ setScreen('main');
               title={item}
               active={mineTab === item}
               onPress={() => {
-  setMineTab(item);
+  
+setMineTab(item);
 
-  if (item === 'Joined') {
-    loadJoinedRooms();
-  }
+if (item === 'Joined') {
+  loadJoinedRooms();
+}
+
+if (item === 'Follow') {
+  loadFollowedRooms();
+}
 }}
+
             />
           ))}
         </View>
