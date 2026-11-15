@@ -871,29 +871,28 @@ async function chooseRoomDp() {
   // ROOM: LOAD MY ROOMS
   // =========================================
 
-  async function loadMyRooms() {
-    try {
-      if (!session?.access_token) return;
+  
+async function loadMyRooms() {
+  try {
+    if (!session?.access_token) return;
 
-      const result = await api('/api/rooms', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
-        }
-      });
+    const result = await api('/api/rooms/mine', {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`
+      }
+    });
 
-      const allRooms = Array.isArray(result.rooms)
-        ? result.rooms
-        : [];
+    const allRooms = Array.isArray(result.rooms)
+      ? result.rooms
+      : [];
 
-      setMyRooms(
-        allRooms.filter(
-          room => room.owner_id === session.user.id
-        )
-      );
-    } catch (error) {
-      console.log('My rooms:', error.message);
-    }
+    setMyRooms(allRooms);
+
+  } catch (error) {
+    console.log('My rooms:', error.message);
   }
+}
+
 
   
   // =========================================
