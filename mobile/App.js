@@ -2728,9 +2728,11 @@ function renderCreateRoom() {
       <StatusBar barStyle="light-content" />
 
       <View style={{ flex: 1 }}>
-        <View style={{ paddingHorizontal: 15 }}>
-          {renderMainHeader()}
-        </View>
+        {!['roomSettings', 'createRoom'].includes(screen) && (
+  <View style={{ paddingHorizontal: 15 }}>
+    {renderMainHeader()}
+  </View>
+)}
 
         <ScrollView
           style={{ flex: 1 }}
