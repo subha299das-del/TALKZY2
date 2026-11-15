@@ -965,7 +965,10 @@ async function loadMyRooms() {
       setRoomPassword('');
       setRoomType('public');
       setRoomDpUri(null);
-      setShowCreateRoom(false);
+      setActiveTab('Room');
+setRoomTab('Mine');
+setMineTab('Recent');
+setScreen('main');
 
       await loadPublicRooms();
       await loadMyRooms();
