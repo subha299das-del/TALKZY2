@@ -355,6 +355,7 @@ const [roomSettingsPassword, setRoomSettingsPassword] = useState('');
   const [mineTab, setMineTab] = useState('Recent');
 
   const [rooms, setRooms] = useState([]);
+  const [joinedRooms, setJoinedRooms] = useState([]);
   const [myRooms, setMyRooms] = useState([]);
 
   const [roomName, setRoomName] = useState('');
