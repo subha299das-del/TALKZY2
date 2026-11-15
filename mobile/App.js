@@ -949,6 +949,44 @@ async function loadFollowedRooms(currentSession = session) {
   }
 }
 
+async function toggleFollowRoom(room) {
+  if (!room || !session?.access_token) {
+    Alert.alert('Login required', 'Please sign in again.');
+    return;
+  }
+
+  const isFollowing = followedRooms.some(
+    item => item.id === room.id
+  );
+
+  try {
+    const result = await api(
+      `/api/rooms/${room.id}/follow`,
+      {
+        method: isFollowing ? 'DELETE' : 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      }
+    );
+
+    await loadFollowedRooms();
+
+    Alert.alert(
+      'Success',
+      isFollowing
+        ? 'Room unfollowed successfully.'
+        : 'Room followed successfully.'
+    );
+
+  } catch (error) {
+    Alert.alert(
+      'Follow error',
+      error.message || 'Could not update followed rooms.'
+    );
+  }
+}
+
 
   // =========================================
   // ROOM: JOIN ROOM
