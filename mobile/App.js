@@ -1564,7 +1564,13 @@ setScreen('main');
               key={item}
               title={item}
               active={mineTab === item}
-              onPress={() => setMineTab(item)}
+              onPress={() => {
+  setMineTab(item);
+
+  if (item === 'Joined') {
+    loadJoinedRooms();
+  }
+}}
             />
           ))}
         </View>
