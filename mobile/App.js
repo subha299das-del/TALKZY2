@@ -1715,7 +1715,7 @@ if (item === 'Follow') {
               )
             )}
 
-            <SectionTitle>Recently Available Rooms</SectionTitle>
+            <SectionTitle>Recently Visited Rooms</SectionTitle>
 
             {rooms.length === 0 ? (
               <ComingSoon
