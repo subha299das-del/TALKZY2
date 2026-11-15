@@ -369,23 +369,93 @@ app.post('/api/rooms', userAuth, roomCreateLimiter, async (req, res) => {
   const description = String(req.body?.description || '').trim();
   const roomType = String(req.body?.roomType || 'public');
   const password = String(req.body?.password || '');
+  const roomDpUrl = String(req.body?.roomDpUrl || '').trim();
 
   if (roomName.length < 3 || roomName.length > 40) {
-    return res.status(400).json({ error: 'Room name must be between 3 and 40 characters.' });
+    return res.status(400).json({
+      error: 'Room name must be between 3 and 40 characters.'
+    });
   }
 
   if (description.length > 200) {
-    return res.status(400).json({ error: 'Description cannot exceed 200 characters.' });
+    return res.status(400).json({
+      error: 'Description cannot exceed 200 characters.'
+    });
   }
 
   if (!['public', 'locked'].includes(roomType)) {
-    return res.status(400).json({ error: 'Invalid room type.' });
+    return res.status(400).json({
+      error: 'Invalid room type.'
+    });
   }
 
-  if (roomType === 'locked' && (password.length < 4 || password.length > 64)) {
+  if (roomType === 'locked' &&
+      (password.length < 4 || password.length > 64)) {
     return res.status(400).json({
       error: 'Locked room password must be 4 to 64 characters.'
     });
+  }
+
+  if (roomDpUrl.length > 1000) {
+    return res.status(400).json({
+      error: 'Room picture URL is too long.'
+    });
+  }
+
+  if (roomDpUrl) {
+    try {
+      const parsedUrl = new URL(roomDpUrl);
+
+      if (parsedUrl.protocol !== 'https:') {
+        throw new Error('HTTPS required');
+      }
+    } catch {
+      return res.status(400).json({
+        error: 'Room picture must be a valid HTTPS URL.'
+      });
+    }
+  }
+
+  try {
+    const passwordHash = roomType === 'locked'
+      ? await makePasswordHash(password)
+      : null;
+
+    const { data, error } = await supabase
+      .from('talkzy_rooms')
+      .insert({
+        owner_id: req.talkzyUser.id,
+        room_name: roomName,
+        description,
+        room_type: roomType,
+        password_hash: passwordHash,
+        room_dp_url: roomDpUrl || null
+      })
+      .select(
+        'id, room_name, description, room_type, room_dp_url, status, created_at'
+      )
+      .single();
+
+    if (error) {
+      if (error.code === '23505') {
+        return res.status(409).json({
+          error: 'You already own an active room. Close it before creating another.'
+        });
+      }
+
+      throw error;
+    }
+
+    return res.status(201).json({ room: data });
+  } catch (error) {
+    console.error('Room creation failed:', error.message);
+
+    return res.status(500).json({
+      error: 'Could not create room.'
+    });
+  }
+});
+
   }
 
   try {
