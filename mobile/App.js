@@ -801,8 +801,11 @@ async function chooseRoomDp() {
       if (error) throw error;
 
       setProfile(data);
-      setAvatarUri(data.avatar_url || null);
-      setScreen('main');
+setAvatarUri(data.avatar_url || null);
+setScreen('main');
+
+loadPublicRooms();
+loadMyRooms(session);
 
       Alert.alert(
         'Welcome to TALKZY!',
