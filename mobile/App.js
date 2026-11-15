@@ -1885,6 +1885,44 @@ function renderPopular() {
   );
 }
 
+function renderHotRooms() {
+  return (
+    <>
+      <TouchableOpacity
+        onPress={() => setScreen('main')}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          marginBottom: 18
+        }}
+      >
+        <Text style={{ color: C.text, fontSize: 23 }}>‹</Text>
+        <Text style={{ color: C.text, fontSize: 17, fontWeight: '900', marginLeft: 10 }}>
+          Hot Rooms
+        </Text>
+      </TouchableOpacity>
+
+      {loadingRooms ? (
+        <ActivityIndicator color={C.accent} />
+      ) : rooms.length === 0 ? (
+        <ComingSoon
+          title="No hot rooms yet"
+          description="Popular live rooms will appear here."
+        />
+      ) : (
+        rooms.map(room => renderRoomCard(room))
+      )}
+
+      <Button
+        title="Refresh Hot Rooms"
+        secondary
+        onPress={loadPublicRooms}
+      />
+    </>
+  );
+}
+
+
 
   // =========================================
   // ROOM: DISCOVER
