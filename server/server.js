@@ -390,12 +390,12 @@ app.get('/api/rooms/mine', userAuth, async (req, res) => {
   }
 });
 
-// Create a public or password-locked room.
+
+// Create a new public room.
+// Only the owner can change it to Locked later in Room Settings.
 app.post('/api/rooms', userAuth, roomCreateLimiter, async (req, res) => {
   const roomName = String(req.body?.roomName || '').trim();
   const description = String(req.body?.description || '').trim();
-  const roomType = String(req.body?.roomType || 'public');
-  const password = String(req.body?.password || '');
   const roomDpUrl = String(req.body?.roomDpUrl || '').trim();
 
   if (roomName.length < 3 || roomName.length > 40) {
@@ -407,19 +407,6 @@ app.post('/api/rooms', userAuth, roomCreateLimiter, async (req, res) => {
   if (description.length > 200) {
     return res.status(400).json({
       error: 'Description cannot exceed 200 characters.'
-    });
-  }
-
-  if (!['public', 'locked'].includes(roomType)) {
-    return res.status(400).json({
-      error: 'Invalid room type.'
-    });
-  }
-
-  if (roomType === 'locked' &&
-      (password.length < 4 || password.length > 64)) {
-    return res.status(400).json({
-      error: 'Locked room password must be 4 to 64 characters.'
     });
   }
 
@@ -444,18 +431,14 @@ app.post('/api/rooms', userAuth, roomCreateLimiter, async (req, res) => {
   }
 
   try {
-    const passwordHash = roomType === 'locked'
-      ? await makePasswordHash(password)
-      : null;
-
     const { data, error } = await supabase
       .from('talkzy_rooms')
       .insert({
         owner_id: req.talkzyUser.id,
         room_name: roomName,
         description,
-        room_type: roomType,
-        password_hash: passwordHash,
+        room_type: 'public',
+        password_hash: null,
         room_dp_url: roomDpUrl || null
       })
       .select(
@@ -483,26 +466,7 @@ app.post('/api/rooms', userAuth, roomCreateLimiter, async (req, res) => {
   }
 });
 
-// Read a room's details. A locked room requires membership or management permission.
-app.get('/api/rooms/:roomId', userAuth, async (req, res) => {
-  try {
-    const room = await requireRoom(req, res);
-    if (!room) return;
 
-    const userId = req.talkzyUser.id;
-    const allowed = room.room_type === 'public' ||
-      room.owner_id === userId ||
-      await isRoomAdmin(room.id, userId) ||
-      await isRoomMember(room.id, userId);
-
-    if (!allowed) {
-      return res.status(403).json({ error: 'You need the room password or an invitation.' });
-    }
-
-    res.set('Cache-Control', 'no-store').json({ room });
-  } catch (error) {
-    console.error('Could not load room:', error.message);
-    res.status(500).json({ error: 'Could not load this room.' });
   }
 });
 
