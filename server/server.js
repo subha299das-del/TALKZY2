@@ -345,7 +345,7 @@ app.get('/api/rooms', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('talkzy_rooms')
-      .select('id, room_name, description, room_type, status, created_at')
+      .select('id, owner_id, room_name, description, room_dp_url, room_type, status, created_at')
       .eq('status', 'active')
       .eq('room_type', 'public')
       .order('created_at', { ascending: false })
