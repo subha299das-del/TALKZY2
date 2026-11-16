@@ -503,7 +503,9 @@ const [joiningRoom, setJoiningRoom] = useState(false);
   !data.display_name ||
   !data.gender ||
   !data.date_of_birth ||
-  !data.country
+  !data.country ||
+  !data.language ||
+  !data.bio
 ) {
         setProfile(data || null);
         setScreen('profile');
