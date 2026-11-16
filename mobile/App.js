@@ -2256,12 +2256,22 @@ function renderDiscover() {
 
   return (
     <>
-      <SectionTitle>🏆 History Big Win</SectionTitle>
-
-      <ComingSoon
-        title="Greedy Game Big Winner"
-        description="The player with the highest Greedy game coin win will appear here once game history and coin records are connected."
-      />
+      <Pressable
+  onPress={() => setActiveGame('Greedy')}
+  style={{ marginBottom: 15 }}
+>
+  <Card style={{ padding: 18, alignItems: 'center' }}>
+    <Text style={{ fontSize: 22, fontWeight: '900', color: C.text }}>
+      🏆 History Big Win
+    </Text>
+    <Text style={{ color: C.muted, marginTop: 8 }}>
+      Play Greedy Game and win big!
+    </Text>
+    <Text style={{ color: C.primary, fontWeight: '900', marginTop: 10 }}>
+      PLAY GREEDY GAME →
+    </Text>
+  </Card>
+</Pressable>
 
       <SectionTitle>🌟 TALKZY Rankings</SectionTitle>
 
