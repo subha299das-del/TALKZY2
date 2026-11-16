@@ -1842,6 +1842,58 @@ function renderPopular() {
         </View>
       </ScrollView>
 
+              
+      <SectionTitle>🏆 TALKZY Rankings</SectionTitle>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={{ marginBottom: 18 }}
+      >
+        {[
+          { emoji: '👑', title: 'Family Rankings', subtitle: 'Top TALKZY families' },
+          { emoji: '🎁', title: 'Gift Rankings', subtitle: 'Top gift contributors' },
+          { emoji: '❤️', title: 'CP Rankings', subtitle: 'Top TALKZY couples' }
+        ].map((item, index) => (
+          <View
+            key={index}
+            style={{
+              width: 175,
+              backgroundColor: C.panel,
+              borderWidth: 1,
+              borderColor: C.line,
+              borderRadius: 14,
+              padding: 15,
+              marginRight: 10,
+              alignItems: 'center'
+            }}
+          >
+            <Text style={{ fontSize: 30 }}>{item.emoji}</Text>
+            <Text
+              style={{
+                color: C.text,
+                fontSize: 13,
+                fontWeight: '900',
+                marginTop: 8,
+                textAlign: 'center'
+              }}
+            >
+              {item.title}
+            </Text>
+            <Text
+              style={{
+                color: C.muted,
+                fontSize: 10,
+                marginTop: 5,
+                textAlign: 'center'
+              }}
+            >
+              {item.subtitle}
+            </Text>
+          </View>
+        ))}
+      </ScrollView>
+          
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <TouchableOpacity
           onPress={() => {
