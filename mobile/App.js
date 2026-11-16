@@ -2430,7 +2430,20 @@ function renderDiscover() {
       </>
     );
           }
-          
+       
+  // TEMPORARY MAIN DISCOVER TEST
+
+  return (
+    <View style={{ padding: 20 }}>
+      <Text style={{ color: C.text, fontSize: 22 }}>
+        Discover Main Test
+      </Text>
+      <Text style={{ color: C.text }}>
+        Main Discover is working.
+      </Text>
+    </View>
+  );
+
 
   return (
     <>
