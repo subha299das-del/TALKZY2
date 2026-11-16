@@ -2258,6 +2258,105 @@ function renderDiscover() {
   const filteredCountries = countries.filter(item =>
     item[1].toLowerCase().includes(countrySearch.toLowerCase())
   );
+  
+  if (showMySubscription) {
+    return (
+      <>
+        <Pressable
+          onPress={() => setShowMySubscription(false)}
+          style={{ marginBottom: 20 }}
+        >
+          <Text style={{
+            color: C.primary,
+            fontSize: 16,
+            fontWeight: '900'
+          }}>
+            ← Back to Discover
+          </Text>
+        </Pressable>
+
+        <Text style={{
+          color: C.text,
+          fontSize: 22,
+          fontWeight: '900',
+          marginBottom: 20
+        }}>
+          💎 My Subscription
+        </Text>
+
+        <View style={{
+          flexDirection: 'row',
+          marginBottom: 20
+        }}>
+          {['My Subscription', 'Published Activities'].map(tab => (
+            <Pressable
+              key={tab}
+              onPress={() => setSubscriptionTab(tab)}
+              style={{
+                flex: 1,
+                paddingVertical: 12,
+                marginRight: 5,
+                borderRadius: 12,
+                alignItems: 'center',
+                backgroundColor:
+                  subscriptionTab === tab ? C.primary : C.panel
+              }}
+            >
+              <Text style={{
+                color: subscriptionTab === tab ? '#FFFFFF' : C.text,
+                fontWeight: '900',
+                fontSize: 12
+              }}>
+                {tab}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {subscriptionTab === 'My Subscription' ? (
+          <ComingSoon
+            title="No Subscriptions Yet"
+            description="Activities you subscribe to will appear here."
+          />
+        ) : (
+          <>
+            <Pressable
+              onPress={() => Alert.alert(
+                'Create Activity',
+                'Activity creation will be available soon.'
+              )}
+              style={{ marginBottom: 15 }}
+            >
+              <Card style={{
+                alignItems: 'center',
+                padding: 20
+              }}>
+                <Text style={{
+                  color: C.primary,
+                  fontSize: 28
+                }}>
+                  ＋
+                </Text>
+                <Text style={{
+                  color: C.text,
+                  fontWeight: '900',
+                  marginTop: 6
+                }}>
+                  Create New Activity
+                </Text>
+              </Card>
+            </Pressable>
+
+            <ComingSoon
+              title="No Published Activities"
+              description="Activities published by your rooms will appear here."
+            />
+          </>
+        )}
+      </>
+    );
+          }
+          
 
   return (
     <>
