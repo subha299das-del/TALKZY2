@@ -346,6 +346,8 @@ const [roomSettingsPassword, setRoomSettingsPassword] = useState('');
   const [gender, setGender] = useState('Male');
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [country, setCountry] = useState('India');
+  const [language, setLanguage] = useState('English');
+const [bio, setBio] = useState('');
   const [avatarUri, setAvatarUri] = useState(null);
 
   // ---------------------------------
