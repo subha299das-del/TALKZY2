@@ -4,13 +4,16 @@ import {
   View,
   Text,
   TextInput,
+  
   TouchableOpacity,
+  Pressable,
   ScrollView,
   StatusBar,
   Alert,
   Image,
-    ActivityIndicator,
+  ActivityIndicator,
   Modal
+
 } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
