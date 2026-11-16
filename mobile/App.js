@@ -488,10 +488,22 @@ const [joiningRoom, setJoiningRoom] = useState(false);
   // LOAD USER PROFILE
   // ---------------------------------
 
-  async function loadUserProfile(currentSession) {
-    try {
-      const userId = currentSession.user.id;
+  
+async function loadUserProfile(currentSession) {
+  const userId = currentSession?.user?.id;
 
+  if (!userId) return;
+
+  // Prevent duplicate profile loading for the same user
+  if (
+    profileLoadRef.current &&
+    profileLoadRef.current.userId === userId
+  ) {
+    return profileLoadRef.current.promise;
+  }
+
+  const loadPromise = (async () => {
+    try {
       const { data, error } = await supabase
         .from('talkzy_profiles')
         .select('*')
@@ -500,27 +512,29 @@ const [joiningRoom, setJoiningRoom] = useState(false);
 
       if (error) throw error;
 
+      // Check whether the profile is incomplete
       if (
-  !data ||
-  !data.display_name ||
-  !data.gender ||
-  !data.date_of_birth ||
-  !data.country ||
-  !data.language ||
-  !data.bio
-) {
+        !data ||
+        !data.display_name ||
+        !data.gender ||
+        !data.date_of_birth ||
+        !data.country ||
+        !data.language ||
+        !data.bio
+      ) {
         setProfile(data || null);
         setScreen('profile');
         return;
       }
 
+      // Load completed profile
       setProfile(data);
       setDisplayName(data.display_name || '');
       setGender(data.gender || 'Male');
       setDateOfBirth(data.date_of_birth || '');
       setCountry(data.country || 'India');
       setLanguage(data.language || 'English');
-setBio(data.bio || '');
+      setBio(data.bio || '');
       setAvatarUri(data.avatar_url || null);
 
       setScreen('main');
@@ -528,7 +542,8 @@ setBio(data.bio || '');
       loadPublicRooms();
       loadMyRooms(currentSession);
       loadJoinedRooms(currentSession);
-loadFollowedRooms(currentSession);
+      loadFollowedRooms(currentSession);
+
     } catch (error) {
       console.log('Profile loading error:', error.message);
 
@@ -538,8 +553,22 @@ loadFollowedRooms(currentSession);
       );
 
       setScreen('profile');
+
+    } finally {
+      if (profileLoadRef.current?.promise === loadPromise) {
+        profileLoadRef.current = null;
+      }
     }
-  }
+  })();
+
+  profileLoadRef.current = {
+    userId,
+    promise: loadPromise
+  };
+
+  return loadPromise;
+}
+  
 
   // ---------------------------------
   // EMAIL SIGNUP
