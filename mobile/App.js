@@ -651,7 +651,6 @@ async function loadUserProfile(currentSession) {
 
       if (data.session) {
         setSession(data.session);
-        await loadUserProfile(data.session);
       }
     } catch (error) {
       Alert.alert('Login failed', error.message);
@@ -712,7 +711,6 @@ async function loadUserProfile(currentSession) {
 
           if (sessionData.session) {
             setSession(sessionData.session);
-            await loadUserProfile(sessionData.session);
           }
         } else {
           Alert.alert(
