@@ -2338,7 +2338,16 @@ function renderDiscover() {
   const filteredCountries = countries.filter(item =>
     item[1].toLowerCase().includes(countrySearch.toLowerCase())
   );
-  
+  return (
+  <View style={{ padding: 20 }}>
+    <Text style={{ color: C.text, fontSize: 20 }}>
+      Discover Country Test
+    </Text>
+    <Text style={{ color: C.text }}>
+      Countries found: {filteredCountries.length}
+    </Text>
+  </View>
+);
   if (showMySubscription) {
     return (
       <>
