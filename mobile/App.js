@@ -1821,48 +1821,92 @@ function renderPopular() {
     <>
       <SectionTitle>🔥 Hot Events</SectionTitle>
 
+      
       <ScrollView
+        ref={hotEventsScrollRef}
         horizontal
         showsHorizontalScrollIndicator={false}
         style={{ marginBottom: 18 }}
+        onMomentumScrollEnd={(event) => {
+          const index = Math.round(
+            event.nativeEvent.contentOffset.x / 270
+          );
+          setHotEventIndex(Math.min(index, 2));
+        }}
       >
-        <View
-          style={{
-            width: 260,
-            height: 115,
-            backgroundColor: C.accent,
-            borderRadius: 15,
-            padding: 15,
-            justifyContent: 'center',
-            marginRight: 10
-          }}
-        >
-          <Text style={{ color: 'white', fontSize: 19, fontWeight: '900' }}>
-            🔥 Hot Events
-          </Text>
-          <Text style={{ color: 'white', fontSize: 12, marginTop: 7 }}>
-            Discover exciting TALKZY events
-          </Text>
-        </View>
-
-        <View
-          style={{
-            width: 260,
-            height: 115,
-            backgroundColor: C.gold,
-            borderRadius: 15,
-            padding: 15,
-            justifyContent: 'center'
-          }}
-        >
-          <Text style={{ color: '#000', fontSize: 19, fontWeight: '900' }}>
-            🎁 Upcoming Events
-          </Text>
-          <Text style={{ color: '#000', fontSize: 12, marginTop: 7 }}>
-            New activities and rewards
-          </Text>
-        </View>
+        {[
+          {
+            title: 'TALKZY SPOTLIGHT',
+            subtitle: 'Discover exciting community events',
+            emoji: '🔥',
+            color: '#7C3AED'
+          },
+          {
+            title: 'VOICE ROOM CHALLENGE',
+            subtitle: 'Join the excitement and participate',
+            emoji: '🎤',
+            color: '#E04F5F'
+          },
+          {
+            title: 'GIFT FESTIVAL',
+            subtitle: 'Celebrate with the TALKZY community',
+            emoji: '🎁',
+            color: '#D69B24'
+          }
+        ].map((event, index) => (
+          <View
+            key={index}
+            style={{
+              width: 260,
+              height: 125,
+              backgroundColor: event.color,
+              borderRadius: 15,
+              padding: 16,
+              justifyContent: 'center',
+              marginRight: 10
+            }}
+          >
+            <Text style={{ fontSize: 25 }}>
+              {event.emoji}
+            </Text>
+            <Text style={{
+              color: 'white',
+              fontSize: 17,
+              fontWeight: '900',
+              marginTop: 5
+            }}>
+              {event.title}
+            </Text>
+            <Text style={{
+              color: 'white',
+              fontSize: 11,
+              marginTop: 5
+            }}>
+              {event.subtitle}
+            </Text>
+          </View>
+        ))}
       </ScrollView>
+
+      <View style={{
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginBottom: 18
+      }}>
+        {[0, 1, 2].map(index => (
+          <View
+            key={index}
+            style={{
+              width: hotEventIndex === index ? 18 : 6,
+              height: 6,
+              borderRadius: 5,
+              backgroundColor:
+                hotEventIndex === index ? C.accent : C.line,
+              marginHorizontal: 3
+            }}
+          />
+        ))}
+      </View>
 
               
       <SectionTitle>🏆 TALKZY Rankings</SectionTitle>
