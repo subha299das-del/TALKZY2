@@ -3535,20 +3535,30 @@ function renderMainContent() {
   // PROFILE SETUP SCREEN
   // =========================================
 
-  if (screen === 'profile') {
-    return (
-      <SafeAreaView
-        style={{
-          flex: 1,
-          backgroundColor: C.bg,
-          paddingHorizontal: 18
-        }}
-      >
-        <StatusBar barStyle="light-content" />
-        {renderProfileSetup()}
-      </SafeAreaView>
-    );
-  }
+const profileIncomplete =
+  !profile ||
+  !profile.display_name ||
+  !profile.gender ||
+  !profile.date_of_birth ||
+  !profile.country ||
+  !profile.language ||
+  !profile.bio;
+
+if (screen === 'profile' || profileIncomplete) {
+  return (
+    <SafeAreaView
+      style={{
+        flex: 1,
+        backgroundColor: C.bg,
+        paddingHorizontal: 18
+      }}
+    >
+      <StatusBar barStyle="light-content" />
+      {renderProfileSetup()}
+    </SafeAreaView>
+  );
+}
+
 
   // =========================================
   // FINAL MAIN APP
