@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+ import React, { useEffect, useState, useRef } from 'react';
 import {
   SafeAreaView,
   View,
@@ -913,17 +913,29 @@ loadFollowedRooms(session);
         'Welcome to TALKZY!',
         `Your TALKZY ID is ${data.talkzy_id || 'being assigned'}.`
       );
-    } catch (error) {
-      console.log('Profile save error:', error.message);
+    
+} catch (error) {
+  const errorDetails = {
+    message: error.message,
+    code: error.code,
+    details: error.details,
+    hint: error.hint,
+    sessionUserId: session?.user?.id,
+  };
 
-      Alert.alert(
-        'Profile could not be saved',
-        error.message
-      );
-    } finally {
-      setSaving(false);
-    }
-  }
+  console.log(
+    'PROFILE SAVE ERROR:',
+    JSON.stringify(errorDetails, null, 2)
+  );
+
+  Alert.alert(
+    'Profile save diagnostic',
+    JSON.stringify(errorDetails, null, 2)
+  );
+} finally {
+  setSaving(false);
+}
+}
 
   // ---------------------------------
   // SIGN OUT
