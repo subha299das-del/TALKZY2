@@ -2433,25 +2433,6 @@ function renderDiscover() {
       </>
     );
           }
-     
-// TEMPORARY PRESSABLE TEST
-
-return (
-  <View style={{ padding: 20 }}>
-    <Pressable
-      onPress={() => Alert.alert('Pressable Test', 'Pressable is working!')}
-      style={{ padding: 18 }}
-    >
-      <Card style={{ padding: 18, alignItems: 'center' }}>
-        <Text style={{ color: C.text, fontSize: 22 }}>
-          Pressable Component Test
-        </Text>
-      </Card>
-    </Pressable>
-  </View>
-);
-
-
 
 // ORIGINAL DISCOVER CODE — KEEP THIS
     return (
