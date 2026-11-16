@@ -3188,6 +3188,19 @@ function renderDiscover() {
           onChangeText={setCountry}
           placeholder="Enter your country"
         />
+            <Field
+  label="Language"
+  value={language}
+  onChangeText={setLanguage}
+  placeholder="Select your language"
+/>
+
+<Field
+  label="Bio"
+  value={bio}
+  onChangeText={setBio}
+  placeholder="Tell us about yourself"
+/>
 
         <Button
           title={saving ? 'Saving Profile...' : 'Complete Profile'}
