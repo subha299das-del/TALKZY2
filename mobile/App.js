@@ -518,6 +518,9 @@ async function loadUserProfile(currentSession) {
         .maybeSingle();
 
       if (error) throw error;
+      if (profileLoadRef.current?.promise !== loadPromise) {
+  return;
+      }
 
       // Check whether the profile is incomplete
       if (
