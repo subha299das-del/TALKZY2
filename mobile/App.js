@@ -851,6 +851,15 @@ async function loadUserProfile(currentSession) {
       );
       return;
     }
+    
+if (!gender || !country.trim() || !language.trim() || !bio.trim()) {
+  Alert.alert(
+    'Incomplete profile',
+    'Please complete your gender, country, language and bio.'
+  );
+  return;
+}
+    
 
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)) {
       Alert.alert(
