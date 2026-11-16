@@ -2433,19 +2433,32 @@ function renderDiscover() {
        
   // TEMPORARY MAIN DISCOVER TEST
 
-  return (
-    <View style={{ padding: 20 }}>
-      <Text style={{ color: C.text, fontSize: 22 }}>
-        Discover Main Test
-      </Text>
-      <Text style={{ color: C.text }}>
-        Main Discover is working.
-      </Text>
-    </View>
-  );
+  
+return (
+  <>
+    <Pressable
+      onPress={() => Alert.alert('History Big Win', 'Test successful')}
+      style={{ marginBottom: 15 }}
+    >
+      <Card style={{ padding: 18, alignItems: 'center' }}>
+        <Text style={{ fontSize: 22, fontWeight: '900', color: C.text }}>
+          🏆 History Big Win
+        </Text>
 
+        <Text style={{ color: C.muted, marginTop: 8 }}>
+          Play Greedy Game and win big!
+        </Text>
 
-  return (
+        <Text style={{ color: C.primary, fontWeight: '900', marginTop: 10 }}>
+          PLAY GREEDY GAME →
+        </Text>
+      </Card>
+    </Pressable>
+  </>
+);
+
+// ORIGINAL DISCOVER CODE — KEEP THIS
+    return (
     <>
       <Pressable
   onPress={() => setActiveGame('Greedy')}
