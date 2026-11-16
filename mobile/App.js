@@ -2174,13 +2174,7 @@ function renderNewRooms() {
   // =========================================
 
 function renderDiscover() {
-   return (
-    <View style={{ padding: 20 }}>
-      <Text style={{ color: '#FFFFFF', fontSize: 20 }}>
-        Discover Test Screen
-      </Text>
-    </View>
-  );
+   // TEMPORARY COUNTRY TEST
   const countries = [
   // ASIA
   ['🇮🇳', 'India'],
