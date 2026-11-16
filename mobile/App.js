@@ -877,7 +877,6 @@ if (!gender || !country.trim() || !language.trim() || !bio.trim()) {
       const uploadedAvatar = await uploadAvatar(userId);
 
       const profileData = {
-  id: userId,
   display_name: displayName.trim(),
   gender,
   date_of_birth: dateOfBirth,
