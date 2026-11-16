@@ -515,6 +515,8 @@ const [joiningRoom, setJoiningRoom] = useState(false);
       setGender(data.gender || 'Male');
       setDateOfBirth(data.date_of_birth || '');
       setCountry(data.country || 'India');
+      setLanguage(data.language || 'English');
+setBio(data.bio || '');
       setAvatarUri(data.avatar_url || null);
 
       setScreen('main');
@@ -826,12 +828,14 @@ loadFollowedRooms(currentSession);
       const uploadedAvatar = await uploadAvatar(userId);
 
       const profileData = {
-        id: userId,
-        display_name: displayName.trim(),
-        gender,
-        date_of_birth: dateOfBirth,
-        country: country.trim() || 'India'
-      };
+  id: userId,
+  display_name: displayName.trim(),
+  gender,
+  date_of_birth: dateOfBirth,
+  country: country.trim(),
+  language: language.trim(),
+  bio: bio.trim()
+};
 
       if (uploadedAvatar) {
         profileData.avatar_url = uploadedAvatar;
