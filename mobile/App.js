@@ -461,28 +461,35 @@ const [joiningRoom, setJoiningRoom] = useState(false);
 
     loadSession();
 
-    const {
-      data: { subscription }
-    } = supabase.auth.onAuthStateChange(
-      async (_event, newSession) => {
-        if (!mounted) return;
+    
+const {
+  data: { subscription }
+} = supabase.auth.onAuthStateChange(
+  (_event, newSession) => {
+    if (!mounted) return;
 
-        setSession(newSession);
+    setSession(newSession);
 
-        if (newSession) {
-          await loadUserProfile(newSession);
-        } else {
-          setProfile(null);
-          setScreen('login');
+    if (newSession) {
+      Promise.resolve().then(() => {
+        if (mounted) {
+          loadUserProfile(newSession);
         }
-      }
-    );
+      });
+    } else {
+      profileLoadRef.current = null;
+      setProfile(null);
+      setScreen('login');
+    }
+  }
+);
 
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
+return () => {
+  mounted = false;
+  subscription.unsubscribe();
+};
+}, []);
+
 
   // ---------------------------------
   // LOAD USER PROFILE
