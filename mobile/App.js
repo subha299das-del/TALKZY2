@@ -498,7 +498,7 @@ const [joiningRoom, setJoiningRoom] = useState(false);
 
       if (error) throw error;
 
-      iif (
+      if (
   !data ||
   !data.display_name ||
   !data.gender ||
