@@ -2330,31 +2330,100 @@ function renderDiscover() {
         />
       )}
 
-      <SectionTitle>Community</SectionTitle>
+      
+{/* COMMUNITY ACTIVITY */}
 
-      <View style={{ flexDirection: 'row' }}>
-        <View style={{ flex: 1, marginRight: 5 }}>
-          <Card style={{ alignItems: 'center' }}>
-            <Text style={{ color: C.text, fontWeight: '900' }}>
-              📊 Activity
-            </Text>
-            <Text style={{ color: C.muted, marginTop: 8 }}>
-              Coming soon
-            </Text>
-          </Card>
-        </View>
+<View style={{
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginTop: 20,
+  marginBottom: 15
+}}>
+  <Text style={{
+    color: C.text,
+    fontSize: 19,
+    fontWeight: '900'
+  }}>
+    🎉 Community Activity
+  </Text>
 
-        <View style={{ flex: 1, marginLeft: 5 }}>
-          <Card style={{ alignItems: 'center' }}>
-            <Text style={{ color: C.text, fontWeight: '900' }}>
-              💎 My Subscription
-            </Text>
-            <Text style={{ color: C.muted, marginTop: 8 }}>
-              Coming soon
-            </Text>
-          </Card>
-        </View>
-      </View>
+  <Pressable
+    onPress={() => setShowMySubscription(true)}
+  >
+    <Text style={{
+      color: C.primary,
+      fontWeight: '900',
+      fontSize: 13
+    }}>
+      My Subscription →
+    </Text>
+  </Pressable>
+</View>
+
+{/* ACTIVITY POSTER GRID */}
+
+<View style={{
+  flexDirection: 'row',
+  flexWrap: 'wrap',
+  justifyContent: 'space-between'
+}}>
+
+  {[1, 2, 3, 4].map((item) => (
+    <Pressable
+      key={item}
+      style={{
+        width: '48%',
+        marginBottom: 12
+      }}
+      onPress={() => Alert.alert(
+        'Community Activity',
+        'Activity details will be available soon.'
+      )}
+    >
+      <Card style={{
+        padding: 8,
+        minHeight: 155,
+        justifyContent: 'center',
+        alignItems: 'center'
+      }}>
+        <Text style={{ fontSize: 38 }}>
+          {item === 1 ? '🎤' :
+           item === 2 ? '🎉' :
+           item === 3 ? '🎮' : '🎊'}
+        </Text>
+
+        <Text style={{
+          color: C.text,
+          fontWeight: '900',
+          marginTop: 10
+        }}>
+          {item === 1 ? 'Voice Party' :
+           item === 2 ? 'Special Event' :
+           item === 3 ? 'Game Party' : 'Fun Gathering'}
+        </Text>
+
+        <Text style={{
+          color: C.muted,
+          fontSize: 11,
+          marginTop: 5
+        }}>
+          TALKZY Community
+        </Text>
+
+        <Text style={{
+          color: C.primary,
+          fontSize: 11,
+          marginTop: 8
+        }}>
+          ♡ 0 Likes
+        </Text>
+      </Card>
+    </Pressable>
+  ))}
+
+</View>
+
     </>
   );
 }
