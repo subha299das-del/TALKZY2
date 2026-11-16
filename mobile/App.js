@@ -2437,68 +2437,189 @@ function renderDiscover() {
 // ORIGINAL DISCOVER CODE — KEEP THIS
     return (
     <>
-      <Pressable
-  onPress={() => setActiveGame('Greedy')}
+      
+{/* HISTORY BIG WIN */}
+
+<Text style={{
+  color: C.text,
+  fontSize: 19,
+  fontWeight: '900',
+  marginBottom: 12
+}}>
+  🏆 History Big Win
+</Text>
+
+<ScrollView
+  horizontal
+  showsHorizontalScrollIndicator={false}
+  style={{ marginBottom: 18 }}
+>
+  {[1, 2, 3, 4, 5].map((item) => (
+    <Card
+      key={item}
+      style={{
+        width: 145,
+        padding: 12,
+        marginRight: 10,
+        alignItems: 'center'
+      }}
+    >
+      <Text style={{ fontSize: 27 }}>💰</Text>
+
+      <Text style={{
+        color: C.text,
+        fontWeight: '900',
+        marginTop: 7
+      }}>
+        Greedy Win
+      </Text>
+
+      <Text style={{
+        color: C.primary,
+        fontSize: 15,
+        fontWeight: '900',
+        marginTop: 5
+      }}>
+        🪙 Winner
+      </Text>
+
+      <Text style={{
+        color: C.muted,
+        fontSize: 10,
+        marginTop: 4
+      }}>
+        Win history
+      </Text>
+    </Card>
+  ))}
+</ScrollView>
+
+
+      
+{/* TALKZY RANKING POSTER */}
+
+<Pressable
+  onPress={() => Alert.alert(
+    'TALKZY Ranking',
+    'Full Ranking page will be connected next.'
+  )}
   style={{ marginBottom: 15 }}
 >
-  <Card style={{ padding: 18, alignItems: 'center' }}>
-    <Text style={{ fontSize: 22, fontWeight: '900', color: C.text }}>
-      🏆 History Big Win
+  <Card style={{
+    padding: 0,
+    height: 120,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: C.panel
+  }}>
+    <Text style={{
+      color: C.primary,
+      fontSize: 22,
+      fontWeight: '900'
+    }}>
+      🏆 TALKZY RANKING
     </Text>
-    <Text style={{ color: C.muted, marginTop: 8 }}>
-      Play Greedy Game and win big!
+
+    <Text style={{
+      color: C.text,
+      fontSize: 12,
+      marginTop: 8
+    }}>
+      Monthly Top 30 Players
     </Text>
-    <Text style={{ color: C.primary, fontWeight: '900', marginTop: 10 }}>
-      PLAY GREEDY GAME →
+
+    <Text style={{
+      color: C.muted,
+      fontSize: 11,
+      marginTop: 5
+    }}>
+      Tap to View Ranking →
     </Text>
   </Card>
 </Pressable>
+       
 
-      <SectionTitle>🌟 TALKZY Rankings</SectionTitle>
+      
+<SectionTitle>🌍 Recommended Countries</SectionTitle>
 
-      <ComingSoon
-        title="Discover Top Users"
-        description="Explore top users and community rankings."
-      />
-
-      <SectionTitle>🌍 Recommended Countries</SectionTitle>
-
-      <TextInput
-        value={countrySearch}
-        onChangeText={setCountrySearch}
-        placeholder="Search country..."
-        placeholderTextColor={C.muted}
-        style={{
-          backgroundColor: C.panel,
+<View style={{
+  flexDirection: 'row',
+  flexWrap: 'wrap',
+  justifyContent: 'space-between'
+}}>
+  {countries.slice(0, 9).map((item) => (
+    <Pressable
+      key={item[1]}
+      onPress={() => Alert.alert(
+        item[1],
+        'Country Rooms page will be connected next.'
+      )}
+      style={{
+        width: '19%',
+        marginBottom: 12
+      }}
+    >
+      <Card style={{
+        paddingVertical: 12,
+        paddingHorizontal: 2,
+        alignItems: 'center',
+        minHeight: 75,
+        justifyContent: 'center'
+      }}>
+        <Text style={{ fontSize: 23 }}>
+          {item[0]}
+        </Text>
+        <Text style={{
           color: C.text,
-          borderWidth: 1,
-          borderColor: C.line,
-          borderRadius: 12,
-          paddingHorizontal: 14,
-          paddingVertical: 12,
-          marginBottom: 12
+          fontSize: 10,
+          fontWeight: '800',
+          textAlign: 'center',
+          marginTop: 5
         }}
-      />
+        numberOfLines={1}>
+          {item[1]}
+        </Text>
+      </Card>
+    </Pressable>
+  ))}
 
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-        {filteredCountries.map((item, index) => (
-          <View
-            key={item[1]}
-            style={{
-              width: '48%',
-              marginRight: index % 2 === 0 ? '2%' : 0,
-              marginBottom: 8
-            }}
-          >
-            <Card style={{ padding: 12 }}>
-              <Text style={{ color: C.text, fontWeight: '800' }}>
-                {item[0]} {item[1]}
-              </Text>
-            </Card>
-          </View>
-        ))}
-      </View>
-
+  <Pressable
+    onPress={() => Alert.alert(
+      'Country and Region',
+      'Full country list page will be connected next.'
+    )}
+    style={{
+      width: '19%',
+      marginBottom: 12
+    }}
+  >
+    <Card style={{
+      paddingVertical: 12,
+      paddingHorizontal: 2,
+      alignItems: 'center',
+      minHeight: 75,
+      justifyContent: 'center'
+    }}>
+      <Text style={{
+        fontSize: 23,
+        color: C.primary,
+        fontWeight: '900'
+      }}>
+        ...
+      </Text>
+      <Text style={{
+        color: C.text,
+        fontSize: 10,
+        fontWeight: '900',
+        marginTop: 5
+      }}>
+        All
+      </Text>
+    </Card>
+  </Pressable>
+</View>
+               
       {filteredCountries.length === 0 && (
         <ComingSoon
           title="No country found"
@@ -2507,7 +2628,8 @@ function renderDiscover() {
       )}
 
       
-{/* COMMUNITY ACTIVITY */}
+
+{/* COMMUNITY ACTIVITIES */}
 
 <View style={{
   flexDirection: 'row',
@@ -2521,21 +2643,25 @@ function renderDiscover() {
     fontSize: 19,
     fontWeight: '900'
   }}>
-    🎉 Community Activity
+    🎉 Community Activities
   </Text>
 
   <Pressable
-    onPress={() => setShowMySubscription(true)}
+    onPress={() => {
+      setSubscriptionTab('My Subscription');
+      setShowMySubscription(true);
+    }}
   >
     <Text style={{
       color: C.primary,
       fontWeight: '900',
       fontSize: 13
     }}>
-      My Subscription →
+      Subscribe Activities →
     </Text>
   </Pressable>
 </View>
+
 
 {/* ACTIVITY POSTER GRID */}
 
