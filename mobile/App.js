@@ -2431,31 +2431,21 @@ function renderDiscover() {
     );
           }
        
-  // TEMPORARY MAIN DISCOVER TEST
 
-  
-return (
-  <>
-    <Pressable
-      onPress={() => Alert.alert('History Big Win', 'Test successful')}
-      style={{ marginBottom: 15 }}
-    >
-      <Card style={{ padding: 18, alignItems: 'center' }}>
-        <Text style={{ fontSize: 22, fontWeight: '900', color: C.text }}>
-          🏆 History Big Win
-        </Text>
+  // TEMPORARY BASIC VIEW TEST
 
-        <Text style={{ color: C.muted, marginTop: 8 }}>
-          Play Greedy Game and win big!
-        </Text>
+  return (
+    <View style={{ padding: 20 }}>
+      <Text style={{ color: C.text, fontSize: 22 }}>
+        Discover Basic View Test
+      </Text>
 
-        <Text style={{ color: C.primary, fontWeight: '900', marginTop: 10 }}>
-          PLAY GREEDY GAME →
-        </Text>
-      </Card>
-    </Pressable>
-  </>
-);
+      <Text style={{ color: C.muted, marginTop: 10 }}>
+        Basic Discover screen is working.
+      </Text>
+    </View>
+  );
+
 
 // ORIGINAL DISCOVER CODE — KEEP THIS
     return (
