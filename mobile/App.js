@@ -356,6 +356,9 @@ const [roomSettingsPassword, setRoomSettingsPassword] = useState('');
   const [popularPage, setPopularPage] = useState('main');
   const [mineTab, setMineTab] = useState('Recent');
   const [countrySearch, setCountrySearch] = useState('');
+  // COMMUNITY ACTIVITY STATES
+const [showMySubscription, setShowMySubscription] = useState(false);
+const [subscriptionTab, setSubscriptionTab] = useState('My Subscription');
   const [hotEventIndex, setHotEventIndex] = useState(0);
 const hotEventsScrollRef = useRef(null);
 
