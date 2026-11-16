@@ -2430,23 +2430,23 @@ function renderDiscover() {
       </>
     );
           }
-       
+     
+// TEMPORARY PRESSABLE TEST
 
-  // TEMPORARY CARD TEST
-
-  return (
-    <View style={{ padding: 20 }}>
+return (
+  <View style={{ padding: 20 }}>
+    <Pressable
+      onPress={() => Alert.alert('Pressable Test', 'Pressable is working!')}
+      style={{ padding: 18 }}
+    >
       <Card style={{ padding: 18, alignItems: 'center' }}>
-        <Text style={{ color: C.text, fontSize: 22, fontWeight: '900' }}>
-          Card Component Test
-        </Text>
-
-        <Text style={{ color: C.muted, marginTop: 10 }}>
-          Checking TALKZY Card component.
+        <Text style={{ color: C.text, fontSize: 22 }}>
+          Pressable Component Test
         </Text>
       </Card>
-    </View>
-  );
+    </Pressable>
+  </View>
+);
 
 
 
