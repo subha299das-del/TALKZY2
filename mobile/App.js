@@ -388,6 +388,26 @@ const [joiningRoom, setJoiningRoom] = useState(false);
   const [momentTab, setMomentTab] = useState('Follow');
   const [messageTab, setMessageTab] = useState('Message');
 
+  
+  // HOT EVENTS AUTO ROTATION
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setHotEventIndex(current => {
+        const next = (current + 1) % 3;
+
+        hotEventsScrollRef.current?.scrollTo({
+          x: next * 270,
+          animated: true
+        });
+
+        return next;
+      });
+    }, 4500);
+
+    return () => clearInterval(timer);
+  }, []);
+  
+
   // ---------------------------------
   // LOAD SUPABASE SESSION
   // ---------------------------------
