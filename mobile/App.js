@@ -891,10 +891,11 @@ if (!gender || !country.trim() || !language.trim() || !bio.trim()) {
       }
 
       const { data, error } = await supabase
-        .from('talkzy_profiles')
-        .upsert(profileData, { onConflict: 'id' })
-        .select('*')
-        .single();
+  .from('talkzy_profiles')
+  .update(profileData)
+  .eq('id', userId)
+  .select('*')
+  .single();
 
       if (error) throw error;
 
