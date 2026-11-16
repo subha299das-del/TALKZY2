@@ -496,7 +496,13 @@ const [joiningRoom, setJoiningRoom] = useState(false);
 
       if (error) throw error;
 
-      if (!data || !data.display_name) {
+      iif (
+  !data ||
+  !data.display_name ||
+  !data.gender ||
+  !data.date_of_birth ||
+  !data.country
+) {
         setProfile(data || null);
         setScreen('profile');
         return;
