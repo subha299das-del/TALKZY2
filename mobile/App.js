@@ -2432,19 +2432,22 @@ function renderDiscover() {
           }
        
 
-  // TEMPORARY BASIC VIEW TEST
+  // TEMPORARY CARD TEST
 
   return (
     <View style={{ padding: 20 }}>
-      <Text style={{ color: C.text, fontSize: 22 }}>
-        Discover Basic View Test
-      </Text>
+      <Card style={{ padding: 18, alignItems: 'center' }}>
+        <Text style={{ color: C.text, fontSize: 22, fontWeight: '900' }}>
+          Card Component Test
+        </Text>
 
-      <Text style={{ color: C.muted, marginTop: 10 }}>
-        Basic Discover screen is working.
-      </Text>
+        <Text style={{ color: C.muted, marginTop: 10 }}>
+          Checking TALKZY Card component.
+        </Text>
+      </Card>
     </View>
   );
+
 
 
 // ORIGINAL DISCOVER CODE — KEEP THIS
