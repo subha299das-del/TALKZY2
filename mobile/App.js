@@ -612,7 +612,6 @@ async function loadUserProfile(currentSession) {
 
       if (data.session) {
         setSession(data.session);
-        await loadUserProfile(data.session);
       } else {
         Alert.alert(
           'Check your email',
