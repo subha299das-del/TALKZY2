@@ -4415,9 +4415,11 @@ function renderCreateRoomActivity() {
     overflow: 'hidden'
   }}
 >
-  {activityPoster ? (
+  {activityPoster || activityPosterTemplate ? (
     <Image
-      source={{ uri: activityPoster }}
+      source={{
+  uri: activityPoster || activityPosterTemplate.image_url
+}}
       style={{
         width: '100%',
         height: '100%'
