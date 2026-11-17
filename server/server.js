@@ -702,28 +702,55 @@ app.delete('/api/rooms/:roomId/follow', userAuth, async (req, res) => {
 
 
 
-// Leave a room. The owner must close their room instead.
+
+// Leave a room. Room owners cannot leave their own room.
 app.post('/api/rooms/:roomId/leave', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
 
-    if (room.owner_id === req.talkzyUser.id) {
-      return res.status(400).json({ error: 'Room owners must close their room.' });
+    if (room.status !== 'active') {
+      return res.status(409).json({
+        error: 'This room is closed.'
+      });
     }
 
-    const { error } = await supabase
+    const userId = req.talkzyUser.id;
+
+    if (room.owner_id === userId) {
+      return res.status(403).json({
+        error: 'Room owners cannot leave their own room.'
+      });
+    }
+
+    // Remove admin privileges first.
+    const { error: adminError } = await supabase
+      .from('talkzy_room_admins')
+      .delete()
+      .eq('room_id', room.id)
+      .eq('user_id', userId);
+
+    if (adminError) throw adminError;
+
+    // Remove room membership.
+    const { error: memberError } = await supabase
       .from('talkzy_room_members')
       .delete()
       .eq('room_id', room.id)
-      .eq('user_id', req.talkzyUser.id);
+      .eq('user_id', userId);
 
-    if (error) throw error;
+    if (memberError) throw memberError;
 
-    res.json({ left: true, roomId: room.id });
+    return res.json({
+      left: true,
+      roomId: room.id
+    });
+
   } catch (error) {
     console.error('Could not leave room:', error.message);
-    res.status(500).json({ error: 'Could not leave this room.' });
+    return res.status(500).json({
+      error: 'Could not leave this room.'
+    });
   }
 });
 
