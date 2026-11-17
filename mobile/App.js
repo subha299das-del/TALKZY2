@@ -1475,6 +1475,31 @@ function renderCreateRoom() {
         onChangeText={setRoomDescription}
         placeholder="Write your room announcement"
       />
+               <SectionTitle>Room type</SectionTitle>
+
+      <View style={{ flexDirection: 'row' }}>
+        <Chip
+          title="Public"
+          active={roomType === 'public'}
+          onPress={() => setRoomType('public')}
+        />
+
+        <Chip
+          title="Locked"
+          active={roomType === 'locked'}
+          onPress={() => setRoomType('locked')}
+        />
+      </View>
+
+      {roomType === 'locked' && (
+        <Field
+          label="Room password"
+          value={roomPassword}
+          onChangeText={setRoomPassword}
+          placeholder="Create a password"
+          secureTextEntry
+        />
+      )}
 
       <Button
         title={
