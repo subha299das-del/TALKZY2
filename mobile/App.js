@@ -3881,6 +3881,67 @@ function renderDiscover() {
   // =========================================
 
   
+function renderMySubscription() {
+  return (
+    <View style={{ flex: 1, padding: 16 }}>
+
+      {/* HEADER */}
+      <View style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 22
+      }}>
+
+        {/* BACK BUTTON */}
+        <Pressable
+          onPress={() => setShowMySubscription(false)}
+          style={{ padding: 5 }}
+        >
+          <Text style={{
+            color: C.primary,
+            fontSize: 25,
+            fontWeight: '900'
+          }}>
+            ←
+          </Text>
+        </Pressable>
+
+        {/* PAGE TITLE */}
+        <Text style={{
+          color: C.text,
+          fontSize: 21,
+          fontWeight: '900'
+        }}>
+          My Subscription
+        </Text>
+
+        {/* PLUS BUTTON */}
+        <Pressable
+          onPress={() => setShowCreateRoomActivity(true)}
+          style={{ padding: 5 }}
+        >
+          <Text style={{
+            color: C.primary,
+            fontSize: 29,
+            fontWeight: '900'
+          }}>
+            ＋
+          </Text>
+        </Pressable>
+
+      </View>
+
+      {/* SUBSCRIPTION LIST EMPTY STATE */}
+      <ComingSoon
+        title="No Subscriptions Yet"
+        description="Activities you subscribe to will appear here."
+      />
+
+    </View>
+  );
+}
+
 function renderMainContent() {
 
   if (showCreateRoomActivity) {
