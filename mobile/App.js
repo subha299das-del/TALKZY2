@@ -2116,6 +2116,7 @@ function renderCountryRegion() {
     });
     setCountrySearch('');
     loadPublicRooms();
+   setCountryRoomsFromRegion(true);
     setShowCountryRegion(false);
     setShowCountryRooms(true);
   };
