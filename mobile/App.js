@@ -3992,11 +3992,97 @@ function renderCreateRoomActivity() {
 
       </View>
 
-      {/* FORM WILL BE ADDED NEXT */}
-      <ComingSoon
-        title="Create Your Activity"
-        description="Your activity creation form will appear here."
-      />
+      
+<ScrollView
+  showsVerticalScrollIndicator={false}
+  keyboardShouldPersistTaps="handled"
+>
+  <Text style={{
+    color: C.text,
+    fontSize: 16,
+    fontWeight: '900',
+    marginBottom: 12
+  }}>
+    Select Your Room
+  </Text>
+
+  {myRooms.length === 0 ? (
+    <ComingSoon
+      title="No Created Rooms"
+      description="You must create a room before publishing an activity."
+    />
+  ) : (
+    myRooms.map(room => (
+      <Pressable
+        key={room.id}
+        onPress={() => setActivitySelectedRoom(room)}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          padding: 11,
+          marginBottom: 10,
+          borderRadius: 12,
+          borderWidth: 2,
+          borderColor:
+            activitySelectedRoom?.id === room.id
+              ? C.primary
+              : C.line,
+          backgroundColor: C.card
+        }}
+      >
+        {room.room_dp_url ? (
+          <Image
+            source={{ uri: room.room_dp_url }}
+            style={{
+              width: 52,
+              height: 52,
+              borderRadius: 9,
+              marginRight: 12
+            }}
+          />
+        ) : (
+          <View style={{
+            width: 52,
+            height: 52,
+            borderRadius: 9,
+            backgroundColor: C.line,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 12
+          }}>
+            <Text style={{ fontSize: 23 }}>🎙️</Text>
+          </View>
+        )}
+
+        <View style={{ flex: 1 }}>
+          <Text style={{
+            color: C.text,
+            fontSize: 14,
+            fontWeight: '900'
+          }}>
+            {room.room_name}
+          </Text>
+          <Text style={{
+            color: C.muted,
+            fontSize: 11,
+            marginTop: 4
+          }}>
+            Your Room
+          </Text>
+        </View>
+
+        <Text style={{
+          color: C.primary,
+          fontSize: 20,
+          fontWeight: '900'
+        }}>
+          {activitySelectedRoom?.id === room.id ? '✓' : '○'}
+        </Text>
+      </Pressable>
+    ))
+  )}
+</ScrollView>
+
 
     </View>
   );
