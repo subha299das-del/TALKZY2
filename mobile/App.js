@@ -3970,6 +3970,9 @@ function renderDiscover() {
 
   
 function renderMainContent() {
+ if (showCountryRegion) {
+  return renderCountryRegion();
+ }
    if (showCountryRooms) {
     return renderCountryRooms();
    }
