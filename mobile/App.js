@@ -3942,6 +3942,57 @@ function renderMySubscription() {
   );
 }
 
+function renderCreateRoomActivity() {
+  return (
+    <View style={{ flex: 1, padding: 16 }}>
+
+      {/* HEADER */}
+      <View style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 22
+      }}>
+
+        {/* BACK BUTTON */}
+        <Pressable
+          onPress={() => setShowCreateRoomActivity(false)}
+          style={{
+            position: 'absolute',
+            left: 0,
+            padding: 5
+          }}
+        >
+          <Text style={{
+            color: C.primary,
+            fontSize: 25,
+            fontWeight: '900'
+          }}>
+            ←
+          </Text>
+        </Pressable>
+
+        {/* PAGE TITLE */}
+        <Text style={{
+          color: C.text,
+          fontSize: 20,
+          fontWeight: '900'
+        }}>
+          Create Room Activity
+        </Text>
+
+      </View>
+
+      {/* FORM WILL BE ADDED NEXT */}
+      <ComingSoon
+        title="Create Your Activity"
+        description="Your activity creation form will appear here."
+      />
+
+    </View>
+  );
+}
+
 function renderMainContent() {
 
   if (showCreateRoomActivity) {
