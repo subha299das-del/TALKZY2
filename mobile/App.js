@@ -4033,91 +4033,61 @@ function renderCreateRoomActivity() {
   showsVerticalScrollIndicator={false}
   keyboardShouldPersistTaps="handled"
 >
-  <Text style={{
-    color: C.text,
-    fontSize: 16,
-    fontWeight: '900',
-    marginBottom: 12
-  }}>
-    Select Your Room
-  </Text>
+   
+{/* ACTIVITY POSTER */}
+<Text style={{
+  color: C.text,
+  fontSize: 16,
+  fontWeight: '900',
+  marginBottom: 12
+}}>
+  Activity Poster
+</Text>
 
-  {myRooms.length === 0 ? (
-    <ComingSoon
-      title="No Created Rooms"
-      description="You must create a room before publishing an activity."
+<Pressable
+  onPress={chooseActivityPoster}
+  style={{
+    height: 180,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: C.line,
+    backgroundColor: C.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    overflow: 'hidden'
+  }}
+>
+  {activityPoster ? (
+    <Image
+      source={{ uri: activityPoster }}
+      style={{
+        width: '100%',
+        height: '100%'
+      }}
+      resizeMode="cover"
     />
   ) : (
-    myRooms.map(room => (
-      <Pressable
-        key={room.id}
-        onPress={() => setActivitySelectedRoom(room)}
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          padding: 11,
-          marginBottom: 10,
-          borderRadius: 12,
-          borderWidth: 2,
-          borderColor:
-            activitySelectedRoom?.id === room.id
-              ? C.primary
-              : C.line,
-          backgroundColor: C.card
-        }}
-      >
-        {room.room_dp_url ? (
-          <Image
-            source={{ uri: room.room_dp_url }}
-            style={{
-              width: 52,
-              height: 52,
-              borderRadius: 9,
-              marginRight: 12
-            }}
-          />
-        ) : (
-          <View style={{
-            width: 52,
-            height: 52,
-            borderRadius: 9,
-            backgroundColor: C.line,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginRight: 12
-          }}>
-            <Text style={{ fontSize: 23 }}>🎙️</Text>
-          </View>
-        )}
-
-        <View style={{ flex: 1 }}>
-          <Text style={{
-            color: C.text,
-            fontSize: 14,
-            fontWeight: '900'
-          }}>
-            {room.room_name}
-          </Text>
-          <Text style={{
-            color: C.muted,
-            fontSize: 11,
-            marginTop: 4
-          }}>
-            Your Room
-          </Text>
-        </View>
-
-        <Text style={{
-          color: C.primary,
-          fontSize: 20,
-          fontWeight: '900'
-        }}>
-          {activitySelectedRoom?.id === room.id ? '✓' : '○'}
-        </Text>
-      </Pressable>
-    ))
+    <>
+      <Text style={{ fontSize: 38 }}>🖼️</Text>
+      <Text style={{
+        color: C.primary,
+        fontWeight: '900',
+        marginTop: 10
+      }}>
+        Choose Poster from Gallery
+      </Text>
+      <Text style={{
+        color: C.muted,
+        fontSize: 11,
+        marginTop: 5
+      }}>
+        Select a 16:9 activity poster
+      </Text>
+    </>
   )}
-     
+</Pressable>
+
 {/* ACTIVITY TITLE */}
 <Text style={{
   color: C.text,
