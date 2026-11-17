@@ -38,6 +38,7 @@ const API_BASE_URL = (
 
 const BUCKET = 'talkzy-profiles';
 
+
 const C = {
   bg: '#090D18',
   panel: '#141B2B',
@@ -45,10 +46,13 @@ const C = {
   text: '#F4F7FF',
   muted: '#9AA8C0',
   accent: '#7C5CFC',
+  primary: '#7C5CFC',
+  card: '#141B2B',
   line: '#29344A',
   danger: '#FF6B78',
   gold: '#FFC857'
 };
+
 
 const supabase = createClient(
   SUPABASE_URL || 'https://placeholder.supabase.co',
