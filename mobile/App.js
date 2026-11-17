@@ -2093,6 +2093,183 @@ function renderPopular() {
   );
 }
 
+
+function renderCountryRooms() {
+  const countryRooms = rooms
+    .filter(room =>
+      (room.country_name || '').trim().toLowerCase() ===
+      (selectedCountry?.name || '').trim().toLowerCase()
+    )
+    .slice()
+    .sort((a, b) => {
+      const aLocked = a.room_type === 'private';
+      const bLocked = b.room_type === 'private';
+
+      if (aLocked !== bLocked) {
+        return aLocked ? 1 : -1;
+      }
+
+      return (Number(b.active_users) || 0) -
+             (Number(a.active_users) || 0);
+    });
+
+  return (
+    <>
+      {/* COUNTRY ROOMS HEADER */}
+      <TouchableOpacity
+        onPress={() => setShowCountryRooms(false)}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          marginBottom: 18
+        }}
+      >
+        <Text style={{ color: C.text, fontSize: 26 }}>‹</Text>
+
+        <Text style={{
+          color: C.text,
+          fontSize: 18,
+          fontWeight: '900',
+          marginLeft: 10
+        }}>
+          {selectedCountry?.flag} {selectedCountry?.name} Rooms
+        </Text>
+      </TouchableOpacity>
+
+      {loadingRooms ? (
+        <ActivityIndicator color={C.accent} />
+      ) : countryRooms.length === 0 ? (
+        <ComingSoon
+          title="No rooms yet"
+          description={`No rooms are available in ${selectedCountry?.name || 'this country'} yet.`}
+        />
+      ) : (
+        countryRooms.map(room => (
+          <Card
+            key={room.id}
+            style={{
+              padding: 9,
+              marginBottom: 8,
+              borderRadius: 11
+            }}
+          >
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center'
+            }}>
+
+              {/* ROOM PICTURE */}
+              {room.room_dp_url ? (
+                <Image
+                  source={{ uri: room.room_dp_url }}
+                  style={{
+                    width: 58,
+                    height: 58,
+                    borderRadius: 9,
+                    marginRight: 9
+                  }}
+                />
+              ) : (
+                <View style={{
+                  width: 58,
+                  height: 58,
+                  borderRadius: 9,
+                  backgroundColor: C.line,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: 9
+                }}>
+                  <Text style={{ fontSize: 24 }}>🎙️</Text>
+                </View>
+              )}
+
+              {/* ROOM DETAILS */}
+              <View style={{ flex: 1 }}>
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center'
+                }}>
+                  <Text
+                    numberOfLines={1}
+                    style={{
+                      color: C.text,
+                      fontSize: 13,
+                      fontWeight: '900',
+                      flexShrink: 1
+                    }}
+                  >
+                    {room.room_name}
+                  </Text>
+
+                  <View style={{
+                    backgroundColor: C.accent,
+                    paddingHorizontal: 5,
+                    paddingVertical: 2,
+                    borderRadius: 4,
+                    marginLeft: 5
+                  }}>
+                    <Text style={{
+                      color: 'white',
+                      fontSize: 8,
+                      fontWeight: '900'
+                    }}>
+                      FAMILY
+                    </Text>
+                  </View>
+                </View>
+
+                <Text style={{
+                  color: C.muted,
+                  fontSize: 10,
+                  marginTop: 4
+                }}>
+                  {room.country_flag || selectedCountry?.flag}
+                  {'  '}
+                  {room.medals || '🏅'}
+                </Text>
+
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    color: C.muted,
+                    fontSize: 10,
+                    marginTop: 4
+                  }}
+                >
+                  {room.description || 'Welcome to TALKZY'}
+                </Text>
+              </View>
+
+              {/* ACTIVE USERS */}
+              <View style={{
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginLeft: 7
+              }}>
+                <Text style={{
+                  color: C.text,
+                  fontSize: 12,
+                  fontWeight: '800'
+                }}>
+                  👥 {Number(room.active_users) || 0}
+                </Text>
+
+                {room.room_type === 'private' && (
+                  <Text style={{ fontSize: 10, marginTop: 3 }}>
+                    🔒
+                  </Text>
+                )}
+              </View>
+
+            </View>
+          </Card>
+        ))
+      )}
+    </>
+  );
+                 }
+                 
+
 function renderHotRooms() {
   return (
     <>
