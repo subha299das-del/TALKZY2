@@ -4282,6 +4282,9 @@ function renderCreateRoomActivity() {
 }
 
 function renderMainContent() {
+ if (showPosterTemplates) {
+  return renderPosterTemplates();
+ }
    if (showPosterOptions) {
     return renderPosterOptions();
    }
