@@ -4117,6 +4117,83 @@ function renderPosterOptions() {
   );
                      }
 
+function renderPosterTemplates() {
+  return (
+    <View style={{ flex: 1, padding: 16 }}>
+
+      {/* HEADER */}
+      <View style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 25
+      }}>
+
+        <Pressable
+          onPress={() => setShowPosterTemplates(false)}
+          style={{
+            position: 'absolute',
+            left: 0,
+            padding: 5
+          }}
+        >
+          <Text style={{
+            color: C.primary,
+            fontSize: 25,
+            fontWeight: '900'
+          }}>
+            ←
+          </Text>
+        </Pressable>
+
+        <Text style={{
+          color: C.text,
+          fontSize: 20,
+          fontWeight: '900'
+        }}>
+          Official TALKZY Posters
+        </Text>
+
+      </View>
+
+      {/* EMPTY GALLERY */}
+      <View style={{
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 25
+      }}>
+
+        <Text style={{ fontSize: 55 }}>
+          🎉
+        </Text>
+
+        <Text style={{
+          color: C.text,
+          fontSize: 18,
+          fontWeight: '900',
+          marginTop: 18,
+          textAlign: 'center'
+        }}>
+          No Official Posters Available Yet
+        </Text>
+
+        <Text style={{
+          color: C.muted,
+          fontSize: 13,
+          marginTop: 10,
+          textAlign: 'center',
+          lineHeight: 21
+        }}>
+          Official TALKZY poster themes will appear here when they are uploaded by the Main Owner or Assistant.
+        </Text>
+
+      </View>
+
+    </View>
+  );
+}
+
 function renderCreateRoomActivity() {
   return (
     <View style={{ flex: 1, padding: 16 }}>
