@@ -2909,10 +2909,10 @@ function renderDiscover() {
   ))}
 
   <Pressable
-    onPress={() => Alert.alert(
-      'Country and Region',
-      'Full country list page will be connected next.'
-    )}
+    onPress={() => {
+  setCountrySearch('');
+  setShowCountryRegion(true);
+}}
     style={{
       width: '19%',
       marginBottom: 12
