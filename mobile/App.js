@@ -3990,6 +3990,131 @@ function renderMySubscription() {
   );
 }
 
+function renderPosterOptions() {
+  return (
+    <View style={{ flex: 1, padding: 16 }}>
+
+      {/* HEADER */}
+      <View style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 25
+      }}>
+
+        <Pressable
+          onPress={() => setShowPosterOptions(false)}
+          style={{
+            position: 'absolute',
+            left: 0,
+            padding: 5
+          }}
+        >
+          <Text style={{
+            color: C.primary,
+            fontSize: 25,
+            fontWeight: '900'
+          }}>
+            ←
+          </Text>
+        </Pressable>
+
+        <Text style={{
+          color: C.text,
+          fontSize: 20,
+          fontWeight: '900'
+        }}>
+          Choose Activity Poster
+        </Text>
+
+      </View>
+
+      {/* APP PROVIDED POSTERS */}
+      <Pressable
+        onPress={() => setShowPosterTemplates(true)}
+        style={{
+          backgroundColor: C.card,
+          borderWidth: 1,
+          borderColor: C.line,
+          borderRadius: 16,
+          padding: 22,
+          marginBottom: 18
+        }}
+      >
+        <Text style={{ fontSize: 38 }}>🎉</Text>
+
+        <Text style={{
+          color: C.text,
+          fontSize: 17,
+          fontWeight: '900',
+          marginTop: 12
+        }}>
+          App Provided Posters
+        </Text>
+
+        <Text style={{
+          color: C.muted,
+          fontSize: 13,
+          marginTop: 6
+        }}>
+          Choose from TALKZY's ready-made party poster collection.
+        </Text>
+
+        <Text style={{
+          color: C.primary,
+          fontWeight: '900',
+          marginTop: 12
+        }}>
+          Browse Posters →
+        </Text>
+      </Pressable>
+
+      {/* CUSTOMIZE POSTER */}
+      <Pressable
+        onPress={() => {
+          setShowPosterOptions(false);
+          setShowPosterEditor(true);
+        }}
+        style={{
+          backgroundColor: C.card,
+          borderWidth: 1,
+          borderColor: C.line,
+          borderRadius: 16,
+          padding: 22
+        }}
+      >
+        <Text style={{ fontSize: 38 }}>🎨</Text>
+
+        <Text style={{
+          color: C.text,
+          fontSize: 17,
+          fontWeight: '900',
+          marginTop: 12
+        }}>
+          Customize Your Poster
+        </Text>
+
+        <Text style={{
+          color: C.muted,
+          fontSize: 13,
+          marginTop: 6
+        }}>
+          Create your own poster using photos, text, backgrounds and decorations.
+        </Text>
+
+        <Text style={{
+          color: C.primary,
+          fontWeight: '900',
+          marginTop: 12
+        }}>
+          Create Poster →
+        </Text>
+      </Pressable>
+
+    </View>
+  );
+                     }
+
 function renderCreateRoomActivity() {
   return (
     <View style={{ flex: 1, padding: 16 }}>
