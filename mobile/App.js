@@ -378,6 +378,7 @@ const [activityTitle, setActivityTitle] = useState('');
 const [activityDescription, setActivityDescription] = useState('');
 const [activitySelectedRoom, setActivitySelectedRoom] = useState(null);
 const [activityPoster, setActivityPoster] = useState(null);
+ const [showPosterOptions, setShowPosterOptions] = useState(false);
 const [activityDate, setActivityDate] = useState('');
 const [activityStartTime, setActivityStartTime] = useState('');
 const [activityEndTime, setActivityEndTime] = useState('');
