@@ -4117,6 +4117,156 @@ function renderPosterOptions() {
   );
                      }
 
+function renderPosterEditor() {
+  return (
+    <View style={{ flex: 1, padding: 16 }}>
+
+      {/* HEADER */}
+      <View style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 25
+      }}>
+
+        <Pressable
+          onPress={() => {
+            setShowPosterEditor(false);
+            setShowPosterOptions(true);
+          }}
+          style={{
+            position: 'absolute',
+            left: 0,
+            padding: 5
+          }}
+        >
+          <Text style={{
+            color: C.primary,
+            fontSize: 25,
+            fontWeight: '900'
+          }}>
+            ←
+          </Text>
+        </Pressable>
+
+        <Text style={{
+          color: C.text,
+          fontSize: 20,
+          fontWeight: '900'
+        }}>
+          Upload My Own Poster
+        </Text>
+
+      </View>
+
+      {/* POSTER PREVIEW */}
+      <Pressable
+        onPress={chooseActivityPoster}
+        style={{
+          height: 200,
+          backgroundColor: C.card,
+          borderWidth: 1,
+          borderColor: C.line,
+          borderRadius: 16,
+          overflow: 'hidden',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        {activityPoster ? (
+          <Image
+            source={{ uri: activityPoster }}
+            style={{
+              width: '100%',
+              height: '100%'
+            }}
+            resizeMode="contain"
+          />
+        ) : (
+          <>
+            <Text style={{ fontSize: 45 }}>🖼️</Text>
+
+            <Text style={{
+              color: C.primary,
+              fontWeight: '900',
+              marginTop: 12
+            }}>
+              Choose Poster from Gallery
+            </Text>
+
+            <Text style={{
+              color: C.muted,
+              fontSize: 12,
+              marginTop: 6
+            }}>
+              Select an image from your phone
+            </Text>
+          </>
+        )}
+      </Pressable>
+
+      {/* CHOOSE AGAIN */}
+      {activityPoster && (
+        <Pressable
+          onPress={chooseActivityPoster}
+          style={{
+            padding: 14,
+            alignItems: 'center',
+            marginTop: 12
+          }}
+        >
+          <Text style={{
+            color: C.primary,
+            fontWeight: '900'
+          }}>
+            Choose Another Poster
+          </Text>
+        </Pressable>
+      )}
+
+      {/* USE POSTER */}
+      <Pressable
+        onPress={() => {
+          if (!activityPoster) {
+            Alert.alert(
+              'Poster Required',
+              'Please choose a poster first.'
+            );
+            return;
+          }
+
+          setShowPosterEditor(false);
+        }}
+        style={{
+          backgroundColor: C.primary,
+          padding: 16,
+          borderRadius: 12,
+          alignItems: 'center',
+          marginTop: 22
+        }}
+      >
+        <Text style={{
+          color: '#FFFFFF',
+          fontWeight: '900',
+          fontSize: 15
+        }}>
+          Use This Poster
+        </Text>
+      </Pressable>
+
+      <Text style={{
+        color: C.muted,
+        fontSize: 12,
+        textAlign: 'center',
+        marginTop: 15
+      }}>
+        This poster will be used for this party only.
+      </Text>
+
+    </View>
+  );
+           }
+
 function renderPosterTemplates() {
   return (
     <View style={{ flex: 1, padding: 16 }}>
