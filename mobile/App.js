@@ -2556,10 +2556,13 @@ function renderDiscover() {
   {countries.slice(0, 9).map((item) => (
     <Pressable
       key={item[1]}
-      onPress={() => Alert.alert(
-        item[1],
-        'Country Rooms page will be connected next.'
-      )}
+      onPress={() => {
+  setSelectedCountry({
+    flag: item[0],
+    name: item[1]
+  });
+  setShowCountryRooms(true);
+}}
       style={{
         width: '19%',
         marginBottom: 12
@@ -3768,10 +3771,13 @@ if (screen === 'profile' || profileIncomplete) {
       <StatusBar barStyle="light-content" />
 
       <View style={{ flex: 1 }}>
-        {!['roomSettings', 'createRoom'].includes(screen) && (
-  <View style={{ paddingHorizontal: 15 }}>
-    {renderMainHeader()}
-  </View>
+     {!['roomSettings', 'createRoom'].includes(screen) &&
+  !showCountryRooms &&
+  !showCountryRegion &&
+  !showMySubscription && (
+    <View style={{ paddingHorizontal: 15 }}>
+      {renderMainHeader()}
+    </View>
 )}
 
         <ScrollView
@@ -3786,7 +3792,12 @@ if (screen === 'profile' || profileIncomplete) {
         </ScrollView>
       </View>
 
-      {!['roomSettings', 'createRoom', 'hotRooms', 'newRooms'].includes(screen) && renderBottomNavigation()}
+      {!['roomSettings', 'createRoom', 'hotRooms', 'newRooms'].includes(screen) &&
+  !showCountryRooms &&
+  !showCountryRegion &&
+  !showMySubscription &&
+  renderBottomNavigation()
+      }
 <Modal
   visible={showJoinPassword}
   transparent
