@@ -3969,7 +3969,22 @@ function renderMySubscription() {
 
         {/* PLUS BUTTON */}
         <Pressable
-          onPress={() => setShowCreateRoomActivity(true)}
+          onPress={() => {
+  setActivityPoster(null);
+  setActivityPosterTemplate(null);
+
+  setShowPosterOptions(false);
+  setShowPosterTemplates(false);
+  setShowPosterEditor(false);
+
+  setActivityTitle('');
+  setActivityDescription('');
+  setActivityDate('');
+  setActivityStartTime('');
+  setActivityEndTime('');
+
+  setShowCreateRoomActivity(true);
+}}
           style={{ padding: 5 }}
         >
           <Text style={{
