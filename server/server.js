@@ -858,6 +858,11 @@ app.patch('/api/rooms/:roomId/members/:userId/role', userAuth, async (req, res) 
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
+    if (room.status !== 'active') {
+  return res.status(409).json({
+    error: 'Cannot manage admins in a closed room.'
+  });
+    }
 
     if (!await canManageRoom(room, req.talkzyUser.id)) {
       return res.status(403).json({ error: 'Only the owner or a room admin can manage speakers.' });
