@@ -4081,6 +4081,65 @@ function renderCreateRoomActivity() {
       </Pressable>
     ))
   )}
+     
+{/* ACTIVITY TITLE */}
+<Text style={{
+  color: C.text,
+  fontSize: 15,
+  fontWeight: '900',
+  marginTop: 18,
+  marginBottom: 8
+}}>
+  Activity Title
+</Text>
+
+<TextInput
+  value={activityTitle}
+  onChangeText={setActivityTitle}
+  placeholder="Enter activity title"
+  placeholderTextColor={C.muted}
+  style={{
+    backgroundColor: C.panel2,
+    color: C.text,
+    borderWidth: 1,
+    borderColor: C.line,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 13
+  }}
+/>
+
+{/* ACTIVITY DESCRIPTION */}
+<Text style={{
+  color: C.text,
+  fontSize: 15,
+  fontWeight: '900',
+  marginTop: 18,
+  marginBottom: 8
+}}>
+  Activity Description
+</Text>
+
+<TextInput
+  value={activityDescription}
+  onChangeText={setActivityDescription}
+  placeholder="Tell everyone about your activity..."
+  placeholderTextColor={C.muted}
+  multiline
+  numberOfLines={4}
+  textAlignVertical="top"
+  style={{
+    backgroundColor: C.panel2,
+    color: C.text,
+    borderWidth: 1,
+    borderColor: C.line,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    minHeight: 100
+  }}
+/>
+ 
 </ScrollView>
 
 
