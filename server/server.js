@@ -697,33 +697,18 @@ app.post('/api/rooms/:roomId/leave', userAuth, async (req, res) => {
   }
 });
 
-// Close a room. Only its owner can close it.
-app.post('/api/rooms/:roomId/close', userAuth, async (req, res) => {
-  try {
-    const room = await requireRoom(req, res);
-    if (!room) return;
 
-    if (room.owner_id !== req.talkzyUser.id) {
-      return res.status(403).json({ error: 'Only the room owner can close this room.' });
-    }
+// =========================================
+// CLOSE ROOM
+// MAIN OWNER ADMIN PANEL ONLY — TO BE CONNECTED LATER
+// =========================================
 
-    const { error } = await supabase
-      .from('talkzy_rooms')
-      .update({ status: 'closed', closed_at: new Date().toISOString() })
-      .eq('id', room.id)
-      .eq('status', 'active');
-
-    if (error) throw error;
-
-    await supabase.from('talkzy_room_members').delete().eq('room_id', room.id);
-    await supabase.from('talkzy_room_admins').delete().eq('room_id', room.id);
-
-    res.json({ closed: true, roomId: room.id });
-  } catch (error) {
-    console.error('Could not close room:', error.message);
-    res.status(500).json({ error: 'Could not close this room.' });
-  }
+app.post('/api/rooms/:roomId/close', (req, res) => {
+  return res.status(403).json({
+    error: 'Room closure is restricted to the TALKZY Main Owner.'
+  });
 });
+
 
 // Change a room between public and locked. Only the owner can change this.
 app.patch('/api/rooms/:roomId/type', userAuth, async (req, res) => {
