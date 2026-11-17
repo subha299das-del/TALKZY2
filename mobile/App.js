@@ -4296,7 +4296,8 @@ if (screen === 'profile' || profileIncomplete) {
   !showCountryRooms &&
 !showCountryRegion &&
 !showMySubscription &&
-!showCreateRoomActivity && (
+!showCreateRoomActivity && 
+      !showPosterOptions && (
     <View style={{ paddingHorizontal: 15 }}>
       {renderMainHeader()}
     </View>
@@ -4319,6 +4320,7 @@ if (screen === 'profile' || profileIncomplete) {
 !showCountryRegion &&
 !showMySubscription &&
 !showCreateRoomActivity &&
+!showPosterOptions &&
 renderBottomNavigation()
       }
 <Modal
