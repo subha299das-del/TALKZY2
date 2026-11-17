@@ -845,6 +845,7 @@ async function loadUserProfile(currentSession) {
 
       if (!result.canceled && result.assets?.[0]?.uri) {
         setActivityPoster(result.assets[0].uri);
+setActivityPosterTemplate(null);
       }
 
     } catch (error) {
