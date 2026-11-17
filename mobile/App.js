@@ -2094,6 +2094,153 @@ function renderPopular() {
 }
 
 
+function renderCountryRegion() {
+  const countries = [
+    ['🇮🇳', 'India'],
+    ['🇧🇩', 'Bangladesh'],
+    ['🇳🇵', 'Nepal'],
+    ['🇵🇰', 'Pakistan'],
+    ['🇱🇰', 'Sri Lanka'],
+    ['🇺🇸', 'United States'],
+    ['🇬🇧', 'United Kingdom'],
+    ['🇦🇪', 'United Arab Emirates'],
+    ['🇮🇩', 'Indonesia'],
+    ['🇧🇷', 'Brazil']
+  ];
+
+  const filteredCountries = countries.filter(item =>
+    item[1].toLowerCase().includes(countrySearch.toLowerCase())
+  );
+
+  const hotCountries = countries.slice(0, 5);
+
+  const openCountry = (item) => {
+    setSelectedCountry({
+      flag: item[0],
+      name: item[1]
+    });
+    setCountrySearch('');
+    loadPublicRooms();
+    setShowCountryRegion(false);
+    setShowCountryRooms(true);
+  };
+
+  return (
+    <>
+      {/* HEADER */}
+      <TouchableOpacity
+        onPress={() => {
+          setShowCountryRegion(false);
+          setCountrySearch('');
+        }}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          marginBottom: 18
+        }}
+      >
+        <Text style={{ color: C.text, fontSize: 25 }}>‹</Text>
+        <Text style={{
+          color: C.text,
+          fontSize: 19,
+          fontWeight: '900',
+          marginLeft: 10
+        }}>
+          Country and Region
+        </Text>
+      </TouchableOpacity>
+
+      {/* SEARCH */}
+      <TextInput
+        value={countrySearch}
+        onChangeText={setCountrySearch}
+        placeholder="Search country..."
+        placeholderTextColor={C.muted}
+        style={{
+          backgroundColor: C.panel,
+          color: C.text,
+          borderWidth: 1,
+          borderColor: C.line,
+          borderRadius: 12,
+          padding: 13,
+          marginBottom: 8
+        }}
+      />
+
+      <Text style={{
+        color: C.muted,
+        fontSize: 11,
+        textAlign: 'right',
+        marginBottom: 18
+      }}>
+        {filteredCountries.length} / {countries.length}
+      </Text>
+
+      {/* HOT COUNTRIES */}
+      {!countrySearch.trim() && (
+        <>
+          <SectionTitle>🔥 Hot Countries</SectionTitle>
+
+          <View style={{
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            marginBottom: 18
+          }}>
+            {hotCountries.map(item => (
+              <TouchableOpacity
+                key={item[1]}
+                onPress={() => openCountry(item)}
+                style={{
+                  width: '20%',
+                  alignItems: 'center',
+                  marginBottom: 12
+                }}
+              >
+                <Text style={{ fontSize: 25 }}>{item[0]}</Text>
+                <Text style={{
+                  color: C.text,
+                  fontSize: 10,
+                  textAlign: 'center'
+                }}>
+                  {item[1]}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </>
+      )}
+
+      {/* ALL COUNTRIES */}
+      <SectionTitle>🌍 All Countries</SectionTitle>
+
+      {filteredCountries.map(item => (
+        <TouchableOpacity
+          key={item[1]}
+          onPress={() => openCountry(item)}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingVertical: 12,
+            borderBottomWidth: 1,
+            borderBottomColor: C.line
+          }}
+        >
+          <Text style={{ fontSize: 23, marginRight: 13 }}>
+            {item[0]}
+          </Text>
+          <Text style={{
+            color: C.text,
+            fontSize: 14,
+            fontWeight: '700'
+          }}>
+            {item[1]}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </>
+  );
+                   }
+         
 function renderCountryRooms() {
   const countryRooms = rooms
     .filter(room =>
