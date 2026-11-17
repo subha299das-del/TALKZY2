@@ -3952,7 +3952,16 @@ if (showMySubscription) {
 
   
 function renderMainContent() {
- if (showCountryRegion) {
+
+  if (showCreateRoomActivity) {
+    return renderCreateRoomActivity();
+  }
+
+  if (showMySubscription) {
+    return renderMySubscription();
+  }
+
+  if (showCountryRegion) {
   return renderCountryRegion();
  }
    if (showCountryRooms) {
