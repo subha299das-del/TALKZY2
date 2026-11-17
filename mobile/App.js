@@ -4658,7 +4658,8 @@ if (screen === 'profile' || profileIncomplete) {
 !showMySubscription &&
 !showCreateRoomActivity && 
       !showPosterTemplates &&
-      !showPosterOptions && (
+      !showPosterOptions &&
+      !showPosterEditor &&(
     <View style={{ paddingHorizontal: 15 }}>
       {renderMainHeader()}
     </View>
@@ -4683,6 +4684,7 @@ if (screen === 'profile' || profileIncomplete) {
 !showCreateRoomActivity &&
 !showPosterOptions &&
 !showPosterTemplates &&
+       !showPosterEditor &&
 renderBottomNavigation()
       }
 <Modal
