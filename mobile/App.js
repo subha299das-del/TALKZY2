@@ -363,6 +363,11 @@ const [bio, setBio] = useState('');
   const [popularPage, setPopularPage] = useState('main');
   const [mineTab, setMineTab] = useState('Recent');
   const [countrySearch, setCountrySearch] = useState('');
+ 
+const [selectedCountry, setSelectedCountry] = useState(null);
+const [showCountryRooms, setShowCountryRooms] = useState(false);
+const [showCountryRegion, setShowCountryRegion] = useState(false);
+         
   
   // COMMUNITY ACTIVITY STATES
 const [showMySubscription, setShowMySubscription] = useState(false);
