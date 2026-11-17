@@ -893,7 +893,7 @@ app.patch('/api/rooms/:roomId/members/:userId/role', userAuth, async (req, res) 
     if (!room) return;
     if (room.status !== 'active') {
   return res.status(409).json({
-    error: 'Cannot manage admins in a closed room.'
+    error: 'Cannot manage members in a closed room.'
   });
     }
 
