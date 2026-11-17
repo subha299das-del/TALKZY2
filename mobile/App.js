@@ -367,6 +367,7 @@ const [bio, setBio] = useState('');
 const [selectedCountry, setSelectedCountry] = useState(null);
 const [showCountryRooms, setShowCountryRooms] = useState(false);
 const [showCountryRegion, setShowCountryRegion] = useState(false);
+ const [countryRoomsFromRegion, setCountryRoomsFromRegion] = useState(false);
          
   
   // COMMUNITY ACTIVITY STATES
