@@ -813,7 +813,43 @@ async function loadUserProfile(currentSession) {
       );
     }
   }
+  
+  // ---------------------------------
+  // SELECT ACTIVITY POSTER
+  // ---------------------------------
 
+  async function chooseActivityPoster() {
+    try {
+      const permission =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (!permission.granted) {
+        Alert.alert(
+          'Permission required',
+          'Please allow photo access to select an activity poster.'
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 0.85
+      });
+
+      if (!result.canceled && result.assets?.[0]?.uri) {
+        setActivityPoster(result.assets[0].uri);
+      }
+
+    } catch (error) {
+      Alert.alert(
+        'Poster error',
+        'Could not select the activity poster.'
+      );
+    }
+  }
+ 
   // ---------------------------------
   // UPLOAD PROFILE PHOTO
   // ---------------------------------
