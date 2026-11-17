@@ -4077,8 +4077,9 @@ if (screen === 'profile' || profileIncomplete) {
       <View style={{ flex: 1 }}>
      {!['roomSettings', 'createRoom'].includes(screen) &&
   !showCountryRooms &&
-  !showCountryRegion &&
-  !showMySubscription && (
+!showCountryRegion &&
+!showMySubscription &&
+!showCreateRoomActivity && (
     <View style={{ paddingHorizontal: 15 }}>
       {renderMainHeader()}
     </View>
@@ -4097,10 +4098,11 @@ if (screen === 'profile' || profileIncomplete) {
       </View>
 
       {!['roomSettings', 'createRoom', 'hotRooms', 'newRooms'].includes(screen) &&
-  !showCountryRooms &&
-  !showCountryRegion &&
-  !showMySubscription &&
-  renderBottomNavigation()
+!showCountryRooms &&
+!showCountryRegion &&
+!showMySubscription &&
+!showCreateRoomActivity &&
+renderBottomNavigation()
       }
 <Modal
   visible={showJoinPassword}
