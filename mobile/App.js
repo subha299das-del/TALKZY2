@@ -1238,7 +1238,7 @@ async function createRoom() {
  }
  if (
   roomType === 'locked' &&
-  (roomPassword.length < 4 || roomPassword.length > 64)
+(roomPassword.trim().length < 4 || roomPassword.trim().length > 64)
 ) {
   Alert.alert(
     'Invalid password',
