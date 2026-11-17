@@ -2674,94 +2674,66 @@ function renderDiscover() {
         >
           <Text style={{
             color: C.primary,
-            fontSize: 16,
+
+if (showMySubscription) {
+  return (
+    <>
+      {/* MY SUBSCRIPTION HEADER */}
+      <View style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 22
+      }}>
+
+        {/* BACK BUTTON */}
+        <Pressable
+          onPress={() => setShowMySubscription(false)}
+          style={{ padding: 5 }}
+        >
+          <Text style={{
+            color: C.primary,
+            fontSize: 25,
             fontWeight: '900'
           }}>
-            ← Back to Discover
+            ←
           </Text>
         </Pressable>
 
+        {/* PAGE TITLE */}
         <Text style={{
           color: C.text,
-          fontSize: 22,
-          fontWeight: '900',
-          marginBottom: 20
+          fontSize: 21,
+          fontWeight: '900'
         }}>
-          💎 My Subscription
+          My Subscription
         </Text>
 
-        <View style={{
-          flexDirection: 'row',
-          marginBottom: 20
-        }}>
-          {['My Subscription', 'Published Activities'].map(tab => (
-            <Pressable
-              key={tab}
-              onPress={() => setSubscriptionTab(tab)}
-              style={{
-                flex: 1,
-                paddingVertical: 12,
-                marginRight: 5,
-                borderRadius: 12,
-                alignItems: 'center',
-                backgroundColor:
-                  subscriptionTab === tab ? C.primary : C.panel
-              }}
-            >
-              <Text style={{
-                color: subscriptionTab === tab ? '#FFFFFF' : C.text,
-                fontWeight: '900',
-                fontSize: 12
-              }}>
-                {tab}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+        {/* CREATE BUTTON */}
+        <Pressable
+          onPress={() => setShowCreateRoomActivity(true)}
+          style={{ padding: 5 }}
+        >
+          <Text style={{
+            color: C.primary,
+            fontSize: 29,
+            fontWeight: '900'
+          }}>
+            ＋
+          </Text>
+        </Pressable>
 
-        {subscriptionTab === 'My Subscription' ? (
-          <ComingSoon
-            title="No Subscriptions Yet"
-            description="Activities you subscribe to will appear here."
-          />
-        ) : (
-          <>
-            <Pressable
-              onPress={() => Alert.alert(
-                'Create Activity',
-                'Activity creation will be available soon.'
-              )}
-              style={{ marginBottom: 15 }}
-            >
-              <Card style={{
-                alignItems: 'center',
-                padding: 20
-              }}>
-                <Text style={{
-                  color: C.primary,
-                  fontSize: 28
-                }}>
-                  ＋
-                </Text>
-                <Text style={{
-                  color: C.text,
-                  fontWeight: '900',
-                  marginTop: 6
-                }}>
-                  Create New Activity
-                </Text>
-              </Card>
-            </Pressable>
+      </View>
 
-            <ComingSoon
-              title="No Published Activities"
-              description="Activities published by your rooms will appear here."
-            />
-          </>
-        )}
-      </>
-    );
-          }
+      {/* SUBSCRIBED ACTIVITIES */}
+      <ComingSoon
+        title="No Subscriptions Yet"
+        description="Activities you subscribe to will appear here."
+      />
+    </>
+  );
+}
+
 
 // ORIGINAL DISCOVER CODE — KEEP THIS
     return (
