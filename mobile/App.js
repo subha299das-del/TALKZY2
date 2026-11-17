@@ -1232,6 +1232,20 @@ async function createRoom() {
     Alert.alert('Room name', 'Please enter a room name.');
     return;
   }
+ if (roomType === 'locked' && !roomPassword.trim()) {
+  Alert.alert('Password required', 'Please create a password for your locked room.');
+  return;
+ }
+ if (
+  roomType === 'locked' &&
+  (roomPassword.length < 4 || roomPassword.length > 64)
+) {
+  Alert.alert(
+    'Invalid password',
+    'Room password must be between 4 and 64 characters.'
+  );
+  return;
+ }
 
   if (!session?.access_token) {
     Alert.alert('Login required', 'Please sign in again.');
@@ -1278,7 +1292,8 @@ async function createRoom() {
       body: JSON.stringify({
         roomName: roomName.trim(),
         description: roomDescription.trim(),
-        roomType: 'public',
+        roomType: roomType,
+password: roomType === 'locked' ? roomPassword : null,
         roomDpUrl
       })
     });
