@@ -3832,6 +3832,9 @@ function renderDiscover() {
 
   
 function renderMainContent() {
+   if (showCountryRooms) {
+    return renderCountryRooms();
+   }
   if (screen === 'roomSettings') {
     return renderRoomSettings();
   }
