@@ -2561,6 +2561,7 @@ function renderDiscover() {
     flag: item[0],
     name: item[1]
   });
+  loadPublicRooms();
   setShowCountryRooms(true);
 }}
       style={{
