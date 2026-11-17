@@ -939,6 +939,11 @@ app.get('/api/rooms/:roomId/members', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
+    if (room.status !== 'active') {
+  return res.status(409).json({
+    error: 'This room is closed.'
+  });
+    }
 
     const userId = req.talkzyUser.id;
     const allowed = await canManageRoom(room, userId) ||
