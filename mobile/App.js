@@ -4322,6 +4322,8 @@ function renderPosterTemplates() {
 
       </View>
 
+{/* OFFICIAL POSTER THEMES WILL APPEAR HERE */}
+
       {/* EMPTY GALLERY */}
       <View style={{
         flex: 1,
