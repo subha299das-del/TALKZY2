@@ -392,11 +392,16 @@ app.get('/api/rooms/mine', userAuth, async (req, res) => {
 
 
 // Create a new public room.
-// Only the owner can change it to Locked later in Room Settings.
+
+// Create a new room — public or locked.
+// Each user can create only one room ever.
+
 app.post('/api/rooms', userAuth, roomCreateLimiter, async (req, res) => {
   const roomName = String(req.body?.roomName || '').trim();
   const description = String(req.body?.description || '').trim();
   const roomDpUrl = String(req.body?.roomDpUrl || '').trim();
+  const roomType = String(req.body?.roomType || 'public');
+  const password = String(req.body?.password || '');
 
   if (roomName.length < 3 || roomName.length > 40) {
     return res.status(400).json({
@@ -407,6 +412,27 @@ app.post('/api/rooms', userAuth, roomCreateLimiter, async (req, res) => {
   if (description.length > 200) {
     return res.status(400).json({
       error: 'Description cannot exceed 200 characters.'
+    });
+  }
+
+  if (!['public', 'locked'].includes(roomType)) {
+    return res.status(400).json({
+      error: 'Room type must be public or locked.'
+    });
+  }
+
+  if (roomType === 'locked' && !password.trim()) {
+    return res.status(400).json({
+      error: 'A password is required for a locked room.'
+    });
+  }
+
+  if (
+    roomType === 'locked' &&
+    (password.length < 4 || password.length > 64)
+  ) {
+    return res.status(400).json({
+      error: 'Room password must be between 4 and 64 characters.'
     });
   }
 
@@ -431,14 +457,18 @@ app.post('/api/rooms', userAuth, roomCreateLimiter, async (req, res) => {
   }
 
   try {
+    const passwordHash = roomType === 'locked'
+      ? await makePasswordHash(password)
+      : null;
+
     const { data, error } = await supabase
       .from('talkzy_rooms')
       .insert({
         owner_id: req.talkzyUser.id,
         room_name: roomName,
         description,
-        room_type: 'public',
-        password_hash: null,
+        room_type: roomType,
+        password_hash: passwordHash,
         room_dp_url: roomDpUrl || null
       })
       .select(
@@ -449,7 +479,7 @@ app.post('/api/rooms', userAuth, roomCreateLimiter, async (req, res) => {
     if (error) {
       if (error.code === '23505') {
         return res.status(409).json({
-          error: 'You already own an active room. Close it before creating another.'
+          error: 'You have already created a room. Each user can create only one room ever.'
         });
       }
 
