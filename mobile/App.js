@@ -382,6 +382,7 @@ const [activityPoster, setActivityPoster] = useState(null);
  const [showPosterTemplates, setShowPosterTemplates] = useState(false);
 const [showPosterEditor, setShowPosterEditor] = useState(false);
  const [activityPosterTemplate, setActivityPosterTemplate] = useState(null);
+ const [activityPosterTemplate, setActivityPosterTemplate] = useState(null);
 const [activityDate, setActivityDate] = useState('');
 const [activityStartTime, setActivityStartTime] = useState('');
 const [activityEndTime, setActivityEndTime] = useState('');
