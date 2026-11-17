@@ -4155,6 +4155,9 @@ function renderCreateRoomActivity() {
 }
 
 function renderMainContent() {
+   if (showPosterOptions) {
+    return renderPosterOptions();
+   }
 
   if (showCreateRoomActivity) {
     return renderCreateRoomActivity();
