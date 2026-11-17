@@ -788,7 +788,8 @@ app.patch('/api/rooms/:roomId/type', userAuth, async (req, res) => {
       return res.status(400).json({ error: 'Room type must be public or locked.' });
     }
 
-    if (roomType === 'locked' && (password.length < 4 || password.length > 64)) {
+    if (roomType === 'locked' &&
+    (password.trim().length < 4 || password.length > 64)) {
       return res.status(400).json({
         error: 'A new locked-room password must be 4 to 64 characters.'
       });
