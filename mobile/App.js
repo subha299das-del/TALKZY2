@@ -4093,7 +4093,7 @@ function renderPosterOptions() {
           fontWeight: '900',
           marginTop: 12
         }}>
-          Customize Your Poster
+          Upload My Own Poster
         </Text>
 
         <Text style={{
@@ -4101,7 +4101,7 @@ function renderPosterOptions() {
           fontSize: 13,
           marginTop: 6
         }}>
-          Create your own poster using photos, text, backgrounds and decorations.
+          Upload a poster from your mobile gallery for this party only. Upload it again if you want to use it for another party.
         </Text>
 
         <Text style={{
@@ -4109,7 +4109,7 @@ function renderPosterOptions() {
           fontWeight: '900',
           marginTop: 12
         }}>
-          Create Poster →
+          Choose from Gallery →
         </Text>
       </Pressable>
 
