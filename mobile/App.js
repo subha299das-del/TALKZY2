@@ -4048,7 +4048,7 @@ function renderCreateRoomActivity() {
 </Text>
 
 <Pressable
-  onPress={chooseActivityPoster}
+  onPress={() => setShowPosterOptions(true)}
   style={{
     height: 180,
     borderRadius: 14,
