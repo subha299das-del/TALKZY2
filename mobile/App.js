@@ -2260,7 +2260,14 @@ function renderCountryRooms() {
     <>
       {/* COUNTRY ROOMS HEADER */}
       <TouchableOpacity
-        onPress={() => setShowCountryRooms(false)}
+        onPress={() => {
+  setShowCountryRooms(false);
+
+  if (countryRoomsFromRegion) {
+    setShowCountryRegion(true);
+    setCountryRoomsFromRegion(false);
+  }
+}}
         style={{
           flexDirection: 'row',
           alignItems: 'center',
@@ -2878,6 +2885,7 @@ function renderDiscover() {
     flag: item[0],
     name: item[1]
   });
+  setCountryRoomsFromRegion(false);
   loadPublicRooms();
   setShowCountryRooms(true);
 }}
