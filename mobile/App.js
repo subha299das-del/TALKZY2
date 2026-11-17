@@ -2499,14 +2499,7 @@ function renderNewRooms() {
 }
 
 
-
-
-  // =========================================
-  // ROOM: DISCOVER
-  // =========================================
-
-function renderDiscover() {
-   // TEMPORARY COUNTRY TEST
+// TEMPORARY COUNTRY TEST
   const countries = [
   // ASIA
   ['🇮🇳', 'India'],
@@ -2611,6 +2604,7 @@ function renderDiscover() {
   ['🇬🇹', 'Guatemala'],
   ['🇧🇿', 'Belize'],
   ['🇭🇳', 'Honduras'],
+   
   ['🇸🇻', 'El Salvador'],
   ['🇳🇮', 'Nicaragua'],
   ['🇨🇷', 'Costa Rica'],
@@ -2659,9 +2653,12 @@ function renderDiscover() {
   ['🇲🇭', 'Marshall Islands'],
   ['🇫🇲', 'Micronesia']
 ];
+  // =========================================
+  // ROOM: DISCOVER
+  // =========================================
 
-
-  const filteredCountries = countries.filter(item =>
+function renderDiscover() {
+   const filteredCountries = countries.filter(item =>
     item[1].toLowerCase().includes(countrySearch.toLowerCase())
   );
   
