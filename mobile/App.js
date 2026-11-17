@@ -2095,24 +2095,18 @@ function renderPopular() {
 
 
 function renderCountryRegion() {
-  const countries = [
-    ['🇮🇳', 'India'],
-    ['🇧🇩', 'Bangladesh'],
-    ['🇳🇵', 'Nepal'],
-    ['🇵🇰', 'Pakistan'],
-    ['🇱🇰', 'Sri Lanka'],
-    ['🇺🇸', 'United States'],
-    ['🇬🇧', 'United Kingdom'],
-    ['🇦🇪', 'United Arab Emirates'],
-    ['🇮🇩', 'Indonesia'],
-    ['🇧🇷', 'Brazil']
-  ];
-
+  
   const filteredCountries = countries.filter(item =>
     item[1].toLowerCase().includes(countrySearch.toLowerCase())
   );
 
-  const hotCountries = countries.slice(0, 5);
+  const hotCountries = [
+  ['🇮🇳', 'India'],
+  ['🇧🇩', 'Bangladesh'],
+  ['🇳🇵', 'Nepal'],
+  ['🇵🇰', 'Pakistan'],
+  ['🇺🇸', 'United States']
+];
 
   const openCountry = (item) => {
     setSelectedCountry({
