@@ -792,6 +792,11 @@ app.post('/api/rooms/:roomId/admins', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
+    if (room.status !== 'active') {
+  return res.status(409).json({
+    error: 'Cannot manage admins in a closed room.'
+  });
+    }
 
     if (room.owner_id !== req.talkzyUser.id) {
       return res.status(403).json({ error: 'Only the room owner can appoint admins.' });
