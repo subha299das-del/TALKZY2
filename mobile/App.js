@@ -374,6 +374,15 @@ const [showMySubscription, setShowMySubscription] = useState(false);
 const [showCreateRoomActivity, setShowCreateRoomActivity] = useState(false);
 const [subscriptionTab, setSubscriptionTab] = useState('My Subscription');
  
+const [activityTitle, setActivityTitle] = useState('');
+const [activityDescription, setActivityDescription] = useState('');
+const [activitySelectedRoom, setActivitySelectedRoom] = useState(null);
+const [activityPoster, setActivityPoster] = useState(null);
+const [activityDate, setActivityDate] = useState('');
+const [activityStartTime, setActivityStartTime] = useState('');
+const [activityEndTime, setActivityEndTime] = useState('');
+ 
+ 
   const [hotEventIndex, setHotEventIndex] = useState(0);
 const hotEventsScrollRef = useRef(null);
 
