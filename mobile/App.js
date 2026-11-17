@@ -369,9 +369,9 @@ const [showCountryRooms, setShowCountryRooms] = useState(false);
 const [showCountryRegion, setShowCountryRegion] = useState(false);
  const [countryRoomsFromRegion, setCountryRoomsFromRegion] = useState(false);
          
-  
   // COMMUNITY ACTIVITY STATES
 const [showMySubscription, setShowMySubscription] = useState(false);
+const [showCreateRoomActivity, setShowCreateRoomActivity] = useState(false);
 const [subscriptionTab, setSubscriptionTab] = useState('My Subscription');
  
   const [hotEventIndex, setHotEventIndex] = useState(0);
