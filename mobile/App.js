@@ -7024,18 +7024,18 @@ if (screen === 'profile' || profileIncomplete) {
         </ScrollView>
       </View>
 
-      {!['roomSettings', 'createRoom', 'hotRooms', 'newRooms', 'eventDetail', 'eventManagement', 'eventManagementList'].includes(screen) &&
-  !showEventPreview &&
-  !showCountryRooms &&
-  !showCountryRegion &&
-  !showMySubscription &&
-  !showCreateRoomActivity &&
-  !showPosterOptions &&
-  !showPosterTemplates &&
-  !showPosterEditor &&
-  renderBottomNavigation()}
-      }
-<Modal
+            {!['roomSettings', 'createRoom', 'hotRooms', 'newRooms', 'eventDetail', 'eventManagement', 'eventManagementList'].includes(screen) &&
+        !showEventPreview &&
+        !showCountryRooms &&
+        !showCountryRegion &&
+        !showMySubscription &&
+        !showCreateRoomActivity &&
+        !showPosterOptions &&
+        !showPosterTemplates &&
+        !showPosterEditor &&
+        renderBottomNavigation()}
+
+      <Modal
   visible={showJoinPassword}
   transparent
   animationType="fade"
