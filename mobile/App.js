@@ -6692,7 +6692,7 @@ if (screen === 'profile' || profileIncomplete) {
       <StatusBar barStyle="light-content" />
 
       <View style={{ flex: 1 }}>
-     !['roomSettings', 'createRoom', 'eventDetail'].includes(screen) &&
+     !['roomSettings', 'createRoom', 'eventDetail', 'eventManagement', 'eventManagementList'].includes(screen) &&
 !showEventPreview &&
   !showCountryRooms &&
 !showCountryRegion &&
@@ -6718,7 +6718,7 @@ if (screen === 'profile' || profileIncomplete) {
         </ScrollView>
       </View>
 
-      {!['roomSettings', 'createRoom', 'hotRooms', 'newRooms', 'eventDetail'].includes(screen) &&
+      !['roomSettings', 'createRoom', 'hotRooms', 'newRooms', 'eventDetail', 'eventManagement', 'eventManagementList'].includes(screen) &&
        !showEventPreview &&
 !showCountryRooms &&
 !showCountryRegion &&
