@@ -5819,8 +5819,7 @@ function handlePreviewEvent() {
       !gift ||
       !gift.image_uri ||
       !gift.name.trim() ||
-      !Number.isFinite(Number(gift.coin_value)) ||
-      Number(gift.coin_value) <= 0
+      !/^[1-9]\d*$/.test(String(gift.coin_value).trim())
     ) {
       Alert.alert(
         'Incomplete Gift',
