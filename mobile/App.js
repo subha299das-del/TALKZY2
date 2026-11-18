@@ -332,6 +332,7 @@ export default function App() {
   const [saving, setSaving] = useState(false);
 
   const [screen, setScreen] = useState('login');
+ const [selectedOfficialEvent, setSelectedOfficialEvent] = useState(null);
   const [popularReturnScreen, setPopularReturnScreen] = useState('main');
   const [activeTab, setActiveTab] = useState('Room');
   const [roomSettingsType, setRoomSettingsType] = useState('public');
