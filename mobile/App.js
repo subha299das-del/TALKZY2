@@ -5731,6 +5731,32 @@ function renderEventPreview() {
           </View>
         ))
       )}
+
+      {/* PUBLISH EVENT BUTTON */}
+      <TouchableOpacity
+        disabled={true}
+        style={{
+          backgroundColor: C.panel2,
+          borderWidth: 1,
+          borderColor: C.line,
+          borderRadius: 12,
+          padding: 17,
+          alignItems: 'center',
+          marginTop: 22,
+          opacity: 0.55
+        }}
+      >
+        <Text
+          style={{
+            color: C.muted,
+            fontSize: 16,
+            fontWeight: '900'
+          }}
+        >
+          Publish Event
+        </Text>
+      </TouchableOpacity>
+
          
         {/* PREVIEW EVENT BUTTON */}
         <TouchableOpacity
