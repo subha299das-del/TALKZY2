@@ -1060,6 +1060,32 @@ loadFollowedRooms(session);
     }
   }
 
+
+ 
+// =========================================
+// EVENTS: LOAD LIVE OFFICIAL EVENTS
+// =========================================
+
+async function loadOfficialEvents() {
+  try {
+    setLoadingOfficialEvents(true);
+
+    const result = await api('/api/events/live');
+
+    setOfficialEvents(
+      Array.isArray(result.events)
+        ? result.events
+        : []
+    );
+  } catch (error) {
+    console.log('Official events error:', error.message);
+    Alert.alert('Events', 'Could not load official events.');
+  } finally {
+    setLoadingOfficialEvents(false);
+  }
+}
+ 
+
   // =========================================
   // ROOM: LOAD MY ROOMS
   // =========================================
