@@ -5878,6 +5878,13 @@ function handlePreviewEvent() {
     Alert.alert('Missing Information', 'Please enter the event rules.');
     return;
   }
+   if (startDate.getTime() <= Date.now()) {
+    Alert.alert(
+      'Invalid Start Time',
+      'The event start time must be in the future.'
+    );
+    return;
+   }
 
   for (let i = 0; i < 3; i++) {
     if (!eventDraft.top_rewards[i]?.description.trim()) {
@@ -5893,11 +5900,9 @@ function handlePreviewEvent() {
     const milestone = eventDraft.milestones[i];
 
     if (
-      !milestone.target ||
-      !Number.isFinite(Number(milestone.target)) ||
-      Number(milestone.target) <= 0 ||
-      !milestone.reward_description.trim()
-    ) {
+  !/^[1-9]\d*$/.test(String(milestone.target).trim()) ||
+  !milestone.reward_description.trim()
+){
       Alert.alert(
         'Incomplete Milestone',
         `Please complete Milestone ${i + 1}, or remove it.`
