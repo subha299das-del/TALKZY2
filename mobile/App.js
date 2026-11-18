@@ -6438,8 +6438,6 @@ function renderEventDetail() {
     </Text>
   </View>
 </View>
-       
-</View>
 
       {/* TASKS SECTION */}
       {activeEventSection === 'tasks' && (
