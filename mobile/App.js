@@ -1097,6 +1097,18 @@ function openOfficialEvent(event) {
   setScreen('eventDetail');
 }
 
+ 
+// =========================================
+// EVENTS: BACK TO EVENTS LIST
+// =========================================
+
+function closeOfficialEvent() {
+  setSelectedOfficialEvent(null);
+  setActiveTab('Room');
+  setRoomTab('Events');
+  setScreen('main');
+}
+ 
   // =========================================
   // ROOM: LOAD MY ROOMS
   // =========================================
