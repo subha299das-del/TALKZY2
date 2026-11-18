@@ -4770,6 +4770,29 @@ function renderCreateRoomActivity() {
 }
 
 
+function calculateEventEndAt() {
+  if (!eventDraft.start_at) return '';
+
+  const start = new Date(eventDraft.start_at);
+
+  if (Number.isNaN(start.getTime())) return '';
+
+  const end = new Date(start);
+
+  if (eventDraft.duration === '7_days') {
+    end.setDate(end.getDate() + 7);
+  } else {
+    end.setMonth(end.getMonth() + 1);
+  }
+
+  const pad = value => String(value).padStart(2, '0');
+
+  return (
+    `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())}` +
+    ` ${pad(end.getHours())}:${pad(end.getMinutes())}`
+  );
+}
+
   // =========================================
   // EVENTS: OFFICIAL EVENT MANAGEMENT
   // =========================================
@@ -5018,6 +5041,418 @@ function renderCreateRoomActivity() {
             />
           </View>
         ))}
+         
+        {/* EVENT DURATION */}
+        <Text
+          style={{
+            color: C.text,
+            fontSize: 18,
+            fontWeight: '900',
+            marginTop: 10,
+            marginBottom: 12
+          }}
+        >
+          Event Duration
+        </Text>
+
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 22 }}>
+          {[
+            { label: '7 Days', value: '7_days' },
+            { label: '1 Month', value: '1_month' }
+          ].map(option => (
+            <TouchableOpacity
+              key={option.value}
+              onPress={() =>
+                setEventDraft(previous => ({
+                  ...previous,
+                  duration: option.value
+                }))
+              }
+              style={{
+                flex: 1,
+                padding: 15,
+                borderRadius: 10,
+                alignItems: 'center',
+                backgroundColor:
+                  eventDraft.duration === option.value
+                    ? C.accent
+                    : C.panel,
+                borderWidth: 1,
+                borderColor: C.line
+              }}
+            >
+              <Text style={{ color: C.text, fontWeight: '800' }}>
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* EVENT START DATE AND TIME */}
+        <Text
+          style={{
+            color: C.text,
+            fontSize: 18,
+            fontWeight: '900',
+            marginBottom: 10
+          }}
+        >
+          Event Start Date & Time
+        </Text>
+
+        <TextInput
+          value={eventDraft.start_at}
+          onChangeText={value =>
+            setEventDraft(previous => ({
+              ...previous,
+              start_at: value
+            }))
+          }
+          placeholder="YYYY-MM-DDTHH:MM"
+          placeholderTextColor={C.muted}
+          style={{
+            backgroundColor: C.panel,
+            color: C.text,
+            borderRadius: 10,
+            borderWidth: 1,
+            borderColor: C.line,
+            padding: 14,
+            marginBottom: 10
+          }}
+        />
+
+        <Text style={{ color: C.muted, fontSize: 12, marginBottom: 20 }}>
+          Enter the scheduled start time in India local time. The event end
+          time will be calculated automatically from the selected duration.
+        </Text>
+
+        {/* AUTOMATIC EVENT END TIME */}
+        <View
+          style={{
+            backgroundColor: C.panel,
+            borderRadius: 10,
+            borderWidth: 1,
+            borderColor: C.line,
+            padding: 14,
+            marginBottom: 22
+          }}
+        >
+          <Text
+            style={{
+              color: C.text,
+              fontWeight: '800',
+              marginBottom: 8
+            }}
+          >
+            Automatically Calculated End Date & Time
+          </Text>
+
+          <Text
+            style={{
+              color: C.accent,
+              fontSize: 16,
+              fontWeight: '900'
+            }}
+          >
+            {calculateEventEndAt() || 'Enter a valid start date and time'}
+          </Text>
+        </View>
+
+
+     {/* EVENT RULES */}
+        <Text
+          style={{
+            color: C.text,
+            fontSize: 18,
+            fontWeight: '900',
+            marginTop: 10,
+            marginBottom: 12
+          }}
+        >
+          Event Rules
+        </Text>
+
+        <TextInput
+          value={eventDraft.rules}
+          onChangeText={value =>
+            setEventDraft(previous => ({
+              ...previous,
+              rules: value
+            }))
+          }
+          placeholder="Write the rules and conditions of this event..."
+          placeholderTextColor={C.muted}
+          multiline
+          textAlignVertical="top"
+          style={{
+            backgroundColor: C.panel,
+            color: C.text,
+            borderRadius: 10,
+            borderWidth: 1,
+            borderColor: C.line,
+            padding: 14,
+            minHeight: 130,
+            marginBottom: 22
+          }}
+        />
+
+        {/* TOP 3 WINNER REWARDS */}
+        <Text
+          style={{
+            color: C.text,
+            fontSize: 18,
+            fontWeight: '900',
+            marginBottom: 14
+          }}
+        >
+          Top 3 Winner Rewards
+        </Text>
+
+        {eventDraft.top_rewards.map((reward, index) => (
+          <View
+            key={index}
+            style={{
+              backgroundColor: C.panel,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: C.line,
+              padding: 14,
+              marginBottom: 12
+            }}
+          >
+            <Text
+              style={{
+                color: C.gold,
+                fontWeight: '900',
+                marginBottom: 10
+              }}
+            >
+              {['🥇 First Place', '🥈 Second Place', '🥉 Third Place'][index]}
+            </Text>
+
+            <TextInput
+              value={reward.description}
+              onChangeText={value => {
+                setEventDraft(previous => {
+                  const updatedRewards = [...previous.top_rewards];
+
+                  updatedRewards[index] = {
+                    ...updatedRewards[index],
+                    description: value
+                  };
+
+                  return {
+                    ...previous,
+                    top_rewards: updatedRewards
+                  };
+                });
+              }}
+              placeholder="Describe the winner reward..."
+              placeholderTextColor={C.muted}
+              multiline
+              style={{
+                backgroundColor: C.panel2,
+                color: C.text,
+                borderRadius: 9,
+                padding: 12,
+                minHeight: 65
+              }}
+            />
+          </View>
+        ))}
+             
+        {/* EVENT MILESTONES */}
+        <Text
+          style={{
+            color: C.text,
+            fontSize: 18,
+            fontWeight: '900',
+            marginTop: 12,
+            marginBottom: 12
+          }}
+        >
+          Event Milestones
+        </Text>
+
+        <Text
+          style={{
+            color: C.muted,
+            fontSize: 12,
+            marginBottom: 14
+          }}
+        >
+          Add as many milestones as needed. Each milestone can reward gifts, coins, or VIP.
+        </Text>
+
+        {eventDraft.milestones.map((milestone, index) => (
+          <View
+            key={milestone.id || index}
+            style={{
+              backgroundColor: C.panel,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: C.line,
+              padding: 14,
+              marginBottom: 14
+            }}
+          >
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 14
+              }}
+            >
+              <Text style={{ color: C.accent, fontWeight: '900' }}>
+                Milestone {index + 1}
+              </Text>
+
+              <TouchableOpacity
+                onPress={() =>
+                  setEventDraft(previous => ({
+                    ...previous,
+                    milestones: previous.milestones.filter(
+                      (_, i) => i !== index
+                    )
+                  }))
+                }
+              >
+                <Text style={{ color: C.danger, fontWeight: '800' }}>
+                  Remove
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <TextInput
+              value={milestone.target}
+              onChangeText={value => {
+                setEventDraft(previous => {
+                  const updated = [...previous.milestones];
+                  updated[index] = {
+                    ...updated[index],
+                    target: value
+                  };
+                  return { ...previous, milestones: updated };
+                });
+              }}
+              placeholder="Target coins spent"
+              placeholderTextColor={C.muted}
+              keyboardType="numeric"
+              style={{
+                backgroundColor: C.panel2,
+                color: C.text,
+                borderRadius: 9,
+                padding: 12,
+                marginBottom: 14
+              }}
+            />
+
+            <Text
+              style={{
+                color: C.text,
+                fontWeight: '800',
+                marginBottom: 10
+              }}
+            >
+              Reward Type
+            </Text>
+
+            <View
+              style={{
+                flexDirection: 'row',
+                gap: 8,
+                marginBottom: 14
+              }}
+            >
+              {['gift', 'coins', 'vip'].map(type => (
+                <TouchableOpacity
+                  key={type}
+                  onPress={() => {
+                    setEventDraft(previous => {
+                      const updated = [...previous.milestones];
+                      updated[index] = {
+                        ...updated[index],
+                        reward_type: type
+                      };
+                      return { ...previous, milestones: updated };
+                    });
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: 11,
+                    borderRadius: 9,
+                    alignItems: 'center',
+                    backgroundColor:
+                      milestone.reward_type === type
+                        ? C.accent
+                        : C.panel2
+                  }}
+                >
+                  <Text style={{ color: C.text, fontWeight: '800' }}>
+                    {type.toUpperCase()}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TextInput
+              value={milestone.reward_description}
+              onChangeText={value => {
+                setEventDraft(previous => {
+                  const updated = [...previous.milestones];
+                  updated[index] = {
+                    ...updated[index],
+                    reward_description: value
+                  };
+                  return { ...previous, milestones: updated };
+                });
+              }}
+              placeholder="Describe the milestone reward..."
+              placeholderTextColor={C.muted}
+              multiline
+              style={{
+                backgroundColor: C.panel2,
+                color: C.text,
+                borderRadius: 9,
+                padding: 12,
+                minHeight: 65
+              }}
+            />
+          </View>
+        ))}
+
+        <TouchableOpacity
+          onPress={() =>
+            setEventDraft(previous => ({
+              ...previous,
+              milestones: [
+                ...previous.milestones,
+                {
+                  id: `milestone-${Date.now()}`,
+                  target: '',
+                  reward_type: 'coins',
+                  reward_description: ''
+                }
+              ]
+            }))
+          }
+          style={{
+            backgroundColor: C.panel,
+            borderWidth: 1,
+            borderColor: C.accent,
+            borderRadius: 10,
+            padding: 15,
+            alignItems: 'center',
+            marginBottom: 20
+          }}
+        >
+          <Text style={{ color: C.accent, fontWeight: '900' }}>
+            + Add Another Milestone
+          </Text>
+        </TouchableOpacity>
+
+
 
 
       </View>
