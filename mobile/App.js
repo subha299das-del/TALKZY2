@@ -6285,7 +6285,7 @@ function renderEventDetail() {
     }}
   >
     <Text style={{ color: C.text, fontWeight: '800', fontSize: 14 }}>
-      Milestone {task.id}
+      Milestone {index + 1}
     </Text>
 
     <Text style={{ color: C.muted, fontSize: 12, marginTop: 7 }}>
