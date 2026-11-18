@@ -4907,18 +4907,118 @@ function renderCreateRoomActivity() {
           </Text>
         </TouchableOpacity>
 
-        {eventDraft.border_uri && (
-          <Image
-            source={{ uri: eventDraft.border_uri }}
+        
+        {/* EVENT GIFTS */}
+        <Text
+          style={{
+            color: C.text,
+            fontSize: 18,
+            fontWeight: '900',
+            marginBottom: 15
+          }}
+        >
+          Event Gifts (Exactly 3)
+        </Text>
+
+        {eventDraft.gifts.map((gift, index) => (
+          <View
+            key={index}
             style={{
-              width: '100%',
-              height: 150,
-              borderRadius: 10,
-              marginBottom: 22
+              backgroundColor: C.panel,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: C.line,
+              padding: 14,
+              marginBottom: 15
             }}
-            resizeMode="contain"
-          />
-        )}
+          >
+            <Text
+              style={{
+                color: C.accent,
+                fontWeight: '900',
+                fontSize: 15,
+                marginBottom: 12
+              }}
+            >
+              Gift {index + 1}
+            </Text>
+
+            <TouchableOpacity
+              onPress={() => chooseEventImage(null, index)}
+              style={{
+                backgroundColor: C.panel2,
+                borderRadius: 10,
+                padding: 14,
+                alignItems: 'center',
+                marginBottom: 12
+              }}
+            >
+              <Text style={{ color: C.text, fontWeight: '800' }}>
+                {gift.image_uri ? 'Change Gift Image' : 'Upload Gift Image'}
+              </Text>
+            </TouchableOpacity>
+
+            {gift.image_uri && (
+              <Image
+                source={{ uri: gift.image_uri }}
+                style={{
+                  width: 85,
+                  height: 85,
+                  alignSelf: 'center',
+                  marginBottom: 12
+                }}
+                resizeMode="contain"
+              />
+            )}
+
+            <TextInput
+              value={gift.name}
+              onChangeText={value => {
+                setEventDraft(previous => {
+                  const updatedGifts = [...previous.gifts];
+                  updatedGifts[index] = {
+                    ...updatedGifts[index],
+                    name: value
+                  };
+                  return { ...previous, gifts: updatedGifts };
+                });
+              }}
+              placeholder="Enter gift name"
+              placeholderTextColor={C.muted}
+              style={{
+                backgroundColor: C.panel2,
+                color: C.text,
+                borderRadius: 9,
+                padding: 12,
+                marginBottom: 10
+              }}
+            />
+
+            <TextInput
+              value={gift.coin_value}
+              onChangeText={value => {
+                setEventDraft(previous => {
+                  const updatedGifts = [...previous.gifts];
+                  updatedGifts[index] = {
+                    ...updatedGifts[index],
+                    coin_value: value
+                  };
+                  return { ...previous, gifts: updatedGifts };
+                });
+              }}
+              placeholder="Gift coin value"
+              placeholderTextColor={C.muted}
+              keyboardType="numeric"
+              style={{
+                backgroundColor: C.panel2,
+                color: C.text,
+                borderRadius: 9,
+                padding: 12
+              }}
+            />
+          </View>
+        ))}
+
 
       </View>
     );
