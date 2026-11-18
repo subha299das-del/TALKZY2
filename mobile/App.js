@@ -3041,22 +3041,77 @@ function renderDiscover() {
   // ROOM: EVENTS
   // =========================================
 
-  function renderEvents() {
+  
+function renderEvents() {
+  if (loadingOfficialEvents) {
     return (
-      <>
-        <Heading>Events</Heading>
-
-        <Text style={{ color: C.muted, marginBottom: 15 }}>
-          Discover all ongoing TALKZY events.
-        </Text>
-
-        <ComingSoon
-          title="No active events"
-          description="All ongoing events will be displayed here when the events system is connected."
-        />
-      </>
+      <View style={{ padding: 35, alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={C.accent} />
+      </View>
     );
   }
+
+  if (officialEvents.length === 0) {
+    return (
+      <View style={{ padding: 35, alignItems: 'center' }}>
+        <Text
+          style={{
+            color: C.muted,
+            fontSize: 15,
+            fontWeight: '700',
+            textAlign: 'center'
+          }}
+        >
+          No Live Events Right Now
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={{ gap: 15 }}>
+      {officialEvents.map(event => (
+        <Pressable
+          key={event.id}
+          onPress={() => openOfficialEvent(event)}
+          style={{
+            width: '100%',
+            borderRadius: 14,
+            overflow: 'hidden',
+            backgroundColor: C.panel,
+            borderWidth: 1,
+            borderColor: C.line
+          }}
+        >
+          {event.poster_url ? (
+            <Image
+              source={{ uri: event.poster_url }}
+              style={{
+                width: '100%',
+                aspectRatio: 2
+              }}
+              resizeMode="cover"
+            />
+          ) : (
+            <View
+              style={{
+                width: '100%',
+                aspectRatio: 2,
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <Text style={{ color: C.muted }}>
+                Event Poster Unavailable
+              </Text>
+            </View>
+          )}
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
 
   // =========================================
   // ROOM MAIN SCREEN
