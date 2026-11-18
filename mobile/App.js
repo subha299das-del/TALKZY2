@@ -6542,6 +6542,9 @@ function renderMainContent() {
    if (showEventPreview) {
     return renderEventPreview();
 }
+    if (screen === 'eventManagement') {
+    return renderEventManagement();
+    }
    if (screen === 'eventDetail') {
     return renderEventDetail();
    }
