@@ -3061,13 +3061,17 @@ function renderDiscover() {
               title={item}
               active={roomTab === item}
               onPress={() => {
-                setRoomTab(item);
+  setRoomTab(item);
 
-                if (item === 'Popular' || item === 'Mine') {
-                  loadPublicRooms();
-                  loadMyRooms();
-                }
-              }}
+  if (item === 'Popular' || item === 'Mine') {
+    loadPublicRooms();
+    loadMyRooms();
+  }
+
+  if (item === 'Events') {
+    loadOfficialEvents();
+  }
+}}
             />
           ))}
         </View>
