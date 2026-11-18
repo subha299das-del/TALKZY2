@@ -4770,20 +4770,53 @@ function renderCreateRoomActivity() {
   );
 }
 
-
 function calculateEventEndAt() {
   if (!eventDraft.start_at) return '';
 
-  const start = new Date(eventDraft.start_at);
+  const match =
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(
+      eventDraft.start_at.trim()
+    );
 
-  if (Number.isNaN(start.getTime())) return '';
+  if (!match) return '';
+
+  const [, year, month, day, hour, minute] = match;
+
+  const start = new Date(
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    Number(hour),
+    Number(minute)
+  );
+
+  if (
+    start.getFullYear() !== Number(year) ||
+    start.getMonth() !== Number(month) - 1 ||
+    start.getDate() !== Number(day) ||
+    start.getHours() !== Number(hour) ||
+    start.getMinutes() !== Number(minute)
+  ) {
+    return '';
+  }
 
   const end = new Date(start);
 
   if (eventDraft.duration === '7_days') {
     end.setDate(end.getDate() + 7);
   } else {
+    const originalDay = end.getDate();
+
+    end.setDate(1);
     end.setMonth(end.getMonth() + 1);
+
+    const lastDay = new Date(
+      end.getFullYear(),
+      end.getMonth() + 1,
+      0
+    ).getDate();
+
+    end.setDate(Math.min(originalDay, lastDay));
   }
 
   const pad = value => String(value).padStart(2, '0');
@@ -4793,6 +4826,7 @@ function calculateEventEndAt() {
     ` ${pad(end.getHours())}:${pad(end.getMinutes())}`
   );
 }
+
 
   // =========================================
   // EVENTS: OFFICIAL EVENT MANAGEMENT
