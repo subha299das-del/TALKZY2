@@ -4667,9 +4667,64 @@ function renderEventDetail() {
         </Text>
       </View>
 
-      <Text style={{ color: C.muted, textAlign: 'center' }}>
-        Event details will appear here.
-      </Text>
+      
+      {/* EVENT BANNER */}
+      <View
+        style={{
+          width: '100%',
+          borderRadius: 14,
+          overflow: 'hidden',
+          backgroundColor: C.panel,
+          borderWidth: 1,
+          borderColor: C.line,
+          marginBottom: 20
+        }}
+      >
+        {selectedOfficialEvent?.poster_url ? (
+          <Image
+            source={{ uri: selectedOfficialEvent.poster_url }}
+            style={{
+              width: '100%',
+              aspectRatio: 2
+            }}
+            resizeMode="cover"
+          />
+        ) : (
+          <View
+            style={{
+              width: '100%',
+              aspectRatio: 2,
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <Text style={{ color: C.muted }}>
+              Event Banner
+            </Text>
+          </View>
+        )}
+
+        {/* COUNTDOWN RIBBON */}
+        <View
+          style={{
+            backgroundColor: C.accent,
+            paddingVertical: 11,
+            alignItems: 'center'
+          }}
+        >
+          <Text
+            style={{
+              color: '#FFFFFF',
+              fontSize: 14,
+              fontWeight: '800',
+              letterSpacing: 1
+            }}
+          >
+            EVENT COUNTDOWN
+          </Text>
+        </View>
+      </View>
+             
 
     </View>
   );
