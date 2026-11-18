@@ -6293,7 +6293,7 @@ function renderEventDetail() {
     </Text>
 
     <Text style={{ color: C.gold, fontSize: 12, marginTop: 5 }}>
-      Reward: {task.reward}
+      Reward: {task.reward_description}
     </Text>
 
     <View
