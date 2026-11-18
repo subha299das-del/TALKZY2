@@ -6539,6 +6539,9 @@ function renderEventDetail() {
 
 
 function renderMainContent() {
+    if (screen === 'eventManagementList') {
+    return renderEventManagementList();
+    }
    if (showEventPreview) {
     return renderEventPreview();
 }
