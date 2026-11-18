@@ -410,6 +410,7 @@ const [loadingOfficialEvents, setLoadingOfficialEvents] = useState(false);
   milestones: []
 });
  
+ const [showEventPreview, setShowEventPreview] = useState(false);
   const [popularPage, setPopularPage] = useState('main');
   const [mineTab, setMineTab] = useState('Recent');
   const [countrySearch, setCountrySearch] = useState('');
@@ -5458,6 +5459,272 @@ function calculateEventEndAt() {
       </View>
     );
                  }
+
+
+function renderEventPreview() {
+  return (
+    <View style={{ padding: 16, paddingBottom: 35 }}>
+
+      <Text
+        style={{
+          color: C.text,
+          fontSize: 22,
+          fontWeight: '900',
+          marginBottom: 18
+        }}
+      >
+        Preview Official Event
+      </Text>
+
+      {/* EVENT POSTER */}
+      {eventDraft.poster_uri ? (
+        <Image
+          source={{ uri: eventDraft.poster_uri }}
+          style={{
+            width: '100%',
+            aspectRatio: 2,
+            borderRadius: 12,
+            marginBottom: 18
+          }}
+          resizeMode="cover"
+        />
+      ) : (
+        <View
+          style={{
+            width: '100%',
+            aspectRatio: 2,
+            backgroundColor: C.panel,
+            borderRadius: 12,
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginBottom: 18
+          }}
+        >
+          <Text style={{ color: C.muted }}>
+            Event Poster Not Selected
+          </Text>
+        </View>
+      )}
+
+      {/* EVENT NAME */}
+      <Text
+        style={{
+          color: C.text,
+          fontSize: 21,
+          fontWeight: '900',
+          marginBottom: 18
+        }}
+      >
+        {eventDraft.event_name || 'Untitled Event'}
+      </Text>
+
+      {/* EVENT BACKGROUND */}
+      <Text style={{ color: C.text, fontWeight: '900', marginBottom: 10 }}>
+        Event Background
+      </Text>
+
+      {eventDraft.background_uri ? (
+        <Image
+          source={{ uri: eventDraft.background_uri }}
+          style={{
+            width: '100%',
+            height: 150,
+            borderRadius: 10,
+            marginBottom: 18
+          }}
+          resizeMode="cover"
+        />
+      ) : (
+        <Text style={{ color: C.muted, marginBottom: 18 }}>
+          No background selected
+        </Text>
+      )}
+
+      {/* BORDER DESIGN */}
+      <Text style={{ color: C.text, fontWeight: '900', marginBottom: 10 }}>
+        Border Design
+      </Text>
+
+      {eventDraft.border_uri ? (
+        <Image
+          source={{ uri: eventDraft.border_uri }}
+          style={{
+            width: '100%',
+            height: 150,
+            marginBottom: 18
+          }}
+          resizeMode="contain"
+        />
+      ) : (
+        <Text style={{ color: C.muted, marginBottom: 18 }}>
+          No border design selected
+        </Text>
+      )}
+
+      {/* EVENT DURATION */}
+      <Text style={{ color: C.text, fontWeight: '900', marginBottom: 8 }}>
+        Event Duration
+      </Text>
+
+      <Text style={{ color: C.muted, marginBottom: 18 }}>
+        {eventDraft.duration === '7_days' ? '7 Days' : '1 Month'}
+      </Text>
+
+      {/* EVENT SCHEDULE */}
+      <Text style={{ color: C.text, fontWeight: '900', marginBottom: 8 }}>
+        Event Start
+      </Text>
+
+      <Text style={{ color: C.muted, marginBottom: 14 }}>
+        {eventDraft.start_at || 'Not selected'}
+      </Text>
+
+      <Text style={{ color: C.text, fontWeight: '900', marginBottom: 8 }}>
+        Event End
+      </Text>
+
+      <Text style={{ color: C.accent, marginBottom: 22 }}>
+        {calculateEventEndAt() || 'Not calculated'}
+      </Text>
+
+      {/* EVENT GIFTS */}
+      <Text style={{ color: C.text, fontSize: 18, fontWeight: '900', marginBottom: 14 }}>
+        Event Gifts
+      </Text>
+
+      <View style={{ flexDirection: 'row', gap: 10, marginBottom: 22 }}>
+        {eventDraft.gifts.map((gift, index) => (
+          <View
+            key={index}
+            style={{
+              flex: 1,
+              backgroundColor: C.panel,
+              borderRadius: 10,
+              padding: 8,
+              alignItems: 'center'
+            }}
+          >
+            {gift.image_uri ? (
+              <Image
+                source={{ uri: gift.image_uri }}
+                style={{ width: 55, height: 55 }}
+                resizeMode="contain"
+              />
+            ) : (
+              <Text style={{ fontSize: 28 }}>🎁</Text>
+            )}
+
+            <Text style={{ color: C.text, fontWeight: '800', textAlign: 'center' }}>
+              {gift.name || `Gift ${index + 1}`}
+            </Text>
+
+            <Text style={{ color: C.gold, fontSize: 12 }}>
+              {gift.coin_value || '0'} Coins
+            </Text>
+          </View>
+        ))}
+      </View>
+
+      {/* EVENT RULES */}
+      <Text style={{ color: C.text, fontSize: 18, fontWeight: '900', marginBottom: 10 }}>
+        Event Rules
+      </Text>
+
+      <Text style={{ color: C.muted, marginBottom: 22 }}>
+        {eventDraft.rules || 'No rules added yet.'}
+      </Text>
+
+      {/* TOP 3 REWARDS */}
+      <Text style={{ color: C.text, fontSize: 18, fontWeight: '900', marginBottom: 12 }}>
+        Top 3 Winner Rewards
+      </Text>
+
+      {eventDraft.top_rewards.map((reward, index) => (
+        <View
+          key={index}
+          style={{
+            backgroundColor: C.panel,
+            padding: 12,
+            borderRadius: 10,
+            marginBottom: 10
+          }}
+        >
+          <Text style={{ color: C.gold, fontWeight: '900' }}>
+            {['🥇 First Place', '🥈 Second Place', '🥉 Third Place'][index]}
+          </Text>
+
+          <Text style={{ color: C.muted, marginTop: 6 }}>
+            {reward.description || 'No reward added'}
+          </Text>
+        </View>
+      ))}
+
+      {/* MILESTONES */}
+      <Text style={{ color: C.text, fontSize: 18, fontWeight: '900', marginTop: 14, marginBottom: 12 }}>
+        Event Milestones
+      </Text>
+
+      {eventDraft.milestones.length === 0 ? (
+        <Text style={{ color: C.muted }}>
+          No milestones added yet.
+        </Text>
+      ) : (
+        eventDraft.milestones.map((milestone, index) => (
+          <View
+            key={milestone.id || index}
+            style={{
+              backgroundColor: C.panel,
+              padding: 12,
+              borderRadius: 10,
+              marginBottom: 10
+            }}
+          >
+            <Text style={{ color: C.accent, fontWeight: '900' }}>
+              Milestone {index + 1}
+            </Text>
+
+            <Text style={{ color: C.text, marginTop: 6 }}>
+              Target: {milestone.target || 'Not set'} Coins
+            </Text>
+
+            <Text style={{ color: C.text, marginTop: 5 }}>
+              Reward Type: {(milestone.reward_type || 'coins').toUpperCase()}
+            </Text>
+
+            <Text style={{ color: C.muted, marginTop: 5 }}>
+              {milestone.reward_description || 'No reward description'}
+            </Text>
+          </View>
+        ))
+      )}
+         
+        {/* PREVIEW EVENT BUTTON */}
+        <TouchableOpacity
+          onPress={() => setShowEventPreview(true)}
+          style={{
+            backgroundColor: C.accent,
+            borderRadius: 12,
+            padding: 16,
+            alignItems: 'center',
+            marginTop: 18
+          }}
+        >
+          <Text
+            style={{
+              color: '#FFFFFF',
+              fontSize: 16,
+              fontWeight: '900'
+            }}
+          >
+            Preview Event
+          </Text>
+        </TouchableOpacity>
+             
+
+    </View>
+  );
+         }
+           
            
 // =========================================
 // EVENTS: EVENT DETAIL PAGE
