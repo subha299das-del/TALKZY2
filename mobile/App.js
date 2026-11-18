@@ -5259,7 +5259,11 @@ function renderEventDetail() {
               <View
                 key={rank}
                 style={{
-                  backgroundColor: C.panel2,
+                  backgroundColor:
+  rank === 1 ? '#3A3020' :
+  rank === 2 ? '#292D38' :
+  rank === 3 ? '#382820' :
+  C.panel2,
                   borderRadius: 10,
                   padding: 15,
                   marginBottom: 12
