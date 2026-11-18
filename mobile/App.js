@@ -4869,7 +4869,31 @@ function calculateEventEndAt() {
         </Text>
 
         <TouchableOpacity
-          onPress={() => setScreen('eventManagement')}
+          onPress={() => {
+  setEventDraft({
+    event_name: '',
+    poster_uri: null,
+    background_uri: null,
+    border_uri: null,
+    duration: '7_days',
+    start_at: '',
+    rules: '',
+    gifts: [
+      { name: '', coin_value: '', image_uri: null },
+      { name: '', coin_value: '', image_uri: null },
+      { name: '', coin_value: '', image_uri: null }
+    ],
+    top_rewards: [
+      { description: '' },
+      { description: '' },
+      { description: '' }
+    ],
+    milestones: []
+  });
+
+  setShowEventPreview(false);
+  setScreen('eventManagement');
+}}
           style={{
             backgroundColor: C.accent,
             borderRadius: 12,
