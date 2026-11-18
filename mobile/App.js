@@ -4829,6 +4829,115 @@ function calculateEventEndAt() {
 
 
   // =========================================
+  // EVENTS: OFFICIAL EVENT MANAGEMENT LIST
+  // =========================================
+
+  function renderEventManagementList() {
+    return (
+      <View style={{ padding: 16, paddingBottom: 30 }}>
+
+        <TouchableOpacity
+          onPress={() => {
+            setScreen('main');
+            setActiveTab('Me');
+          }}
+          style={{
+            alignSelf: 'flex-start',
+            backgroundColor: C.panel,
+            borderWidth: 1,
+            borderColor: C.line,
+            borderRadius: 10,
+            paddingVertical: 10,
+            paddingHorizontal: 15,
+            marginBottom: 20
+          }}
+        >
+          <Text style={{ color: C.text, fontWeight: '800' }}>
+            ← Back
+          </Text>
+        </TouchableOpacity>
+
+        <Text
+          style={{
+            color: C.text,
+            fontSize: 22,
+            fontWeight: '900',
+            marginBottom: 22
+          }}
+        >
+          Official Event Management
+        </Text>
+
+        <TouchableOpacity
+          onPress={() => setScreen('eventManagement')}
+          style={{
+            backgroundColor: C.accent,
+            borderRadius: 12,
+            padding: 16,
+            alignItems: 'center',
+            marginBottom: 25
+          }}
+        >
+          <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>
+            + Create New Event
+          </Text>
+        </TouchableOpacity>
+
+        {/* SCHEDULED EVENTS */}
+        <Text
+          style={{
+            color: C.text,
+            fontSize: 18,
+            fontWeight: '900',
+            marginBottom: 12
+          }}
+        >
+          Scheduled Events
+        </Text>
+
+        <View
+          style={{
+            backgroundColor: C.panel,
+            padding: 20,
+            borderRadius: 12,
+            marginBottom: 25
+          }}
+        >
+          <Text style={{ color: C.muted, textAlign: 'center' }}>
+            No Scheduled Events
+          </Text>
+        </View>
+
+        {/* LIVE EVENTS */}
+        <Text
+          style={{
+            color: C.text,
+            fontSize: 18,
+            fontWeight: '900',
+            marginBottom: 12
+          }}
+        >
+          Live Events
+        </Text>
+
+        <View
+          style={{
+            backgroundColor: C.panel,
+            padding: 20,
+            borderRadius: 12
+          }}
+        >
+          <Text style={{ color: C.muted, textAlign: 'center' }}>
+            No Live Events
+          </Text>
+        </View>
+
+      </View>
+    );
+}
+           
+
+  // =========================================
   // EVENTS: OFFICIAL EVENT MANAGEMENT
   // =========================================
 
