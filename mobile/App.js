@@ -366,6 +366,8 @@ const [bio, setBio] = useState('');
   // ---------------------------------
 
   const [roomTab, setRoomTab] = useState('Mine');
+ const [officialEvents, setOfficialEvents] = useState([]);
+const [loadingOfficialEvents, setLoadingOfficialEvents] = useState(false);
   const [popularPage, setPopularPage] = useState('main');
   const [mineTab, setMineTab] = useState('Recent');
   const [countrySearch, setCountrySearch] = useState('');
