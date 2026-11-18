@@ -389,6 +389,27 @@ const [bio, setBio] = useState('');
   const [roomTab, setRoomTab] = useState('Mine');
  const [officialEvents, setOfficialEvents] = useState([]);
 const [loadingOfficialEvents, setLoadingOfficialEvents] = useState(false);
+ const [eventDraft, setEventDraft] = useState({
+  event_name: '',
+  poster_uri: null,
+  background_uri: null,
+  border_uri: null,
+  duration: '7_days',
+  start_at: '',
+  rules: '',
+  gifts: [
+    { name: '', coin_value: '', image_uri: null },
+    { name: '', coin_value: '', image_uri: null },
+    { name: '', coin_value: '', image_uri: null }
+  ],
+  top_rewards: [
+    { description: '' },
+    { description: '' },
+    { description: '' }
+  ],
+  milestones: []
+});
+ 
   const [popularPage, setPopularPage] = useState('main');
   const [mineTab, setMineTab] = useState('Recent');
   const [countrySearch, setCountrySearch] = useState('');
