@@ -5465,9 +5465,7 @@ function renderEventPreview() {
   return (
     <View style={{ padding: 16, paddingBottom: 35 }}>
    
-function renderEventPreview() {
-  return (
-    <View style={{ padding: 16, paddingBottom: 35 }}>
+
 
       {/* BACK TO EVENT EDITING */}
       <TouchableOpacity
