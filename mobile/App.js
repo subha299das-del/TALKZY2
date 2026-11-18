@@ -335,6 +335,12 @@ export default function App() {
  const [selectedOfficialEvent, setSelectedOfficialEvent] = useState(null);
  const [activeEventSection, setActiveEventSection] = useState('rank');
  const [eventInfoPopup, setEventInfoPopup] = useState(null);
+ const [eventCountdown, setEventCountdown] = useState({
+  days: '00',
+  hours: '00',
+  minutes: '00',
+  seconds: '00'
+});
   const [popularReturnScreen, setPopularReturnScreen] = useState('main');
   const [activeTab, setActiveTab] = useState('Room');
   const [roomSettingsType, setRoomSettingsType] = useState('public');
