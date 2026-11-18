@@ -5518,16 +5518,7 @@ function renderEventPreview() {
         Preview Official Event
       </Text>
          
-      <Text
-        style={{
-          color: C.text,
-          fontSize: 22,
-          fontWeight: '900',
-          marginBottom: 18
-        }}
-      >
-        Preview Official Event
-      </Text>
+      
 
       {/* EVENT POSTER */}
       {eventDraft.poster_uri ? (
