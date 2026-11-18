@@ -6986,7 +6986,19 @@ if (screen === 'profile' || profileIncomplete) {
       <StatusBar barStyle="light-content" />
 
       <View style={{ flex: 1 }}>
-     !['roomSettings', 'createRoom', 'eventDetail', 'eventManagement', 'eventManagementList'].includes(screen) &&
+  {!['roomSettings', 'createRoom', 'eventDetail', 'eventManagement', 'eventManagementList'].includes(screen) &&
+    !showEventPreview &&
+    !showCountryRooms &&
+    !showCountryRegion &&
+    !showMySubscription &&
+    !showCreateRoomActivity &&
+    !showPosterTemplates &&
+    !showPosterOptions &&
+    !showPosterEditor && (
+      <View style={{ paddingHorizontal: 15 }}>
+        {renderMainHeader()}
+      </View>
+    )}
 !showEventPreview &&
   !showCountryRooms &&
 !showCountryRegion &&
