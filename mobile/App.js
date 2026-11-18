@@ -4620,6 +4620,62 @@ function renderCreateRoomActivity() {
   );
 }
 
+
+// =========================================
+// EVENTS: EVENT DETAIL PAGE
+// =========================================
+
+function renderEventDetail() {
+  const eventName =
+    selectedOfficialEvent?.event_name ||
+    selectedOfficialEvent?.name ||
+    'Event Details';
+
+  return (
+    <View style={{ flex: 1, paddingBottom: 20 }}>
+
+      {/* EVENT DETAIL HEADER */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingVertical: 14,
+          borderBottomWidth: 1,
+          borderBottomColor: C.line,
+          marginBottom: 18
+        }}
+      >
+        <TouchableOpacity
+          onPress={closeOfficialEvent}
+          style={{ paddingRight: 14, paddingVertical: 5 }}
+        >
+          <Text style={{ color: C.text, fontSize: 28 }}>
+            ‹
+          </Text>
+        </TouchableOpacity>
+
+        <Text
+          style={{
+            color: C.text,
+            fontSize: 18,
+            fontWeight: '800',
+            flex: 1
+          }}
+          numberOfLines={1}
+        >
+          {eventName}
+        </Text>
+      </View>
+
+      <Text style={{ color: C.muted, textAlign: 'center' }}>
+        Event details will appear here.
+      </Text>
+
+    </View>
+  );
+}
+
+
 function renderMainContent() {
    if (screen === 'eventDetail') {
     return renderEventDetail();
