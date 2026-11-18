@@ -528,6 +528,59 @@ return () => {
 };
 }, []);
 
+ // ---------------------------------
+// OFFICIAL EVENT COUNTDOWN
+// ---------------------------------
+
+useEffect(() => {
+  const endTime = selectedOfficialEvent?.end_at;
+
+  if (!endTime) {
+    setEventCountdown({
+      days: '00',
+      hours: '00',
+      minutes: '00',
+      seconds: '00'
+    });
+    return;
+  }
+
+  function updateCountdown() {
+    const difference =
+      new Date(endTime).getTime() - Date.now();
+
+    const remaining = Math.max(0, difference);
+
+    const days = Math.floor(
+      remaining / (1000 * 60 * 60 * 24)
+    );
+
+    const hours = Math.floor(
+      (remaining / (1000 * 60 * 60)) % 24
+    );
+
+    const minutes = Math.floor(
+      (remaining / (1000 * 60)) % 60
+    );
+
+    const seconds = Math.floor(
+      (remaining / 1000) % 60
+    );
+
+    setEventCountdown({
+      days: String(days).padStart(2, '0'),
+      hours: String(hours).padStart(2, '0'),
+      minutes: String(minutes).padStart(2, '0'),
+      seconds: String(seconds).padStart(2, '0')
+    });
+  }
+
+  updateCountdown();
+
+  const timer = setInterval(updateCountdown, 1000);
+
+  return () => clearInterval(timer);
+}, [selectedOfficialEvent?.end_at]);
 
   // ---------------------------------
   // LOAD USER PROFILE
