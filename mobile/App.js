@@ -4731,10 +4731,7 @@ function renderEventDetail() {
 
       {/* REWARDS & RULES BUTTON */}
       <TouchableOpacity
-        onPress={() => Alert.alert(
-          'Rewards & Rules',
-          'Rules and Rewards details will be available here.'
-        )}
+        onPress={() => setEventInfoPopup('options')}
         style={{
           backgroundColor: C.panel,
           borderWidth: 1,
@@ -4823,9 +4820,108 @@ function renderEventDetail() {
             Event Leaderboard
           </Text>
 
-          <Text style={{ color: C.muted, fontSize: 13 }}>
-            Top 30 participants will appear here.
-          </Text>
+          
+
+          {/* TOP 30 LEADERBOARD */}
+          {Array.from({ length: 30 }, (_, index) => index + 1).map(rank => (
+            <View
+              key={rank}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: C.panel2,
+                borderRadius: 10,
+                padding: 11,
+                marginBottom: 9
+              }}
+            >
+              <Text
+                style={{
+                  color: rank <= 3 ? C.gold : C.muted,
+                  fontSize: 15,
+                  fontWeight: '900',
+                  width: 30
+                }}
+              >
+                {rank}
+              </Text>
+
+              <View
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 19,
+                  backgroundColor: C.panel,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: 10
+                }}
+              >
+                <Text style={{ fontSize: 19 }}>👤</Text>
+              </View>
+
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: C.text, fontWeight: '800', fontSize: 13 }}>
+                  Participant {rank}
+                </Text>
+
+                <Text style={{ color: C.muted, fontSize: 10, marginTop: 3 }}>
+                  TALKZY ID: —
+                </Text>
+              </View>
+
+              <Text style={{ color: C.gold, fontSize: 12, fontWeight: '800' }}>
+                0 Coins
+              </Text>
+            </View>
+          ))}
+
+
+{/* MY CONTRIBUTION */}
+<View
+  style={{
+    borderTopWidth: 1,
+    borderTopColor: C.line,
+    paddingTop: 16
+  }}
+>
+  <Text
+    style={{
+      color: C.accent,
+      fontSize: 15,
+      fontWeight: '800',
+      marginBottom: 12
+    }}
+  >
+    My Contribution
+  </Text>
+
+  <View
+    style={{
+      backgroundColor: C.panel2,
+      borderRadius: 10,
+      padding: 14,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between'
+    }}
+  >
+    <View>
+      <Text style={{ color: C.text, fontWeight: '800' }}>
+        Your Name
+      </Text>
+
+      <Text style={{ color: C.muted, fontSize: 12, marginTop: 4 }}>
+        Your TALKZY ID
+      </Text>
+    </View>
+
+    <Text style={{ color: C.gold, fontWeight: '800' }}>
+      0 Coins
+    </Text>
+  </View>
+</View>
+
         </View>
       )}
 
@@ -4850,9 +4946,57 @@ function renderEventDetail() {
             Event Milestones
           </Text>
 
-          <Text style={{ color: C.muted, fontSize: 13 }}>
-            All event milestones and your progress will appear here.
-          </Text>
+          
+{[
+  { id: 1, target: '10,000 Coins', reward: 'Milestone Reward 1' },
+  { id: 2, target: '50,000 Coins', reward: 'Milestone Reward 2' },
+  { id: 3, target: '100,000 Coins', reward: 'Milestone Reward 3' }
+].map(task => (
+  <View
+    key={task.id}
+    style={{
+      backgroundColor: C.panel2,
+      borderRadius: 10,
+      padding: 14,
+      marginBottom: 12
+    }}
+  >
+    <Text style={{ color: C.text, fontWeight: '800', fontSize: 14 }}>
+      Milestone {task.id}
+    </Text>
+
+    <Text style={{ color: C.muted, fontSize: 12, marginTop: 7 }}>
+      Target: {task.target}
+    </Text>
+
+    <Text style={{ color: C.gold, fontSize: 12, marginTop: 5 }}>
+      Reward: {task.reward}
+    </Text>
+
+    <View
+      style={{
+        height: 7,
+        backgroundColor: C.line,
+        borderRadius: 10,
+        marginTop: 12,
+        overflow: 'hidden'
+      }}
+    >
+      <View
+        style={{
+          width: '0%',
+          height: 7,
+          backgroundColor: C.accent
+        }}
+      />
+    </View>
+
+    <Text style={{ color: C.muted, fontSize: 11, marginTop: 8 }}>
+      Progress: 0% · Not Completed · Reward Not Received
+    </Text>
+  </View>
+))}
+
         </View>
       )}
 
@@ -4928,6 +5072,238 @@ function renderEventDetail() {
            
 
        
+      {/* REWARDS & RULES OPTIONS POPUP */}
+      <Modal
+        visible={eventInfoPopup === 'options'}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setEventInfoPopup(null)}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.75)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 25
+          }}
+        >
+          <View
+            style={{
+              width: '100%',
+              backgroundColor: C.panel,
+              borderRadius: 16,
+              padding: 20,
+              borderWidth: 1,
+              borderColor: C.line
+            }}
+          >
+            <Text
+              style={{
+                color: C.text,
+                fontSize: 19,
+                fontWeight: '800',
+                textAlign: 'center',
+                marginBottom: 22
+              }}
+            >
+              Rewards & Rules
+            </Text>
+
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <TouchableOpacity
+                onPress={() => setEventInfoPopup('rules')}
+                style={{
+                  flex: 1,
+                  backgroundColor: C.accent,
+                  padding: 16,
+                  borderRadius: 12,
+                  alignItems: 'center'
+                }}
+              >
+                <Text style={{ color: '#FFFFFF', fontWeight: '800' }}>
+                  Rules
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setEventInfoPopup('rewards')}
+                style={{
+                  flex: 1,
+                  backgroundColor: C.accent,
+                  padding: 16,
+                  borderRadius: 12,
+                  alignItems: 'center'
+                }}
+              >
+                <Text style={{ color: '#FFFFFF', fontWeight: '800' }}>
+                  Rewards
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              onPress={() => setEventInfoPopup(null)}
+              style={{ marginTop: 18, alignItems: 'center' }}
+            >
+              <Text style={{ color: C.muted, fontWeight: '700' }}>
+                Close
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+                 
+      {/* EVENT RULES POPUP */}
+      <Modal
+        visible={eventInfoPopup === 'rules'}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setEventInfoPopup('options')}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.75)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 25
+          }}
+        >
+          <View
+            style={{
+              width: '100%',
+              maxHeight: '75%',
+              backgroundColor: C.panel,
+              borderRadius: 16,
+              padding: 20,
+              borderWidth: 1,
+              borderColor: C.line
+            }}
+          >
+            <Text
+              style={{
+                color: C.text,
+                fontSize: 19,
+                fontWeight: '800',
+                marginBottom: 18
+              }}
+            >
+              Event Rules
+            </Text>
+
+            <ScrollView>
+              <Text style={{ color: C.muted, fontSize: 14, lineHeight: 23 }}>
+                {selectedOfficialEvent?.rules || 'Event rules will appear here once configured by TALKZY management.'}
+              </Text>
+            </ScrollView>
+
+            <TouchableOpacity
+              onPress={() => setEventInfoPopup('options')}
+              style={{
+                backgroundColor: C.accent,
+                padding: 13,
+                borderRadius: 10,
+                alignItems: 'center',
+                marginTop: 18
+              }}
+            >
+              <Text style={{ color: '#FFFFFF', fontWeight: '800' }}>
+                Back
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+   
+      {/* EVENT REWARDS POPUP */}
+      <Modal
+        visible={eventInfoPopup === 'rewards'}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setEventInfoPopup('options')}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.75)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 25
+          }}
+        >
+          <View
+            style={{
+              width: '100%',
+              maxHeight: '75%',
+              backgroundColor: C.panel,
+              borderRadius: 16,
+              padding: 20,
+              borderWidth: 1,
+              borderColor: C.line
+            }}
+          >
+            <Text
+              style={{
+                color: C.text,
+                fontSize: 19,
+                fontWeight: '800',
+                marginBottom: 20
+              }}
+            >
+              Winner Rewards
+            </Text>
+
+            {[1, 2, 3].map(rank => (
+              <View
+                key={rank}
+                style={{
+                  backgroundColor: C.panel2,
+                  borderRadius: 10,
+                  padding: 15,
+                  marginBottom: 12
+                }}
+              >
+                <Text
+                  style={{
+                    color: C.gold,
+                    fontSize: 15,
+                    fontWeight: '800',
+                    marginBottom: 6
+                  }}
+                >
+                  {rank === 1 ? '🥇 1st Place' :
+                   rank === 2 ? '🥈 2nd Place' :
+                   '🥉 3rd Place'}
+                </Text>
+
+                <Text style={{ color: C.text, fontSize: 13 }}>
+                  {selectedOfficialEvent?.top_rewards?.[rank - 1]?.description ||
+                    'Reward details will appear here.'}
+                </Text>
+              </View>
+            ))}
+
+            <TouchableOpacity
+              onPress={() => setEventInfoPopup('options')}
+              style={{
+                backgroundColor: C.accent,
+                padding: 13,
+                borderRadius: 10,
+                alignItems: 'center',
+                marginTop: 8
+              }}
+            >
+              <Text style={{ color: '#FFFFFF', fontWeight: '800' }}>
+                Back
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+                 
+
     </View>
   );
 }
