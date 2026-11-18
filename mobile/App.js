@@ -67,11 +67,24 @@ const supabase = createClient(
   }
 );
 
+
 async function api(path, options = {}) {
+  const { data: sessionData, error: sessionError } =
+    await supabase.auth.getSession();
+
+  if (sessionError) {
+    throw new Error('Could not verify your login session.');
+  }
+
+  const accessToken = sessionData?.session?.access_token;
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      ...(accessToken
+        ? { Authorization: `Bearer ${accessToken}` }
+        : {}),
       ...(options.headers || {})
     }
   });
@@ -96,6 +109,7 @@ async function api(path, options = {}) {
 
   return data;
 }
+
 
 function Brand({ small = false }) {
   const size = small ? 48 : 100;
