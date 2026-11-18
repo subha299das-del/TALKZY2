@@ -4724,8 +4724,209 @@ function renderEventDetail() {
           </Text>
         </View>
       </View>
-             
+            
+        </View>
+      </View>
 
+      {/* REWARDS & RULES BUTTON */}
+      <TouchableOpacity
+        onPress={() => Alert.alert(
+          'Rewards & Rules',
+          'Rules and Rewards details will be available here.'
+        )}
+        style={{
+          backgroundColor: C.panel,
+          borderWidth: 1,
+          borderColor: C.accent,
+          borderRadius: 12,
+          padding: 15,
+          marginBottom: 20,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}
+      >
+        <Text
+          style={{
+            color: C.text,
+            fontSize: 15,
+            fontWeight: '800'
+          }}
+        >
+          Rewards & Rules
+        </Text>
+
+        <Text style={{ color: C.accent, fontSize: 20 }}>
+          ›
+        </Text>
+      </TouchableOpacity>
+
+           
+      {/* RANK AND TASKS NAVIGATION */}
+      <View
+        style={{
+          flexDirection: 'row',
+          backgroundColor: C.panel,
+          borderRadius: 12,
+          padding: 5,
+          marginBottom: 18
+        }}
+      >
+        {['rank', 'tasks'].map(section => (
+          <TouchableOpacity
+            key={section}
+            onPress={() => setActiveEventSection(section)}
+            style={{
+              flex: 1,
+              paddingVertical: 12,
+              alignItems: 'center',
+              borderRadius: 9,
+              backgroundColor:
+                activeEventSection === section
+                  ? C.accent
+                  : 'transparent'
+            }}
+          >
+            <Text
+              style={{
+                color: C.text,
+                fontSize: 15,
+                fontWeight: '800'
+              }}
+            >
+              {section === 'rank' ? 'Rank' : 'Tasks'}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+         
+      {/* RANK SECTION */}
+      {activeEventSection === 'rank' && (
+        <View
+          style={{
+            backgroundColor: C.panel,
+            borderRadius: 12,
+            padding: 16,
+            marginBottom: 20
+          }}
+        >
+          <Text
+            style={{
+              color: C.text,
+              fontSize: 17,
+              fontWeight: '800',
+              marginBottom: 10
+            }}
+          >
+            Event Leaderboard
+          </Text>
+
+          <Text style={{ color: C.muted, fontSize: 13 }}>
+            Top 30 participants will appear here.
+          </Text>
+        </View>
+      )}
+
+      {/* TASKS SECTION */}
+      {activeEventSection === 'tasks' && (
+        <View
+          style={{
+            backgroundColor: C.panel,
+            borderRadius: 12,
+            padding: 16,
+            marginBottom: 20
+          }}
+        >
+          <Text
+            style={{
+              color: C.text,
+              fontSize: 17,
+              fontWeight: '800',
+              marginBottom: 10
+            }}
+          >
+            Event Milestones
+          </Text>
+
+          <Text style={{ color: C.muted, fontSize: 13 }}>
+            All event milestones and your progress will appear here.
+          </Text>
+        </View>
+      )}
+
+
+       
+      {/* EVENT GIFTS */}
+      <View
+        style={{
+          backgroundColor: C.panel,
+          borderRadius: 12,
+          padding: 15,
+          marginBottom: 20
+        }}
+      >
+        <Text
+          style={{
+            color: C.text,
+            fontSize: 17,
+            fontWeight: '800',
+            marginBottom: 15
+          }}
+        >
+          Event Gifts
+        </Text>
+
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            gap: 10
+          }}
+        >
+          {[1, 2, 3].map(item => (
+            <View
+              key={item}
+              style={{
+                flex: 1,
+                alignItems: 'center',
+                backgroundColor: C.panel2,
+                borderRadius: 10,
+                paddingVertical: 15,
+                paddingHorizontal: 5
+              }}
+            >
+              <Text style={{ fontSize: 28 }}>
+                🎁
+              </Text>
+
+              <Text
+                style={{
+                  color: C.text,
+                  fontSize: 12,
+                  fontWeight: '800',
+                  marginTop: 8
+                }}
+              >
+                Gift {item}
+              </Text>
+
+              <Text
+                style={{
+                  color: C.gold,
+                  fontSize: 12,
+                  marginTop: 5
+                }}
+              >
+                0 Coins
+              </Text>
+            </View>
+          ))}
+        </View>
+      </View>
+           
+
+       
     </View>
   );
 }
