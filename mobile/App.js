@@ -1084,7 +1084,18 @@ async function loadOfficialEvents() {
     setLoadingOfficialEvents(false);
   }
 }
- 
+
+ // =========================================
+// EVENTS: OPEN EVENT DETAIL
+// =========================================
+
+function openOfficialEvent(event) {
+  setSelectedOfficialEvent(event);
+  setActiveEventSection('rank');
+  setRoomTab('Events');
+  setActiveTab('Room');
+  setScreen('eventDetail');
+}
 
   // =========================================
   // ROOM: LOAD MY ROOMS
