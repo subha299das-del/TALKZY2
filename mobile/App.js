@@ -5760,7 +5760,7 @@ function renderEventPreview() {
          
         {/* PREVIEW EVENT BUTTON */}
         <TouchableOpacity
-          onPress={() => setShowEventPreview(true)}
+          onPress={handlePreviewEvent}
           style={{
             backgroundColor: C.accent,
             borderRadius: 12,
@@ -5785,6 +5785,111 @@ function renderEventPreview() {
   );
          }
            
+function handlePreviewEvent() {
+  if (!eventDraft.event_name.trim()) {
+    Alert.alert('Missing Information', 'Please enter the event name.');
+    return;
+  }
+
+  if (!eventDraft.poster_uri) {
+    Alert.alert('Missing Information', 'Please upload the event poster.');
+    return;
+  }
+
+  if (!eventDraft.background_uri) {
+    Alert.alert('Missing Information', 'Please upload the event background.');
+    return;
+  }
+
+  if (!eventDraft.border_uri) {
+    Alert.alert('Missing Information', 'Please upload the border design.');
+    return;
+  }
+
+  for (let i = 0; i < 3; i++) {
+    const gift = eventDraft.gifts[i];
+
+    if (
+      !gift ||
+      !gift.image_uri ||
+      !gift.name.trim() ||
+      !Number.isFinite(Number(gift.coin_value)) ||
+      Number(gift.coin_value) <= 0
+    ) {
+      Alert.alert(
+        'Incomplete Gift',
+        `Please complete Gift ${i + 1}: image, name and a valid coin value.`
+      );
+      return;
+    }
+  }
+
+  const startValue = eventDraft.start_at.trim();
+  const dateMatch = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(startValue);
+
+  if (!dateMatch) {
+    Alert.alert(
+      'Invalid Start Time',
+      'Enter the date and time in YYYY-MM-DDTHH:MM format.'
+    );
+    return;
+  }
+
+  const [, year, month, day, hour, minute] = dateMatch;
+  const startDate = new Date(
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    Number(hour),
+    Number(minute)
+  );
+
+  if (
+    startDate.getFullYear() !== Number(year) ||
+    startDate.getMonth() !== Number(month) - 1 ||
+    startDate.getDate() !== Number(day) ||
+    startDate.getHours() !== Number(hour) ||
+    startDate.getMinutes() !== Number(minute)
+  ) {
+    Alert.alert('Invalid Start Time', 'Please enter a valid date and time.');
+    return;
+  }
+
+  if (!eventDraft.rules.trim()) {
+    Alert.alert('Missing Information', 'Please enter the event rules.');
+    return;
+  }
+
+  for (let i = 0; i < 3; i++) {
+    if (!eventDraft.top_rewards[i]?.description.trim()) {
+      Alert.alert(
+        'Missing Reward',
+        `Please enter the reward for position ${i + 1}.`
+      );
+      return;
+    }
+  }
+
+  for (let i = 0; i < eventDraft.milestones.length; i++) {
+    const milestone = eventDraft.milestones[i];
+
+    if (
+      !milestone.target ||
+      !Number.isFinite(Number(milestone.target)) ||
+      Number(milestone.target) <= 0 ||
+      !milestone.reward_description.trim()
+    ) {
+      Alert.alert(
+        'Incomplete Milestone',
+        `Please complete Milestone ${i + 1}, or remove it.`
+      );
+      return;
+    }
+  }
+
+  setShowEventPreview(true);
+                }
+
            
 // =========================================
 // EVENTS: EVENT DETAIL PAGE
