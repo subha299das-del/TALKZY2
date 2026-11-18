@@ -4725,9 +4725,6 @@ function renderEventDetail() {
           </Text>
         </View>
       </View>
-            
-        </View>
-      </View>
 
       {/* REWARDS & RULES BUTTON */}
       <TouchableOpacity
@@ -4829,7 +4826,11 @@ function renderEventDetail() {
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                backgroundColor: C.panel2,
+                backgroundColor:
+  rank === 1 ? '#3A3020' :
+  rank === 2 ? '#292D38' :
+  rank === 3 ? '#382820' :
+  C.panel2,
                 borderRadius: 10,
                 padding: 11,
                 marginBottom: 9
@@ -4906,10 +4907,39 @@ function renderEventDetail() {
       justifyContent: 'space-between'
     }}
   >
-    <View>
-      <Text style={{ color: C.text, fontWeight: '800' }}>
-        Your Name
-      </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+      <View
+        style={{
+          width: 42,
+          height: 42,
+          borderRadius: 21,
+          backgroundColor: C.panel,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: 10,
+          overflow: 'hidden'
+        }}
+      >
+        {profile?.avatar_url ? (
+          <Image
+            source={{ uri: profile.avatar_url }}
+            style={{ width: 42, height: 42 }}
+          />
+        ) : (
+          <Text style={{ fontSize: 20 }}>👤</Text>
+        )}
+      </View>
+
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: C.text, fontWeight: '800' }}>
+          {profile?.display_name || 'Your Name'}
+        </Text>
+
+        <Text style={{ color: C.muted, fontSize: 12, marginTop: 4 }}>
+          TALKZY ID: {profile?.talkzy_id || '—'}
+        </Text>
+      </View>
+    </View>
 
       <Text style={{ color: C.muted, fontSize: 12, marginTop: 4 }}>
         Your TALKZY ID
@@ -4947,11 +4977,7 @@ function renderEventDetail() {
           </Text>
 
           
-{[
-  { id: 1, target: '10,000 Coins', reward: 'Milestone Reward 1' },
-  { id: 2, target: '50,000 Coins', reward: 'Milestone Reward 2' },
-  { id: 3, target: '100,000 Coins', reward: 'Milestone Reward 3' }
-].map(task => (
+{(selectedOfficialEvent?.milestones || []).map((task, index) => (
   <View
     key={task.id}
     style={{
@@ -5029,7 +5055,7 @@ function renderEventDetail() {
             gap: 10
           }}
         >
-          {[1, 2, 3].map(item => (
+          {(selectedOfficialEvent?.gifts || []).slice(0, 3).map((item, index) => (
             <View
               key={item}
               style={{
@@ -5053,7 +5079,7 @@ function renderEventDetail() {
                   marginTop: 8
                 }}
               >
-                Gift {item}
+                {item.name || `Gift ${index + 1}`}
               </Text>
 
               <Text
@@ -5063,7 +5089,7 @@ function renderEventDetail() {
                   marginTop: 5
                 }}
               >
-                0 Coins
+                {Number(item.coin_value || 0).toLocaleString()} Coins
               </Text>
             </View>
           ))}
@@ -5259,11 +5285,7 @@ function renderEventDetail() {
               <View
                 key={rank}
                 style={{
-                  backgroundColor:
-  rank === 1 ? '#3A3020' :
-  rank === 2 ? '#292D38' :
-  rank === 3 ? '#382820' :
-  C.panel2,
+                  backgroundColor: C.panel2,
                   borderRadius: 10,
                   padding: 15,
                   marginBottom: 12
