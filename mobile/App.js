@@ -3144,7 +3144,7 @@ function renderEvents() {
     <View style={{ gap: 15 }}>
       {officialEvents.map(event => (
         <Pressable
-          key={event.id}
+          key={event.id || event.event_name}
           onPress={() => openOfficialEvent(event)}
           style={{
             width: '100%',
