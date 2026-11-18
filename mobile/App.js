@@ -6999,18 +6999,6 @@ if (screen === 'profile' || profileIncomplete) {
         {renderMainHeader()}
       </View>
     )}
-!showEventPreview &&
-  !showCountryRooms &&
-!showCountryRegion &&
-!showMySubscription &&
-!showCreateRoomActivity && 
-      !showPosterTemplates &&
-      !showPosterOptions &&
-      !showPosterEditor &&(
-    <View style={{ paddingHorizontal: 15 }}>
-      {renderMainHeader()}
-    </View>
-)}
 
         <ScrollView
           style={{ flex: 1 }}
