@@ -4985,6 +4985,18 @@ function calculateEventEndAt() {
             Upload Border Design
           </Text>
         </TouchableOpacity>
+        {eventDraft.border_uri && (
+          <Image
+            source={{ uri: eventDraft.border_uri }}
+            style={{
+              width: '100%',
+              height: 150,
+              marginBottom: 22
+            }}
+            resizeMode="contain"
+          />
+        )}
+             
 
         
         {/* EVENT GIFTS */}
