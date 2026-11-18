@@ -5473,9 +5473,28 @@ function calculateEventEndAt() {
             + Add Another Milestone
           </Text>
         </TouchableOpacity>
-
-
-
+                     {/* PREVIEW EVENT BUTTON */}
+        <TouchableOpacity
+          onPress={handlePreviewEvent}
+          style={{
+            backgroundColor: C.accent,
+            borderRadius: 12,
+            padding: 16,
+            alignItems: 'center',
+            marginTop: 5,
+            marginBottom: 20
+          }}
+        >
+          <Text
+            style={{
+              color: '#FFFFFF',
+              fontSize: 16,
+              fontWeight: '900'
+            }}
+          >
+            Preview Event
+          </Text>
+        </TouchableOpacity>
 
       </View>
     );
