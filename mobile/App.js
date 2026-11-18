@@ -5000,7 +5000,7 @@ function renderEventDetail() {
       justifyContent: 'space-between'
     }}
   >
-        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
       <View
         style={{
           width: 42,
@@ -5034,19 +5034,11 @@ function renderEventDetail() {
       </View>
     </View>
 
-      <Text style={{ color: C.muted, fontSize: 12, marginTop: 4 }}>
-        Your TALKZY ID
-      </Text>
-    </View>
-
     <Text style={{ color: C.gold, fontWeight: '800' }}>
       0 Coins
     </Text>
   </View>
 </View>
-
-        </View>
-      )}
 
       {/* TASKS SECTION */}
       {activeEventSection === 'tasks' && (
@@ -5072,7 +5064,7 @@ function renderEventDetail() {
           
 {(selectedOfficialEvent?.milestones || []).map((task, index) => (
   <View
-    key={task.id}
+    key={task.id || index}
     style={{
       backgroundColor: C.panel2,
       borderRadius: 10,
@@ -5150,7 +5142,7 @@ function renderEventDetail() {
         >
           {(selectedOfficialEvent?.gifts || []).slice(0, 3).map((item, index) => (
             <View
-              key={item}
+              key={item.id || index}
               style={{
                 flex: 1,
                 alignItems: 'center',
@@ -5160,9 +5152,20 @@ function renderEventDetail() {
                 paddingHorizontal: 5
               }}
             >
-              <Text style={{ fontSize: 28 }}>
-                🎁
-              </Text>
+              {item.image_url ? (
+  <Image
+    source={{ uri: item.image_url }}
+    style={{
+      width: 55,
+      height: 55,
+      resizeMode: 'contain'
+    }}
+  />
+) : (
+  <Text style={{ fontSize: 28 }}>
+    🎁
+  </Text>
+)}
 
               <Text
                 style={{
