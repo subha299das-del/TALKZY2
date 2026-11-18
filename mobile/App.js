@@ -4770,6 +4770,160 @@ function renderCreateRoomActivity() {
 }
 
 
+  // =========================================
+  // EVENTS: OFFICIAL EVENT MANAGEMENT
+  // =========================================
+
+  function renderEventManagement() {
+    return (
+      <View style={{ padding: 16, paddingBottom: 30 }}>
+
+        <Text
+          style={{
+            color: C.text,
+            fontSize: 22,
+            fontWeight: '900',
+            marginBottom: 20
+          }}
+        >
+          Create Official Event
+        </Text>
+
+        {/* EVENT NAME */}
+        <Text style={{ color: C.text, fontWeight: '800', marginBottom: 8 }}>
+          Event Name
+        </Text>
+
+        <TextInput
+          value={eventDraft.event_name}
+          onChangeText={value =>
+            setEventDraft(previous => ({
+              ...previous,
+              event_name: value
+            }))
+          }
+          placeholder="Enter event name"
+          placeholderTextColor={C.muted}
+          style={{
+            backgroundColor: C.panel,
+            color: C.text,
+            borderRadius: 10,
+            borderWidth: 1,
+            borderColor: C.line,
+            padding: 14,
+            marginBottom: 22
+          }}
+        />
+
+        {/* EVENT POSTER */}
+        <Text style={{ color: C.text, fontWeight: '800', marginBottom: 10 }}>
+          Event Poster (16:8)
+        </Text>
+
+        <TouchableOpacity
+          onPress={() => chooseEventImage('poster_uri')}
+          style={{
+            backgroundColor: C.panel,
+            borderWidth: 1,
+            borderColor: C.accent,
+            borderRadius: 12,
+            padding: 15,
+            alignItems: 'center',
+            marginBottom: 12
+          }}
+        >
+          <Text style={{ color: C.text, fontWeight: '800' }}>
+            Upload Event Poster
+          </Text>
+        </TouchableOpacity>
+
+        {eventDraft.poster_uri && (
+          <Image
+            source={{ uri: eventDraft.poster_uri }}
+            style={{
+              width: '100%',
+              aspectRatio: 2,
+              borderRadius: 10,
+              marginBottom: 22
+            }}
+            resizeMode="cover"
+          />
+        )}
+
+        {/* EVENT BACKGROUND */}
+        <Text style={{ color: C.text, fontWeight: '800', marginBottom: 10 }}>
+          Event Background
+        </Text>
+
+        <TouchableOpacity
+          onPress={() => chooseEventImage('background_uri')}
+          style={{
+            backgroundColor: C.panel,
+            borderWidth: 1,
+            borderColor: C.accent,
+            borderRadius: 12,
+            padding: 15,
+            alignItems: 'center',
+            marginBottom: 12
+          }}
+        >
+          <Text style={{ color: C.text, fontWeight: '800' }}>
+            Upload Event Background
+          </Text>
+        </TouchableOpacity>
+
+        {eventDraft.background_uri && (
+          <Image
+            source={{ uri: eventDraft.background_uri }}
+            style={{
+              width: '100%',
+              height: 150,
+              borderRadius: 10,
+              marginBottom: 22
+            }}
+            resizeMode="cover"
+          />
+        )}
+
+        {/* BORDER DESIGN */}
+        <Text style={{ color: C.text, fontWeight: '800', marginBottom: 10 }}>
+          Event Border Design (Transparent PNG)
+        </Text>
+
+        <TouchableOpacity
+          onPress={() => chooseEventImage('border_uri')}
+          style={{
+            backgroundColor: C.panel,
+            borderWidth: 1,
+            borderColor: C.accent,
+            borderRadius: 12,
+            padding: 15,
+            alignItems: 'center',
+            marginBottom: 12
+          }}
+        >
+          <Text style={{ color: C.text, fontWeight: '800' }}>
+            Upload Border Design
+          </Text>
+        </TouchableOpacity>
+
+        {eventDraft.border_uri && (
+          <Image
+            source={{ uri: eventDraft.border_uri }}
+            style={{
+              width: '100%',
+              height: 150,
+              borderRadius: 10,
+              marginBottom: 22
+            }}
+            resizeMode="contain"
+          />
+        )}
+
+      </View>
+    );
+                 }
+           
 // =========================================
 // EVENTS: EVENT DETAIL PAGE
 // =========================================
