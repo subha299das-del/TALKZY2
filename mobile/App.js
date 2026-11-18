@@ -921,6 +921,60 @@ async function loadUserProfile(currentSession) {
       );
     }
   }
+
+ 
+  // ---------------------------------
+  // EVENTS: SELECT EVENT IMAGES
+  // ---------------------------------
+
+  async function chooseEventImage(field, giftIndex = null) {
+    try {
+      const permission =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (!permission.granted) {
+        Alert.alert(
+          'Permission required',
+          'Please allow photo access to select event images.'
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: false,
+        quality: 1
+      });
+
+      if (!result.canceled && result.assets?.[0]?.uri) {
+        const imageUri = result.assets[0].uri;
+
+        setEventDraft(previous => {
+          if (giftIndex !== null) {
+            const updatedGifts = [...previous.gifts];
+
+            updatedGifts[giftIndex] = {
+              ...updatedGifts[giftIndex],
+              image_uri: imageUri
+            };
+
+            return {
+              ...previous,
+              gifts: updatedGifts
+            };
+          }
+
+          return {
+            ...previous,
+            [field]: imageUri
+          };
+        });
+      }
+    } catch (error) {
+      Alert.alert('Image error', error.message);
+    }
+  }
+ 
   
   // ---------------------------------
   // SELECT ACTIVITY POSTER
