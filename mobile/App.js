@@ -5464,7 +5464,41 @@ function calculateEventEndAt() {
 function renderEventPreview() {
   return (
     <View style={{ padding: 16, paddingBottom: 35 }}>
+   
+function renderEventPreview() {
+  return (
+    <View style={{ padding: 16, paddingBottom: 35 }}>
 
+      {/* BACK TO EVENT EDITING */}
+      <TouchableOpacity
+        onPress={() => setShowEventPreview(false)}
+        style={{
+          alignSelf: 'flex-start',
+          backgroundColor: C.panel,
+          borderWidth: 1,
+          borderColor: C.line,
+          borderRadius: 10,
+          paddingVertical: 11,
+          paddingHorizontal: 16,
+          marginBottom: 18
+        }}
+      >
+        <Text style={{ color: C.text, fontWeight: '800' }}>
+          ← Back to Edit
+        </Text>
+      </TouchableOpacity>
+
+      <Text
+        style={{
+          color: C.text,
+          fontSize: 22,
+          fontWeight: '900',
+          marginBottom: 18
+        }}
+      >
+        Preview Official Event
+      </Text>
+         
       <Text
         style={{
           color: C.text,
