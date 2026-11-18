@@ -4510,6 +4510,9 @@ function renderCreateRoomActivity() {
 }
 
 function renderMainContent() {
+   if (screen === 'eventDetail') {
+    return renderEventDetail();
+   }
    if (showPosterEditor) {
     return renderPosterEditor();
    }
