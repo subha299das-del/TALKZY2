@@ -6479,6 +6479,9 @@ function renderEventDetail() {
 
 
 function renderMainContent() {
+   if (showEventPreview) {
+    return renderEventPreview();
+}
    if (screen === 'eventDetail') {
     return renderEventDetail();
    }
