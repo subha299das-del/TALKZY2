@@ -4801,6 +4801,27 @@ function calculateEventEndAt() {
   function renderEventManagement() {
     return (
       <View style={{ padding: 16, paddingBottom: 30 }}>
+         {/* BACK TO EVENT MANAGEMENT LIST */}
+      <TouchableOpacity
+        onPress={() => {
+          setShowEventPreview(false);
+          setScreen('eventManagementList');
+        }}
+        style={{
+          alignSelf: 'flex-start',
+          backgroundColor: C.panel,
+          borderWidth: 1,
+          borderColor: C.line,
+          borderRadius: 10,
+          paddingVertical: 10,
+          paddingHorizontal: 15,
+          marginBottom: 18
+        }}
+      >
+        <Text style={{ color: C.text, fontWeight: '800' }}>
+          ← Back
+        </Text>
+      </TouchableOpacity>
 
         <Text
           style={{
