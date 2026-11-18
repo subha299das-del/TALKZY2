@@ -4772,16 +4772,50 @@ function renderEventDetail() {
             alignItems: 'center'
           }}
         >
-          <Text
-            style={{
-              color: '#FFFFFF',
-              fontSize: 14,
-              fontWeight: '800',
-              letterSpacing: 1
-            }}
-          >
-            EVENT COUNTDOWN
-          </Text>
+          <View
+  style={{
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8
+  }}
+>
+  {[
+    { label: 'DAYS', value: eventCountdown.days },
+    { label: 'HRS', value: eventCountdown.hours },
+    { label: 'MIN', value: eventCountdown.minutes },
+    { label: 'SEC', value: eventCountdown.seconds }
+  ].map(item => (
+    <View
+      key={item.label}
+      style={{
+        alignItems: 'center',
+        minWidth: 55
+      }}
+    >
+      <Text
+        style={{
+          color: '#FFFFFF',
+          fontSize: 21,
+          fontWeight: '900'
+        }}
+      >
+        {item.value}
+      </Text>
+
+      <Text
+        style={{
+          color: '#FFFFFF',
+          fontSize: 9,
+          fontWeight: '800',
+          marginTop: 3
+        }}
+      >
+        {item.label}
+      </Text>
+    </View>
+  ))}
+</View>
         </View>
       </View>
 
