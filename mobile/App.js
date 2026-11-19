@@ -6128,95 +6128,48 @@ function renderEventDetail() {
 
       
       {/* EVENT BANNER */}
-      <View
-        style={{
-          width: '100%',
-          borderRadius: 14,
-          overflow: 'hidden',
-          backgroundColor: C.panel,
-          borderWidth: 1,
-          borderColor: C.line,
-          marginBottom: 20
-        }}
-      >
-        {selectedOfficialEvent?.poster_url ? (
-          <Image
-            source={{ uri: selectedOfficialEvent.poster_url }}
-            style={{
-              width: '100%',
-              aspectRatio: 2
-            }}
-            resizeMode="cover"
-          />
-        ) : (
-          <View
-            style={{
-              width: '100%',
-              aspectRatio: 2,
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            <Text style={{ color: C.muted }}>
-              Event Banner
-            </Text>
-          </View>
-        )}
-
-        {/* COUNTDOWN RIBBON */}
-        <View
-          style={{
-            backgroundColor: C.accent,
-            paddingVertical: 11,
-            alignItems: 'center'
-          }}
-        >
-          <View
+<View
   style={{
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8
+    width: '100%',
+    borderRadius: 14,
+    overflow: 'hidden',
+    backgroundColor: C.panel,
+    borderWidth: 1,
+    borderColor: '#D6A84F',
+    marginBottom: 18
   }}
 >
-  {[
-    { label: 'DAYS', value: eventCountdown.days },
-    { label: 'HRS', value: eventCountdown.hours },
-    { label: 'MIN', value: eventCountdown.minutes },
-    { label: 'SEC', value: eventCountdown.seconds }
-  ].map(item => (
-    <View
-      key={item.label}
+  {selectedOfficialEvent?.poster_url ? (
+    <Image
+      source={{ uri: selectedOfficialEvent.poster_url }}
       style={{
+        width: '100%',
+        aspectRatio: 2
+      }}
+      resizeMode="cover"
+    />
+  ) : (
+    <View
+      style={{
+        width: '100%',
+        aspectRatio: 2,
         alignItems: 'center',
-        minWidth: 55
+        justifyContent: 'center',
+        backgroundColor: '#21183D'
       }}
     >
       <Text
         style={{
-          color: '#FFFFFF',
-          fontSize: 21,
-          fontWeight: '900'
+          color: '#D6A84F',
+          fontSize: 16,
+          fontWeight: '800'
         }}
       >
-        {item.value}
-      </Text>
-
-      <Text
-        style={{
-          color: '#FFFFFF',
-          fontSize: 9,
-          fontWeight: '800',
-          marginTop: 3
-        }}
-      >
-        {item.label}
+        EVENT BANNER
       </Text>
     </View>
-  ))}
+  )}
 </View>
-        </View>
-      </View>
 
       {/* REWARDS & RULES BUTTON */}
       <TouchableOpacity
@@ -6248,273 +6201,7 @@ function renderEventDetail() {
         </Text>
       </TouchableOpacity>
 
-           
-      {/* RANK AND TASKS NAVIGATION */}
-      <View
-        style={{
-          flexDirection: 'row',
-          backgroundColor: C.panel,
-          borderRadius: 12,
-          padding: 5,
-          marginBottom: 18
-        }}
-      >
-        {['rank', 'tasks'].map(section => (
-          <TouchableOpacity
-            key={section}
-            onPress={() => setActiveEventSection(section)}
-            style={{
-              flex: 1,
-              paddingVertical: 12,
-              alignItems: 'center',
-              borderRadius: 9,
-              backgroundColor:
-                activeEventSection === section
-                  ? C.accent
-                  : 'transparent'
-            }}
-          >
-            <Text
-              style={{
-                color: C.text,
-                fontSize: 15,
-                fontWeight: '800'
-              }}
-            >
-              {section === 'rank' ? 'Rank' : 'Tasks'}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-         
-      {/* RANK SECTION */}
-      {activeEventSection === 'rank' && (
-        <View
-          style={{
-            backgroundColor: C.panel,
-            borderRadius: 12,
-            padding: 16,
-            marginBottom: 20
-          }}
-        >
-          <Text
-            style={{
-              color: C.text,
-              fontSize: 17,
-              fontWeight: '800',
-              marginBottom: 10
-            }}
-          >
-            Event Leaderboard
-          </Text>
-
-          
-
-          {/* TOP 30 LEADERBOARD */}
-          {Array.from({ length: 30 }, (_, index) => index + 1).map(rank => (
-            <View
-              key={rank}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                backgroundColor:
-  rank === 1 ? '#3A3020' :
-  rank === 2 ? '#292D38' :
-  rank === 3 ? '#382820' :
-  C.panel2,
-                borderRadius: 10,
-                padding: 11,
-                marginBottom: 9
-              }}
-            >
-              <Text
-                style={{
-                  color: rank <= 3 ? C.gold : C.muted,
-                  fontSize: 15,
-                  fontWeight: '900',
-                  width: 30
-                }}
-              >
-                {rank}
-              </Text>
-
-              <View
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 19,
-                  backgroundColor: C.panel,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginRight: 10
-                }}
-              >
-                <Text style={{ fontSize: 19 }}>👤</Text>
-              </View>
-
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: C.text, fontWeight: '800', fontSize: 13 }}>
-                  Participant {rank}
-                </Text>
-
-                <Text style={{ color: C.muted, fontSize: 10, marginTop: 3 }}>
-                  TALKZY ID: —
-                </Text>
-              </View>
-
-              <Text style={{ color: C.gold, fontSize: 12, fontWeight: '800' }}>
-                0 Coins
-              </Text>
-            </View>
-          ))}
-
-
-{/* MY CONTRIBUTION */}
-<View
-  style={{
-    borderTopWidth: 1,
-    borderTopColor: C.line,
-    paddingTop: 16
-  }}
->
-  <Text
-    style={{
-      color: C.accent,
-      fontSize: 15,
-      fontWeight: '800',
-      marginBottom: 12
-    }}
-  >
-    My Contribution
-  </Text>
-
-  <View
-    style={{
-      backgroundColor: C.panel2,
-      borderRadius: 10,
-      padding: 14,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between'
-    }}
-  >
-    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-      <View
-        style={{
-          width: 42,
-          height: 42,
-          borderRadius: 21,
-          backgroundColor: C.panel,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginRight: 10,
-          overflow: 'hidden'
-        }}
-      >
-        {profile?.avatar_url ? (
-          <Image
-            source={{ uri: profile.avatar_url }}
-            style={{ width: 42, height: 42 }}
-          />
-        ) : (
-          <Text style={{ fontSize: 20 }}>👤</Text>
-        )}
-      </View>
-
-      <View style={{ flex: 1 }}>
-        <Text style={{ color: C.text, fontWeight: '800' }}>
-          {profile?.display_name || 'Your Name'}
-        </Text>
-
-        <Text style={{ color: C.muted, fontSize: 12, marginTop: 4 }}>
-          TALKZY ID: {profile?.talkzy_id || '—'}
-        </Text>
-      </View>
-    </View>
-
-    <Text style={{ color: C.gold, fontWeight: '800' }}>
-      0 Coins
-    </Text>
-  </View>
-</View>
-        </View>
-      )}
-
-      {/* TASKS SECTION */}
-      {activeEventSection === 'tasks' && (
-        <View
-          style={{
-            backgroundColor: C.panel,
-            borderRadius: 12,
-            padding: 16,
-            marginBottom: 20
-          }}
-        >
-          <Text
-            style={{
-              color: C.text,
-              fontSize: 17,
-              fontWeight: '800',
-              marginBottom: 10
-            }}
-          >
-            Event Milestones
-          </Text>
-
-          
-{(selectedOfficialEvent?.milestones || []).map((task, index) => (
-  <View
-    key={task.id || index}
-    style={{
-      backgroundColor: C.panel2,
-      borderRadius: 10,
-      padding: 14,
-      marginBottom: 12
-    }}
-  >
-    <Text style={{ color: C.text, fontWeight: '800', fontSize: 14 }}>
-      Milestone {index + 1}
-    </Text>
-
-    <Text style={{ color: C.muted, fontSize: 12, marginTop: 7 }}>
-      Target: {task.target}
-    </Text>
-
-    <Text style={{ color: C.gold, fontSize: 12, marginTop: 5 }}>
-      Reward: {task.reward_description}
-    </Text>
-
-    <View
-      style={{
-        height: 7,
-        backgroundColor: C.line,
-        borderRadius: 10,
-        marginTop: 12,
-        overflow: 'hidden'
-      }}
-    >
-      <View
-        style={{
-          width: '0%',
-          height: 7,
-          backgroundColor: C.accent
-        }}
-      />
-    </View>
-
-    <Text style={{ color: C.muted, fontSize: 11, marginTop: 8 }}>
-      Progress: 0% · Not Completed · Reward Not Received
-    </Text>
-  </View>
-))}
-
-        </View>
-      )}
-
-
-       
-      {/* EVENT GIFTS */}
+{/* EVENT GIFTS */}
       <View
         style={{
           backgroundColor: C.panel,
@@ -6592,6 +6279,610 @@ function renderEventDetail() {
           ))}
         </View>
       </View>
+
+{/* COMPACT EVENT COUNTDOWN */}
+<View
+  style={{
+    backgroundColor: '#24144D',
+    borderWidth: 1,
+    borderColor: '#9B79FF',
+    borderRadius: 8,
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+    marginBottom: 16,
+    alignItems: 'center'
+  }}
+>
+  <View
+    style={{
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: 6
+    }}
+  >
+    <Text
+      style={{
+        color: '#FFD36B',
+        fontSize: 10,
+        fontWeight: '900'
+      }}
+    >
+      ENDS IN
+    </Text>
+
+    <Text
+      style={{
+        color: '#FFFFFF',
+        fontSize: 12,
+        fontWeight: '900'
+      }}
+    >
+      {eventCountdown.days}d : {eventCountdown.hours}h : {eventCountdown.minutes}m : {eventCountdown.seconds}s
+    </Text>
+  </View>
+</View>
+
+
+           
+      {/* RANK AND TASKS NAVIGATION */}
+      <View
+        style={{
+          flexDirection: 'row',
+          backgroundColor: C.panel,
+          borderRadius: 12,
+          padding: 5,
+          marginBottom: 18
+        }}
+      >
+        {['rank', 'tasks'].map(section => (
+          <TouchableOpacity
+            key={section}
+            onPress={() => setActiveEventSection(section)}
+            style={{
+              flex: 1,
+              paddingVertical: 12,
+              alignItems: 'center',
+              borderRadius: 9,
+              backgroundColor:
+                activeEventSection === section
+                  ? C.accent
+                  : 'transparent'
+            }}
+          >
+            <Text
+              style={{
+                color: C.text,
+                fontSize: 15,
+                fontWeight: '800'
+              }}
+            >
+              {section === 'rank' ? 'Rank' : 'Tasks'}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+         {/* RANK SECTION */}
+{activeEventSection === 'rank' && (
+  <View
+    style={{
+      backgroundColor: C.panel,
+      borderRadius: 14,
+      padding: 14,
+      marginBottom: 20
+    }}
+  >
+    {/* LEADERBOARD TITLE */}
+    <Text
+      style={{
+        color: C.text,
+        fontSize: 18,
+        fontWeight: '900',
+        marginBottom: 5
+      }}
+    >
+      🏆 Event Leaderboard
+    </Text>
+
+    <Text
+      style={{
+        color: C.muted,
+        fontSize: 11,
+        marginBottom: 16
+      }}
+    >
+      Top 30 event participants
+    </Text>
+
+    {/* TOP 30 LEADERBOARD */}
+    {Array.from({ length: 30 }, (_, index) => index + 1).map(rank => (
+      <View
+        key={rank}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor:
+            rank === 1 ? '#3A3020' :
+            rank === 2 ? '#292D38' :
+            rank === 3 ? '#382820' :
+            C.panel2,
+          borderWidth: rank <= 3 ? 1 : 0,
+          borderColor:
+            rank === 1 ? '#D6A84F' :
+            rank === 2 ? '#AAB5C5' :
+            rank === 3 ? '#B87950' :
+            'transparent',
+          borderRadius: rank <= 3 ? 12 : 9,
+          padding: rank <= 3 ? 13 : 10,
+          marginBottom: 8
+        }}
+      >
+        {/* RANK NUMBER */}
+        <View
+          style={{
+            width: 32,
+            alignItems: 'center',
+            marginRight: 8
+          }}
+        >
+          <Text
+            style={{
+              color:
+                rank === 1 ? '#FFD36B' :
+                rank === 2 ? '#C7D2E0' :
+                rank === 3 ? '#CD8B5B' :
+                C.muted,
+              fontSize: rank <= 3 ? 18 : 13,
+              fontWeight: '900'
+            }}
+          >
+            {rank === 1 ? '🥇' :
+             rank === 2 ? '🥈' :
+             rank === 3 ? '🥉' :
+             rank}
+          </Text>
+        </View>
+
+        {/* PLAYER AVATAR */}
+        <View
+          style={{
+            width: rank <= 3 ? 44 : 34,
+            height: rank <= 3 ? 44 : 34,
+            borderRadius: rank <= 3 ? 22 : 17,
+            backgroundColor: C.panel,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 10,
+            borderWidth: rank === 1 ? 2 : 0,
+            borderColor: '#D6A84F'
+          }}
+        >
+          <Text style={{ fontSize: rank <= 3 ? 21 : 16 }}>
+            👤
+          </Text>
+        </View>
+
+        {/* PLAYER INFORMATION */}
+        <View style={{ flex: 1 }}>
+          <Text
+            style={{
+              color: rank === 1 ? '#FFD36B' : C.text,
+              fontSize: rank <= 3 ? 14 : 12,
+              fontWeight: '900'
+            }}
+          >
+            {rank === 1 ? '👑 Top Champion' :
+             rank === 2 ? 'Silver Champion' :
+             rank === 3 ? 'Bronze Champion' :
+             'Player'}
+          </Text>
+
+          <Text
+            style={{
+              color: C.muted,
+              fontSize: 10,
+              marginTop: 4
+            }}
+          >
+            TALKZY ID: —
+          </Text>
+        </View>
+
+        {/* COINS */}
+        <View
+          style={{
+            alignItems: 'flex-end'
+          }}
+        >
+          <Text
+            style={{
+              color: rank <= 3 ? '#FFD36B' : C.gold,
+              fontSize: rank <= 3 ? 13 : 11,
+              fontWeight: '900'
+            }}
+          >
+            0
+          </Text>
+
+          <Text
+            style={{
+              color: C.muted,
+              fontSize: 9,
+              marginTop: 2
+            }}
+          >
+            Coins
+          </Text>
+        </View>
+      </View>
+    ))}
+
+    {/* MY CONTRIBUTION */}
+    <View
+      style={{
+        borderTopWidth: 1,
+        borderTopColor: C.line,
+        paddingTop: 16,
+        marginTop: 8
+      }}
+    >
+      <Text
+        style={{
+          color: C.accent,
+          fontSize: 15,
+          fontWeight: '900',
+          marginBottom: 12
+        }}
+      >
+        💎 My Contribution
+      </Text>
+
+      <View
+        style={{
+          backgroundColor: C.panel2,
+          borderWidth: 1,
+          borderColor: C.accent,
+          borderRadius: 12,
+          padding: 13,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}
+      >
+        {/* MY PROFILE */}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            flex: 1
+          }}
+        >
+          <View
+            style={{
+              width: 42,
+              height: 42,
+              borderRadius: 21,
+              backgroundColor: C.panel,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: 10,
+              overflow: 'hidden'
+            }}
+          >
+            {profile?.avatar_url ? (
+              <Image
+                source={{ uri: profile.avatar_url }}
+                style={{ width: 42, height: 42 }}
+              />
+            ) : (
+              <Text style={{ fontSize: 20 }}>👤</Text>
+            )}
+          </View>
+
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{
+                color: C.text,
+                fontWeight: '900',
+                fontSize: 13
+              }}
+            >
+              {profile?.display_name || 'Your Name'}
+            </Text>
+
+            <Text
+              style={{
+                color: C.muted,
+                fontSize: 10,
+                marginTop: 4
+              }}
+            >
+              TALKZY ID: {profile?.talkzy_id || '—'}
+            </Text>
+          </View>
+        </View>
+
+        {/* MY COINS */}
+        <View style={{ alignItems: 'center' }}>
+          <Text
+            style={{
+              color: C.gold,
+              fontSize: 16,
+              fontWeight: '900'
+            }}
+          >
+            0
+          </Text>
+
+          <Text
+            style={{
+              color: C.muted,
+              fontSize: 10,
+              marginTop: 2
+            }}
+          >
+            Coins
+          </Text>
+        </View>
+      </View>
+    </View>
+  </View>
+)}
+
+      {/* TASKS SECTION */}
+{activeEventSection === 'tasks' && (
+  <View
+    style={{
+      backgroundColor: C.panel,
+      borderRadius: 14,
+      padding: 14,
+      marginBottom: 20
+    }}
+  >
+    {/* SECTION HEADER */}
+    <Text
+      style={{
+        color: C.text,
+        fontSize: 18,
+        fontWeight: '900',
+        marginBottom: 5
+      }}
+    >
+      🏆 Event Milestones
+    </Text>
+
+    <Text
+      style={{
+        color: C.muted,
+        fontSize: 11,
+        marginBottom: 16
+      }}
+    >
+      Complete milestones to unlock event rewards
+    </Text>
+
+    {/* MILESTONE CARDS */}
+    {(selectedOfficialEvent?.milestones || []).map((task, index) => (
+      <View
+        key={task.id || index}
+        style={{
+          backgroundColor: C.panel2,
+          borderWidth: 1,
+          borderColor: C.line,
+          borderRadius: 12,
+          padding: 14,
+          marginBottom: 12
+        }}
+      >
+        {/* MILESTONE TITLE */}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}
+        >
+          <Text
+            style={{
+              color: C.text,
+              fontSize: 14,
+              fontWeight: '900'
+            }}
+          >
+            🎯 Milestone {index + 1}
+          </Text>
+
+          <View
+            style={{
+              backgroundColor: '#34264F',
+              borderRadius: 7,
+              paddingHorizontal: 9,
+              paddingVertical: 5
+            }}
+          >
+            <Text
+              style={{
+                color: '#C7A8FF',
+                fontSize: 10,
+                fontWeight: '900'
+              }}
+            >
+              TARGET
+            </Text>
+          </View>
+        </View>
+
+        {/* TARGET */}
+        <Text
+          style={{
+            color: C.text,
+            fontSize: 13,
+            fontWeight: '700',
+            marginTop: 10
+          }}
+        >
+          {task.target}
+        </Text>
+
+        {/* REWARD */}
+        <View
+          style={{
+            backgroundColor: '#33291A',
+            borderRadius: 8,
+            padding: 10,
+            marginTop: 12
+          }}
+        >
+          <Text
+            style={{
+              color: '#FFD36B',
+              fontSize: 11,
+              fontWeight: '900',
+              marginBottom: 4
+            }}
+          >
+            🎁 MILESTONE REWARD
+          </Text>
+
+          <Text
+            style={{
+              color: C.gold,
+              fontSize: 13,
+              fontWeight: '800'
+            }}
+          >
+            {task.reward_description}
+          </Text>
+        </View>
+
+        {/* PROGRESS */}
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginTop: 14,
+            marginBottom: 7
+          }}
+        >
+          <Text
+            style={{
+              color: C.text,
+              fontSize: 11,
+              fontWeight: '800'
+            }}
+          >
+            Progress
+          </Text>
+
+          <Text
+            style={{
+              color: C.accent,
+              fontSize: 11,
+              fontWeight: '900'
+            }}
+          >
+            0%
+          </Text>
+        </View>
+
+        {/* PROGRESS BAR */}
+        <View
+          style={{
+            height: 8,
+            backgroundColor: C.line,
+            borderRadius: 10,
+            overflow: 'hidden'
+          }}
+        >
+          <View
+            style={{
+              width: '0%',
+              height: 8,
+              backgroundColor: C.accent,
+              borderRadius: 10
+            }}
+          />
+        </View>
+
+        {/* STATUS */}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginTop: 10
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: '#382626',
+              borderRadius: 6,
+              paddingHorizontal: 8,
+              paddingVertical: 5
+            }}
+          >
+            <Text
+              style={{
+                color: '#FF9999',
+                fontSize: 10,
+                fontWeight: '900'
+              }}
+            >
+              ● NOT COMPLETED
+            </Text>
+          </View>
+
+          <Text
+            style={{
+              color: C.muted,
+              fontSize: 10,
+              marginLeft: 8
+            }}
+          >
+            Reward not received
+          </Text>
+        </View>
+      </View>
+    ))}
+
+    {/* EMPTY STATE */}
+    {(selectedOfficialEvent?.milestones || []).length === 0 && (
+      <View
+        style={{
+          backgroundColor: C.panel2,
+          borderRadius: 10,
+          padding: 22,
+          alignItems: 'center'
+        }}
+      >
+        <Text style={{ fontSize: 30 }}>🎯</Text>
+
+        <Text
+          style={{
+            color: C.text,
+            fontWeight: '800',
+            marginTop: 10
+          }}
+        >
+          No Milestones Yet
+        </Text>
+
+        <Text
+          style={{
+            color: C.muted,
+            fontSize: 11,
+            textAlign: 'center',
+            marginTop: 6
+          }}
+        >
+          Event milestones will appear here when they are added.
+        </Text>
+      </View>
+    )}
+  </View>
+)}
+      
            
 
        
