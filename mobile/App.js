@@ -13,7 +13,8 @@ import {
   Share,
   Image,
   ActivityIndicator,
-  Modal
+Modal,
+Platform
 
 } from 'react-native';
 
