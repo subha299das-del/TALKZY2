@@ -444,6 +444,10 @@ const [activityEndTime, setActivityEndTime] = useState('');
 const hotEventsScrollRef = useRef(null);
 
   const [rooms, setRooms] = useState([]);
+ const [roomDetailsVisible, setRoomDetailsVisible] = useState(false);
+const [roomDetailsTab, setRoomDetailsTab] = useState('Information');
+const [roomDetails, setRoomDetails] = useState(null);
+const [memberSearch, setMemberSearch] = useState('');
   const [joinedRooms, setJoinedRooms] = useState([]);
   const [followedRooms, setFollowedRooms] = useState([]);
   const [myRooms, setMyRooms] = useState([]);
