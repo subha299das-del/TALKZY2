@@ -7933,6 +7933,109 @@ if (screen === 'profile' || profileIncomplete) {
         </ScrollView>
       </View>
 
+                 {/* FLOATING MINI ROOM */}
+      {isRoomMinimized && selectedRoom && (
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: C.card,
+            borderWidth: 1,
+            borderColor: C.line,
+            borderRadius: 14,
+            marginHorizontal: 12,
+            marginBottom: 8,
+            padding: 10
+          }}
+        >
+          {/* RESTORE ROOM */}
+          <TouchableOpacity
+            onPress={() => {
+              setIsRoomMinimized(false);
+              setScreen('roomInterior');
+            }}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              flex: 1
+            }}
+          >
+            {selectedRoom.room_dp_url ? (
+              <Image
+                source={{ uri: selectedRoom.room_dp_url }}
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 10,
+                  marginRight: 10
+                }}
+              />
+            ) : (
+              <View
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 10,
+                  backgroundColor: C.line,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: 10
+                }}
+              >
+                <Text style={{ fontSize: 20 }}>🎙️</Text>
+              </View>
+            )}
+
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  color: C.text,
+                  fontWeight: 'bold',
+                  fontSize: 14
+                }}
+                numberOfLines={1}
+              >
+                {selectedRoom.room_name}
+              </Text>
+
+              <Text
+                style={{
+                  color: C.muted,
+                  fontSize: 11,
+                  marginTop: 3
+                }}
+              >
+                Tap to return to room
+              </Text>
+            </View>
+
+            <Text style={{ fontSize: 20, marginRight: 8 }}>
+              {isOnMic ? '🎙️' : '🔊'}
+            </Text>
+          </TouchableOpacity>
+
+          {/* EXIT MINI ROOM */}
+          <TouchableOpacity
+            onPress={() => {
+              setIsRoomMinimized(false);
+              setIsOnMic(false);
+              setSelectedRoom(null);
+              setShowRoomMenu(false);
+              setShowRoomTools(false);
+              setShowRoomGiftPanel(false);
+            }}
+            style={{
+              paddingHorizontal: 8,
+              paddingVertical: 6
+            }}
+          >
+            <Text style={{ color: '#FF5B5B', fontSize: 20 }}>
+              ✕
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
             !['roomInterior', 'roomSettings', 'createRoom', 'hotRooms', 'newRooms', 'eventDetail', 'eventManagement', 'eventManagementList'].includes(screen) &&
         !showEventPreview &&
         !showCountryRooms &&
