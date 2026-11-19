@@ -2086,61 +2086,71 @@ function renderRoomInterior() {
       </View>
 
             {/* MICROPHONE SEATS */}
+<View
+  style={{
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingTop: 25
+  }}
+>
+  {[1, 2, 3, 4, 5, 6, 7, 8].map((seat) => (
+    <TouchableOpacity
+      key={seat}
+      onPress={() => {
+        if (seat === 1) {
+          setIsOnMic(!isOnMic);
+        } else {
+          Alert.alert(
+            'Microphone Seat',
+            'Other microphone seats will be available soon.'
+          );
+        }
+      }}
+      style={{
+        width: '25%',
+        alignItems: 'center',
+        marginBottom: 24
+      }}
+    >
       <View
         style={{
-          flexDirection: 'row',
-          flexWrap: 'wrap',
-          justifyContent: 'center',
-          paddingHorizontal: 12,
-          paddingTop: 25
+          width: 58,
+          height: 58,
+          borderRadius: 29,
+          borderWidth: 1.5,
+          borderColor:
+            seat === 1 && isOnMic
+              ? '#FF5B5B'
+              : C.line,
+          backgroundColor:
+            seat === 1 && isOnMic
+              ? 'rgba(255,91,91,0.12)'
+              : 'transparent',
+          alignItems: 'center',
+          justifyContent: 'center'
         }}
       >
-        {[1, 2, 3, 4, 5, 6, 7, 8].map((seat) => (
-          <View
-            key={seat}
-            style={{
-              width: '25%',
-              alignItems: 'center',
-              marginBottom: 24
-            }}
-          >
-            <View
-              style={{
-                width: 58,
-                height: 58,
-                borderRadius: 29,
-                borderWidth: 1.5,
-                borderColor:
-                  seat === 1 && isOnMic
-                    ? '#FF5B5B'
-                    : C.line,
-                backgroundColor:
-                  seat === 1 && isOnMic
-                    ? 'rgba(255,91,91,0.12)'
-                    : 'transparent',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <Text style={{ fontSize: 23 }}>
-                {seat === 1 && isOnMic ? '🎤' : '🎙️'}
-              </Text>
-            </View>
-
-            {seat === 1 && isOnMic && (
-              <Text
-                style={{
-                  color: C.text,
-                  fontSize: 11,
-                  marginTop: 5
-                }}
-              >
-                You
-              </Text>
-            )}
-          </View>
-        ))}
+        <Text style={{ fontSize: 23 }}>
+          {seat === 1 && isOnMic ? '🎤' : '🎙️'}
+        </Text>
       </View>
+
+      {seat === 1 && isOnMic && (
+        <Text
+          style={{
+            color: C.text,
+            fontSize: 11,
+            marginTop: 5
+          }}
+        >
+          You
+        </Text>
+      )}
+    </TouchableOpacity>
+  ))}
+</View>
 
             {/* EMPTY ROOM SPACE */}
       <View style={{ flexGrow: 1, minHeight: 120 }} />
