@@ -2120,8 +2120,292 @@ function renderRoomInterior() {
           </View>
         ))}
       </View>
-      {/* EMPTY ROOM SPACE */}
+
+            {/* EMPTY ROOM SPACE */}
       <View style={{ flexGrow: 1, minHeight: 120 }} />
+
+      {/* ROOM GIFT PANEL */}
+      {showRoomGiftPanel && (
+        <View
+          style={{
+            backgroundColor: C.card,
+            borderRadius: 14,
+            marginHorizontal: 12,
+            marginBottom: 10,
+            padding: 14,
+            borderWidth: 1,
+            borderColor: C.line
+          }}
+        >
+          <Text
+            style={{
+              color: C.text,
+              fontSize: 15,
+              fontWeight: 'bold',
+              marginBottom: 12
+            }}
+          >
+            Send a Gift 🎁
+          </Text>
+
+          <View
+            style={{
+              flexDirection: 'row',
+              flexWrap: 'wrap'
+            }}
+          >
+            {[
+              { icon: '🌹', name: 'Rose' },
+              { icon: '❤️', name: 'Heart' },
+              { icon: '💎', name: 'Diamond' },
+              { icon: '🎂', name: 'Cake' },
+              { icon: '🎸', name: 'Guitar' },
+              { icon: '👑', name: 'Crown' },
+              { icon: '🚗', name: 'Car' },
+              { icon: '🎁', name: 'Gift Box' }
+            ].map((gift) => (
+              <TouchableOpacity
+                key={gift.name}
+                onPress={() => {
+                  Alert.alert(
+                    gift.name,
+                    `${gift.name} gifting will be available soon.`
+                  );
+                }}
+                style={{
+                  width: '25%',
+                  alignItems: 'center',
+                  paddingVertical: 12
+                }}
+              >
+                <Text style={{ fontSize: 27 }}>
+                  {gift.icon}
+                </Text>
+
+                <Text
+                  style={{
+                    color: C.text,
+                    fontSize: 11,
+                    marginTop: 5
+                  }}
+                >
+                  {gift.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* ROOM TOOLS PANEL */}
+      {showRoomTools && (
+        <View
+          style={{
+            backgroundColor: C.card,
+            borderRadius: 14,
+            marginHorizontal: 12,
+            marginBottom: 10,
+            padding: 14,
+            borderWidth: 1,
+            borderColor: C.line
+          }}
+        >
+          <Text
+            style={{
+              color: C.text,
+              fontSize: 15,
+              fontWeight: 'bold',
+              marginBottom: 12
+            }}
+          >
+            Room Tools
+          </Text>
+
+          <View
+            style={{
+              flexDirection: 'row',
+              flexWrap: 'wrap'
+            }}
+          >
+            {[
+              { icon: '👥', title: 'Members' },
+              { icon: 'ℹ️', title: 'Room Info' },
+              { icon: '📜', title: 'Room Rules' },
+              { icon: '🔗', title: 'Share Room' }
+            ].map((tool) => (
+              <TouchableOpacity
+                key={tool.title}
+                onPress={() => {
+                  if (tool.title === 'Share Room') {
+                    Share.share({
+                      message: `Join my room "${selectedRoom.room_name}" on TALKZY!`
+                    });
+                  } else {
+                    Alert.alert(
+                      tool.title,
+                      `${tool.title} will be available soon.`
+                    );
+                  }
+                }}
+                style={{
+                  width: '50%',
+                  paddingVertical: 12,
+                  alignItems: 'center'
+                }}
+              >
+                <Text style={{ fontSize: 25 }}>
+                  {tool.icon}
+                </Text>
+
+                <Text
+                  style={{
+                    color: C.text,
+                    fontSize: 12,
+                    marginTop: 5
+                  }}
+                >
+                  {tool.title}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      )}
+
+     {/* ROOM BOTTOM CONTROLS */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-around',
+          paddingHorizontal: 6,
+          paddingVertical: 12,
+          borderTopWidth: 1,
+          borderTopColor: C.line
+        }}
+      >
+
+        {/* CHAT */}
+        <TouchableOpacity
+          onPress={() => {
+            Alert.alert(
+              'Room Chat',
+              'Room chat will be connected later.'
+            );
+          }}
+          style={{
+            width: isOnMic ? 38 : 48,
+            height: 38,
+            borderRadius: 20,
+            backgroundColor: C.card,
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <Text style={{ fontSize: 19 }}>💬</Text>
+        </TouchableOpacity>
+
+        {/* MIC - ONLY WHEN ON MIC */}
+        {isOnMic && (
+          <TouchableOpacity
+            onPress={() => setIsOnMic(!isOnMic)}
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 20,
+              backgroundColor: C.card,
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <Text style={{ fontSize: 19 }}>🎙️</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* SPEAKER */}
+        <TouchableOpacity
+          onPress={() => setIsRoomSpeakerOn(!isRoomSpeakerOn)}
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: 20,
+            backgroundColor: C.card,
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <Text style={{ fontSize: 19 }}>
+            {isRoomSpeakerOn ? '🔊' : '🔇'}
+          </Text>
+        </TouchableOpacity>
+
+        {/* MIC JOIN / LEAVE */}
+        <TouchableOpacity
+          onPress={() => setIsOnMic(!isOnMic)}
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: 20,
+            backgroundColor: isOnMic ? '#D94B4B' : C.card,
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <Text style={{ fontSize: 19 }}>
+            {isOnMic ? '🎤' : '😊'}
+          </Text>
+        </TouchableOpacity>
+
+        {/* BELL */}
+        <TouchableOpacity
+          onPress={() => setIsRoomBellOn(!isRoomBellOn)}
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: 20,
+            backgroundColor: C.card,
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <Text style={{ fontSize: 19 }}>
+            {isRoomBellOn ? '🔔' : '🔕'}
+          </Text>
+        </TouchableOpacity>
+
+        {/* FOUR-SQUARE TOOLS */}
+        <TouchableOpacity
+          onPress={() => setShowRoomTools(!showRoomTools)}
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: 20,
+            backgroundColor: C.card,
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <Text style={{ fontSize: 19 }}>⊞</Text>
+        </TouchableOpacity>
+
+        {/* GIFT */}
+        <TouchableOpacity
+          onPress={() => setShowRoomGiftPanel(!showRoomGiftPanel)}
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: 20,
+            backgroundColor: C.card,
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <Text style={{ fontSize: 19 }}>🎁</Text>
+        </TouchableOpacity>
+
+      </View>
+
+      {/* POWER MENU */}
 
       {/* POWER MENU */}
       {showRoomMenu && (
