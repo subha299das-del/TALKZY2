@@ -8334,6 +8334,259 @@ if (screen === 'profile' || profileIncomplete) {
         !showPosterEditor &&
         renderBottomNavigation()}
 
+
+{/* =========================================
+    ROOM DETAILS POPUP
+========================================= */}
+
+<Modal
+  visible={roomDetailsVisible}
+  transparent
+  animationType="fade"
+  onRequestClose={() => setRoomDetailsVisible(false)}
+>
+  <View
+    style={{
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.80)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 15
+    }}
+  >
+    <View
+      style={{
+        width: '100%',
+        maxHeight: '85%',
+        backgroundColor: C.panel,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: C.line,
+        overflow: 'hidden'
+      }}
+    >
+      {/* POPUP HEADER */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: 16,
+          borderBottomWidth: 1,
+          borderBottomColor: C.line
+        }}
+      >
+        <Text
+          style={{
+            color: C.text,
+            fontSize: 19,
+            fontWeight: '900',
+            flex: 1
+          }}
+        >
+          Room Details
+        </Text>
+
+        <TouchableOpacity
+          onPress={() => setRoomDetailsVisible(false)}
+          style={{ padding: 5 }}
+        >
+          <Text style={{ color: C.muted, fontSize: 23 }}>
+            ✕
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* THREE TABS */}
+      <View
+        style={{
+          flexDirection: 'row',
+          paddingHorizontal: 8,
+          paddingVertical: 10,
+          borderBottomWidth: 1,
+          borderBottomColor: C.line
+        }}
+      >
+        {['Information', 'Members', 'Activity'].map(tab => (
+          <TouchableOpacity
+            key={tab}
+            onPress={() => setRoomDetailsTab(tab)}
+            style={{
+              flex: 1,
+              alignItems: 'center',
+              paddingVertical: 11,
+              marginHorizontal: 3,
+              borderRadius: 9,
+              backgroundColor:
+                roomDetailsTab === tab
+                  ? C.accent
+                  : C.panel2
+            }}
+          >
+            <Text
+              style={{
+                color: C.text,
+                fontSize: 12,
+                fontWeight: '900'
+              }}
+            >
+              {tab}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <ScrollView
+        style={{ maxHeight: 480 }}
+        contentContainerStyle={{ padding: 16 }}
+        keyboardShouldPersistTaps="handled"
+      >
+        {roomDetails && (
+          <>
+            {/* INFORMATION TAB */}
+            {roomDetailsTab === 'Information' && (
+              <View>
+                <Text
+                  style={{
+                    color: C.text,
+                    fontSize: 20,
+                    fontWeight: '900',
+                    marginBottom: 18
+                  }}
+                >
+                  {roomDetails.room_name || 'Room'}
+                </Text>
+
+                <View
+                  style={{
+                    backgroundColor: C.panel2,
+                    padding: 14,
+                    borderRadius: 12,
+                    marginBottom: 12
+                  }}
+                >
+                  <Text style={{ color: C.muted, fontSize: 11 }}>
+                    FAMILY
+                  </Text>
+                  <Text
+                    style={{
+                      color: C.text,
+                      fontSize: 15,
+                      fontWeight: '800',
+                      marginTop: 5
+                    }}
+                  >
+                    {roomDetails.family_name ||
+                      roomDetails.family?.name ||
+                      'Not assigned'}
+                  </Text>
+                </View>
+
+                <View
+                  style={{
+                    backgroundColor: C.panel2,
+                    padding: 14,
+                    borderRadius: 12,
+                    marginBottom: 12
+                  }}
+                >
+                  <Text style={{ color: C.muted, fontSize: 11 }}>
+                    ROOM LEVEL
+                  </Text>
+                  <Text
+                    style={{
+                      color: C.gold,
+                      fontSize: 16,
+                      fontWeight: '900',
+                      marginTop: 5
+                    }}
+                  >
+                    {roomDetails.level ??
+                      roomDetails.room_level ??
+                      1}
+                  </Text>
+                </View>
+
+                <View
+                  style={{
+                    backgroundColor: C.panel2,
+                    padding: 14,
+                    borderRadius: 12,
+                    marginBottom: 12
+                  }}
+                >
+                  <Text style={{ color: C.muted, fontSize: 11 }}>
+                    ANNOUNCEMENT
+                  </Text>
+                  <Text
+                    style={{
+                      color: C.text,
+                      fontSize: 13,
+                      marginTop: 8,
+                      lineHeight: 21
+                    }}
+                  >
+                    {roomDetails.announcement ||
+                      'No announcement available.'}
+                  </Text>
+                </View>
+
+                <View
+                  style={{
+                    backgroundColor: C.panel2,
+                    padding: 14,
+                    borderRadius: 12
+                  }}
+                >
+                  <Text style={{ color: C.muted, fontSize: 11 }}>
+                    DESCRIPTION
+                  </Text>
+                  <Text
+                    style={{
+                      color: C.text,
+                      fontSize: 13,
+                      marginTop: 8
+                    }}
+                  >
+                    {roomDetails.description ||
+                      'Welcome to TALKZY'}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {/* MEMBERS TAB */}
+            {roomDetailsTab === 'Members' && (
+              <View>
+                <Text style={{ color: C.text, fontWeight: '900' }}>
+                  Room Members
+                </Text>
+                <Text style={{ color: C.muted, marginTop: 8 }}>
+                  Member list will be connected in the next step.
+                </Text>
+              </View>
+            )}
+
+            {/* ACTIVITY TAB */}
+            {roomDetailsTab === 'Activity' && (
+              <View>
+                <Text style={{ color: C.text, fontWeight: '900' }}>
+                  Room Activities
+                </Text>
+                <Text style={{ color: C.muted, marginTop: 8 }}>
+                  Completed activities and upcoming Room Party events
+                  will appear here.
+                </Text>
+              </View>
+            )}
+          </>
+        )}
+      </ScrollView>
+    </View>
+  </View>
+</Modal>
+                   
+
       <Modal
   visible={showJoinPassword}
   transparent
