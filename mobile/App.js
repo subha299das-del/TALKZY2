@@ -3198,33 +3198,68 @@ function renderDiscover() {
   );
 }
 
+// =========================================
+// ROOM: EVENTS
+// =========================================
 
-  // =========================================
-  // ROOM: EVENTS
-  // =========================================
-
-  
 function renderEvents() {
   if (loadingOfficialEvents) {
     return (
       <View style={{ padding: 35, alignItems: 'center' }}>
         <ActivityIndicator size="large" color={C.accent} />
+
+        <Text
+          style={{
+            color: C.muted,
+            fontSize: 12,
+            marginTop: 12
+          }}
+        >
+          Loading Events...
+        </Text>
       </View>
     );
   }
 
   if (officialEvents.length === 0) {
     return (
-      <View style={{ padding: 35, alignItems: 'center' }}>
+      <View
+        style={{
+          backgroundColor: C.panel,
+          borderWidth: 1,
+          borderColor: C.line,
+          borderRadius: 16,
+          padding: 30,
+          alignItems: 'center',
+          marginTop: 10
+        }}
+      >
+        <Text style={{ fontSize: 38 }}>
+          🏆
+        </Text>
+
         <Text
           style={{
-            color: C.muted,
-            fontSize: 15,
-            fontWeight: '700',
-            textAlign: 'center'
+            color: C.text,
+            fontSize: 16,
+            fontWeight: '900',
+            textAlign: 'center',
+            marginTop: 12
           }}
         >
           No Live Events Right Now
+        </Text>
+
+        <Text
+          style={{
+            color: C.muted,
+            fontSize: 12,
+            textAlign: 'center',
+            lineHeight: 19,
+            marginTop: 8
+          }}
+        >
+          Stay tuned! Official TALKZY events and exciting rewards will appear here when they go live.
         </Text>
       </View>
     );
@@ -3242,7 +3277,7 @@ function renderEvents() {
             overflow: 'hidden',
             backgroundColor: C.panel,
             borderWidth: 1,
-            borderColor: C.line
+            borderColor: '#D6A84F'
           }}
         >
           {event.poster_url ? (
@@ -3260,11 +3295,28 @@ function renderEvents() {
                 width: '100%',
                 aspectRatio: 2,
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                backgroundColor: '#21183D'
               }}
             >
-              <Text style={{ color: C.muted }}>
-                Event Poster Unavailable
+              <Text
+                style={{
+                  color: '#D6A84F',
+                  fontSize: 16,
+                  fontWeight: '900'
+                }}
+              >
+                🏆 TALKZY EVENT
+              </Text>
+
+              <Text
+                style={{
+                  color: C.muted,
+                  fontSize: 11,
+                  marginTop: 6
+                }}
+              >
+                Poster unavailable
               </Text>
             </View>
           )}
@@ -3273,7 +3325,6 @@ function renderEvents() {
     </View>
   );
 }
-
 
   // =========================================
   // ROOM MAIN SCREEN
