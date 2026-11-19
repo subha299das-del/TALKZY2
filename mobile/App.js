@@ -2380,46 +2380,52 @@ function renderRoomInterior() {
   }}
 >
   {/* CHAT BAR / CHAT ICON */}
-  {isOnMic ? (
-    <TouchableOpacity
-      onPress={() => {
-        Alert.alert('Room Chat', 'Room chat will be available soon.');
-      }}
+<View
+  style={{
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    maxWidth: 150,
+    marginRight: 4
+  }}
+>
+  <View
+    style={{
+      flex: 1,
+      height: 38,
+      backgroundColor: C.card,
+      borderRadius: 20,
+      paddingHorizontal: 10,
+      justifyContent: 'center'
+    }}
+  >
+    <TextInput
+      value={roomChatText}
+      onChangeText={setRoomChatText}
+      placeholder="Message..."
+      placeholderTextColor={C.muted}
+      onSubmitEditing={sendRoomChatMessage}
+      returnKeyType="send"
       style={{
-        width: 36,
-        height: 38,
-        alignItems: 'center',
-        justifyContent: 'center'
+        color: C.text,
+        fontSize: 12,
+        padding: 0
       }}
-    >
-      <Text style={{ fontSize: 20 }}>💬</Text>
-    </TouchableOpacity>
-  ) : (
-    <View
-      style={{
-        flex: 1,
-        maxWidth: 130,
-        height: 38,
-        backgroundColor: C.card,
-        borderRadius: 20,
-        paddingHorizontal: 12,
-        justifyContent: 'center',
-        marginRight: 5
-      }}
-    >
-      <TextInput
-        value={roomChatText}
-        onChangeText={setRoomChatText}
-        placeholder="Message..."
-        placeholderTextColor={C.muted}
-        style={{
-          color: C.text,
-          fontSize: 12,
-          padding: 0
-        }}
-      />
-    </View>
-  )}
+    />
+  </View>
+
+  <TouchableOpacity
+    onPress={sendRoomChatMessage}
+    style={{
+      width: 34,
+      height: 38,
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}
+  >
+    <Text style={{ fontSize: 19 }}>➤</Text>
+  </TouchableOpacity>
+</View>
 
   {/* MIC - ONLY WHEN ON MIC */}
   {isOnMic && (
