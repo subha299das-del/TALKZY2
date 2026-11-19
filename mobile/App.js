@@ -7212,6 +7212,9 @@ function renderMainContent() {
    if (showCountryRooms) {
     return renderCountryRooms();
    }
+   if (screen === 'roomInterior') {
+    return renderRoomInterior();
+   }
   if (screen === 'roomSettings') {
     return renderRoomSettings();
   }
