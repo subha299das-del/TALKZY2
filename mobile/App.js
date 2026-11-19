@@ -9,7 +9,8 @@ import {
   Pressable,
   ScrollView,
   StatusBar,
-  Alert,
+    Alert,
+  Share,
   Image,
   ActivityIndicator,
   Modal
