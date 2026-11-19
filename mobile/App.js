@@ -2172,11 +2172,14 @@ function renderRoomInterior() {
 
             {/* ROOM CHAT MESSAGES */}
 {roomChatMessages.length > 0 && (
-  <View
+  <ScrollView
     style={{
-      paddingHorizontal: 12,
+      maxHeight: 160,
       marginTop: 10,
       marginBottom: 10
+    }}
+    contentContainerStyle={{
+      paddingHorizontal: 12
     }}
   >
     {roomChatMessages.map((message) => (
@@ -2213,7 +2216,7 @@ function renderRoomInterior() {
         </Text>
       </View>
     ))}
-  </View>
+  </ScrollView>
 )}
 
 {/* EMPTY ROOM SPACE */}
