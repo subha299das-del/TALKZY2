@@ -2170,8 +2170,54 @@ function renderRoomInterior() {
   ))}
 </View>
 
-            {/* EMPTY ROOM SPACE */}
-      <View style={{ flexGrow: 1, minHeight: 120 }} />
+            {/* ROOM CHAT MESSAGES */}
+{roomChatMessages.length > 0 && (
+  <View
+    style={{
+      paddingHorizontal: 12,
+      marginTop: 10,
+      marginBottom: 10
+    }}
+  >
+    {roomChatMessages.map((message) => (
+      <View
+        key={message.id}
+        style={{
+          backgroundColor: C.card,
+          borderRadius: 12,
+          paddingHorizontal: 12,
+          paddingVertical: 8,
+          marginBottom: 6,
+          alignSelf: 'flex-start',
+          maxWidth: '85%'
+        }}
+      >
+        <Text
+          style={{
+            color: '#8E9AFF',
+            fontSize: 11,
+            fontWeight: 'bold',
+            marginBottom: 3
+          }}
+        >
+          {message.sender}
+        </Text>
+
+        <Text
+          style={{
+            color: C.text,
+            fontSize: 14
+          }}
+        >
+          {message.text}
+        </Text>
+      </View>
+    ))}
+  </View>
+)}
+
+{/* EMPTY ROOM SPACE */}
+<View style={{ flexGrow: 1, minHeight: 120 }} />
 
       {/* ROOM GIFT PANEL */}
       {showRoomGiftPanel && (
