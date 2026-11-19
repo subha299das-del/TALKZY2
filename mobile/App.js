@@ -1785,6 +1785,7 @@ function renderRoomCard(room, showJoin = true) {
 
   return (
   <TouchableOpacity
+  key={room.id}
   activeOpacity={0.85}
   onPress={() => {
     if (showJoin) {
@@ -1798,7 +1799,6 @@ function renderRoomCard(room, showJoin = true) {
   }}
 >
   <Card
-    key={room.id}
       style={{
         padding: 10,
         marginBottom: 9,
