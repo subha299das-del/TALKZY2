@@ -1914,6 +1914,23 @@ function renderRoomCard(room, showJoin = true) {
 // ROOM: ROOM INTERIOR
 // =========================================
 
+function sendRoomChatMessage() {
+  const message = roomChatText.trim();
+
+  if (!message) return;
+
+  setRoomChatMessages(prev => [
+    ...prev,
+    {
+      id: Date.now().toString(),
+      text: message,
+      sender: 'You'
+    }
+  ]);
+
+  setRoomChatText('');
+             }
+
 function renderRoomInterior() {
   if (!selectedRoom) {
     return (
