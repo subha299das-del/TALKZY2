@@ -2174,6 +2174,10 @@ function renderRoomInterior() {
             {/* ROOM CHAT MESSAGES */}
 {roomChatMessages.length > 0 && (
   <ScrollView
+ ref={roomChatScrollRef}
+onContentSizeChange={() =>
+  roomChatScrollRef.current?.scrollToEnd({ animated: true })
+ }
     style={{
       maxHeight: 160,
       marginTop: 10,
