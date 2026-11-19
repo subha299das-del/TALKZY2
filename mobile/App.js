@@ -1839,87 +1839,92 @@ function renderRoomCard(room, showJoin = true) {
         )}
 
         {/* ROOM INFORMATION */}
-        <View style={{ flex: 1 }}>
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center'
-            }}
-          >
-                        <Text
-  numberOfLines={1}
+<View
   style={{
-    color: C.text,
-    fontSize: 14,
-    fontWeight: '900',
-    flexShrink: 1
+    flex: 1,
+    height: 62,
+    justifyContent: 'center',
+    marginRight: 4
   }}
 >
-  {room.room_name}
-</Text>
+  {/* ROOM NAME + FAMILY TAG */}
+  <View
+    style={{
+      flexDirection: 'row',
+      alignItems: 'center'
+    }}
+  >
+    <Text
+      numberOfLines={1}
+      style={{
+        color: C.text,
+        fontSize: 14,
+        fontWeight: '900',
+        flexShrink: 1
+      }}
+    >
+      {room.room_name}
+    </Text>
 
-            <View
-              style={{
-                backgroundColor: C.accent,
-                paddingHorizontal: 5,
-                paddingVertical: 2,
-                borderRadius: 4,
-                marginLeft: 6
-              }}
-            >
-              <Text
-                style={{
-                  color: 'white',
-                  fontSize: 8,
-                  fontWeight: '900'
-                }}
-              >
-                FAMILY
-              </Text>
-            </View>
+    {room.family_name ? (
+      <Text
+        numberOfLines={1}
+        style={{
+          color: C.accent,
+          fontSize: 8,
+          fontWeight: '900',
+          marginLeft: 5,
+          flexShrink: 1
+        }}
+      >
+        [{room.family_name}]
+      </Text>
+    ) : null}
 
-            {isOwner && (
-              <TouchableOpacity
-                onPress={() => {
-                  setSelectedRoom(room);
-                  setRoomSettingsType(
-                    room.room_type || 'public'
-                  );
-                  setRoomSettingsPassword('');
-                  setScreen('roomSettings');
-                }}
-                style={{ marginLeft: 7 }}
-              >
-                <Text style={{ color: C.gold, fontSize: 16 }}>
-                  ⚙
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
+    {isOwner && (
+      <TouchableOpacity
+        onPress={() => {
+          setSelectedRoom(room);
+          setRoomSettingsType(
+            room.room_type || 'public'
+          );
+          setRoomSettingsPassword('');
+          setScreen('roomSettings');
+        }}
+        style={{ marginLeft: 5 }}
+      >
+        <Text style={{ color: C.gold, fontSize: 15 }}>
+          ⚙
+        </Text>
+      </TouchableOpacity>
+    )}
+  </View>
 
-          <Text
-            numberOfLines={1}
-            style={{
-              color: C.muted,
-              fontSize: 10,
-              marginTop: 5
-            }}
-          >
-            {room.country_flag || '🌍'} {room.country_name || 'Country not set'}
-            {room.medals ? `  ${room.medals}` : ''}
-          </Text>
+  {/* COUNTRY */}
+  <Text
+    numberOfLines={1}
+    style={{
+      color: C.muted,
+      fontSize: 10,
+      marginTop: 2
+    }}
+  >
+    {room.country_flag || '🌍'} {room.country_name || 'Country not set'}
+  </Text>
 
-          <Text
-            numberOfLines={1}
-            style={{
-              color: C.muted,
-              fontSize: 11,
-              marginTop: 5
-            }}
-          >
-            {room.description || 'Welcome to TALKZY'}
-          </Text>
-        </View>
+  {/* ANNOUNCEMENT - ONE LINE */}
+  <Text
+    numberOfLines={1}
+    ellipsizeMode="tail"
+    style={{
+      color: C.muted,
+      fontSize: 10,
+      marginTop: 2
+    }}
+  >
+    {room.description || 'Welcome to TALKZY'}
+  </Text>
+</View>
 
         {/* CURRENT ACTIVE USERS */}
 <View
