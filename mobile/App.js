@@ -2698,7 +2698,7 @@ onContentSizeChange={() =>
 
       </View>
 
-      {/* POWER MENU */}
+  
 
       {/* POWER MENU */}
       {showRoomMenu && (
