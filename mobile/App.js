@@ -1926,6 +1926,10 @@ function sendRoomChatMessage() {
       id: Date.now().toString(),
       text: message,
       sender: 'You'
+     time: new Date().toLocaleTimeString([], {
+  hour: '2-digit',
+  minute: '2-digit'
+})
     }
   ]);
 
