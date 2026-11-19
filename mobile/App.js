@@ -458,6 +458,7 @@ const hotEventsScrollRef = useRef(null);
 const [roomDpUploading, setRoomDpUploading] = useState(false);
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
+ const [isRoomMinimized, setIsRoomMinimized] = useState(false);
   const [showJoinPassword, setShowJoinPassword] = useState(false);
 const [joinPassword, setJoinPassword] = useState('');
 const [joiningRoom, setJoiningRoom] = useState(false);
