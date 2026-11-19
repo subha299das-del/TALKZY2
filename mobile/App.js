@@ -7374,9 +7374,10 @@ if (screen === 'profile' || profileIncomplete) {
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{
-            paddingHorizontal: 15,
-            paddingBottom: 25
-          }}
+  paddingHorizontal: screen === 'roomInterior' ? 0 : 15,
+  paddingBottom: screen === 'roomInterior' ? 0 : 25,
+  flexGrow: 1
+}}
           keyboardShouldPersistTaps="handled"
         >
           {renderMainContent()}
