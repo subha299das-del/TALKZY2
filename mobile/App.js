@@ -2375,7 +2375,10 @@ function renderRoomInterior() {
 
         {/* FOUR-SQUARE TOOLS */}
         <TouchableOpacity
-          onPress={() => setShowRoomTools(!showRoomTools)}
+          onPress={() => {
+  setShowRoomTools(!showRoomTools);
+  setShowRoomGiftPanel(false);
+}}
           style={{
             width: 38,
             height: 38,
@@ -2390,7 +2393,10 @@ function renderRoomInterior() {
 
         {/* GIFT */}
         <TouchableOpacity
-          onPress={() => setShowRoomGiftPanel(!showRoomGiftPanel)}
+          onPress={() => {
+  setShowRoomGiftPanel(!showRoomGiftPanel);
+  setShowRoomTools(false);
+}}
           style={{
             width: 38,
             height: 38,
