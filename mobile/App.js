@@ -2439,10 +2439,12 @@ function renderRoomInterior() {
               borderBottomColor: C.line
             }}
             onPress={() => {
-              setShowRoomMenu(false);
-              setIsRoomMinimized(true);
-              setScreen('main');
-            }}
+  setShowRoomMenu(false);
+  setShowRoomTools(false);
+  setShowRoomGiftPanel(false);
+  setIsRoomMinimized(true);
+  setScreen('main');
+}}
           >
             <Text style={{ color: C.text, fontSize: 15 }}>
               Minimize
@@ -2453,11 +2455,14 @@ function renderRoomInterior() {
           <TouchableOpacity
             style={{ padding: 14 }}
             onPress={() => {
-              setShowRoomMenu(false);
-              setIsRoomMinimized(false);
-              setSelectedRoom(null);
-              setScreen('main');
-            }}
+  setShowRoomMenu(false);
+  setShowRoomTools(false);
+  setShowRoomGiftPanel(false);
+  setIsOnMic(false);
+  setIsRoomMinimized(false);
+  setSelectedRoom(null);
+  setScreen('main');
+}}
           >
             <Text style={{ color: '#FF5B5B', fontSize: 15 }}>
               Exit Room
