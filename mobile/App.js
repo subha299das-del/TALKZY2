@@ -2027,50 +2027,55 @@ function renderRoomInterior() {
         )}
 
         {/* ROOM DETAILS */}
-        <View style={{ flex: 1 }}>
-          <Text
-            style={{
-              color: C.text,
-              fontSize: 17,
-              fontWeight: 'bold'
-            }}
-            numberOfLines={1}
-          >
-            {selectedRoom.room_name}
-          </Text>
+<View style={{ flex: 1 }}>
+  <TouchableOpacity
+    onPress={() => openRoomDetails(selectedRoom)}
+    style={{ alignSelf: 'flex-start' }}
+  >
+    <Text
+      style={{
+        color: C.text,
+        fontSize: 17,
+        fontWeight: 'bold'
+      }}
+      numberOfLines={1}
+    >
+      {selectedRoom.room_name}
+    </Text>
+  </TouchableOpacity>
 
-          {selectedRoom.family_name ? (
-            <Text
-              style={{
-                color: C.text,
-                fontSize: 11,
-                marginTop: 2
-              }}
-            >
-              🏷️ {selectedRoom.family_name}
-            </Text>
-          ) : null}
+  {selectedRoom.family_name ? (
+    <Text
+      style={{
+        color: C.text,
+        fontSize: 11,
+        marginTop: 2
+      }}
+    >
+      🏷️ {selectedRoom.family_name}
+    </Text>
+  ) : null}
 
-          <Text
-            style={{
-              color: C.muted,
-              fontSize: 11,
-              marginTop: 3
-            }}
-          >
-            Room ID: Not available
-          </Text>
+  <Text
+    style={{
+      color: C.muted,
+      fontSize: 11,
+      marginTop: 3
+    }}
+  >
+    Owner ID: {selectedRoom.id}
+  </Text>
 
-          <Text
-            style={{
-              color: C.muted,
-              fontSize: 11,
-              marginTop: 2
-            }}
-          >
-            Room Level: Not available
-          </Text>
-        </View>
+  <Text
+    style={{
+      color: C.muted,
+      fontSize: 11,
+      marginTop: 2
+    }}
+  >
+    Room Level: Not available
+  </Text>
+</View>
 
         {/* ROOM TYPE */}
         <TouchableOpacity
