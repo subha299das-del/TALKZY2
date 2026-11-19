@@ -2216,13 +2216,24 @@ onContentSizeChange={() =>
         </Text>
 
         <Text
-          style={{
-            color: C.text,
-            fontSize: 14
-          }}
-        >
-          {message.text}
-        </Text>
+  style={{
+    color: C.text,
+    fontSize: 14
+  }}
+>
+  {message.text}
+</Text>
+
+<Text
+  style={{
+    color: C.muted,
+    fontSize: 10,
+    textAlign: 'right',
+    marginTop: 4
+  }}
+>
+  {message.time}
+</Text>
       </View>
     ))}
   </ScrollView>
