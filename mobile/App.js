@@ -2353,19 +2353,34 @@ onContentSizeChange={() =>
              { icon: '🗑️', title: 'Clear Chat' }
             ].map((tool) => (
               <TouchableOpacity
-                key={tool.title}
                 onPress={() => {
-                  if (tool.title === 'Share Room') {
-                    Share.share({
-                      message: `Join my room "${selectedRoom.room_name}" on TALKZY!`
-                    });
-                  } else {
-                    Alert.alert(
-                      tool.title,
-                      `${tool.title} will be available soon.`
-                    );
-                  }
-                }}
+  if (tool.title === 'Share Room') {
+    Share.share({
+      message: `Join my room "${selectedRoom.room_name}" on TALKZY!`
+    });
+  } else if (tool.title === 'Clear Chat') {
+    Alert.alert(
+      'Clear Room Chat',
+      'Are you sure you want to clear all chat messages?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        },
+        {
+          text: 'Clear',
+          style: 'destructive',
+          onPress: () => setRoomChatMessages([])
+        }
+      ]
+    );
+  } else {
+    Alert.alert(
+      tool.title,
+      `${tool.title} will be available soon.`
+    );
+  }
+}}
                 style={{
                   width: '50%',
                   paddingVertical: 12,
