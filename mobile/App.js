@@ -4866,7 +4866,7 @@ function renderEvents() {
           borderTopWidth: 1,
           borderTopColor: C.line,
           paddingTop: 9,
-          paddingBottom: 8
+paddingBottom: Platform.OS === 'android' ? 28 : 8
         }}
       >
         {tabs.map(tab => {
