@@ -1226,7 +1226,16 @@ loadFollowedRooms(session);
     }
   }
 
+// =========================================
+// ROOM: OPEN ROOM DETAILS
+// =========================================
 
+function openRoomDetails(room) {
+  setRoomDetails(room);
+  setRoomDetailsTab('Information');
+  setMemberSearch('');
+  setRoomDetailsVisible(true);
+}
  
 // =========================================
 // EVENTS: LOAD LIVE OFFICIAL EVENTS
