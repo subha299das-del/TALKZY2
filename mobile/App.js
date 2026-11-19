@@ -1833,17 +1833,22 @@ function renderRoomCard(room, showJoin = true) {
               alignItems: 'center'
             }}
           >
-            <Text
-              numberOfLines={1}
-              style={{
-                color: C.text,
-                fontSize: 14,
-                fontWeight: '900',
-                flexShrink: 1
-              }}
+                        <TouchableOpacity
+              onPress={() => openRoomDetails(room)}
+              style={{ flexShrink: 1 }}
             >
-              {room.room_name}
-            </Text>
+              <Text
+                numberOfLines={1}
+                style={{
+                  color: C.text,
+                  fontSize: 14,
+                  fontWeight: '900',
+                  flexShrink: 1
+                }}
+              >
+                {room.room_name}
+              </Text>
+            </TouchableOpacity>
 
             <View
               style={{
