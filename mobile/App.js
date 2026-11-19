@@ -2753,26 +2753,30 @@ onContentSizeChange={() =>
   function renderMine() {
     return (
       <>
-        <TouchableOpacity
-          onPress={() => setScreen('createRoom')}
-          style={{
-            backgroundColor: C.accent,
-            padding: 17,
-            borderRadius: 15,
-            marginBottom: 15
-          }}
-        >
-          <Text
-            style={{
-              color: 'white',
-              fontSize: 17,
-              fontWeight: '900',
-              textAlign: 'center'
-            }}
-          >
-            ＋ Create Your Room
-          </Text>
-        </TouchableOpacity>
+        {myRooms.length === 0 ? (
+  <TouchableOpacity
+    onPress={() => setScreen('createRoom')}
+    style={{
+      backgroundColor: C.accent,
+      padding: 17,
+      borderRadius: 15,
+      marginBottom: 15
+    }}
+  >
+    <Text
+      style={{
+        color: 'white',
+        fontSize: 17,
+        fontWeight: '900',
+        textAlign: 'center'
+      }}
+    >
+      ＋ Create Your Room
+    </Text>
+  </TouchableOpacity>
+) : (
+  renderRoomCard(myRooms[0], false)
+)}
 
 
         <View style={{ flexDirection: 'row', marginBottom: 15 }}>
@@ -2800,20 +2804,7 @@ if (item === 'Follow') {
 
         {mineTab === 'Recent' && (
           <>
-            <SectionTitle>My Created Rooms</SectionTitle>
-
-            {myRooms.length === 0 ? (
-              <ComingSoon
-                title="No created rooms"
-                description="Create your first TALKZY room and invite your friends."
-              />
-            ) : (
-              myRooms.map(room =>
-                renderRoomCard(room, false)
-              )
-            )}
-
-            <SectionTitle>Public Rooms</SectionTitle>
+             <SectionTitle>Public Rooms</SectionTitle>
 
             {rooms.length === 0 ? (
               <ComingSoon
