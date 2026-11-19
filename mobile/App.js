@@ -8199,7 +8199,7 @@ if (screen === 'profile' || profileIncomplete) {
         </View>
       )}
 
-            !['roomInterior', 'roomSettings', 'createRoom', 'hotRooms', 'newRooms', 'eventDetail', 'eventManagement', 'eventManagementList'].includes(screen) &&
+{!['roomInterior', 'roomSettings', 'createRoom', 'hotRooms', 'newRooms', 'eventDetail', 'eventManagement', 'eventManagementList'].includes(screen) &&
         !showEventPreview &&
         !showCountryRooms &&
         !showCountryRegion &&
