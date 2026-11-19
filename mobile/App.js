@@ -1920,11 +1920,257 @@ function renderRoomInterior() {
     );
   }
 
+  const roomIsLocked = selectedRoom.room_type === 'locked';
+
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
-      <Text style={{ color: C.text }}>
-        {selectedRoom.room_name}
-      </Text>
+
+      {/* ROOM HEADER */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingHorizontal: 12,
+          paddingVertical: 12,
+          borderBottomWidth: 1,
+          borderBottomColor: C.line
+        }}
+      >
+
+        {/* ROOM DP */}
+        {selectedRoom.room_dp_url ? (
+          <Image
+            source={{ uri: selectedRoom.room_dp_url }}
+            style={{
+              width: 58,
+              height: 58,
+              borderRadius: 12,
+              marginRight: 10
+            }}
+          />
+        ) : (
+          <View
+            style={{
+              width: 58,
+              height: 58,
+              borderRadius: 12,
+              backgroundColor: C.line,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: 10
+            }}
+          >
+            <Text style={{ fontSize: 27 }}>🎙️</Text>
+          </View>
+        )}
+
+        {/* ROOM DETAILS */}
+        <View style={{ flex: 1 }}>
+          <Text
+            style={{
+              color: C.text,
+              fontSize: 17,
+              fontWeight: 'bold'
+            }}
+            numberOfLines={1}
+          >
+            {selectedRoom.room_name}
+          </Text>
+
+          {selectedRoom.family_name ? (
+            <Text
+              style={{
+                color: C.text,
+                fontSize: 11,
+                marginTop: 2
+              }}
+            >
+              🏷️ {selectedRoom.family_name}
+            </Text>
+          ) : null}
+
+          <Text
+            style={{
+              color: C.muted,
+              fontSize: 11,
+              marginTop: 3
+            }}
+          >
+            Room ID: Not available
+          </Text>
+
+          <Text
+            style={{
+              color: C.muted,
+              fontSize: 11,
+              marginTop: 2
+            }}
+          >
+            Room Level: Not available
+          </Text>
+        </View>
+
+        {/* ROOM TYPE */}
+        <TouchableOpacity
+          style={{ paddingHorizontal: 7 }}
+          onPress={() => {
+            Alert.alert(
+              'Room Type',
+              roomIsLocked
+                ? '🔒 Locked Room'
+                : '🌐 Public Room'
+            );
+          }}
+        >
+          <Text style={{ fontSize: 22 }}>
+            {roomIsLocked ? '🔒' : '🌐'}
+          </Text>
+        </TouchableOpacity>
+
+        {/* SHARE */}
+        <TouchableOpacity
+          style={{ paddingHorizontal: 7 }}
+          onPress={async () => {
+            try {
+              await Share.share({
+                message: `Join my room "${selectedRoom.room_name}" on TALKZY!`
+              });
+            } catch (error) {
+              console.log('Room share error:', error.message);
+            }
+          }}
+        >
+          <Text style={{ fontSize: 22 }}>↗️</Text>
+        </TouchableOpacity>
+
+        {/* POWER MENU */}
+        <TouchableOpacity
+          style={{ paddingLeft: 7 }}
+          onPress={() => setShowRoomMenu(!showRoomMenu)}
+        >
+          <Text style={{ fontSize: 24, color: C.text }}>
+            ⏻
+          </Text>
+        </TouchableOpacity>
+
+            </View>
+
+      {/* ROOM TROPHY / COINS */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingHorizontal: 14,
+          paddingTop: 10,
+          paddingBottom: 4
+        }}
+      >
+        <Text style={{ fontSize: 18 }}>🏆</Text>
+
+        <Text
+          style={{
+            color: C.text,
+            fontSize: 14,
+            fontWeight: 'bold',
+            marginLeft: 6
+          }}
+        >
+          0
+        </Text>
+      </View>
+
+      {/* MICROPHONE SEATS */}
+      <View
+        style={{
+          flexDirection: 'row',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          paddingHorizontal: 12,
+          paddingTop: 25
+        }}
+      >
+        {[1, 2, 3, 4, 5, 6, 7, 8].map((seat) => (
+          <View
+            key={seat}
+            style={{
+              width: '25%',
+              alignItems: 'center',
+              marginBottom: 24
+            }}
+          >
+            <View
+              style={{
+                width: 58,
+                height: 58,
+                borderRadius: 29,
+                borderWidth: 1.5,
+                borderColor: C.line,
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <Text style={{ fontSize: 23 }}>🎙️</Text>
+            </View>
+          </View>
+        ))}
+      </View>
+      {/* EMPTY ROOM SPACE */}
+      <View style={{ flexGrow: 1, minHeight: 120 }} />
+
+      {/* POWER MENU */}
+      {showRoomMenu && (
+        <View
+          style={{
+            position: 'absolute',
+            top: 75,
+            right: 12,
+            zIndex: 100,
+            elevation: 10,
+            backgroundColor: C.card,
+            borderWidth: 1,
+            borderColor: C.line,
+            borderRadius: 12,
+            width: 150,
+            overflow: 'hidden'
+          }}
+        >
+
+          {/* MINIMIZE */}
+          <TouchableOpacity
+            style={{
+              padding: 14,
+              borderBottomWidth: 1,
+              borderBottomColor: C.line
+            }}
+            onPress={() => {
+              setShowRoomMenu(false);
+              setIsRoomMinimized(true);
+              setScreen('main');
+            }}
+          >
+            <Text style={{ color: C.text, fontSize: 15 }}>
+              Minimize
+            </Text>
+          </TouchableOpacity>
+
+          {/* EXIT */}
+          <TouchableOpacity
+            style={{ padding: 14 }}
+            onPress={() => {
+              setShowRoomMenu(false);
+              setIsRoomMinimized(false);
+              setSelectedRoom(null);
+              setScreen('main');
+            }}
+          >
+            <Text style={{ color: '#FF5B5B', fontSize: 15 }}>
+              Exit Room
+            </Text>
+          </TouchableOpacity>
+
+        </View>
+      )}
+
     </View>
   );
 }
