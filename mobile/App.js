@@ -1980,7 +1980,7 @@ function renderRoomInterior() {
   const roomIsLocked = selectedRoom.room_type === 'locked';
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg }}>
+    <View style={{ flex: 1, backgroundColor: C.bg, minHeight: 0 }}>
 
       {/* ROOM HEADER */}
       <View
