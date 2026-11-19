@@ -7934,7 +7934,7 @@ if (screen === 'profile' || profileIncomplete) {
       </View>
 
                  {/* FLOATING MINI ROOM */}
-      {isRoomMinimized && selectedRoom && (
+      {isRoomMinimized && selectedRoom && screen !== 'roomInterior' && (
         <View
           style={{
             flexDirection: 'row',
