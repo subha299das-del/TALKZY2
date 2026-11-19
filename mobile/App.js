@@ -2349,7 +2349,8 @@ onContentSizeChange={() =>
               { icon: '👥', title: 'Members' },
               { icon: 'ℹ️', title: 'Room Info' },
               { icon: '📜', title: 'Room Rules' },
-              { icon: '🔗', title: 'Share Room' }
+              { icon: '🔗', title: 'Share Room' },
+             { icon: '🗑️', title: 'Clear Chat' }
             ].map((tool) => (
               <TouchableOpacity
                 key={tool.title}
