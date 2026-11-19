@@ -1922,22 +1922,32 @@ function renderRoomCard(room, showJoin = true) {
         </View>
 
         {/* CURRENT ACTIVE USERS */}
-        {typeof room.active_users === 'number' && (
-          <Text
-            style={{
-              color: C.muted,
-              fontSize: 11,
-              marginLeft: 7
-            }}
-          >
-            {room.active_users}
-          </Text>
-        )}
-            </View>
-    </Card>
-  </TouchableOpacity>
-  );
-}
+<View
+  style={{
+    backgroundColor: C.card,
+    borderWidth: 1,
+    borderColor: C.line,
+    borderRadius: 10,
+    paddingHorizontal: 9,
+    paddingVertical: 7,
+    marginLeft: 6,
+    alignItems: 'center',
+    justifyContent: 'center'
+  }}
+>
+  <Text style={{ fontSize: 15 }}>👥</Text>
+
+  <Text
+    style={{
+      color: C.text,
+      fontSize: 12,
+      fontWeight: '900',
+      marginTop: 2
+    }}
+  >
+    {room.active_users ?? 0}
+  </Text>
+</View>
 
 // =========================================
 // ROOM: ROOM INTERIOR
