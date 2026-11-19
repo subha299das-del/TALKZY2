@@ -1784,8 +1784,21 @@ function renderRoomCard(room, showJoin = true) {
     room.owner_id === session?.user?.id;
 
   return (
-    <Card
-      key={room.id}
+  <TouchableOpacity
+  activeOpacity={0.85}
+  onPress={() => {
+    if (showJoin) {
+      joinRoom(room);
+      return;
+    }
+
+    setSelectedRoom(room);
+    setIsRoomMinimized(false);
+    setScreen('roomInterior');
+  }}
+>
+  <Card
+    key={room.id}
       style={{
         padding: 10,
         marginBottom: 9,
@@ -1925,10 +1938,11 @@ function renderRoomCard(room, showJoin = true) {
             {room.active_users}
           </Text>
         )}
-      </View>
+            </View>
     </Card>
+  </TouchableOpacity>
   );
-                    }
+}
 
 // =========================================
 // ROOM: ROOM INTERIOR
