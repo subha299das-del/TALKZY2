@@ -1901,6 +1901,32 @@ function renderRoomCard(room, showJoin = true) {
   );
                     }
 
+// =========================================
+// ROOM: ROOM INTERIOR
+// =========================================
+
+function renderRoomInterior() {
+  if (!selectedRoom) {
+    return (
+      <Card>
+        <Heading>Room not selected</Heading>
+        <Button
+          title="Back to Rooms"
+          onPress={() => setScreen('main')}
+        />
+      </Card>
+    );
+  }
+
+  return (
+    <View style={{ flex: 1, backgroundColor: C.bg }}>
+      <Text style={{ color: C.text }}>
+        {selectedRoom.room_name}
+      </Text>
+    </View>
+  );
+}
+
 
   // =========================================
   // ROOM: SETTINGS SCREEN
