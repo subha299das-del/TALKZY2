@@ -2085,7 +2085,7 @@ function renderRoomInterior() {
         </Text>
       </View>
 
-      {/* MICROPHONE SEATS */}
+            {/* MICROPHONE SEATS */}
       <View
         style={{
           flexDirection: 'row',
@@ -2110,13 +2110,34 @@ function renderRoomInterior() {
                 height: 58,
                 borderRadius: 29,
                 borderWidth: 1.5,
-                borderColor: C.line,
+                borderColor:
+                  seat === 1 && isOnMic
+                    ? '#FF5B5B'
+                    : C.line,
+                backgroundColor:
+                  seat === 1 && isOnMic
+                    ? 'rgba(255,91,91,0.12)'
+                    : 'transparent',
                 alignItems: 'center',
                 justifyContent: 'center'
               }}
             >
-              <Text style={{ fontSize: 23 }}>🎙️</Text>
+              <Text style={{ fontSize: 23 }}>
+                {seat === 1 && isOnMic ? '🎤' : '🎙️'}
+              </Text>
             </View>
+
+            {seat === 1 && isOnMic && (
+              <Text
+                style={{
+                  color: C.text,
+                  fontSize: 11,
+                  marginTop: 5
+                }}
+              >
+                You
+              </Text>
+            )}
           </View>
         ))}
       </View>
