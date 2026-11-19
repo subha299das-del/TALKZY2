@@ -467,6 +467,7 @@ const [isRoomBellOn, setIsRoomBellOn] = useState(true);
 const [showRoomTools, setShowRoomTools] = useState(false);
 const [showRoomGiftPanel, setShowRoomGiftPanel] = useState(false);
 const [roomChatText, setRoomChatText] = useState('');
+ const [roomChatMessages, setRoomChatMessages] = useState([]);
   const [showJoinPassword, setShowJoinPassword] = useState(false);
 const [joinPassword, setJoinPassword] = useState('');
 const [joiningRoom, setJoiningRoom] = useState(false);
