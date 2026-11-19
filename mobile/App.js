@@ -2294,18 +2294,146 @@ function renderRoomInterior() {
       )}
 
      {/* ROOM BOTTOM CONTROLS */}
-      <View
+<View
+  style={{
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingHorizontal: 6,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: C.line
+  }}
+>
+  {/* CHAT BAR / CHAT ICON */}
+  {isOnMic ? (
+    <TouchableOpacity
+      onPress={() => {
+        Alert.alert('Room Chat', 'Room chat will be available soon.');
+      }}
+      style={{
+        width: 36,
+        height: 38,
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+    >
+      <Text style={{ fontSize: 20 }}>💬</Text>
+    </TouchableOpacity>
+  ) : (
+    <View
+      style={{
+        flex: 1,
+        maxWidth: 130,
+        height: 38,
+        backgroundColor: C.card,
+        borderRadius: 20,
+        paddingHorizontal: 12,
+        justifyContent: 'center',
+        marginRight: 5
+      }}
+    >
+      <TextInput
+        value={roomChatText}
+        onChangeText={setRoomChatText}
+        placeholder="Message..."
+        placeholderTextColor={C.muted}
         style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-around',
-          paddingHorizontal: 6,
-          paddingVertical: 12,
-          borderTopWidth: 1,
-          borderTopColor: C.line
+          color: C.text,
+          fontSize: 12,
+          padding: 0
         }}
-      >
+      />
+    </View>
+  )}
 
+  {/* MIC - ONLY WHEN ON MIC */}
+  {isOnMic && (
+    <TouchableOpacity
+      onPress={() => setIsOnMic(false)}
+      style={{
+        width: 38,
+        height: 38,
+        borderRadius: 20,
+        backgroundColor: '#D94B4B',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+    >
+      <Text style={{ fontSize: 19 }}>🎤</Text>
+    </TouchableOpacity>
+  )}
+
+  {/* SPEAKER */}
+  <TouchableOpacity
+    onPress={() => setIsRoomSpeakerOn(!isRoomSpeakerOn)}
+    style={{
+      width: 38,
+      height: 38,
+      borderRadius: 20,
+      backgroundColor: C.card,
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}
+  >
+    <Text style={{ fontSize: 19 }}>
+      {isRoomSpeakerOn ? '🔊' : '🔇'}
+    </Text>
+  </TouchableOpacity>
+
+  {/* BELL */}
+  <TouchableOpacity
+    onPress={() => setIsRoomBellOn(!isRoomBellOn)}
+    style={{
+      width: 38,
+      height: 38,
+      borderRadius: 20,
+      backgroundColor: C.card,
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}
+  >
+    <Text style={{ fontSize: 19 }}>
+      {isRoomBellOn ? '🔔' : '🔕'}
+    </Text>
+  </TouchableOpacity>
+
+  {/* FOUR-SQUARE TOOLS */}
+  <TouchableOpacity
+    onPress={() => {
+      setShowRoomTools(!showRoomTools);
+      setShowRoomGiftPanel(false);
+    }}
+    style={{
+      width: 38,
+      height: 38,
+      borderRadius: 20,
+      backgroundColor: C.card,
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}
+  >
+    <Text style={{ fontSize: 19 }}>⊞</Text>
+  </TouchableOpacity>
+
+  {/* GIFT */}
+  <TouchableOpacity
+    onPress={() => {
+      setShowRoomGiftPanel(!showRoomGiftPanel);
+      setShowRoomTools(false);
+    }}
+    style={{
+      width: 38,
+      height: 38,
+      borderRadius: 20,
+      backgroundColor: C.card,
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}
+  >
+    <Text style={{ fontSize: 19 }}>🎁</Text>
+  </TouchableOpacity>
+</View>
         {/* CHAT */}
         <TouchableOpacity
           onPress={() => {
