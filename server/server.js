@@ -396,6 +396,9 @@ app.get('/api/rooms', async (req, res) => {
 
 app.get('/api/rooms/mine', userAuth, async (req, res) => {
   try {
+    // Active rooms are shown in Mine, but eligibility checks ALL historical
+    // room records so closing a room or reinstalling the app never restores
+    // the one-time Create Room option.
     const { data, error } = await supabase
       .from('talkzy_rooms')
       .select('id, owner_id, room_name, description, room_dp_url, room_type, status, created_at, room_talkzy_id, country_name')
@@ -405,9 +408,19 @@ app.get('/api/rooms/mine', userAuth, async (req, res) => {
 
     if (error) throw error;
 
+    const { data: createdRoom, error: eligibilityError } = await supabase
+      .from('talkzy_rooms')
+      .select('id')
+      .eq('owner_id', req.talkzyUser.id)
+      .limit(1)
+      .maybeSingle();
+
+    if (eligibilityError) throw eligibilityError;
+
     res.set('Cache-Control', 'no-store').json({
       rooms: data || [],
-      count: data?.length || 0
+      count: data?.length || 0,
+      hasEverCreatedRoom: Boolean(createdRoom)
     });
   } catch (error) {
     console.error('Could not load owner rooms:', error.message);
