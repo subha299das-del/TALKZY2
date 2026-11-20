@@ -604,6 +604,18 @@ useEffect(() => {
   return () => { active = false; supabase.removeChannel(channel); };
 }, [selectedRoom?.id]);
 
+// ROOM CHAT REALTIME UPDATES
+useEffect(() => {
+  if (!selectedRoom?.id) return;
+  const roomId = selectedRoom.id;
+  const channel = supabase.channel(`room-chat-sync-${roomId}`)
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'talkzy_room_messages', filter: `room_id=eq.${roomId}`
+    }, () => loadRoomMessages(roomId))
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
+}, [selectedRoom?.id]);
+
 const [isRoomSpeakerOn, setIsRoomSpeakerOn] = useState(true);
 const [isRoomBellOn, setIsRoomBellOn] = useState(true);
 const [showRoomTools, setShowRoomTools] = useState(false);
@@ -1609,6 +1621,39 @@ async function toggleFollowRoom(room) {
     } finally { setJoiningRoom(false); }
   }
 
+  async function sendRoomImage() {
+    if (!selectedRoom?.id) return;
+    if (isRoomTourist && !touristsSendPic) {
+      return Alert.alert('Picture sharing disabled', 'The room owner does not allow tourists to send pictures.');
+    }
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) return Alert.alert('Permission required', 'Allow photo access to share a picture.');
+      const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, quality: 0.82 });
+      if (picked.canceled || !picked.assets?.[0]?.uri) return;
+      const uri = picked.assets[0].uri;
+      const response = await fetch(uri);
+      const bytes = await response.arrayBuffer();
+      const path = `${session.user.id}/rooms/${selectedRoom.id}/messages/${Date.now()}.jpg`;
+      const { error: uploadError } = await supabase.storage.from('talkzy-rooms').upload(path, bytes, {
+        contentType: 'image/jpeg', upsert: false
+      });
+      if (uploadError) throw uploadError;
+      const imageUrl = supabase.storage.from('talkzy-rooms').getPublicUrl(path).data.publicUrl;
+      const result = await api(`/api/rooms/${selectedRoom.id}/messages`, {
+        method: 'POST', body: JSON.stringify({ type: 'image', imageUrl })
+      });
+      const item = result.message;
+      setRoomChatMessages(prev => [...prev, {
+        id: item.id, text: '📷 Photo', sender: profile?.display_name || displayName || 'You',
+        senderId: session?.user?.id, image_url: imageUrl,
+        time: new Date(item.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }]);
+    } catch (error) {
+      Alert.alert('Picture not sent', error.message || 'Could not share this picture.');
+    }
+  }
+
   async function loadRoomMessages(roomId) {
     if (!roomId) return;
     try {
@@ -2374,6 +2419,7 @@ function renderRoomInterior() {
     return (
       <TouchableOpacity
         key={seat}
+        disabled={isRoomTourist && !touristsOnMic}
         onPress={async () => {
           // Occupied by another person: no request needed.
           if (isOccupied && !isMySeat) {
@@ -2440,6 +2486,7 @@ function renderRoomInterior() {
           }
         }}
         style={{
+          opacity: isRoomTourist && !touristsOnMic ? 0.4 : 1,
           width: rowSeats.length >= 5 ? '20%' : '25%',
           alignItems: 'center',
           marginBottom: 24,
@@ -2593,7 +2640,7 @@ onContentSizeChange={() =>
     fontSize: 14
   }}
 >
-  {message.text || message.message_text}
+  {message.image_url ? <Image source={{ uri: message.image_url }} style={{ width: 190, height: 140, borderRadius: 9 }} resizeMode="cover" /> : (message.text || message.message_text)}
 </Text>
 
 <Text
@@ -2731,6 +2778,13 @@ borderTopWidth: 1,
     marginRight: 4
   }}
 >
+  <TouchableOpacity
+    onPress={sendRoomImage}
+    disabled={isRoomTourist && !touristsSendPic}
+    style={{ width: 30, height: 38, alignItems: 'center', justifyContent: 'center', opacity: isRoomTourist && !touristsSendPic ? 0.35 : 1 }}
+  >
+    <Text style={{ fontSize: 18 }}>📷</Text>
+  </TouchableOpacity>
   <View
     style={{
       flex: 1,
