@@ -2360,15 +2360,38 @@ function renderRoomInterior() {
 </View>
 
         {/* ROOM TYPE + MICROPHONE LAYOUT */}
-        <TouchableOpacity style={{ paddingHorizontal: 7 }} onPress={() => setShowMicCountPicker(true)}>
-          <Text style={{ fontSize: 22 }}>
-            {roomIsLocked ? '🔒' : '🌐'}
-          </Text>
+        <TouchableOpacity
+          onPress={() => setShowMicCountPicker(true)}
+          activeOpacity={0.75}
+          style={{
+            width: 34,
+            height: 34,
+            marginLeft: 5,
+            borderRadius: 11,
+            backgroundColor: C.panel2,
+            borderWidth: 1,
+            borderColor: C.line,
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <Text style={{ fontSize: 19 }}>🏠</Text>
         </TouchableOpacity>
 
         {/* SHARE */}
         <TouchableOpacity
-          style={{ paddingHorizontal: 7 }}
+          activeOpacity={0.75}
+          style={{
+            width: 34,
+            height: 34,
+            marginLeft: 6,
+            borderRadius: 11,
+            backgroundColor: C.panel2,
+            borderWidth: 1,
+            borderColor: C.line,
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
           onPress={async () => {
             try {
               await Share.share({
@@ -2379,17 +2402,26 @@ function renderRoomInterior() {
             }
           }}
         >
-          <Text style={{ fontSize: 22 }}>↗️</Text>
+          <Text style={{ fontSize: 19, color: C.text }}>↗</Text>
         </TouchableOpacity>
 
-        {/* POWER MENU */}
+        {/* POWER / EXIT MENU */}
         <TouchableOpacity
-          style={{ paddingLeft: 7 }}
+          activeOpacity={0.75}
+          style={{
+            width: 34,
+            height: 34,
+            marginLeft: 6,
+            borderRadius: 11,
+            backgroundColor: 'rgba(255, 82, 82, 0.12)',
+            borderWidth: 1,
+            borderColor: 'rgba(255, 82, 82, 0.28)',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
           onPress={() => setShowRoomMenu(!showRoomMenu)}
         >
-          <Text style={{ fontSize: 24, color: C.text }}>
-            ⏻
-          </Text>
+          <Text style={{ fontSize: 21, color: '#FF6666' }}>⏻</Text>
         </TouchableOpacity>
 
             </View>
