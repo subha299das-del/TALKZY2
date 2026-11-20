@@ -1076,7 +1076,9 @@ const seatsWithProfiles = (data || []).map(seat => {
 });
 
 res.set('Cache-Control', 'no-store').json({
-  micCount: roomSettings.mic_count,\n  micLayout: roomSettings.mic_layout || 'eight',\n  seats: seatsWithProfiles
+  micCount: roomSettings.mic_count,
+  micLayout: roomSettings.mic_layout || 'eight',
+  seats: seatsWithProfiles
 });
     
   } catch (error) {
