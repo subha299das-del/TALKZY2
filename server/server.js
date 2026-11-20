@@ -632,6 +632,43 @@ app.get('/api/rooms/:roomId/messages', userAuth, async (req, res) => {
   }
 });
 
+app.delete('/api/rooms/:roomId/messages', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+    if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
+    if (!(await canManageRoom(room, req.talkzyUser.id))) {
+      return res.status(403).json({ error: 'Only the room owner or an admin can clear room chat.' });
+    }
+
+    const { data: existing, error: readError } = await supabase.from('talkzy_room_messages')
+      .select('id, image_url').eq('room_id', room.id);
+    if (readError) throw readError;
+
+    const { error: deleteError } = await supabase.from('talkzy_room_messages')
+      .delete().eq('room_id', room.id);
+    if (deleteError) throw deleteError;
+
+    const publicPrefix = '/storage/v1/object/public/talkzy-rooms/';
+    const imagePaths = (existing || []).map(item => {
+      const url = String(item.image_url || '');
+      const index = url.indexOf(publicPrefix);
+      if (index < 0) return null;
+      try { return decodeURIComponent(url.slice(index + publicPrefix.length).split('?')[0]); }
+      catch { return null; }
+    }).filter(Boolean);
+    if (imagePaths.length) {
+      const { error: storageError } = await supabase.storage.from('talkzy-rooms').remove(imagePaths);
+      if (storageError) console.error('Could not remove cleared room chat images:', storageError.message);
+    }
+
+    res.json({ cleared: true, deletedCount: (existing || []).length });
+  } catch (error) {
+    console.error('Could not clear room chat:', error.message);
+    res.status(500).json({ error: 'Could not clear room chat.' });
+  }
+});
+
 app.post('/api/rooms/:roomId/messages', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
