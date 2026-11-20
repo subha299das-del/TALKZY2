@@ -42,7 +42,7 @@ const API_BASE_URL = (
 
 const BUCKET = 'talkzy-profiles';
 
-const YOUTUBE_PLAYER_HTML = `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><style>html,body,#player{margin:0;width:100%;height:100%;background:#000;overflow:hidden}</style></head><body><div id="player"></div><script src="https://www.youtube.com/iframe_api"></script><script>let player;function onYouTubeIframeAPIReady(){player=new YT.Player('player',{height:'100%',width:'100%',videoId:'',playerVars:{playsinline:1,controls:0,rel:0,modestbranding:1,fs:0,disablekb:1},events:{onReady:function(){window.ReactNativeWebView&&window.ReactNativeWebView.postMessage('ready')}}})}function talkzyLoad(id,seconds,playing){if(!player||!player.loadVideoById)return;if(id){player.loadVideoById({videoId:id,startSeconds:Math.max(0,seconds||0)});if(!playing)player.pauseVideo()}}function talkzySync(seconds,playing){if(!player||!player.getCurrentTime)return;let current=player.getCurrentTime();if(Math.abs(current-(seconds||0))>3)player.seekTo(seconds||0,true);if(playing)player.playVideo();else player.pauseVideo()}function talkzyPlay(){if(player)player.playVideo()}function talkzyPause(){if(player)player.pauseVideo()}</script></body></html>`;
+const YOUTUBE_PLAYER_HTML = `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><style>html,body,#player{margin:0;width:100%;height:100%;background:#000;overflow:hidden}</style></head><body><div id="player"></div><script src="https://www.youtube.com/iframe_api"></script><script>let player;function onYouTubeIframeAPIReady(){player=new YT.Player('player',{height:'100%',width:'100%',videoId:'',playerVars:{playsinline:1,controls:0,rel:0,modestbranding:1,fs:0,disablekb:1},events:{onReady:function(){window.ReactNativeWebView&&window.ReactNativeWebView.postMessage('ready')},onStateChange:function(e){if(e.data===0&&window.ReactNativeWebView)window.ReactNativeWebView.postMessage('ended')}}})}setInterval(function(){if(player&&player.getCurrentTime&&player.getPlayerState&&player.getPlayerState()===1&&window.ReactNativeWebView)window.ReactNativeWebView.postMessage('time:'+player.getCurrentTime())},2000);function talkzyLoad(id,seconds,playing){if(!player||!player.loadVideoById)return;if(id){player.loadVideoById({videoId:id,startSeconds:Math.max(0,seconds||0)});if(!playing)player.pauseVideo()}}function talkzySync(seconds,playing){if(!player||!player.getCurrentTime)return;let current=player.getCurrentTime();if(Math.abs(current-(seconds||0))>3)player.seekTo(seconds||0,true);if(playing)player.playVideo();else player.pauseVideo()}function talkzyPlay(){if(player)player.playVideo()}function talkzyPause(){if(player)player.pauseVideo()}</script></body></html>`;
 
 
 const C = {
@@ -706,6 +706,7 @@ const youtubeWebViewRef = useRef(null);
 const youtubeLastUpdateRef = useRef(null);
 const youtubeLoadedVideoRef = useRef(null);
 const youtubePanelDismissedRef = useRef(false);
+const youtubeLastPositionWriteRef = useRef(0);
  const [showRoomInfo, setShowRoomInfo] = useState(false);
 const [showRoomGiftPanel, setShowRoomGiftPanel] = useState(false);
 const [roomChatText, setRoomChatText] = useState('');
@@ -2606,11 +2607,27 @@ function renderRoomInterior() {
                 allowsInlineMediaPlayback
                 mediaPlaybackRequiresUserAction={false}
                 onMessage={(event) => {
-                  if (event.nativeEvent.data === 'ready' && youtubeState.video_id) {
+                  const message = String(event.nativeEvent.data || '');
+                  if (message === 'ready' && youtubeState.video_id) {
                     youtubeLoadedVideoRef.current = youtubeState.video_id;
                     youtubeWebViewRef.current?.injectJavaScript(
                       `window.talkzyLoad && window.talkzyLoad('${youtubeState.video_id}', ${Number(youtubeState.current_time_seconds || 0)}, ${youtubeState.is_playing ? 'true' : 'false'});` + 'true;'
                     );
+                  } else if (message.startsWith('time:')) {
+                    const isController = selectedRoom?.owner_id === session?.user?.id ||
+                      roomPresence.find(person => person.user_id === session?.user?.id)?.presence_role === 'admin';
+                    const now = Date.now();
+                    if (isController && now - youtubeLastPositionWriteRef.current > 9000) {
+                      youtubeLastPositionWriteRef.current = now;
+                      const seconds = Number(message.slice(5));
+                      if (Number.isFinite(seconds)) {
+                        saveYoutubeState({ ...youtubeState, current_time_seconds: seconds });
+                      }
+                    }
+                  } else if (message === 'ended') {
+                    const isController = selectedRoom?.owner_id === session?.user?.id ||
+                      roomPresence.find(person => person.user_id === session?.user?.id)?.presence_role === 'admin';
+                    if (isController) advanceYoutubeQueue();
                   }
                 }}
                 style={{ flex: 1, backgroundColor: '#000' }}
