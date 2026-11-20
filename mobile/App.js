@@ -481,6 +481,8 @@ const [memberSearch, setMemberSearch] = useState('');
   const [joinedRooms, setJoinedRooms] = useState([]);
   const [followedRooms, setFollowedRooms] = useState([]);
   const [myRooms, setMyRooms] = useState([]);
+  const [hasEverCreatedRoom, setHasEverCreatedRoom] = useState(false);
+  const [roomCreationEligibilityLoaded, setRoomCreationEligibilityLoaded] = useState(false);
 
   const [roomName, setRoomName] = useState('');
   const [roomDescription, setRoomDescription] = useState('');
@@ -1548,8 +1550,12 @@ function closeOfficialEvent() {
   
 async function loadMyRooms(currentSession = session) {
   try {
-    if (!currentSession?.access_token) return;
+    if (!currentSession?.access_token) {
+      setRoomCreationEligibilityLoaded(false);
+      return;
+    }
 
+    setRoomCreationEligibilityLoaded(false);
     const result = await api('/api/rooms/mine', {
       headers: {
         Authorization: `Bearer ${currentSession.access_token}`
@@ -1561,8 +1567,12 @@ async function loadMyRooms(currentSession = session) {
       : [];
 
     setMyRooms(allRooms);
+    setHasEverCreatedRoom(result.hasEverCreatedRoom === true);
+    setRoomCreationEligibilityLoaded(true);
 
   } catch (error) {
+    // Fail closed: never briefly show Create Room when eligibility is unknown.
+    setRoomCreationEligibilityLoaded(false);
     console.log('My rooms:', error.message);
   }
 }
@@ -3661,30 +3671,31 @@ borderTopWidth: 1,
   function renderMine() {
     return (
       <>
-        {myRooms.length === 0 ? (
-  <TouchableOpacity
-    onPress={() => setScreen('createRoom')}
-    style={{
-      backgroundColor: C.accent,
-      padding: 17,
-      borderRadius: 15,
-      marginBottom: 15
-    }}
-  >
-    <Text
-      style={{
-        color: 'white',
-        fontSize: 17,
-        fontWeight: '900',
-        textAlign: 'center'
-      }}
-    >
-      ＋ Create Your Room
-    </Text>
-  </TouchableOpacity>
-) : (
-  renderRoomCard(myRooms[0], false)
-)}
+        {!roomCreationEligibilityLoaded ? (
+          <View style={{ paddingVertical: 22, alignItems: 'center' }}>
+            <ActivityIndicator color={C.accent} />
+          </View>
+        ) : !hasEverCreatedRoom && myRooms.length === 0 ? (
+          <TouchableOpacity
+            onPress={() => setScreen('createRoom')}
+            style={{
+              backgroundColor: C.accent,
+              padding: 17,
+              borderRadius: 15,
+              marginBottom: 15
+            }}
+          >
+            <Text style={{ color: 'white', fontSize: 17, fontWeight: '900', textAlign: 'center' }}>
+              ＋ Create Your Room
+            </Text>
+          </TouchableOpacity>
+        ) : myRooms.length > 0 ? (
+          renderRoomCard(myRooms[0], false)
+        ) : (
+          <Text style={{ color: C.muted, textAlign: 'center', paddingVertical: 18 }}>
+            You have already used your one-time room creation.
+          </Text>
+        )}
 
 
         <View style={{ flexDirection: 'row', marginBottom: 15 }}>
