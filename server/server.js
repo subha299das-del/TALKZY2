@@ -1121,9 +1121,23 @@ app.post('/api/rooms/:roomId/mic-seats/:seatNumber', userAuth, async (req, res) 
 
     const seatNumber = Number(req.params.seatNumber);
 
-    if (!Number.isInteger(seatNumber) || seatNumber < 1 || seatNumber > 8) {
-      return res.status(400).json({ error: 'Choose a seat from 1 to 8.' });
-    }
+    const { data: roomSettings, error: settingsError } = await supabase
+  .from('talkzy_rooms')
+  .select('mic_count')
+  .eq('id', room.id)
+  .single();
+
+if (settingsError) throw settingsError;
+
+if (
+  !Number.isInteger(seatNumber) ||
+  seatNumber < 1 ||
+  seatNumber > roomSettings.mic_count
+) {
+  return res.status(400).json({
+    error: `Choose a seat from 1 to ${roomSettings.mic_count}.`
+  });
+}
 
     const { data, error } = await supabase.rpc('talkzy_take_mic_seat', {
       p_room_id: room.id,
