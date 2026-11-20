@@ -2701,7 +2701,29 @@ borderTopWidth: 1,
   {/* MIC - MUTE / UNMUTE WHILE REMAINING ON SEAT */}
 {isOnMic && (
   <TouchableOpacity
-    onPress={() => setIsMicMuted(!isMicMuted)}
+    onPress={async () => {
+  try {
+    const nextMuted = !isMicMuted;
+
+    await api(
+      `/api/rooms/${selectedRoom.id}/mic-seats/mute`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({
+          isMuted: nextMuted
+        })
+      }
+    );
+
+    await loadRoomMicSeats(selectedRoom.id);
+
+  } catch (error) {
+    Alert.alert(
+      'Microphone',
+      error.message || 'Could not change mute status.'
+    );
+  }
+}}
     style={{
       width: 38,
       height: 38,
