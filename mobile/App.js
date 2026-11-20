@@ -8382,21 +8382,19 @@ if (screen === 'profile' || profileIncomplete) {
       <View style={{ flex: 1 }}>
         {/* Main app header hidden: branding is reserved for the login screen. */}
 
-        {screen === 'roomInterior' ? (
-          renderMainContent()
-        ) : (
-          <ScrollView
-            style={{ flex: 1 }}
-            contentContainerStyle={{
-              paddingHorizontal: 15,
-              paddingBottom: 25,
-              flexGrow: 1
-            }}
-            keyboardShouldPersistTaps="handled"
-          >
-            {renderMainContent()}
-          </ScrollView>
-        )}
+        <ScrollView
+          style={{ flex: 1 }}
+          scrollEnabled={!(screen === 'roomInterior' && (showRoomTools || showRoomGiftPanel))}
+          contentContainerStyle={{
+            paddingHorizontal: screen === 'roomInterior' ? 0 : 15,
+            paddingBottom: screen === 'roomInterior' ? 0 : 25,
+            flexGrow: 1
+          }}
+          keyboardShouldPersistTaps="handled"
+          nestedScrollEnabled
+        >
+          {renderMainContent()}
+        </ScrollView>
       </View>
 
                  {/* FLOATING MINI ROOM */}
