@@ -639,6 +639,7 @@ useEffect(() => {
     return;
   }
   const roomId = selectedRoom.id;
+  setRoomPresence([]);
   let active = true;
   const refresh = async () => {
     try {
@@ -3097,6 +3098,7 @@ borderTopWidth: 1,
   setShowRoomMenu(false);
   setShowRoomTools(false);
   setShowRoomGiftPanel(false);
+  setShowRoomUsers(false);
   setIsOnMic(false);
   setMyMicSeat(null);
   setIsMicMuted(false);
