@@ -585,6 +585,9 @@ app.post('/api/rooms/:roomId/leave-visit', userAuth, async (req, res) => {
     const { error } = await supabase.from('talkzy_room_visitors').delete()
       .eq('room_id', room.id).eq('user_id', userId);
     if (error) throw error;
+    const { error: presenceError } = await supabase.from('talkzy_room_presence').delete()
+      .eq('room_id', room.id).eq('user_id', userId);
+    if (presenceError) throw presenceError;
     res.json({ left: true });
   } catch (error) {
     console.error('Could not leave tourist visit:', error.message);
