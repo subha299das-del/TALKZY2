@@ -3083,6 +3083,29 @@ borderTopWidth: 1,
           <TouchableOpacity onPress={saveRoomSettings} disabled={roomSettingSaving} style={{ backgroundColor: '#7657F6', padding: 15, borderRadius: 14, alignItems: 'center', marginBottom: 14 }}>
             <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>{roomSettingSaving ? 'Saving...' : 'Save Room Settings'}</Text>
           </TouchableOpacity>
+        <Modal visible={!!roomSettingsSubpage} transparent animationType="slide" onRequestClose={() => setRoomSettingsSubpage(null)}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.82)', justifyContent: 'flex-end' }}>
+            <View style={{ height: '78%', backgroundColor: C.panel, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 18 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14 }}>
+                <TouchableOpacity onPress={() => setRoomSettingsSubpage(null)} style={{ padding: 8, marginRight: 8 }}><Text style={{ color: C.text, fontSize: 24 }}>‹</Text></TouchableOpacity>
+                <Text style={{ color: C.text, fontSize: 18, fontWeight: '900', flex: 1 }}>{roomSettingsSubpage === 'admins' ? 'Room Administrator List' : roomSettingsSubpage === 'kicklist' ? 'Kick List' : 'Room Members'}</Text>
+              </View>
+              <ScrollView>
+                {(roomSettingsSubpage === 'admins' ? roomSettingAdmins : roomSettingsSubpage === 'kicklist' ? roomSettingKicked : roomSettingMembers).map(item => (
+                  <View key={item.user_id} style={{ flexDirection: 'row', alignItems: 'center', padding: 10, borderBottomWidth: 1, borderColor: C.line }}>
+                    {item.avatar_url ? <Image source={{ uri: item.avatar_url }} style={{ width: 42, height: 42, borderRadius: 21, marginRight: 10 }} /> : <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: C.panel2, marginRight: 10, alignItems: 'center', justifyContent: 'center' }}><Text>👤</Text></View>}
+                    <View style={{ flex: 1 }}><Text style={{ color: C.text, fontWeight: '800' }}>{item.display_name || 'TALKZY User'}</Text><Text style={{ color: C.muted, fontSize: 11 }}>TALKZY ID: {item.talkzy_id || '—'}</Text></View>
+                    {roomSettingsSubpage === 'admins' && <TouchableOpacity onPress={() => removeRoomAdmin(item.user_id)}><Text style={{ color: C.danger, fontWeight: '800' }}>Remove</Text></TouchableOpacity>}
+                    {roomSettingsSubpage === 'kicklist' && <TouchableOpacity onPress={() => unkickRoomMember(item.user_id)}><Text style={{ color: '#65D6A5', fontWeight: '800' }}>Unblock</Text></TouchableOpacity>}
+                    {roomSettingsSubpage === 'members' && <TouchableOpacity onPress={() => kickRoomMember(item.user_id)}><Text style={{ color: C.danger, fontWeight: '800' }}>Kick</Text></TouchableOpacity>}
+                  </View>
+                ))}
+                {((roomSettingsSubpage === 'admins' && !roomSettingAdmins.length) || (roomSettingsSubpage === 'kicklist' && !roomSettingKicked.length) || (roomSettingsSubpage === 'members' && !roomSettingMembers.length)) && <Text style={{ color: C.muted, padding: 16 }}>No entries to show.</Text>}
+              </ScrollView>
+              <TouchableOpacity onPress={() => setRoomSettingsSubpage(null)} style={{ backgroundColor: C.panel2, borderRadius: 12, padding: 13, alignItems: 'center', marginTop: 10 }}><Text style={{ color: C.text, fontWeight: '800' }}>Close</Text></TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
           <Text style={{ color: '#71809A', fontSize: 10, textAlign: 'center', marginTop: 2 }}>Room controls are reserved for the room creator.</Text>
         </ScrollView>
       </View>
@@ -8638,7 +8661,7 @@ if (screen === 'profile' || profileIncomplete) {
         {['Information', 'Members', 'Activity'].map(tab => (
           <TouchableOpacity
             key={tab}
-            onPress={() => setRoomDetailsTab(tab)}
+            onPress={() => { setRoomDetailsTab(tab); if (tab === 'Activity') loadRoomActivities(roomDetails?.id); }}
             style={{
               flex: 1,
               alignItems: 'center',
@@ -8809,15 +8832,15 @@ if (screen === 'profile' || profileIncomplete) {
                     No member records were returned for this room.
                   </Text>
                 ) : roomDetailMembers
-                  .filter(member => String(member.user_id || '').toLowerCase().includes(memberSearch.toLowerCase()))
+                  .filter(member => `${member.display_name || ''} ${member.talkzy_id || ''} ${member.user_id || ''}`.toLowerCase().includes(memberSearch.toLowerCase()))
                   .map(member => (
-                    <View key={member.user_id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
-                      <Text style={{ color: C.text, fontSize: 12, flex: 1 }} numberOfLines={1}>
-                        {member.user_id}
-                      </Text>
-                      <Text style={{ color: C.gold, fontSize: 11, fontWeight: '800' }}>
-                        {member.role || 'Member'}
-                      </Text>
+                    <View key={member.user_id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
+                      {member.avatar_url ? <Image source={{ uri: member.avatar_url }} style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10 }} /> : <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: C.panel2, marginRight: 10, alignItems: 'center', justifyContent: 'center' }}><Text>👤</Text></View>}
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: C.text, fontSize: 13, fontWeight: '800' }}>{member.display_name || 'TALKZY User'}</Text>
+                        <Text style={{ color: C.muted, fontSize: 10, marginTop: 2 }}>TALKZY ID: {member.talkzy_id || '—'}</Text>
+                      </View>
+                      <Text style={{ color: C.gold, fontSize: 11, fontWeight: '800' }}>{member.is_admin ? 'ADMIN' : (member.role || 'Member')}</Text>
                     </View>
                   ))}
               </View>
@@ -8826,13 +8849,20 @@ if (screen === 'profile' || profileIncomplete) {
             {/* ACTIVITY TAB */}
             {roomDetailsTab === 'Activity' && (
               <View>
-                <Text style={{ color: C.text, fontWeight: '900' }}>
-                  Room Activities
-                </Text>
-                <Text style={{ color: C.muted, marginTop: 8 }}>
-                  Completed activities and upcoming Room Party events
-                  will appear here.
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <Text style={{ color: C.text, fontWeight: '900', fontSize: 16 }}>Room Activities</Text>
+                  <TouchableOpacity onPress={() => loadRoomActivities(roomDetails?.id)}><Text style={{ color: C.accent, fontWeight: '800' }}>Refresh</Text></TouchableOpacity>
+                </View>
+                {loadingRoomActivities ? <ActivityIndicator color={C.accent} /> :
+                  roomActivities.length === 0 ? <Text style={{ color: C.muted, marginTop: 8 }}>No published room activities yet.</Text> :
+                  roomActivities.map(activity => (
+                    <View key={activity.id} style={{ backgroundColor: C.panel2, borderRadius: 13, padding: 12, marginBottom: 10 }}>
+                      {activity.poster_url ? <Image source={{ uri: activity.poster_url }} style={{ width: '100%', height: 145, borderRadius: 10, marginBottom: 9 }} resizeMode="cover" /> : null}
+                      <Text style={{ color: C.text, fontWeight: '900', fontSize: 14 }}>{activity.title}</Text>
+                      {!!activity.description && <Text style={{ color: C.muted, fontSize: 12, marginTop: 5 }}>{activity.description}</Text>}
+                      <Text style={{ color: C.gold, fontSize: 10, fontWeight: '800', marginTop: 8 }}>{String(activity.status || '').toUpperCase()}</Text>
+                    </View>
+                  ))}
               </View>
             )}
           </>
