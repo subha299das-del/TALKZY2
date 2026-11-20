@@ -4976,7 +4976,6 @@ function renderEvents() {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingBottom: 35 }}
       >
-        <Brand small />
 
         <Heading>Complete Your Profile</Heading>
 
@@ -8352,15 +8351,13 @@ function renderMainContent() {
       >
         <StatusBar barStyle="light-content" />
 
-        <Brand />
-
         <ActivityIndicator
           size="large"
           color={C.accent}
         />
 
         <Text style={{ color: C.muted, marginTop: 12 }}>
-          Loading TALKZY...
+          Loading...
         </Text>
       </SafeAreaView>
     );
@@ -8428,18 +8425,7 @@ if (screen === 'profile' || profileIncomplete) {
       <StatusBar barStyle="light-content" />
 
       <View style={{ flex: 1 }}>
-  !['roomInterior', 'roomSettings', 'createRoom', 'hotRooms', 'newRooms', 'eventDetail', 'eventManagement', 'eventManagementList'].includes(screen) &&    !showEventPreview &&
-    !showCountryRooms &&
-    !showCountryRegion &&
-    !showMySubscription &&
-    !showCreateRoomActivity &&
-    !showPosterTemplates &&
-    !showPosterOptions &&
-    !showPosterEditor && (
-      <View style={{ paddingHorizontal: 15 }}>
-        {renderMainHeader()}
-      </View>
-    )}
+        {/* Main app header hidden: branding is reserved for the login screen. */}
 
         <ScrollView
           style={{ flex: 1 }}
