@@ -1,10 +1,7 @@
 name: TALKZY Android APK
 
 on:
-  # Temporary, narrowly scoped trigger to diagnose the Android autolinking failure.
-  push:
-    paths:
-      - '.github/workflows/android-apk.yml'
+  # APK builds must be explicitly started by the project owner.
   workflow_dispatch:
 
 jobs:
