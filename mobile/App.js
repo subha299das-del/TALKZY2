@@ -496,6 +496,9 @@ const [roomDpUploading, setRoomDpUploading] = useState(false);
  const [isMicMuted, setIsMicMuted] = useState(false);
  const [micCount, setMicCount] = useState(8);
 const [micSeats, setMicSeats] = useState([]);
+const [roomPresence, setRoomPresence] = useState([]);
+const [roomPresenceLoading, setRoomPresenceLoading] = useState(false);
+const [showRoomUsers, setShowRoomUsers] = useState(false);
 const micSeatLoadVersionRef = useRef(0);
  const [showMicCountPicker, setShowMicCountPicker] = useState(false);
  const [micLayout, setMicLayout] = useState('eight');
@@ -545,6 +548,19 @@ async function loadRoomMicSeats(roomId) {
         error.message
       );
     }
+  }
+}
+
+async function loadRoomPresence(roomId, showLoader = false) {
+  if (!roomId) return;
+  if (showLoader) setRoomPresenceLoading(true);
+  try {
+    const result = await api(`/api/rooms/${roomId}/presence`);
+    if (selectedRoom?.id === roomId) setRoomPresence(Array.isArray(result.users) ? result.users : []);
+  } catch (error) {
+    console.log('Room presence loading error:', error.message);
+  } finally {
+    if (showLoader) setRoomPresenceLoading(false);
   }
 }
 
@@ -616,17 +632,29 @@ useEffect(() => {
   return () => { supabase.removeChannel(channel); };
 }, [selectedRoom?.id]);
 
-// Keep a tourist visit alive only while the visitor remains in the room.
+// Keep live room presence current for members, owners, admins and tourists.
 useEffect(() => {
-  if (!selectedRoom?.id || !isRoomTourist) return;
+  if (!selectedRoom?.id) {
+    setRoomPresence([]);
+    return;
+  }
   const roomId = selectedRoom.id;
-  const ping = () => api(`/api/rooms/${roomId}/visit/ping`).catch(error => {
-    console.log('Tourist visit refresh:', error.message);
-  });
-  ping();
-  const interval = setInterval(ping, 30000);
-  return () => clearInterval(interval);
-}, [selectedRoom?.id, isRoomTourist]);
+  let active = true;
+  const refresh = async () => {
+    try {
+      await api(`/api/rooms/${roomId}/presence/ping`, { method: 'POST' });
+      if (active) await loadRoomPresence(roomId);
+    } catch (error) {
+      console.log('Room presence refresh:', error.message);
+    }
+  };
+  refresh();
+  const interval = setInterval(refresh, 20000);
+  return () => {
+    active = false;
+    clearInterval(interval);
+  };
+}, [selectedRoom?.id]);
 
 const [isRoomSpeakerOn, setIsRoomSpeakerOn] = useState(true);
 const [isRoomBellOn, setIsRoomBellOn] = useState(true);
@@ -2359,51 +2387,67 @@ function renderRoomInterior() {
   </Text>
 </View>
 
-        {/* ROOM TYPE + MICROPHONE LAYOUT */}
-        <TouchableOpacity
-          onPress={() => setShowMicCountPicker(true)}
-          activeOpacity={0.75}
-          style={{
-            width: 34,
-            height: 34,
-            marginLeft: 5,
-            borderRadius: 11,
-            backgroundColor: C.panel2,
-            borderWidth: 1,
-            borderColor: C.line,
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-        >
-          <Text style={{ fontSize: 19 }}>🏠</Text>
-        </TouchableOpacity>
+        {/* TOP-RIGHT ROOM ACTIONS + LIVE USERS PREVIEW */}
+        <View style={{ alignItems: 'flex-end', marginLeft: 5 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            {/* ROOM TYPE + MICROPHONE LAYOUT */}
+            <TouchableOpacity
+              onPress={() => setShowMicCountPicker(true)}
+              activeOpacity={0.75}
+              style={{ width: 34, height: 34, borderRadius: 11, backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Text style={{ fontSize: 19 }}>🏠</Text>
+            </TouchableOpacity>
 
-        {/* SHARE */}
-        <TouchableOpacity
-          activeOpacity={0.75}
-          style={{
-            width: 34,
-            height: 34,
-            marginLeft: 6,
-            borderRadius: 11,
-            backgroundColor: C.panel2,
-            borderWidth: 1,
-            borderColor: C.line,
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-          onPress={async () => {
-            try {
-              await Share.share({
-                message: `Join my room "${selectedRoom.room_name}" on TALKZY!`
-              });
-            } catch (error) {
-              console.log('Room share error:', error.message);
-            }
-          }}
-        >
-          <Text style={{ fontSize: 19, color: C.text }}>↗</Text>
-        </TouchableOpacity>
+            {/* SHARE */}
+            <TouchableOpacity
+              activeOpacity={0.75}
+              style={{ width: 34, height: 34, marginLeft: 6, borderRadius: 11, backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' }}
+              onPress={async () => {
+                try {
+                  await Share.share({ message: `Join my room "${selectedRoom.room_name}" on TALKZY!` });
+                } catch (error) {
+                  console.log('Room share error:', error.message);
+                }
+              }}
+            >
+              <Text style={{ fontSize: 19, color: C.text }}>↗</Text>
+            </TouchableOpacity>
+
+            {/* POWER / EXIT MENU */}
+            <TouchableOpacity
+              activeOpacity={0.75}
+              style={{ width: 34, height: 34, marginLeft: 6, borderRadius: 11, backgroundColor: 'rgba(255, 82, 82, 0.12)', borderWidth: 1, borderColor: 'rgba(255, 82, 82, 0.28)', alignItems: 'center', justifyContent: 'center' }}
+              onPress={() => setShowRoomMenu(!showRoomMenu)}
+            >
+              <Text style={{ fontSize: 21, color: '#FF6666' }}>⏻</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* LIVE ROOM USERS PREVIEW */}
+          <TouchableOpacity
+            activeOpacity={0.75}
+            onPress={() => {
+              setShowRoomUsers(true);
+              loadRoomPresence(selectedRoom.id, true);
+            }}
+            style={{ flexDirection: 'row', alignItems: 'center', marginTop: 7, paddingVertical: 3, paddingHorizontal: 5, borderRadius: 12, backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line }}
+          >
+            <Text style={{ color: C.muted, fontSize: 12, marginRight: 4 }}>👥</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 5 }}>
+              {roomPresence.slice(0, 4).map((person, index) => (
+                <View key={person.user_id} style={{ width: 19, height: 19, borderRadius: 10, overflow: 'hidden', borderWidth: 1.5, borderColor: C.panel2, marginLeft: index === 0 ? 0 : -5, backgroundColor: C.line, alignItems: 'center', justifyContent: 'center' }}>
+                  {person.avatar_url ? (
+                    <Image source={{ uri: person.avatar_url }} style={{ width: 19, height: 19 }} />
+                  ) : (
+                    <Text style={{ color: C.text, fontSize: 8, fontWeight: '900' }}>{(person.display_name || 'U').slice(0, 1).toUpperCase()}</Text>
+                  )}
+                </View>
+              ))}
+            </View>
+            <Text style={{ color: C.text, fontSize: 10, fontWeight: '900' }}>{roomPresence.length}</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* POWER / EXIT MENU */}
         <TouchableOpacity
@@ -3118,6 +3162,57 @@ borderTopWidth: 1,
             </ScrollView>
             <Text style={{ color:C.muted, fontSize:11, textAlign:'center', marginTop:8 }}>Seats above the selected limit are removed automatically. Only the room owner can change this setting.</Text>
             <TouchableOpacity onPress={() => setShowMicCountPicker(false)} style={{ marginTop:12, padding:12, borderRadius:10, backgroundColor:C.panel2, alignItems:'center' }}><Text style={{ color:C.text, fontWeight:'bold' }}>Close</Text></TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* LIVE ROOM USERS LIST */}
+      <Modal visible={showRoomUsers} transparent animationType="slide" onRequestClose={() => setShowRoomUsers(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.72)', justifyContent: 'flex-end' }}>
+          <View style={{ maxHeight: '78%', minHeight: '42%', backgroundColor: C.card, borderTopLeftRadius: 22, borderTopRightRadius: 22, borderWidth: 1, borderColor: C.line, paddingHorizontal: 16, paddingTop: 17, paddingBottom: 24 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: C.text, fontSize: 18, fontWeight: '900' }}>People in this room</Text>
+                <Text style={{ color: C.muted, fontSize: 11, marginTop: 3 }}>{roomPresence.length} currently online</Text>
+              </View>
+              <TouchableOpacity onPress={() => loadRoomPresence(selectedRoom?.id, true)} style={{ paddingHorizontal: 10, paddingVertical: 7, marginRight: 7, borderRadius: 9, backgroundColor: C.panel2 }}>
+                <Text style={{ color: C.accent, fontSize: 11, fontWeight: '800' }}>Refresh</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowRoomUsers(false)} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: C.panel2, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: C.text, fontSize: 19 }}>×</Text>
+              </TouchableOpacity>
+            </View>
+            {roomPresenceLoading ? (
+              <Text style={{ color: C.muted, textAlign: 'center', padding: 24 }}>Loading room users…</Text>
+            ) : roomPresence.length === 0 ? (
+              <Text style={{ color: C.muted, textAlign: 'center', padding: 24 }}>No active users found.</Text>
+            ) : (
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {roomPresence.map((person) => (
+                  <View key={person.user_id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: C.line }}>
+                    {person.avatar_url ? (
+                      <Image source={{ uri: person.avatar_url }} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.line }} />
+                    ) : (
+                      <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.panel2, alignItems: 'center', justifyContent: 'center' }}>
+                        <Text style={{ color: C.text, fontSize: 17, fontWeight: '900' }}>{(person.display_name || 'U').slice(0, 1).toUpperCase()}</Text>
+                      </View>
+                    )}
+                    <View style={{ flex: 1, marginLeft: 11 }}>
+                      <Text style={{ color: C.text, fontSize: 13, fontWeight: '900' }} numberOfLines={1}>{person.display_name || 'TALKZY User'}</Text>
+                      <Text style={{ color: C.muted, fontSize: 10, marginTop: 3 }}>Level: {person.level || 'Not assigned'}</Text>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 5 }}>
+                        {(person.badges || []).map((badge, index) => (
+                          <View key={`${person.user_id}-badge-${index}`} style={{ backgroundColor: person.presence_role === 'tourist' ? 'rgba(242,197,107,0.14)' : C.panel2, borderWidth: 1, borderColor: C.line, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 8, marginRight: 5, marginBottom: 2 }}>
+                            <Text style={{ color: person.presence_role === 'tourist' ? '#F2C56B' : C.accent, fontSize: 9, fontWeight: '900' }}>{badge}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                    <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: '#35C987', marginLeft: 6 }} />
+                  </View>
+                ))}
+              </ScrollView>
+            )}
           </View>
         </View>
       </Modal>
