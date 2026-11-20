@@ -1008,8 +1008,10 @@ app.get('/api/rooms/:roomId/members', userAuth, async (req, res) => {
           .in('id', userIds)
       : { data: [], error: null };
     if (profileError) throw profileError;
-    const adminIds = new Set((await supabase.from('talkzy_room_admins')
-      .select('user_id').eq('room_id', room.id)).data || []);
+    const { data: adminRows, error: adminRowsError } = await supabase.from('talkzy_room_admins')
+      .select('user_id').eq('room_id', room.id);
+    if (adminRowsError) throw adminRowsError;
+    const adminIds = new Set((adminRows || []).map(item => item.user_id));
     const membersWithProfiles = (data || []).map(member => {
       const profile = (profiles || []).find(item => item.id === member.user_id);
       return {
