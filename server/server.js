@@ -1252,6 +1252,17 @@ app.patch('/api/rooms/:roomId/settings', userAuth, async (req, res) => {
         .select('tourists_on_mic, tourists_send_text, tourists_send_pic, updated_at').single();
       if (error) throw error;
       settings = data;
+      if (settings.tourists_on_mic === false) {
+        const { data: visitors, error: visitorError } = await supabase.from('talkzy_room_visitors')
+          .select('user_id').eq('room_id', room.id);
+        if (visitorError) throw visitorError;
+        const visitorIds = (visitors || []).map(visitor => visitor.user_id);
+        if (visitorIds.length) {
+          const { error: seatCleanupError } = await supabase.from('talkzy_room_mic_seats')
+            .delete().eq('room_id', room.id).in('user_id', visitorIds);
+          if (seatCleanupError) throw seatCleanupError;
+        }
+      }
     } else {
       const { data, error } = await supabase.from('talkzy_room_settings')
         .select('tourists_on_mic, tourists_send_text, tourists_send_pic, updated_at')
