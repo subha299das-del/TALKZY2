@@ -1296,9 +1296,9 @@ app.delete('/api/rooms/:roomId/music/me', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
-    if (!(await canEnterRoom(room, req.talkzyUser.id))) {
-      return res.status(403).json({ error: 'Enter the room before stopping your music.' });
-    }
+    // A user may leave the room before the component cleanup request arrives.
+    // Deleting is scoped to the authenticated user's own stream below, so it is
+    // safe to allow cleanup after membership/visitor status has already ended.
     const { data: previous, error: readError } = await supabase.from('talkzy_room_music_state')
       .select('queue').eq('room_id', room.id).eq('user_id', req.talkzyUser.id).maybeSingle();
     if (readError) throw readError;
