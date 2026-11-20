@@ -8984,7 +8984,7 @@ if (screen === 'profile' || profileIncomplete) {
     <SafeAreaView
       style={{
         flex: 1,
-        backgroundColor: C.bg
+        backgroundColor: screen === 'roomInterior' ? 'transparent' : C.bg
       }}
     >
       <StatusBar barStyle="light-content" />
