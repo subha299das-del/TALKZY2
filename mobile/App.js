@@ -2341,9 +2341,10 @@ function renderRoomInterior() {
           }
         }}
         style={{
-          width: '25%',
+          width: rowSeats.length >= 5 ? '20%' : '25%',
           alignItems: 'center',
-          marginBottom: 24
+          marginBottom: 24,
+          paddingHorizontal: 1
         }}
       >
         <View
@@ -2420,15 +2421,25 @@ function renderRoomInterior() {
             color: C.text,
             fontSize: 11,
             marginTop: 5,
-            fontWeight: isMySeat ? 'bold' : 'normal'
+            fontWeight: 'bold'
           }}
         >
-          {isOccupied
-            ? (isMySeat
-                ? (displayName || 'You')
-                : (occupiedSeat.display_name || 'User'))
-            : seat}
+          {seat}
         </Text>
+        {isOccupied && (
+          <Text
+            numberOfLines={1}
+            style={{
+              color: isMySeat ? C.accent : C.muted,
+              fontSize: 9,
+              marginTop: 2,
+              maxWidth: '100%',
+              textAlign: 'center'
+            }}
+          >
+            {isMySeat ? (displayName || 'You') : (occupiedSeat.display_name || 'User')}
+          </Text>
+        )}
       </TouchableOpacity>
     );
       })}
