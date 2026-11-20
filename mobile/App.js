@@ -1633,7 +1633,7 @@ async function toggleFollowRoom(room) {
       if (picked.canceled || !picked.assets?.[0]?.uri) return;
       const uri = picked.assets[0].uri;
       const response = await fetch(uri);
-      const bytes = await response.arrayBuffer();
+      const bytes = await response.blob();
       const path = `${session.user.id}/rooms/${selectedRoom.id}/messages/${Date.now()}.jpg`;
       const { error: uploadError } = await supabase.storage.from('talkzy-rooms').upload(path, bytes, {
         contentType: 'image/jpeg', upsert: false
