@@ -3184,13 +3184,8 @@ borderTopWidth: 1,
                     <View style={{ flex: 1, marginLeft: 11 }}>
                       <Text style={{ color: C.text, fontSize: 13, fontWeight: '900' }} numberOfLines={1}>{person.display_name || 'TALKZY User'}</Text>
                       <Text style={{ color: C.muted, fontSize: 10, marginTop: 3 }}>Level: {person.level || 'Not assigned'}</Text>
-                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 5 }}>
-                        {(person.badges || []).map((badge, index) => (
-                          <View key={`${person.user_id}-badge-${index}`} style={{ backgroundColor: person.presence_role === 'tourist' ? 'rgba(242,197,107,0.14)' : C.panel2, borderWidth: 1, borderColor: C.line, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 8, marginRight: 5, marginBottom: 2 }}>
-                            <Text style={{ color: person.presence_role === 'tourist' ? '#F2C56B' : C.accent, fontSize: 9, fontWeight: '900' }}>{badge}</Text>
-                          </View>
-                        ))}
-                      </View>
+                      {/* Reserved space for future profile badges */}
+                      <View style={{ minHeight: 18, marginTop: 5 }} />
                     </View>
                     <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: '#35C987', marginLeft: 6 }} />
                   </View>
