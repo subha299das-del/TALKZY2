@@ -2449,25 +2449,6 @@ function renderRoomInterior() {
           </TouchableOpacity>
         </View>
 
-        {/* POWER / EXIT MENU */}
-        <TouchableOpacity
-          activeOpacity={0.75}
-          style={{
-            width: 34,
-            height: 34,
-            marginLeft: 6,
-            borderRadius: 11,
-            backgroundColor: 'rgba(255, 82, 82, 0.12)',
-            borderWidth: 1,
-            borderColor: 'rgba(255, 82, 82, 0.28)',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-          onPress={() => setShowRoomMenu(!showRoomMenu)}
-        >
-          <Text style={{ fontSize: 21, color: '#FF6666' }}>⏻</Text>
-        </TouchableOpacity>
-
             </View>
 
       {/* ROOM TROPHY / COINS */}
