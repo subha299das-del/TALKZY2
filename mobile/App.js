@@ -9030,9 +9030,9 @@ if (screen === 'profile' || profileIncomplete) {
       }
       const result = await api(`/api/rooms/${selectedRoom.id}/settings`, {
         method: 'PATCH',
-        body: { roomName: roomSettingName.trim(), announcement: roomSettingAnnouncement, roomDpUrl,
+        body: JSON.stringify({ roomName: roomSettingName.trim(), announcement: roomSettingAnnouncement, roomDpUrl,
           roomType: roomSettingsType, password: roomSettingsPassword || undefined,
-          touristsOnMic, touristsSendText, touristsSendPic }
+          touristsOnMic, touristsSendText, touristsSendPic })
       });
       setSelectedRoom(old => ({ ...old, ...result.room }));
       setRoomDetails(old => old?.id === selectedRoom.id ? { ...old, ...result.room, announcement: result.room.description } : old);
@@ -9056,7 +9056,7 @@ if (screen === 'profile' || profileIncomplete) {
 
   async function addRoomAdmin(userId) {
     try {
-      await api(`/api/rooms/${selectedRoom.id}/admins`, { method: 'POST', body: { userId } });
+      await api(`/api/rooms/${selectedRoom.id}/admins`, { method: 'POST', body: JSON.stringify({ userId }) });
       Alert.alert('Administrator added', 'This member is now a room administrator.');
       await loadRoomSettingsSubpage('admins');
     } catch (e) { Alert.alert('Could not add administrator', e.message); }
@@ -9083,7 +9083,7 @@ if (screen === 'profile' || profileIncomplete) {
         posterUrl = supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
       }
       const created = await api(`/api/rooms/${selectedRoom.id}/activities`, {
-        method: 'POST', body: { title: roomActivityTitle.trim(), description: roomActivityDescription, posterUrl }
+        method: 'POST', body: JSON.stringify({ title: roomActivityTitle.trim(), description: roomActivityDescription, posterUrl })
       });
       await api(`/api/rooms/${selectedRoom.id}/activities/${created.activity.id}/publish`, { method: 'POST' });
       setShowRoomActivityComposer(false); setRoomActivityTitle(''); setRoomActivityDescription(''); setRoomActivityPoster(null);
