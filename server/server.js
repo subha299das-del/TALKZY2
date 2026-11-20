@@ -1703,6 +1703,14 @@ app.patch('/api/rooms/:roomId/mic-seats/mute', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
+    const userId = req.talkzyUser.id;
+    const member = await canManageRoom(room, userId) || await isRoomMember(room.id, userId);
+    const tourist = !member && await isRoomVisitor(room.id, userId);
+    if (!member && !tourist) return res.status(403).json({ error: 'Enter the room first.' });
+    if (tourist) {
+      const permissions = await getRoomTouristPermissions(room.id);
+      if (!permissions.tourists_on_mic) return res.status(403).json({ error: 'The room owner has disabled microphone access for tourists.' });
+    }
 
     const isMuted = req.body?.isMuted;
 
@@ -1717,7 +1725,7 @@ app.patch('/api/rooms/:roomId/mic-seats/mute', userAuth, async (req, res) => {
         updated_at: new Date().toISOString()
       })
       .eq('room_id', room.id)
-      .eq('user_id', req.talkzyUser.id)
+      .eq('user_id', userId)
       .select()
       .maybeSingle();
 
