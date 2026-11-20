@@ -3183,9 +3183,11 @@ borderTopWidth: 1,
                     )}
                     <View style={{ flex: 1, marginLeft: 11 }}>
                       <Text style={{ color: C.text, fontSize: 13, fontWeight: '900' }} numberOfLines={1}>{person.display_name || 'TALKZY User'}</Text>
-                      <Text style={{ color: C.muted, fontSize: 10, marginTop: 3 }}>Level: {person.level || 'Not assigned'}</Text>
-                      {/* Reserved space for future profile badges */}
-                      <View style={{ minHeight: 18, marginTop: 5 }} />
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, minHeight: 18 }}>
+                        <Text style={{ color: C.muted, fontSize: 10 }}>Level: {person.level || 'Not assigned'}</Text>
+                        {/* Reserved inline space for future profile badges */}
+                        <View style={{ flex: 1, minHeight: 18, marginLeft: 8 }} />
+                      </View>
                     </View>
                     <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: '#35C987', marginLeft: 6 }} />
                   </View>
