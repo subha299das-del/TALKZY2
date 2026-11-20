@@ -496,7 +496,8 @@ async function loadRoomMicSeats(roomId) {
     // Ignore stale requests that finish after a newer seat update/load.
     if (requestVersion !== micSeatLoadVersionRef.current) return;
 
-    setMicCount(result.micCount || 8);\n    setMicLayout(result.micLayout || 'eight');
+    setMicCount(result.micCount || 8);
+    setMicLayout(result.micLayout || 'eight');
     setMicSeats(result.seats || []);
 
     const myUserId = session?.user?.id;
