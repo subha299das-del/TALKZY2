@@ -9377,8 +9377,6 @@ if (screen === 'profile' || profileIncomplete) {
                       'Welcome to TALKZY'}
                   </Text>
                 </View>
-              </View>
-            )}
 
                 {roomDetails.owner_id === session?.user?.id && (
                   <TouchableOpacity
@@ -9392,6 +9390,8 @@ if (screen === 'profile' || profileIncomplete) {
                     <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '900' }}>⚙️  Settings</Text>
                   </TouchableOpacity>
                 )}
+              </View>
+            )}
 
             {/* MEMBERS TAB */}
             {roomDetailsTab === 'Members' && (
