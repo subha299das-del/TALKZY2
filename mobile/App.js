@@ -369,6 +369,14 @@ const [roomSettingDp, setRoomSettingDp] = useState(null);
 const [touristsOnMic, setTouristsOnMic] = useState(true);
 const [touristsSendText, setTouristsSendText] = useState(true);
 const [touristsSendPic, setTouristsSendPic] = useState(false);
+const [roomSettingSaving, setRoomSettingSaving] = useState(false);
+const [roomSettingsSubpage, setRoomSettingsSubpage] = useState(null);
+const [roomSettingAdmins, setRoomSettingAdmins] = useState([]);
+const [roomSettingKicked, setRoomSettingKicked] = useState([]);
+const [roomSettingMembers, setRoomSettingMembers] = useState([]);
+const [roomActivities, setRoomActivities] = useState([]);
+const [loadingRoomActivities, setLoadingRoomActivities] = useState(false);
+
 
 
   // ---------------------------------
@@ -3059,8 +3067,8 @@ borderTopWidth: 1,
           </SettingCard>
 
           <SettingCard icon="🛡️" title="2. Room Management" subtitle="Manage trusted people and room access">
-            <SettingRow icon="👑" title="Room Administrator List" hint="View and manage room administrators" onPress={() => Alert.alert('Room Administrators', 'Administrator management will be connected here.')} />
-            <SettingRow icon="🚫" title="Kick List" hint="View members removed from this room" onPress={() => Alert.alert('Kick List', 'The room kick list will be connected here.')} />
+            <SettingRow icon="👑" title="Room Administrator List" hint="View and manage room administrators" onPress={() => loadRoomSettingsSubpage('admins')} />
+            <SettingRow icon="🚫" title="Kick List" hint="View members removed from this room" onPress={() => loadRoomSettingsSubpage('kicklist')} />
           </SettingCard>
 
           <SettingCard icon="🎮" title="3. Tools Game Settings" subtitle="More room tools and game controls">
@@ -3072,6 +3080,9 @@ borderTopWidth: 1,
             <ApprovalRow title="Tourists send text" subtitle="Allow visitors to send chat messages" value={touristsSendText} onChange={setTouristsSendText} />
             <ApprovalRow title="Tourists send pic" subtitle="Allow visitors to share pictures in chat" value={touristsSendPic} onChange={setTouristsSendPic} />
           </SettingCard>
+          <TouchableOpacity onPress={saveRoomSettings} disabled={roomSettingSaving} style={{ backgroundColor: '#7657F6', padding: 15, borderRadius: 14, alignItems: 'center', marginBottom: 14 }}>
+            <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>{roomSettingSaving ? 'Saving...' : 'Save Room Settings'}</Text>
+          </TouchableOpacity>
           <Text style={{ color: '#71809A', fontSize: 10, textAlign: 'center', marginTop: 2 }}>Room controls are reserved for the room creator.</Text>
         </ScrollView>
       </View>
@@ -8775,14 +8786,8 @@ if (screen === 'profile' || profileIncomplete) {
                 {roomDetails.owner_id === session?.user?.id && (
                   <TouchableOpacity
                     onPress={() => {
-                      setSelectedRoom(roomDetails);
-                      setRoomSettingsType(roomDetails.room_type || 'public');
-                      setRoomSettingsPassword('');
-                      setRoomSettingName(roomDetails.room_name || '');
-                      setRoomSettingAnnouncement(roomDetails.announcement || '');
-                      setRoomSettingDp(roomDetails.room_dp_url || null);
                       setRoomDetailsVisible(false);
-                      setScreen('roomSettings');
+                      openRoomSettings(roomDetails);
                     }}
                     activeOpacity={0.85}
                     style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#5B45C7', paddingVertical: 13, borderRadius: 13, marginTop: 16 }}
@@ -8933,3 +8938,87 @@ if (screen === 'profile' || profileIncomplete) {
   );
             }
             
+  async function openRoomSettings(room) {
+    if (!room || room.owner_id !== session?.user?.id) return Alert.alert('Room Settings', 'Only the room creator can open these settings.');
+    setSelectedRoom(room); setRoomSettingsSubpage(null);
+    setRoomSettingName(room.room_name || ''); setRoomSettingAnnouncement(room.description || '');
+    setRoomSettingDp(room.room_dp_url || null); setRoomSettingsPassword('');
+    try {
+      const result = await api(`/api/rooms/${room.id}/settings`);
+      setTouristsOnMic(result.settings?.tourists_on_mic !== false);
+      setTouristsSendText(result.settings?.tourists_send_text !== false);
+      setTouristsSendPic(result.settings?.tourists_send_pic === true);
+      setRoomSettingName(result.room?.room_name || room.room_name || '');
+      setRoomSettingAnnouncement(result.room?.description || room.description || '');
+      setRoomSettingDp(result.room?.room_dp_url || room.room_dp_url || null);
+      setRoomSettingsType(result.room?.room_type || room.room_type || 'public');
+      setScreen('roomSettings');
+    } catch (e) { Alert.alert('Room Settings', e.message); }
+  }
+
+  async function saveRoomSettings() {
+    if (!selectedRoom?.id || selectedRoom.owner_id !== session?.user?.id) return;
+    if (!roomSettingName.trim()) return Alert.alert('Room name required', 'Enter a room name.');
+    try {
+      setRoomSettingSaving(true);
+      let roomDpUrl = roomSettingDp;
+      if (roomDpUrl && !roomDpUrl.startsWith('http')) {
+        const response = await fetch(roomDpUrl);
+        const bytes = await response.arrayBuffer();
+        const path = `rooms/${selectedRoom.id}/${Date.now()}.jpg`;
+        const { error } = await supabase.storage.from(BUCKET).upload(path, bytes, { contentType: 'image/jpeg', upsert: true });
+        if (error) throw error;
+        roomDpUrl = supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+      }
+      const result = await api(`/api/rooms/${selectedRoom.id}/settings`, {
+        method: 'PATCH',
+        body: { roomName: roomSettingName.trim(), announcement: roomSettingAnnouncement, roomDpUrl,
+          roomType: roomSettingsType, password: roomSettingsPassword || undefined,
+          touristsOnMic, touristsSendText, touristsSendPic }
+      });
+      setSelectedRoom(old => ({ ...old, ...result.room }));
+      setRoomDetails(old => old?.id === selectedRoom.id ? { ...old, ...result.room, announcement: result.room.description } : old);
+      setRoomSettingDp(result.room.room_dp_url || null); setRoomSettingsPassword('');
+      await Promise.all([loadMyRooms(), loadPublicRooms()]);
+      Alert.alert('Saved', 'Your room settings have been updated.');
+    } catch (e) { Alert.alert('Save failed', e.message); }
+    finally { setRoomSettingSaving(false); }
+  }
+
+  async function loadRoomSettingsSubpage(page) {
+    setRoomSettingsSubpage(page);
+    try {
+      const suffix = page === 'admins' ? 'admins' : page === 'kicklist' ? 'kicklist' : 'members';
+      const result = await api(`/api/rooms/${selectedRoom.id}/${suffix}`);
+      if (page === 'admins') setRoomSettingAdmins(result.admins || []);
+      else if (page === 'kicklist') setRoomSettingKicked(result.kicked || []);
+      else setRoomSettingMembers(result.members || []);
+    } catch (e) { Alert.alert('Room Management', e.message); }
+  }
+
+  async function removeRoomAdmin(userId) {
+    try { await api(`/api/rooms/${selectedRoom.id}/admins/${userId}`, { method: 'DELETE' }); setRoomSettingAdmins(items => items.filter(x => x.user_id !== userId)); }
+    catch (e) { Alert.alert('Admin List', e.message); }
+  }
+  async function unkickRoomMember(userId) {
+    try { await api(`/api/rooms/${selectedRoom.id}/kicklist/${userId}`, { method: 'DELETE' }); setRoomSettingKicked(items => items.filter(x => x.user_id !== userId)); }
+    catch (e) { Alert.alert('Kick List', e.message); }
+  }
+  async function kickRoomMember(userId) {
+    Alert.alert('Kick member?', 'This member will be removed and blocked from rejoining until unblocked from the Kick List.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Kick', style: 'destructive', onPress: async () => {
+        try { await api(`/api/rooms/${selectedRoom.id}/members/${userId}/kick`, { method: 'POST' }); setRoomSettingMembers(items => items.filter(x => x.user_id !== userId)); }
+        catch (e) { Alert.alert('Kick failed', e.message); }
+      }}
+    ]);
+  }
+  async function loadRoomActivities(roomId) {
+    if (!roomId) return;
+    setLoadingRoomActivities(true);
+    try { const result = await api(`/api/rooms/${roomId}/activities`); setRoomActivities(result.activities || []); }
+    catch (e) { setRoomActivities([]); console.log('Room activities:', e.message); }
+    finally { setLoadingRoomActivities(false); }
+  }
+
+
