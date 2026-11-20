@@ -1000,6 +1000,157 @@ app.get('/api/rooms/:roomId/members', userAuth, async (req, res) => {
   }
 });
 
+// =========================================
+// TALKZY MICROPHONE SEAT API
+// =========================================
+
+// GET ALL 8 MICROPHONE SEATS
+app.get('/api/rooms/:roomId/mic-seats', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+
+    if (room.status !== 'active') {
+      return res.status(409).json({ error: 'This room is closed.' });
+    }
+
+    const userId = req.talkzyUser.id;
+    const allowed = await canManageRoom(room, userId) ||
+      await isRoomMember(room.id, userId);
+
+    if (!allowed) {
+      return res.status(403).json({ error: 'Join the room first.' });
+    }
+
+    const { data, error } = await supabase
+      .from('talkzy_room_mic_seats')
+      .select('room_id, seat_number, user_id, is_muted, updated_at')
+      .eq('room_id', room.id)
+      .order('seat_number');
+
+    if (error) throw error;
+
+    res.set('Cache-Control', 'no-store').json({
+      seats: data || []
+    });
+  } catch (error) {
+    console.error('Could not load microphone seats:', error.message);
+    res.status(500).json({ error: 'Could not load microphone seats.' });
+  }
+});
+
+
+// TAKE OR SWITCH MICROPHONE SEAT
+app.post('/api/rooms/:roomId/mic-seats/:seatNumber', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+
+    if (room.status !== 'active') {
+      return res.status(409).json({ error: 'This room is closed.' });
+    }
+
+    const userId = req.talkzyUser.id;
+    const allowed = await canManageRoom(room, userId) ||
+      await isRoomMember(room.id, userId);
+
+    if (!allowed) {
+      return res.status(403).json({ error: 'Join the room first.' });
+    }
+
+    const seatNumber = Number(req.params.seatNumber);
+
+    if (!Number.isInteger(seatNumber) || seatNumber < 1 || seatNumber > 8) {
+      return res.status(400).json({ error: 'Choose a seat from 1 to 8.' });
+    }
+
+    const { data, error } = await supabase.rpc('talkzy_take_mic_seat', {
+      p_room_id: room.id,
+      p_seat_number: seatNumber,
+      p_user_id: userId
+    });
+
+    if (error) {
+      if (error.message.includes('SEAT_TAKEN')) {
+        return res.status(409).json({ error: 'This microphone is already occupied.' });
+      }
+
+      if (error.message.includes('INVALID_SEAT')) {
+        return res.status(400).json({ error: 'Invalid microphone seat.' });
+      }
+
+      throw error;
+    }
+
+    res.set('Cache-Control', 'no-store').json({
+      success: true,
+      seat: data
+    });
+  } catch (error) {
+    console.error('Could not take microphone seat:', error.message);
+    res.status(500).json({ error: 'Could not take microphone seat.' });
+  }
+});
+
+
+// LEAVE MICROPHONE SEAT
+app.delete('/api/rooms/:roomId/mic-seats', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+
+    const { error } = await supabase
+      .from('talkzy_room_mic_seats')
+      .delete()
+      .eq('room_id', room.id)
+      .eq('user_id', req.talkzyUser.id);
+
+    if (error) throw error;
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Could not leave microphone seat:', error.message);
+    res.status(500).json({ error: 'Could not leave microphone seat.' });
+  }
+});
+
+
+// MUTE OR UNMUTE MICROPHONE
+app.patch('/api/rooms/:roomId/mic-seats/mute', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+
+    const isMuted = req.body?.isMuted;
+
+    if (typeof isMuted !== 'boolean') {
+      return res.status(400).json({ error: 'Mute status must be true or false.' });
+    }
+
+    const { data, error } = await supabase
+      .from('talkzy_room_mic_seats')
+      .update({
+        is_muted: isMuted,
+        updated_at: new Date().toISOString()
+      })
+      .eq('room_id', room.id)
+      .eq('user_id', req.talkzyUser.id)
+      .select()
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (!data) {
+      return res.status(404).json({ error: 'You are not occupying a microphone seat.' });
+    }
+
+    res.json({ success: true, seat: data });
+  } catch (error) {
+    console.error('Could not update microphone mute status:', error.message);
+    res.status(500).json({ error: 'Could not update microphone mute status.' });
+  }
+});
+      
 // Handle unexpected errors.
 app.use((error, req, res, next) => {
   console.error('Unexpected server error:', error.message);
