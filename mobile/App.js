@@ -2788,41 +2788,45 @@ onContentSizeChange={() =>
                 </TouchableOpacity>
               ))
             ) : (
-              [
-                { icon: '👥', title: 'Members' },
-                { icon: 'ℹ️', title: 'Room Info' },
-                { icon: '📜', title: 'Room Rules' },
-                { icon: '🔗', title: 'Share Room' },
-                { icon: '🗑️', title: 'Clear Chat' }
-              ].map(tool => (
-                <TouchableOpacity
-                  key={tool.title}
-                  onPress={() => {
-                    setShowRoomTools(false);
-                    if (tool.title === 'Share Room') {
-                      Share.share({ message: `Join my room "${selectedRoom.room_name}" on TALKZY!` });
-                    } else if (tool.title === 'Clear Chat') {
-                      Alert.alert('Clear Room Chat', 'Are you sure you want to clear all chat messages?', [
-                        { text: 'Cancel', style: 'cancel' },
-                        { text: 'Clear', style: 'destructive', onPress: () => setRoomChatMessages([]) }
-                      ]);
-                    } else if (tool.title === 'Members') {
-                      openRoomDetails(selectedRoom);
-                      setRoomDetailsTab('Members');
-                    } else if (tool.title === 'Room Info') {
-                      openRoomDetails(selectedRoom);
-                      setRoomDetailsTab('Information');
-                    } else if (tool.title === 'Room Rules') {
-                      const rules = selectedRoom?.rules || selectedRoom?.room_rules;
-                      Alert.alert('Room Rules', rules || 'No custom room rules have been published by the owner yet.');
-                    }
-                  }}
-                  style={{ width: '50%', paddingVertical: 12, alignItems: 'center' }}
-                >
-                  <Text style={{ fontSize: 25 }}>{tool.icon}</Text>
-                  <Text style={{ color: C.text, fontSize: 12, marginTop: 5 }}>{tool.title}</Text>
-                </TouchableOpacity>
-              ))
+              (() => {
+                const isCurrentRoomOwner = selectedRoom?.owner_id === session?.user?.id;
+                const myPresence = roomPresence.find(person => person.user_id === session?.user?.id);
+                const isCurrentRoomAdmin = myPresence?.presence_role === 'admin';
+                const roomToolItems = [
+                  { icon: '🎵', title: 'Music' },
+                  { icon: '▶️', title: 'YouTube' },
+                  { icon: '✨', title: 'Effect' },
+                  { icon: '🎒', title: 'My Props' },
+                  { icon: '🍀', title: 'Lucky Number' },
+                  { icon: '🎲', title: 'Dice' },
+                  { icon: '🎁', title: 'Lucky Bag' },
+                  ...(isCurrentRoomAdmin || isCurrentRoomOwner ? [{ icon: '🗑️', title: 'Clear Chat' }] : []),
+                  ...(isCurrentRoomOwner ? [{ icon: '🎉', title: 'Activity' }] : [])
+                ];
+                return roomToolItems.map(tool => (
+                  <TouchableOpacity
+                    key={tool.title}
+                    onPress={() => {
+                      setShowRoomTools(false);
+                      if (tool.title === 'Clear Chat') {
+                        Alert.alert('Clear Room Chat', 'Are you sure you want to clear all chat messages?', [
+                          { text: 'Cancel', style: 'cancel' },
+                          { text: 'Clear', style: 'destructive', onPress: () => setRoomChatMessages([]) }
+                        ]);
+                      } else if (tool.title === 'Activity') {
+                        openRoomDetails(selectedRoom);
+                        setRoomDetailsTab('Activity');
+                      } else {
+                        Alert.alert(tool.title, `${tool.title} will be available here soon.`);
+                      }
+                    }}
+                    style={{ width: '33.333%', paddingVertical: 12, alignItems: 'center' }}
+                  >
+                    <Text style={{ fontSize: 25 }}>{tool.icon}</Text>
+                    <Text style={{ color: C.text, fontSize: 12, marginTop: 5 }}>{tool.title}</Text>
+                  </TouchableOpacity>
+                ));
+              })()
             )}
           </ScrollView>
         </View>
