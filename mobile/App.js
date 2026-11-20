@@ -2468,8 +2468,9 @@ onContentSizeChange={() =>
     alignItems: 'center',
     justifyContent: 'space-around',
     paddingHorizontal: 6,
-    paddingVertical: 12,
-    borderTopWidth: 1,
+paddingTop: 12,
+paddingBottom: Platform.OS === 'android' ? 40 : 12,
+borderTopWidth: 1,
     borderTopColor: C.line
   }}
 >
