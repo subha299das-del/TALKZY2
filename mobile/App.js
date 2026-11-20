@@ -2212,7 +2212,9 @@ function renderRoomInterior() {
         }}
       >
         <Text style={{ fontSize: 23 }}>
-          {seat === 1 && isOnMic ? '🎤' : '🎙️'}
+          {seat === 1 && isOnMic
+  ? (isMicMuted ? '🔇' : '🎤')
+  : '🎙️'}
         </Text>
       </View>
 
