@@ -208,7 +208,7 @@ async function userAuth(req, res, next) {
 async function getRoom(roomId) {
   const { data, error } = await supabase
     .from('talkzy_rooms')
-    .select('id, owner_id, room_name, description, room_type, status, created_at, closed_at')
+    .select('id, owner_id, room_name, description, room_type, status, created_at, closed_at, room_talkzy_id, country_name')
     .eq('id', roomId)
     .maybeSingle();
 
@@ -345,7 +345,7 @@ app.get('/api/rooms', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('talkzy_rooms')
-      .select('id, owner_id, room_name, description, room_dp_url, room_type, status, created_at')
+      .select('id, owner_id, room_name, description, room_dp_url, room_type, status, created_at, room_talkzy_id, country_name')
       .eq('status', 'active')
       .eq('room_type', 'public')
       .order('created_at', { ascending: false })
@@ -371,7 +371,7 @@ app.get('/api/rooms/mine', userAuth, async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('talkzy_rooms')
-      .select('id, owner_id, room_name, description, room_dp_url, room_type, status, created_at')
+      .select('id, owner_id, room_name, description, room_dp_url, room_type, status, created_at, room_talkzy_id, country_name')
       .eq('owner_id', req.talkzyUser.id)
       .eq('status', 'active')
       .order('created_at', { ascending: false });
@@ -472,7 +472,7 @@ app.post('/api/rooms', userAuth, roomCreateLimiter, async (req, res) => {
         room_dp_url: roomDpUrl || null
       })
       .select(
-        'id, room_name, description, room_type, room_dp_url, status, created_at'
+        'id, room_name, description, room_type, room_dp_url, status, created_at, room_talkzy_id, country_name'
       )
       .single();
 
@@ -572,7 +572,7 @@ app.get('/api/rooms/joined', userAuth, async (req, res) => {
     // Get the active rooms from those memberships.
     const { data: rooms, error: roomError } = await supabase
       .from('talkzy_rooms')
-      .select('id, owner_id, room_name, description, room_dp_url, room_type, status, created_at')
+      .select('id, owner_id, room_name, description, room_dp_url, room_type, status, created_at, room_talkzy_id, country_name')
       .in('id', roomIds)
       .eq('status', 'active')
       .order('created_at', { ascending: false });
@@ -616,7 +616,7 @@ app.get('/api/rooms/followed', userAuth, async (req, res) => {
 
     const { data: rooms, error: roomError } = await supabase
       .from('talkzy_rooms')
-      .select('id, owner_id, room_name, description, room_dp_url, room_type, status, created_at')
+      .select('id, owner_id, room_name, description, room_dp_url, room_type, status, created_at, room_talkzy_id, country_name')
       .in('id', roomIds)
       .eq('status', 'active')
       .order('created_at', { ascending: false });
