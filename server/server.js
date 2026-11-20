@@ -895,6 +895,8 @@ app.post('/api/rooms/:roomId/leave', userAuth, async (req, res) => {
       .eq('user_id', userId);
 
     if (memberError) throw memberError;
+    const { error: presenceError } = await supabase.from('talkzy_room_presence').delete().eq('room_id', room.id).eq('user_id', userId);
+    if (presenceError) throw presenceError;
 
     return res.json({
       left: true,
@@ -1459,6 +1461,8 @@ app.post('/api/rooms/:roomId/members/:userId/kick', userAuth, async (req, res) =
     if (visitorDeleteError) throw visitorDeleteError;
     const { error: seatDeleteError } = await supabase.from('talkzy_room_mic_seats').delete().eq('room_id', room.id).eq('user_id', req.params.userId);
     if (seatDeleteError) throw seatDeleteError;
+    const { error: presenceDeleteError } = await supabase.from('talkzy_room_presence').delete().eq('room_id', room.id).eq('user_id', req.params.userId);
+    if (presenceDeleteError) throw presenceDeleteError;
     res.json({ kicked: true });
   } catch (error) {
     console.error('Could not kick room member:', error.message);
