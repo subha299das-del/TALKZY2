@@ -542,6 +542,74 @@ const [roomDpUploading, setRoomDpUploading] = useState(false);
  const [micCount, setMicCount] = useState(8);
 const [micSeats, setMicSeats] = useState([]);
  const [showMicCountPicker, setShowMicCountPicker] = useState(false);
+ 
+async function loadRoomMicSeats(roomId) {
+  if (!roomId) return;
+
+  try {
+    const result = await api(`/api/rooms/${roomId}/mic-seats`);
+
+    setMicCount(result.micCount || 8);
+    setMicSeats(result.seats || []);
+
+    const myUserId = session?.user?.id;
+
+    const mySeat = (result.seats || []).find(
+      seat => seat.user_id === myUserId
+    );
+
+    if (mySeat) {
+      setIsOnMic(true);
+      setMyMicSeat(mySeat.seat_number);
+      setIsMicMuted(mySeat.is_muted);
+    } else {
+      setIsOnMic(false);
+      setMyMicSeat(null);
+      setIsMicMuted(false);
+    }
+  } catch (error) {
+    console.log(
+      'Microphone seats loading error:',
+      error.message
+    );
+  }
+}
+
+// REALTIME MICROPHONE SEAT SYNC
+useEffect(() => {
+  if (!selectedRoom?.id) return;
+
+  const roomId = selectedRoom.id;
+
+  const channel = supabase
+    .channel(`room-mic-sync-${roomId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'talkzy_room_mic_seats',
+        filter: `room_id=eq.${roomId}`
+      },
+      () => loadRoomMicSeats(roomId)
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'talkzy_rooms',
+        filter: `id=eq.${roomId}`
+      },
+      () => loadRoomMicSeats(roomId)
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, [selectedRoom?.id]);
+ 
 const [isRoomSpeakerOn, setIsRoomSpeakerOn] = useState(true);
 const [isRoomBellOn, setIsRoomBellOn] = useState(true);
 const [showRoomTools, setShowRoomTools] = useState(false);
