@@ -1162,7 +1162,7 @@ app.post('/api/rooms/:roomId/presence/ping', userAuth, async (req, res) => {
 // Personal room music streams. Each participant owns and controls only their own stream.
 async function buildRoomMusicState(roomId, userId) {
   const { data: rows, error } = await supabase.from('talkzy_room_music_state')
-    .select('room_id, user_id, queue, current_index, is_playing, current_time_seconds, updated_at')
+    .select('room_id, user_id, queue, current_index, is_playing, current_time_seconds, repeat_mode, shuffle, volume, updated_at')
     .eq('room_id', roomId);
   if (error) throw error;
   const activeRows = rows || [];
@@ -1193,6 +1193,9 @@ async function buildRoomMusicState(roomId, userId) {
       current_index: row.current_index,
       is_playing: row.is_playing,
       current_time_seconds: row.current_time_seconds,
+      repeat_mode: row.repeat_mode || 'off',
+      shuffle: Boolean(row.shuffle),
+      volume: Number(row.volume ?? 0.8),
       updated_at: row.updated_at,
       is_mine: row.user_id === userId
     });
@@ -1255,6 +1258,9 @@ app.put('/api/rooms/:roomId/music/me', userAuth, async (req, res) => {
       current_index: currentIndex,
       is_playing: Boolean(body.is_playing) && queue.length > 0,
       current_time_seconds: currentTime,
+      repeat_mode: ['off', 'one', 'all'].includes(body.repeat_mode) ? body.repeat_mode : 'off',
+      shuffle: Boolean(body.shuffle),
+      volume: Math.min(1, Math.max(0, Number(body.volume ?? 0.8))),
       updated_at: new Date().toISOString()
     };
     const { error } = await supabase.from('talkzy_room_music_state')
