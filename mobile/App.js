@@ -475,6 +475,15 @@ const [roomDpUploading, setRoomDpUploading] = useState(false);
 const [micSeats, setMicSeats] = useState([]);
 const micSeatLoadVersionRef = useRef(0);
  const [showMicCountPicker, setShowMicCountPicker] = useState(false);
+ const [micLayout, setMicLayout] = useState('eight');
+ const MIC_LAYOUTS = {
+ seven:{count:7,label:'7 Mics',rows:[[1,2],[3,4,5,6,7]]}, eight:{count:8,label:'8 Mics',rows:[[1,2,3,4],[5,6,7,8]]},
+ ten_couple:{count:10,label:'10 Mics · Couple',rows:[[1,2],[3,4,5,6],[7,8,9,10]]}, ten_standard:{count:10,label:'10 Mics · Standard',rows:[[1,2,3,4,5],[6,7,8,9,10]]},
+ eleven:{count:11,label:'11 Mics',rows:[[1],[2,3,4,5,6],[7,8,9,10,11]]}, twelve:{count:12,label:'12 Mics',rows:[[1,2],[3,4,5,6,7],[8,9,10,11,12]]},
+ fourteen:{count:14,label:'14 Mics',rows:[[1,2],[3,4,5,6],[7,8,9,10],[11,12,13,14]]}, fifteen:{count:15,label:'15 Mics',rows:[[1,2,3,4,5],[6,7,8,9,10],[11,12,13,14,15]]},
+ sixteen:{count:16,label:'16 Mics',rows:[[1],[2,3,4,5,6],[7,8,9,10,11],[12,13,14,15,16]]}, seventeen:{count:17,label:'17 Mics',rows:[[1,2],[3,4,5,6,7],[8,9,10,11,12],[13,14,15,16,17]]}
+ };
+
  
 async function loadRoomMicSeats(roomId) {
   if (!roomId) return;
@@ -487,7 +496,7 @@ async function loadRoomMicSeats(roomId) {
     // Ignore stale requests that finish after a newer seat update/load.
     if (requestVersion !== micSeatLoadVersionRef.current) return;
 
-    setMicCount(result.micCount || 8);
+    setMicCount(result.micCount || 8);\n    setMicLayout(result.micLayout || 'eight');
     setMicSeats(result.seats || []);
 
     const myUserId = session?.user?.id;
@@ -2188,18 +2197,8 @@ function renderRoomInterior() {
   </Text>
 </View>
 
-        {/* ROOM TYPE */}
-        <TouchableOpacity
-          style={{ paddingHorizontal: 7 }}
-          onPress={() => {
-            Alert.alert(
-              'Room Type',
-              roomIsLocked
-                ? '🔒 Locked Room'
-                : '🌐 Public Room'
-            );
-          }}
-        >
+        {/* ROOM TYPE + MICROPHONE LAYOUT */}
+        <TouchableOpacity style={{ paddingHorizontal: 7 }} onPress={() => setShowMicCountPicker(true)}>
           <Text style={{ fontSize: 22 }}>
             {roomIsLocked ? '🔒' : '🌐'}
           </Text>
@@ -2258,16 +2257,10 @@ function renderRoomInterior() {
       </View>
 
            {/* MICROPHONE SEATS */}
-<View
-  style={{
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    paddingHorizontal: 12,
-    paddingTop: 25
-  }}
->
-  {Array.from({ length: micCount }, (_, index) => index + 1).map((seat) => {
+<View style={{ paddingHorizontal: 12, paddingTop: 25 }}>
+  {(MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.map((rowSeats, rowIndex) => (
+    <View key={rowIndex} style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start' }}>
+      {rowSeats.map((seat) => {
 
     const occupiedSeat = micSeats.find(
       item => item.seat_number === seat
@@ -2437,7 +2430,9 @@ function renderRoomInterior() {
         </Text>
       </TouchableOpacity>
     );
-  })}
+      })}
+    </View>
+  ))}
 </View>
                     
 
@@ -2967,140 +2962,37 @@ borderTopWidth: 1,
         </View>
       )}
 
-      {/* MICROPHONE COUNT PICKER */}
-      <Modal
-        visible={showMicCountPicker}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowMicCountPicker(false)}
-      >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: 'rgba(0,0,0,0.65)',
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: 25
-          }}
-        >
-          <View
-            style={{
-              width: '100%',
-              backgroundColor: C.card,
-              borderRadius: 18,
-              borderWidth: 1,
-              borderColor: C.line,
-              padding: 20
-            }}
-          >
-            <Text
-              style={{
-                color: C.text,
-                fontSize: 19,
-                fontWeight: 'bold',
-                textAlign: 'center'
-              }}
-            >
-              🎙 Microphone Settings
-            </Text>
-
-            <Text
-              style={{
-                color: C.muted,
-                fontSize: 13,
-                textAlign: 'center',
-                marginTop: 8,
-                marginBottom: 20
-              }}
-            >
-              Choose the number of microphone seats in your room.
-            </Text>
-
-            <View
-              style={{
-                flexDirection: 'row',
-                flexWrap: 'wrap',
-                justifyContent: 'center'
-              }}
-            >
-              {[7, 8, 10, 11, 12, 14, 17].map((count) => (
-                <TouchableOpacity
-                  key={count}
-                  onPress={async () => {
+      {/* ROOM TYPE / MICROPHONE LAYOUT POPUP */}
+      <Modal visible={showMicCountPicker} transparent animationType="fade" onRequestClose={() => setShowMicCountPicker(false)}>
+        <View style={{ flex:1, backgroundColor:'rgba(0,0,0,0.72)', justifyContent:'center', alignItems:'center', padding:16 }}>
+          <View style={{ width:'100%', maxHeight:'88%', backgroundColor:C.card, borderRadius:18, borderWidth:1, borderColor:C.line, padding:16 }}>
+            <Text style={{ color:C.text, fontSize:19, fontWeight:'bold', textAlign:'center' }}>{roomIsLocked ? '🔒 Locked Room' : '🌐 Public Room'}</Text>
+            <Text style={{ color:C.muted, fontSize:12, textAlign:'center', marginTop:5, marginBottom:14 }}>{selectedRoom?.owner_id === session?.user?.id ? 'Choose the microphone count and arrangement.' : 'Current microphone arrangement'}</Text>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {Object.entries(MIC_LAYOUTS).map(([layoutKey, layout]) => {
+                const selected = micLayout === layoutKey;
+                const canChange = selectedRoom?.owner_id === session?.user?.id;
+                return (
+                  <TouchableOpacity key={layoutKey} disabled={!canChange} onPress={async () => {
                     try {
-                      const result = await api(
-                        `/api/rooms/${selectedRoom.id}/mic-count`,
-                        {
-                          method: 'PATCH',
-                          body: JSON.stringify({
-                            micCount: count
-                          })
-                        }
-                      );
-
-                      setMicCount(result.micCount || count);
-                      setShowMicCountPicker(false);
-
+                      const result = await api(`/api/rooms/${selectedRoom.id}/mic-count`, { method:'PATCH', body:JSON.stringify({ micCount:layout.count, micLayout:layoutKey }) });
+                      setMicCount(result.micCount || layout.count); setMicLayout(result.micLayout || layoutKey);
                       await loadRoomMicSeats(selectedRoom.id);
-
-                    } catch (error) {
-                      Alert.alert(
-                        'Mic Settings',
-                        error.message || 'Could not change microphone count.'
-                      );
-                    }
-                  }}
-                  style={{
-                    width: '22%',
-                    margin: '1.5%',
-                    paddingVertical: 15,
-                    borderRadius: 12,
-                    alignItems: 'center',
-                    backgroundColor:
-                      micCount === count ? C.accent : C.panel2,
-                    borderWidth: 1,
-                    borderColor:
-                      micCount === count ? C.accent : C.line
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: C.text,
-                      fontSize: 18,
-                      fontWeight: 'bold'
-                    }}
-                  >
-                    {count}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <Text
-              style={{
-                color: C.muted,
-                fontSize: 11,
-                textAlign: 'center',
-                marginTop: 12
-              }}
-            >
-              Seats above the selected limit will be removed automatically.
-            </Text>
-
-            <TouchableOpacity
-              onPress={() => setShowMicCountPicker(false)}
-              style={{
-                marginTop: 18,
-                padding: 12,
-                borderRadius: 10,
-                backgroundColor: C.panel2,
-                alignItems: 'center'
-              }}
-            >
-              <Text style={{ color: C.text, fontWeight: 'bold' }}>
-                Cancel
-              </Text>
-            </TouchableOpacity>
+                    } catch(error) { Alert.alert('Room Layout', error.message || 'Could not change microphone layout.'); }
+                  }} style={{ padding:10, marginBottom:9, borderRadius:12, borderWidth:1.5, borderColor:selected ? C.accent : C.line, backgroundColor:selected ? C.panel2 : 'transparent', opacity:canChange ? 1 : 0.9 }}>
+                    <View style={{ flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+                      <Text style={{ color:C.text, fontSize:13, fontWeight:'bold' }}>{layout.label}</Text>
+                      <Text style={{ color:selected ? C.accent : C.muted, fontSize:11, fontWeight:'bold' }}>{selected ? '✓ Selected' : (canChange ? 'Select' : '')}</Text>
+                    </View>
+                    {layout.rows.map((previewRow,rowIndex) => <View key={rowIndex} style={{ flexDirection:'row', justifyContent:'center', marginBottom:4 }}>
+                      {previewRow.map(seat => <View key={seat} style={{ width:19, height:19, borderRadius:10, borderWidth:1, borderColor:selected ? C.accent : C.muted, backgroundColor:selected ? C.accent : C.panel2, alignItems:'center', justifyContent:'center', marginHorizontal:3 }}><Text style={{ color:'#FFFFFF', fontSize:8 }}>{seat}</Text></View>)}
+                    </View>)}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+            <Text style={{ color:C.muted, fontSize:11, textAlign:'center', marginTop:8 }}>Seats above the selected limit are removed automatically. Only the room owner can change this setting.</Text>
+            <TouchableOpacity onPress={() => setShowMicCountPicker(false)} style={{ marginTop:12, padding:12, borderRadius:10, backgroundColor:C.panel2, alignItems:'center' }}><Text style={{ color:C.text, fontWeight:'bold' }}>Close</Text></TouchableOpacity>
           </View>
         </View>
       </Modal>
