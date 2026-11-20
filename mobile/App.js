@@ -113,6 +113,37 @@ async function api(path, options = {}) {
   return data;
 }
 
+async function loadRoomMicSeats(roomId) {
+  if (!roomId) return;
+
+  try {
+    const result = await api(
+      `/api/rooms/${roomId}/mic-seats`
+    );
+
+    setMicCount(result.micCount || 8);
+    setMicSeats(result.seats || []);
+
+    const myUserId = session?.user?.id;
+
+    const mySeat = (result.seats || []).find(
+      seat => seat.user_id === myUserId
+    );
+
+    if (mySeat) {
+      setIsOnMic(true);
+      setMyMicSeat(mySeat.seat_number);
+      setIsMicMuted(mySeat.is_muted);
+    } else {
+      setIsOnMic(false);
+      setMyMicSeat(null);
+      setIsMicMuted(false);
+    }
+  } catch (error) {
+    console.log('Microphone seats loading error:', error.message);
+  }
+}
+
 
 function Brand({ small = false }) {
   const size = small ? 48 : 100;
