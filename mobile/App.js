@@ -9396,9 +9396,23 @@ if (screen === 'profile' || profileIncomplete) {
             {/* MEMBERS TAB */}
             {roomDetailsTab === 'Members' && (
               <View>
-                <Text style={{ color: C.text, fontWeight: '900', marginBottom: 10 }}>
-                  Room Members ({roomDetailMembers.length})
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <Text style={{ color: C.text, fontWeight: '900' }}>
+                    Room Members ({roomDetailMembers.length})
+                  </Text>
+                  {roomDetails.owner_id === session?.user?.id && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setRoomDetailsVisible(false);
+                        openRoomSettings(roomDetails);
+                      }}
+                      activeOpacity={0.85}
+                      style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#5B45C7', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 }}
+                    >
+                      <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '900' }}>⚙️ Room Settings</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
                 {loadingRoomDetailMembers ? (
                   <ActivityIndicator color={C.accent} />
                 ) : roomDetailMembers.length === 0 ? (
