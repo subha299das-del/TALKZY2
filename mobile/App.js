@@ -541,6 +541,7 @@ const [roomDpUploading, setRoomDpUploading] = useState(false);
  const [isMicMuted, setIsMicMuted] = useState(false);
  const [micCount, setMicCount] = useState(8);
 const [micSeats, setMicSeats] = useState([]);
+ const [showMicCountPicker, setShowMicCountPicker] = useState(false);
 const [isRoomSpeakerOn, setIsRoomSpeakerOn] = useState(true);
 const [isRoomBellOn, setIsRoomBellOn] = useState(true);
 const [showRoomTools, setShowRoomTools] = useState(false);
