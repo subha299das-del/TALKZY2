@@ -246,6 +246,7 @@ async function isRoomVisitor(roomId, userId) {
     .select('room_id')
     .eq('room_id', roomId)
     .eq('user_id', userId)
+    .gt('last_seen_at', new Date(Date.now() - 5 * 60 * 1000).toISOString())
     .maybeSingle();
   if (error) throw error;
   return Boolean(data);
@@ -553,6 +554,23 @@ app.post('/api/rooms/:roomId/visit', userAuth, async (req, res) => {
   } catch (error) {
     console.error('Could not enter room as tourist:', error.message);
     res.status(500).json({ error: 'Could not enter this room as a tourist.' });
+  }
+});
+
+app.post('/api/rooms/:roomId/visit/ping', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+    const { data, error } = await supabase.from('talkzy_room_visitors')
+      .update({ last_seen_at: new Date().toISOString() })
+      .eq('room_id', room.id).eq('user_id', req.talkzyUser.id)
+      .select('room_id').maybeSingle();
+    if (error) throw error;
+    if (!data) return res.status(403).json({ error: 'Your tourist visit has expired. Re-enter the room.' });
+    res.json({ active: true });
+  } catch (error) {
+    console.error('Could not refresh tourist visit:', error.message);
+    res.status(500).json({ error: 'Could not refresh your room visit.' });
   }
 });
 
