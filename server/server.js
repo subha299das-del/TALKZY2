@@ -208,7 +208,7 @@ async function userAuth(req, res, next) {
 async function getRoom(roomId) {
   const { data, error } = await supabase
     .from('talkzy_rooms')
-    .select('id, owner_id, room_name, description, room_type, status, created_at, closed_at, room_talkzy_id, country_name')
+    .select('id, owner_id, room_name, description, room_dp_url, room_type, password_hash, status, created_at, closed_at, room_talkzy_id, country_name')
     .eq('id', roomId)
     .maybeSingle();
 
@@ -508,6 +508,14 @@ app.post('/api/rooms/:roomId/join', userAuth, async (req, res) => {
     }
 
     const userId = req.talkzyUser.id;
+    const { data: kicked, error: kickCheckError } = await supabase
+      .from('talkzy_room_kicklist')
+      .select('user_id')
+      .eq('room_id', room.id)
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (kickCheckError) throw kickCheckError;
+    if (kicked) return res.status(403).json({ error: 'You are on this room’s kick list and cannot rejoin.' });
     const manager = await canManageRoom(room, userId);
     const alreadyMember = await isRoomMember(room.id, userId);
 
@@ -988,15 +996,323 @@ app.get('/api/rooms/:roomId/members', userAuth, async (req, res) => {
 
     const { data, error } = await supabase
       .from('talkzy_room_members')
-      .select('user_id, role')
+      .select('user_id, role, joined_at')
       .eq('room_id', room.id);
 
     if (error) throw error;
 
-    res.json({ members: data || [] });
+    const userIds = (data || []).map(member => member.user_id);
+    const { data: profiles, error: profileError } = userIds.length
+      ? await supabase.from('talkzy_profiles')
+          .select('id, talkzy_id, display_name, avatar_url, country')
+          .in('id', userIds)
+      : { data: [], error: null };
+    if (profileError) throw profileError;
+    const adminIds = new Set((await supabase.from('talkzy_room_admins')
+      .select('user_id').eq('room_id', room.id)).data || []);
+    const membersWithProfiles = (data || []).map(member => {
+      const profile = (profiles || []).find(item => item.id === member.user_id);
+      return {
+        ...member,
+        talkzy_id: profile?.talkzy_id || null,
+        display_name: profile?.display_name || 'TALKZY User',
+        avatar_url: profile?.avatar_url || null,
+        country: profile?.country || null,
+        is_admin: adminIds.has(member.user_id)
+      };
+    });
+    res.set('Cache-Control', 'no-store').json({ members: membersWithProfiles });
   } catch (error) {
     console.error('Could not load room members:', error.message);
     res.status(500).json({ error: 'Could not load room members.' });
+  }
+});
+
+// =========================================
+// ROOM CREATOR SETTINGS, ADMIN/KICK LISTS AND ROOM ACTIVITIES
+// =========================================
+
+app.get('/api/rooms/:roomId/settings', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+    if (room.owner_id !== req.talkzyUser.id) return res.status(403).json({ error: 'Only the room creator can view these settings.' });
+    const { data, error } = await supabase.from('talkzy_room_settings')
+      .select('tourists_on_mic, tourists_send_text, tourists_send_pic, updated_at')
+      .eq('room_id', room.id).maybeSingle();
+    if (error) throw error;
+    res.set('Cache-Control', 'no-store').json({
+      room: { id: room.id, room_name: room.room_name, description: room.description,
+        room_dp_url: room.room_dp_url, room_type: room.room_type },
+      settings: data || { tourists_on_mic: true, tourists_send_text: true, tourists_send_pic: false }
+    });
+  } catch (error) {
+    console.error('Could not load room settings:', error.message);
+    res.status(500).json({ error: 'Could not load room settings.' });
+  }
+});
+
+app.patch('/api/rooms/:roomId/settings', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+    if (room.owner_id !== req.talkzyUser.id) return res.status(403).json({ error: 'Only the room creator can change settings.' });
+    if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
+
+    const body = req.body || {};
+    const patch = {};
+    if (body.roomName !== undefined) {
+      const value = String(body.roomName).trim();
+      if (!value || value.length > 40) return res.status(400).json({ error: 'Room name must be 1–40 characters.' });
+      patch.room_name = value;
+    }
+    if (body.announcement !== undefined) {
+      const value = String(body.announcement);
+      if (value.length > 240) return res.status(400).json({ error: 'Announcement must be 240 characters or fewer.' });
+      patch.description = value.trim();
+    }
+    if (body.roomDpUrl !== undefined) {
+      const value = body.roomDpUrl === null ? null : String(body.roomDpUrl).trim();
+      if (value && !/^https:\/\/\S+$/i.test(value)) return res.status(400).json({ error: 'Room DP must be a secure image URL.' });
+      patch.room_dp_url = value;
+    }
+    let nextType = room.room_type;
+    if (body.roomType !== undefined) {
+      if (!['public','locked'].includes(body.roomType)) return res.status(400).json({ error: 'Room type must be public or locked.' });
+      nextType = body.roomType;
+    }
+    let passwordHash = room.password_hash;
+    if (body.password !== undefined && String(body.password).length) {
+      const password = String(body.password);
+      if (password.length < 4 || password.length > 64) return res.status(400).json({ error: 'Room password must be 4–64 characters.' });
+      passwordHash = await makePasswordHash(password);
+      nextType = 'locked';
+    }
+    if (nextType === 'public') passwordHash = null;
+    if (body.roomType !== undefined || body.password !== undefined) {
+      patch.room_type = nextType;
+      patch.password_hash = passwordHash;
+    }
+    const approval = {};
+    for (const [key, column] of [
+      ['touristsOnMic','tourists_on_mic'],
+      ['touristsSendText','tourists_send_text'],
+      ['touristsSendPic','tourists_send_pic']
+    ]) {
+      if (body[key] !== undefined) {
+        if (typeof body[key] !== 'boolean') return res.status(400).json({ error: key + ' must be true or false.' });
+        approval[column] = body[key];
+      }
+    }
+    let updatedRoom = room;
+    if (Object.keys(patch).length) {
+      const { data, error } = await supabase.from('talkzy_rooms').update(patch)
+        .eq('id', room.id).eq('owner_id', req.talkzyUser.id)
+        .select('id, owner_id, room_name, description, room_dp_url, room_type')
+        .single();
+      if (error) throw error;
+      updatedRoom = data;
+    }
+    let settings = null;
+    if (Object.keys(approval).length) {
+      const { data, error } = await supabase.from('talkzy_room_settings')
+        .upsert({ room_id: room.id, ...approval, updated_at: new Date().toISOString() }, { onConflict: 'room_id' })
+        .select('tourists_on_mic, tourists_send_text, tourists_send_pic, updated_at').single();
+      if (error) throw error;
+      settings = data;
+    } else {
+      const { data, error } = await supabase.from('talkzy_room_settings')
+        .select('tourists_on_mic, tourists_send_text, tourists_send_pic, updated_at')
+        .eq('room_id', room.id).maybeSingle();
+      if (error) throw error;
+      settings = data || { tourists_on_mic: true, tourists_send_text: true, tourists_send_pic: false };
+    }
+    res.set('Cache-Control', 'no-store').json({ room: updatedRoom, settings });
+  } catch (error) {
+    console.error('Could not save room settings:', error.message);
+    res.status(500).json({ error: 'Could not save room settings.' });
+  }
+});
+
+app.get('/api/rooms/:roomId/admins', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+    if (room.owner_id !== req.talkzyUser.id) return res.status(403).json({ error: 'Only the room creator can manage administrators.' });
+    const { data, error } = await supabase.from('talkzy_room_admins')
+      .select('user_id, created_at').eq('room_id', room.id).order('created_at', { ascending: false });
+    if (error) throw error;
+    const ids = (data || []).map(x => x.user_id);
+    const { data: profiles, error: profileError } = ids.length
+      ? await supabase.from('talkzy_profiles').select('id, talkzy_id, display_name, avatar_url').in('id', ids)
+      : { data: [], error: null };
+    if (profileError) throw profileError;
+    res.json({ admins: (data || []).map(x => ({ ...x, ...(profiles || []).find(p => p.id === x.user_id) })) });
+  } catch (error) {
+    console.error('Could not load room admins:', error.message);
+    res.status(500).json({ error: 'Could not load room administrators.' });
+  }
+});
+
+app.get('/api/rooms/:roomId/kicklist', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+    if (room.owner_id !== req.talkzyUser.id) return res.status(403).json({ error: 'Only the room creator can view the kick list.' });
+    const { data, error } = await supabase.from('talkzy_room_kicklist')
+      .select('user_id, kicked_by, reason, created_at').eq('room_id', room.id).order('created_at', { ascending: false });
+    if (error) throw error;
+    const ids = (data || []).map(x => x.user_id);
+    const { data: profiles, error: profileError } = ids.length
+      ? await supabase.from('talkzy_profiles').select('id, talkzy_id, display_name, avatar_url').in('id', ids)
+      : { data: [], error: null };
+    if (profileError) throw profileError;
+    res.json({ kicked: (data || []).map(x => ({ ...x, ...(profiles || []).find(p => p.id === x.user_id) })) });
+  } catch (error) {
+    console.error('Could not load room kick list:', error.message);
+    res.status(500).json({ error: 'Could not load the kick list.' });
+  }
+});
+
+app.delete('/api/rooms/:roomId/kicklist/:userId', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+    if (room.owner_id !== req.talkzyUser.id) return res.status(403).json({ error: 'Only the room creator can remove people from the kick list.' });
+    const { error } = await supabase.from('talkzy_room_kicklist').delete()
+      .eq('room_id', room.id).eq('user_id', req.params.userId);
+    if (error) throw error;
+    res.json({ removed: true });
+  } catch (error) {
+    console.error('Could not update room kick list:', error.message);
+    res.status(500).json({ error: 'Could not update the kick list.' });
+  }
+});
+
+app.post('/api/rooms/:roomId/members/:userId/kick', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+    if (room.owner_id !== req.talkzyUser.id) return res.status(403).json({ error: 'Only the room creator can kick members.' });
+    if (req.params.userId === room.owner_id) return res.status(400).json({ error: 'The room creator cannot be kicked.' });
+    const reason = String(req.body?.reason || '').trim().slice(0, 200);
+    const { error: insertError } = await supabase.from('talkzy_room_kicklist')
+      .upsert({ room_id: room.id, user_id: req.params.userId, kicked_by: req.talkzyUser.id, reason },
+        { onConflict: 'room_id,user_id' });
+    if (insertError) throw insertError;
+    const { error: memberError } = await supabase.from('talkzy_room_members').delete()
+      .eq('room_id', room.id).eq('user_id', req.params.userId);
+    if (memberError) throw memberError;
+    await supabase.from('talkzy_room_admins').delete().eq('room_id', room.id).eq('user_id', req.params.userId);
+    await supabase.from('talkzy_room_mic_seats').delete().eq('room_id', room.id).eq('user_id', req.params.userId);
+    res.json({ kicked: true });
+  } catch (error) {
+    console.error('Could not kick room member:', error.message);
+    res.status(500).json({ error: 'Could not kick room member.' });
+  }
+});
+
+app.get('/api/rooms/:roomId/activities', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+    const owner = room.owner_id === req.talkzyUser.id;
+    const member = owner || await isRoomMember(room.id, req.talkzyUser.id);
+    if (!member) return res.status(403).json({ error: 'Join the room to view its activities.' });
+    let query = supabase.from('talkzy_room_activities')
+      .select('id, room_id, created_by, title, description, poster_url, starts_at, ends_at, status, published_at, created_at')
+      .eq('room_id', room.id).order('starts_at', { ascending: true, nullsFirst: false });
+    if (!owner) query = query.in('status', ['published','completed']);
+    const { data, error } = await query;
+    if (error) throw error;
+    res.set('Cache-Control', 'no-store').json({ activities: data || [] });
+  } catch (error) {
+    console.error('Could not load room activities:', error.message);
+    res.status(500).json({ error: 'Could not load room activities.' });
+  }
+});
+
+app.post('/api/rooms/:roomId/activities', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+    if (room.owner_id !== req.talkzyUser.id) return res.status(403).json({ error: 'Only the room creator can create room activities.' });
+    const title = String(req.body?.title || '').trim();
+    const description = String(req.body?.description || '').trim();
+    const posterUrl = req.body?.posterUrl ? String(req.body.posterUrl).trim() : null;
+    if (!title || title.length > 100) return res.status(400).json({ error: 'Activity title must be 1–100 characters.' });
+    if (posterUrl && !/^https:\/\/\S+$/i.test(posterUrl)) return res.status(400).json({ error: 'Poster must be a secure image URL.' });
+    const { data, error } = await supabase.from('talkzy_room_activities').insert({
+      room_id: room.id, created_by: req.talkzyUser.id, title, description,
+      poster_url: posterUrl, starts_at: req.body?.startsAt || null, ends_at: req.body?.endsAt || null
+    }).select('*').single();
+    if (error) throw error;
+    res.status(201).json({ activity: data });
+  } catch (error) {
+    console.error('Could not create room activity:', error.message);
+    res.status(500).json({ error: 'Could not create room activity.' });
+  }
+});
+
+app.patch('/api/rooms/:roomId/activities/:activityId', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+    if (room.owner_id !== req.talkzyUser.id) return res.status(403).json({ error: 'Only the room creator can edit activities.' });
+    const { data: existing, error: readError } = await supabase.from('talkzy_room_activities')
+      .select('*').eq('id', req.params.activityId).eq('room_id', room.id).maybeSingle();
+    if (readError) throw readError;
+    if (!existing) return res.status(404).json({ error: 'Room activity not found.' });
+    if (existing.status !== 'draft') return res.status(409).json({ error: 'Published activities are locked. Their poster cannot be changed.' });
+    const patch = {};
+    if (req.body?.title !== undefined) patch.title = String(req.body.title).trim();
+    if (req.body?.description !== undefined) patch.description = String(req.body.description).trim();
+    if (req.body?.posterUrl !== undefined) patch.poster_url = req.body.posterUrl || null;
+    if (req.body?.startsAt !== undefined) patch.starts_at = req.body.startsAt || null;
+    if (req.body?.endsAt !== undefined) patch.ends_at = req.body.endsAt || null;
+    const { data, error } = await supabase.from('talkzy_room_activities').update(patch)
+      .eq('id', existing.id).select('*').single();
+    if (error) throw error;
+    res.json({ activity: data });
+  } catch (error) {
+    if (/PUBLISHED_POSTER_LOCKED/.test(error.message || '')) return res.status(409).json({ error: 'A published activity poster cannot be changed.' });
+    console.error('Could not update room activity:', error.message);
+    res.status(500).json({ error: 'Could not update room activity.' });
+  }
+});
+
+app.post('/api/rooms/:roomId/activities/:activityId/publish', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+    if (room.owner_id !== req.talkzyUser.id) return res.status(403).json({ error: 'Only the room creator can publish activities.' });
+    const { data, error } = await supabase.from('talkzy_room_activities')
+      .update({ status: 'published', published_at: new Date().toISOString() })
+      .eq('id', req.params.activityId).eq('room_id', room.id).eq('status', 'draft')
+      .select('*').maybeSingle();
+    if (error) throw error;
+    if (!data) return res.status(409).json({ error: 'Only a draft activity can be published.' });
+    res.json({ activity: data });
+  } catch (error) {
+    console.error('Could not publish room activity:', error.message);
+    res.status(500).json({ error: 'Could not publish room activity.' });
+  }
+});
+
+app.delete('/api/rooms/:roomId/activities/:activityId', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+    if (room.owner_id !== req.talkzyUser.id) return res.status(403).json({ error: 'Only the room creator can delete activities.' });
+    const { data, error } = await supabase.from('talkzy_room_activities').delete()
+      .eq('id', req.params.activityId).eq('room_id', room.id).eq('status', 'draft')
+      .select('id').maybeSingle();
+    if (error) throw error;
+    if (!data) return res.status(409).json({ error: 'Only draft activities can be deleted.' });
+    res.json({ deleted: true });
+  } catch (error) {
+    console.error('Could not delete room activity:', error.message);
+    res.status(500).json({ error: 'Could not delete room activity.' });
   }
 });
 
