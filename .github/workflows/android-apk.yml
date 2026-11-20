@@ -1,8 +1,10 @@
-
 name: TALKZY Android APK
 
 on:
-  # APK builds must be explicitly started by the project owner.
+  # Temporary, narrowly scoped trigger to diagnose the Android autolinking failure.
+  push:
+    paths:
+      - '.github/workflows/android-apk.yml'
   workflow_dispatch:
 
 jobs:
@@ -28,6 +30,12 @@ jobs:
         working-directory: mobile
         run: npm install
 
+      - name: Diagnose Expo Android autolinking publications
+        working-directory: mobile
+        run: |
+          npx expo-modules-autolinking resolve --platform android > /tmp/talkzy-autolinking-android.json
+          node -e 'const c=require("/tmp/talkzy-autolinking-android.json"); for (const [i,m] of (c.modules||[]).entries()) { console.log(JSON.stringify({index:i,packageName:m.packageName,packageVersion:m.packageVersion,projects:m.projects},null,2)); }'
+
       - name: Build Android APK
         working-directory: mobile
         env:
@@ -51,4 +59,3 @@ jobs:
           path: mobile/android/app/build/outputs/apk/**/*.apk
           if-no-files-found: error
           retention-days: 7
-          
