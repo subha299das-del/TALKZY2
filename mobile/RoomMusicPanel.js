@@ -235,6 +235,40 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
       const result = await api(`/api/rooms/${roomId}/music`);
       const list = Array.isArray(result.streams) ? result.streams : [];
       setStreams(list);
+
+      // Restore this user's own saved stream when the panel first mounts or the
+      // room is re-entered. Each user still controls only their own player.
+      const mine = list.find(stream => stream.user_id === userId);
+      if (mine) {
+        applyState(mine);
+        const ownItem = mine.queue?.[mine.current_index];
+        if (ownItem?.url) {
+          let ownPlayer = playerRef.current;
+          const isNewOwnPlayer = !ownPlayer;
+          if (!ownPlayer) {
+            ownPlayer = createAudioPlayer(ownItem.url, { updateInterval: 500 });
+            playerRef.current = ownPlayer;
+            ownPlayer.addListener('playbackStatusUpdate', status => {
+              if (status?.didJustFinish) endHandlerRef.current?.();
+            });
+            localPathRef.current = ownItem.object_path;
+          } else if (localPathRef.current !== ownItem.object_path) {
+            ownPlayer.replace(ownItem.url);
+            localPathRef.current = ownItem.object_path;
+          }
+          const ownExpected = Number(mine.current_time_seconds || 0) +
+            (mine.is_playing && mine.updated_at ? Math.max(0, (Date.now() - new Date(mine.updated_at).getTime()) / 1000) : 0);
+          if (isNewOwnPlayer || Math.abs(Number(ownPlayer.currentTime || 0) - ownExpected) > 3) {
+            try { await ownPlayer.seekTo(ownExpected); } catch {}
+          }
+          ownPlayer.volume = Math.min(1, Math.max(0, Number(mine.volume ?? 0.8)));
+          if (mine.is_playing && !ownPlayer.playing) ownPlayer.play();
+          if (!mine.is_playing && ownPlayer.playing) ownPlayer.pause();
+          setCurrentTime(ownExpected);
+          setDuration(Number(ownPlayer.duration || 0));
+        }
+      }
+
       const keep = new Set();
       for (const stream of list) {
         if (stream.user_id === userId) continue;
