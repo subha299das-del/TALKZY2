@@ -2274,37 +2274,61 @@ function renderRoomInterior() {
       <TouchableOpacity
         key={seat}
         onPress={async () => {
+          // Occupied by another person: no request needed.
+          if (isOccupied && !isMySeat) {
+            Alert.alert(
+              'Seat occupied',
+              `${occupiedSeat.display_name || 'Someone'} is already on this microphone.`
+            );
+            return;
+          }
+
+          const roomId = selectedRoom.id;
+          const userId = session?.user?.id;
+          const previousSeats = micSeats;
+
           try {
-
-            // LEAVE MY CURRENT SEAT
+            // Optimistic UI: update the seat immediately.
             if (isMySeat) {
-              await api(
-                `/api/rooms/${selectedRoom.id}/mic-seats`,
-                { method: 'DELETE' }
-              );
+              setMicSeats(current => current.filter(
+                item => item.user_id !== userId
+              ));
+              setIsOnMic(false);
+              setMyMicSeat(null);
+              setIsMicMuted(false);
 
-              await loadRoomMicSeats(selectedRoom.id);
+              await api(`/api/rooms/${roomId}/mic-seats`, {
+                method: 'DELETE'
+              });
               return;
             }
 
-            // SEAT IS OCCUPIED BY SOMEONE ELSE
-            if (isOccupied) {
-              Alert.alert(
-                'Seat occupied',
-                `${occupiedSeat.display_name || 'Someone'} is already on this microphone.`
-              );
-              return;
-            }
+            const optimisticSeat = {
+              room_id: roomId,
+              seat_number: seat,
+              user_id: userId,
+              display_name: profile?.display_name || displayName || 'You',
+              avatar_url: profile?.avatar_url || avatarUri || null,
+              is_muted: false
+            };
 
-            // TAKE FREE SEAT OR SWITCH TO IT
+            setMicSeats(current => [
+              ...current.filter(item => item.user_id !== userId),
+              optimisticSeat
+            ]);
+            setIsOnMic(true);
+            setMyMicSeat(seat);
+            setIsMicMuted(false);
+
             await api(
-              `/api/rooms/${selectedRoom.id}/mic-seats/${seat}`,
+              `/api/rooms/${roomId}/mic-seats/${seat}`,
               { method: 'POST' }
             );
-
-            await loadRoomMicSeats(selectedRoom.id);
-
+            // Realtime sync updates other participants. Avoid an extra GET here.
           } catch (error) {
+            // Restore authoritative server state if the action fails.
+            setMicSeats(previousSeats);
+            await loadRoomMicSeats(roomId);
             Alert.alert(
               'Microphone error',
               error.message || 'Could not change microphone seat.'
