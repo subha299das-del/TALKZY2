@@ -25,6 +25,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { WebView } from 'react-native-webview';
+import RoomMusicPanel from './RoomMusicPanel';
 
 WebBrowser.maybeCompleteAuthSession();
 const MIC_ON_ICON = require('./assets/mic_on.png');
@@ -698,6 +699,7 @@ const [isRoomBellOn, setIsRoomBellOn] = useState(true);
 const [showRoomMessageMenu, setShowRoomMessageMenu] = useState(false);
 const [showRoomTools, setShowRoomTools] = useState(false);
 const [showYoutubePanel, setShowYoutubePanel] = useState(false);
+const [showMusicPanel, setShowMusicPanel] = useState(false);
 const [youtubeUrlInput, setYoutubeUrlInput] = useState('');
 const [youtubeState, setYoutubeState] = useState({ video_id: null, queue: [], is_playing: false, current_time_seconds: 0, updated_at: null });
 const [youtubeLoading, setYoutubeLoading] = useState(false);
@@ -3032,6 +3034,8 @@ onContentSizeChange={() =>
                       } else if (tool.title === 'YouTube') {
                         setShowYoutubePanel(true);
                         loadYoutubeState(true);
+                      } else if (tool.title === 'Music') {
+                        setShowMusicPanel(true);
                       } else {
                         Alert.alert(tool.title, `${tool.title} will be available here soon.`);
                       }
@@ -3047,6 +3051,8 @@ onContentSizeChange={() =>
           </ScrollView>
         </View>
       )}
+
+      <RoomMusicPanel visible={showMusicPanel} roomId={selectedRoom?.id} userId={session?.user?.id} api={api} supabase={supabase} colors={C} onClose={() => setShowMusicPanel(false)} />
 
      {/* ROOM BOTTOM CONTROLS */}
 <View
@@ -8955,7 +8961,7 @@ if (screen === 'profile' || profileIncomplete) {
 
         <ScrollView
           style={{ flex: 1 }}
-          scrollEnabled={!(screen === 'roomInterior' && (showRoomTools || showRoomGiftPanel))}
+          scrollEnabled={!(screen === 'roomInterior' && (showRoomTools || showRoomGiftPanel || showMusicPanel))}
           contentContainerStyle={{
             paddingHorizontal: screen === 'roomInterior' ? 0 : 15,
             paddingBottom: screen === 'roomInterior' ? 0 : 25,
