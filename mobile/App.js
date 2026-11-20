@@ -616,6 +616,18 @@ useEffect(() => {
   return () => { supabase.removeChannel(channel); };
 }, [selectedRoom?.id]);
 
+// Keep a tourist visit alive only while the visitor remains in the room.
+useEffect(() => {
+  if (!selectedRoom?.id || !isRoomTourist) return;
+  const roomId = selectedRoom.id;
+  const ping = () => api(`/api/rooms/${roomId}/visit/ping`).catch(error => {
+    console.log('Tourist visit refresh:', error.message);
+  });
+  ping();
+  const interval = setInterval(ping, 30000);
+  return () => clearInterval(interval);
+}, [selectedRoom?.id, isRoomTourist]);
+
 const [isRoomSpeakerOn, setIsRoomSpeakerOn] = useState(true);
 const [isRoomBellOn, setIsRoomBellOn] = useState(true);
 const [showRoomTools, setShowRoomTools] = useState(false);
