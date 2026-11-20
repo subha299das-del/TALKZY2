@@ -660,6 +660,39 @@ useEffect(() => {
   };
 }, [selectedRoom?.id]);
 
+useEffect(() => {
+  if (!selectedRoom?.id) return;
+  let active = true;
+  const refreshYoutube = async () => {
+    try {
+      const result = await api(`/api/rooms/${selectedRoom.id}/youtube`);
+      if (!active) return;
+      const state = result.state || { video_id: null, queue: [], is_playing: false, current_time_seconds: 0 };
+      setYoutubeState(state);
+      if (state.updated_at && state.updated_at !== youtubeLastUpdateRef.current) {
+        youtubeLastUpdateRef.current = state.updated_at;
+        if (state.video_id) {
+          if (!youtubePanelDismissedRef.current) setShowYoutubePanel(true);
+          const videoChanged = youtubeLoadedVideoRef.current !== state.video_id;
+          const js = videoChanged
+            ? `window.talkzyLoad && window.talkzyLoad('${state.video_id}', ${Number(state.current_time_seconds || 0)}, ${state.is_playing ? 'true' : 'false'});`
+            : `window.talkzySync && window.talkzySync(${Number(state.current_time_seconds || 0)}, ${state.is_playing ? 'true' : 'false'});`;
+          youtubeWebViewRef.current?.injectJavaScript(js + 'true;');
+          youtubeLoadedVideoRef.current = state.video_id;
+        } else {
+          setShowYoutubePanel(false);
+          youtubeLoadedVideoRef.current = null;
+        }
+      }
+    } catch (error) {
+      console.log('YouTube state refresh:', error.message);
+    }
+  };
+  refreshYoutube();
+  const interval = setInterval(refreshYoutube, 2500);
+  return () => { active = false; clearInterval(interval); };
+}, [selectedRoom?.id]);
+
 const [isRoomSpeakerOn, setIsRoomSpeakerOn] = useState(true);
 const [isRoomBellOn, setIsRoomBellOn] = useState(true);
 const [showRoomMessageMenu, setShowRoomMessageMenu] = useState(false);
@@ -671,6 +704,8 @@ const [youtubeLoading, setYoutubeLoading] = useState(false);
 const [youtubeSaving, setYoutubeSaving] = useState(false);
 const youtubeWebViewRef = useRef(null);
 const youtubeLastUpdateRef = useRef(null);
+const youtubeLoadedVideoRef = useRef(null);
+const youtubePanelDismissedRef = useRef(false);
  const [showRoomInfo, setShowRoomInfo] = useState(false);
 const [showRoomGiftPanel, setShowRoomGiftPanel] = useState(false);
 const [roomChatText, setRoomChatText] = useState('');
@@ -2309,9 +2344,16 @@ async function saveYoutubeState(nextState) {
     setYoutubeState(result.state);
     youtubeLastUpdateRef.current = result.state.updated_at;
     if (result.state.video_id) {
-      youtubeWebViewRef.current?.injectJavaScript(
-        `window.talkzySync && window.talkzySync(0, ${result.state.is_playing ? 'true' : 'false'});` + 'true;'
-      );
+      const videoChanged = youtubeLoadedVideoRef.current !== result.state.video_id;
+      const js = videoChanged
+        ? `window.talkzyLoad && window.talkzyLoad('${result.state.video_id}', ${Number(result.state.current_time_seconds || 0)}, ${result.state.is_playing ? 'true' : 'false'});`
+        : `window.talkzySync && window.talkzySync(${Number(result.state.current_time_seconds || 0)}, ${result.state.is_playing ? 'true' : 'false'});`;
+      youtubeWebViewRef.current?.injectJavaScript(js + 'true;');
+      youtubeLoadedVideoRef.current = result.state.video_id;
+      youtubePanelDismissedRef.current = false;
+      setShowYoutubePanel(true);
+    } else {
+      youtubeLoadedVideoRef.current = null;
     }
   } catch (error) {
     Alert.alert('YouTube control', error.message || 'Could not update YouTube.');
@@ -2549,7 +2591,7 @@ function renderRoomInterior() {
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
             <Text style={{ color: C.text, fontWeight: '900', fontSize: 13, flex: 1 }}>▶ YouTube Room Player</Text>
             {youtubeLoading && <ActivityIndicator color={C.accent} size="small" />}
-            <TouchableOpacity onPress={() => setShowYoutubePanel(false)} style={{ paddingHorizontal: 8, paddingVertical: 3 }}>
+            <TouchableOpacity onPress={() => { youtubePanelDismissedRef.current = true; setShowYoutubePanel(false); }} style={{ paddingHorizontal: 8, paddingVertical: 3 }}>
               <Text style={{ color: C.muted, fontSize: 18 }}>⌄</Text>
             </TouchableOpacity>
           </View>
@@ -2565,6 +2607,7 @@ function renderRoomInterior() {
                 mediaPlaybackRequiresUserAction={false}
                 onMessage={(event) => {
                   if (event.nativeEvent.data === 'ready' && youtubeState.video_id) {
+                    youtubeLoadedVideoRef.current = youtubeState.video_id;
                     youtubeWebViewRef.current?.injectJavaScript(
                       `window.talkzyLoad && window.talkzyLoad('${youtubeState.video_id}', ${Number(youtubeState.current_time_seconds || 0)}, ${youtubeState.is_playing ? 'true' : 'false'});` + 'true;'
                     );
