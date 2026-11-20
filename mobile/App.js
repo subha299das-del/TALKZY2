@@ -1952,8 +1952,14 @@ function renderRoomCard(room, showJoin = true) {
     }}
   >
     {room.active_users ?? 0}
-  </Text>
+    </Text>
 </View>
+
+      </View>
+    </Card>
+  </TouchableOpacity>
+  );
+}
 
 // =========================================
 // ROOM: ROOM INTERIOR
