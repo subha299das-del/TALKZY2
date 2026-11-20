@@ -114,44 +114,6 @@ async function api(path, options = {}) {
 }
 
 
-// REALTIME MICROPHONE SEAT SYNC
-useEffect(() => {
-  if (!selectedRoom?.id) return;
-
-  const roomId = selectedRoom.id;
-
-  const channel = supabase
-    .channel(`room-mic-sync-${roomId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'talkzy_room_mic_seats',
-        filter: `room_id=eq.${roomId}`
-      },
-      () => {
-        loadRoomMicSeats(roomId);
-      }
-    )
-    .on(
-      'postgres_changes',
-      {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'talkzy_rooms',
-        filter: `id=eq.${roomId}`
-      },
-      () => {
-        loadRoomMicSeats(roomId);
-      }
-    )
-    .subscribe();
-
-  return () => {
-    supabase.removeChannel(channel);
-  };
-}, [selectedRoom?.id]);
 
 function Brand({ small = false }) {
   const size = small ? 48 : 100;
