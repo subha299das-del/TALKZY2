@@ -26,7 +26,8 @@ import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 
 WebBrowser.maybeCompleteAuthSession();
-
+const MIC_ON_ICON = require('./assets/mic_on.png');
+const MIC_OFF_ICON = require('./assets/mic_off.png');
 const SUPABASE_URL =
   process.env.EXPO_PUBLIC_SUPABASE_URL || '';
 
