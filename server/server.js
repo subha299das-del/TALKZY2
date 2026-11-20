@@ -1251,6 +1251,10 @@ app.put('/api/rooms/:roomId/music/me', userAuth, async (req, res) => {
     if (!Number.isFinite(currentTime) || currentTime < 0 || currentTime > 86400) {
       return res.status(400).json({ error: 'Invalid music playback position.' });
     }
+    const volume = Number(body.volume ?? 0.8);
+    if (!Number.isFinite(volume) || volume < 0 || volume > 1) {
+      return res.status(400).json({ error: 'Invalid music volume.' });
+    }
     const payload = {
       room_id: room.id,
       user_id: req.talkzyUser.id,
@@ -1260,7 +1264,7 @@ app.put('/api/rooms/:roomId/music/me', userAuth, async (req, res) => {
       current_time_seconds: currentTime,
       repeat_mode: ['off', 'one', 'all'].includes(body.repeat_mode) ? body.repeat_mode : 'off',
       shuffle: Boolean(body.shuffle),
-      volume: Math.min(1, Math.max(0, Number(body.volume ?? 0.8))),
+      volume,
       updated_at: new Date().toISOString()
     };
     const { error } = await supabase.from('talkzy_room_music_state')
