@@ -1159,6 +1159,133 @@ app.post('/api/rooms/:roomId/presence/ping', userAuth, async (req, res) => {
   }
 });
 
+// Personal room music streams. Each participant owns and controls only their own stream.
+async function buildRoomMusicState(roomId, userId) {
+  const { data: rows, error } = await supabase.from('talkzy_room_music_state')
+    .select('room_id, user_id, queue, current_index, is_playing, current_time_seconds, updated_at')
+    .eq('room_id', roomId);
+  if (error) throw error;
+  const activeRows = rows || [];
+  const userIds = activeRows.map(row => row.user_id);
+  let profiles = [];
+  if (userIds.length) {
+    const { data, error: profileError } = await supabase.from('talkzy_profiles')
+      .select('id, display_name, avatar_url').in('id', userIds);
+    if (profileError) throw profileError;
+    profiles = data || [];
+  }
+  const profileMap = new Map(profiles.map(profile => [profile.id, profile]));
+  const streams = [];
+  for (const row of activeRows) {
+    const queue = Array.isArray(row.queue) ? row.queue : [];
+    const signedQueue = [];
+    for (const item of queue) {
+      const { data: signed, error: signError } = await supabase.storage
+        .from('talkzy-room-music').createSignedUrl(item.object_path, 3600);
+      if (signError) throw signError;
+      signedQueue.push({ title: item.title, object_path: item.object_path, url: signed.signedUrl });
+    }
+    streams.push({
+      user_id: row.user_id,
+      display_name: profileMap.get(row.user_id)?.display_name || 'TALKZY User',
+      avatar_url: profileMap.get(row.user_id)?.avatar_url || null,
+      queue: signedQueue,
+      current_index: row.current_index,
+      is_playing: row.is_playing,
+      current_time_seconds: row.current_time_seconds,
+      updated_at: row.updated_at,
+      is_mine: row.user_id === userId
+    });
+  }
+  return streams;
+}
+
+app.get('/api/rooms/:roomId/music', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+    if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
+    if (!(await canEnterRoom(room, req.talkzyUser.id))) {
+      return res.status(403).json({ error: 'Enter the room to hear its music streams.' });
+    }
+    const streams = await buildRoomMusicState(room.id, req.talkzyUser.id);
+    res.set('Cache-Control', 'no-store').json({ streams });
+  } catch (error) {
+    console.error('Could not load room music streams:', error.message);
+    res.status(500).json({ error: 'Could not load room music streams.' });
+  }
+});
+
+app.put('/api/rooms/:roomId/music/me', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+    if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
+    if (!(await canEnterRoom(room, req.talkzyUser.id))) {
+      return res.status(403).json({ error: 'Enter the room before sharing music.' });
+    }
+    const body = req.body || {};
+    const inputQueue = body.queue === undefined ? [] : body.queue;
+    if (!Array.isArray(inputQueue) || inputQueue.length > 20) {
+      return res.status(400).json({ error: 'Your music list can contain up to 20 songs.' });
+    }
+    const queue = [];
+    for (const item of inputQueue) {
+      const objectPath = String(item?.object_path || '');
+      const title = String(item?.title || '').trim().slice(0, 120);
+      if (!objectPath.startsWith(`${req.talkzyUser.id}/${room.id}/`) ||
+          objectPath.includes('..') || !title || objectPath.length > 500) {
+        return res.status(400).json({ error: 'One of your music files is invalid.' });
+      }
+      queue.push({ object_path: objectPath, title });
+    }
+    const currentIndex = Number(body.current_index ?? 0);
+    if (!Number.isInteger(currentIndex) || currentIndex < 0 ||
+        (queue.length ? currentIndex >= queue.length : currentIndex !== 0)) {
+      return res.status(400).json({ error: 'Invalid current song selection.' });
+    }
+    const currentTime = Number(body.current_time_seconds ?? 0);
+    if (!Number.isFinite(currentTime) || currentTime < 0 || currentTime > 86400) {
+      return res.status(400).json({ error: 'Invalid music playback position.' });
+    }
+    const payload = {
+      room_id: room.id,
+      user_id: req.talkzyUser.id,
+      queue,
+      current_index: currentIndex,
+      is_playing: Boolean(body.is_playing) && queue.length > 0,
+      current_time_seconds: currentTime,
+      updated_at: new Date().toISOString()
+    };
+    const { error } = await supabase.from('talkzy_room_music_state')
+      .upsert(payload, { onConflict: 'room_id,user_id' });
+    if (error) throw error;
+    const streams = await buildRoomMusicState(room.id, req.talkzyUser.id);
+    const state = streams.find(stream => stream.user_id === req.talkzyUser.id) || null;
+    res.set('Cache-Control', 'no-store').json({ state });
+  } catch (error) {
+    console.error('Could not update personal room music:', error.message);
+    res.status(500).json({ error: 'Could not update your room music.' });
+  }
+});
+
+app.delete('/api/rooms/:roomId/music/me', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+    if (!(await canEnterRoom(room, req.talkzyUser.id))) {
+      return res.status(403).json({ error: 'Enter the room before stopping your music.' });
+    }
+    const { error } = await supabase.from('talkzy_room_music_state')
+      .delete().eq('room_id', room.id).eq('user_id', req.talkzyUser.id);
+    if (error) throw error;
+    res.json({ stopped: true });
+  } catch (error) {
+    console.error('Could not stop personal room music:', error.message);
+    res.status(500).json({ error: 'Could not stop your room music.' });
+  }
+});
+
 // Shared YouTube room state. Any room participant can view; only owner/admin can control.
 app.get('/api/rooms/:roomId/youtube', userAuth, async (req, res) => {
   try {
