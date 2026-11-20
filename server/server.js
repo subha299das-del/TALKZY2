@@ -1122,6 +1122,93 @@ app.delete('/api/rooms/:roomId/members/:userId', userAuth, async (req, res) => {
   }
 });
 
+// Live room presence: active members, owner, admins and tourist visitors.
+app.post('/api/rooms/:roomId/presence/ping', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+    if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
+    const userId = req.talkzyUser.id;
+    const owner = room.owner_id === userId;
+    const admin = !owner && await isRoomAdmin(room.id, userId);
+    const member = !owner && !admin && await isRoomMember(room.id, userId);
+    const tourist = !owner && !admin && !member && await isRoomVisitor(room.id, userId);
+    if (!owner && !admin && !member && !tourist) {
+      return res.status(403).json({ error: 'Enter the room to appear in its live user list.' });
+    }
+    const presenceRole = owner ? 'owner' : admin ? 'admin' : tourist ? 'tourist' : 'member';
+    const now = new Date().toISOString();
+    const { error } = await supabase.from('talkzy_room_presence').upsert({
+      room_id: room.id, user_id: userId, presence_role: presenceRole, last_seen_at: now
+    }, { onConflict: 'room_id,user_id' });
+    if (error) throw error;
+    if (tourist) {
+      const { error: visitorError } = await supabase.from('talkzy_room_visitors')
+        .update({ last_seen_at: now }).eq('room_id', room.id).eq('user_id', userId);
+      if (visitorError) throw visitorError;
+    }
+    res.json({ active: true, role: presenceRole });
+  } catch (error) {
+    console.error('Could not update room presence:', error.message);
+    res.status(500).json({ error: 'Could not update room presence.' });
+  }
+});
+
+app.get('/api/rooms/:roomId/presence', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+    const userId = req.talkzyUser.id;
+    const allowed = room.owner_id === userId || await isRoomAdmin(room.id, userId) ||
+      await isRoomMember(room.id, userId) || await isRoomVisitor(room.id, userId);
+    if (!allowed) return res.status(403).json({ error: 'Enter the room to view its live users.' });
+    const cutoff = new Date(Date.now() - 75000).toISOString();
+    const { data, error } = await supabase.from('talkzy_room_presence')
+      .select('user_id, presence_role, last_seen_at').eq('room_id', room.id)
+      .gte('last_seen_at', cutoff).order('last_seen_at', { ascending: false });
+    if (error) throw error;
+    const rows = data || [];
+    const ids = rows.map(row => row.user_id);
+    const { data: profiles, error: profileError } = ids.length
+      ? await supabase.from('talkzy_profiles').select('id, talkzy_id, display_name, avatar_url, country').in('id', ids)
+      : { data: [], error: null };
+    if (profileError) throw profileError;
+    const users = rows.map(row => {
+      const profile = (profiles || []).find(item => item.id === row.user_id);
+      const role = row.presence_role;
+      return {
+        user_id: row.user_id,
+        display_name: profile?.display_name || 'TALKZY User',
+        talkzy_id: profile?.talkzy_id || null,
+        avatar_url: profile?.avatar_url || null,
+        country: profile?.country || null,
+        level: null,
+        badges: [role === 'owner' ? 'Room Owner' : role === 'admin' ? 'Admin' : role === 'tourist' ? 'Tourist' : 'Member'],
+        presence_role: role,
+        last_seen_at: row.last_seen_at
+      };
+    });
+    res.set('Cache-Control', 'no-store').json({ users, total: users.length });
+  } catch (error) {
+    console.error('Could not load live room users:', error.message);
+    res.status(500).json({ error: 'Could not load live room users.' });
+  }
+});
+
+app.post('/api/rooms/:roomId/presence/leave', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+    const { error } = await supabase.from('talkzy_room_presence').delete()
+      .eq('room_id', room.id).eq('user_id', req.talkzyUser.id);
+    if (error) throw error;
+    res.json({ left: true });
+  } catch (error) {
+    console.error('Could not clear room presence:', error.message);
+    res.status(500).json({ error: 'Could not clear room presence.' });
+  }
+});
+
 // List room members.
 app.get('/api/rooms/:roomId/members', userAuth, async (req, res) => {
   try {
