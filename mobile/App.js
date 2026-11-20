@@ -451,6 +451,8 @@ const hotEventsScrollRef = useRef(null);
 const [roomDetailsTab, setRoomDetailsTab] = useState('Information');
 const [roomDetails, setRoomDetails] = useState(null);
 const [memberSearch, setMemberSearch] = useState('');
+ const [roomDetailMembers, setRoomDetailMembers] = useState([]);
+ const [loadingRoomDetailMembers, setLoadingRoomDetailMembers] = useState(false);
   const [joinedRooms, setJoinedRooms] = useState([]);
   const [followedRooms, setFollowedRooms] = useState([]);
   const [myRooms, setMyRooms] = useState([]);
@@ -1324,11 +1326,24 @@ loadFollowedRooms(session);
 // ROOM: OPEN ROOM DETAILS
 // =========================================
 
-function openRoomDetails(room) {
+async function openRoomDetails(room) {
   setRoomDetails(room);
   setRoomDetailsTab('Information');
   setMemberSearch('');
+  setRoomDetailMembers([]);
   setRoomDetailsVisible(true);
+  if (!session?.access_token || !room?.id) return;
+  setLoadingRoomDetailMembers(true);
+  try {
+    const result = await api(`/api/rooms/${room.id}/members`, {
+      headers: { Authorization: `Bearer ${session.access_token}` }
+    });
+    setRoomDetailMembers(Array.isArray(result.members) ? result.members : []);
+  } catch (error) {
+    Alert.alert('Room Members', error.message || 'Could not load room members.');
+  } finally {
+    setLoadingRoomDetailMembers(false);
+  }
 }
  
 // =========================================
@@ -8783,12 +8798,27 @@ if (screen === 'profile' || profileIncomplete) {
             {/* MEMBERS TAB */}
             {roomDetailsTab === 'Members' && (
               <View>
-                <Text style={{ color: C.text, fontWeight: '900' }}>
-                  Room Members
+                <Text style={{ color: C.text, fontWeight: '900', marginBottom: 10 }}>
+                  Room Members ({roomDetailMembers.length})
                 </Text>
-                <Text style={{ color: C.muted, marginTop: 8 }}>
-                  Member list will be connected in the next step.
-                </Text>
+                {loadingRoomDetailMembers ? (
+                  <ActivityIndicator color={C.accent} />
+                ) : roomDetailMembers.length === 0 ? (
+                  <Text style={{ color: C.muted, marginTop: 8 }}>
+                    No member records were returned for this room.
+                  </Text>
+                ) : roomDetailMembers
+                  .filter(member => String(member.user_id || '').toLowerCase().includes(memberSearch.toLowerCase()))
+                  .map(member => (
+                    <View key={member.user_id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
+                      <Text style={{ color: C.text, fontSize: 12, flex: 1 }} numberOfLines={1}>
+                        {member.user_id}
+                      </Text>
+                      <Text style={{ color: C.gold, fontSize: 11, fontWeight: '800' }}>
+                        {member.role || 'Member'}
+                      </Text>
+                    </View>
+                  ))}
               </View>
             )}
 
