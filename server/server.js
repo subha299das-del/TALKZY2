@@ -1304,6 +1304,24 @@ app.post('/api/rooms/:roomId/activities/:activityId/publish', userAuth, async (r
   }
 });
 
+app.post('/api/rooms/:roomId/activities/:activityId/complete', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+    if (room.owner_id !== req.talkzyUser.id) return res.status(403).json({ error: 'Only the room creator can complete activities.' });
+    const { data, error } = await supabase.from('talkzy_room_activities')
+      .update({ status: 'completed' })
+      .eq('id', req.params.activityId).eq('room_id', room.id).eq('status', 'published')
+      .select('*').maybeSingle();
+    if (error) throw error;
+    if (!data) return res.status(409).json({ error: 'Only a published activity can be marked completed.' });
+    res.json({ activity: data });
+  } catch (error) {
+    console.error('Could not complete room activity:', error.message);
+    res.status(500).json({ error: 'Could not complete room activity.' });
+  }
+});
+
 app.delete('/api/rooms/:roomId/activities/:activityId', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
