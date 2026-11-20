@@ -1031,7 +1031,7 @@ app.get('/api/rooms/:roomId/mic-seats', userAuth, async (req, res) => {
 
     const { data: roomSettings, error: settingsError } = await supabase
   .from('talkzy_rooms')
-  .select('mic_count')
+  .select('mic_count, mic_layout')
   .eq('id', room.id)
   .single();
 
@@ -1076,8 +1076,7 @@ const seatsWithProfiles = (data || []).map(seat => {
 });
 
 res.set('Cache-Control', 'no-store').json({
-  micCount: roomSettings.mic_count,
-  seats: seatsWithProfiles
+  micCount: roomSettings.mic_count,\n  micLayout: roomSettings.mic_layout || 'eight',\n  seats: seatsWithProfiles
 });
     
   } catch (error) {
@@ -1087,64 +1086,60 @@ res.set('Cache-Control', 'no-store').json({
 });
 
 
-// CHANGE ROOM MICROPHONE COUNT (OWNER ONLY)
+// CHANGE ROOM MICROPHONE COUNT AND LAYOUT (OWNER ONLY)
 app.patch('/api/rooms/:roomId/mic-count', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
-
-    if (room.status !== 'active') {
-      return res.status(409).json({ error: 'This room is closed.' });
+    if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
+    if (room.owner_id !== req.talkzyUser.id) {
+      return res.status(403).json({ error: 'Only the room owner can change microphone layout.' });
     }
 
     const micCount = req.body?.micCount;
-
-    if (![7, 8, 10, 11, 12, 14, 17].includes(micCount)) {
-      return res.status(400).json({
-        error: 'Choose 7, 8, 10, 11, 12, 14, or 17 microphones.'
-      });
+    const micLayout = req.body?.micLayout;
+    const layouts = {
+      seven: 7, eight: 8, ten_couple: 10, ten_standard: 10,
+      eleven: 11, twelve: 12, fourteen: 14, fifteen: 15,
+      sixteen: 16, seventeen: 17
+    };
+    if (!Object.prototype.hasOwnProperty.call(layouts, micLayout) || layouts[micLayout] !== micCount) {
+      return res.status(400).json({ error: 'Choose a valid microphone layout and matching seat count.' });
     }
 
-    const { data, error } = await supabase.rpc(
-      'talkzy_set_room_mic_count',
-      {
-        p_room_id: room.id,
-        p_user_id: req.talkzyUser.id,
-        p_mic_count: micCount
-      }
-    );
+    // The server authenticates the room owner above. Persist both settings so
+    // the room UPDATE realtime event distributes the same layout to everyone.
+    const { data: updatedRoom, error: updateError } = await supabase
+      .from('talkzy_rooms')
+      .update({ mic_count: micCount, mic_layout: micLayout })
+      .eq('id', room.id)
+      .eq('owner_id', req.talkzyUser.id)
+      .eq('status', 'active')
+      .select('mic_count, mic_layout')
+      .single();
 
-    if (error) {
-      if (error.message.includes('OWNER_ONLY')) {
-        return res.status(403).json({
-          error: 'Only the room owner can change microphone count.'
-        });
+    if (updateError) {
+      if (updateError.code === '42703' || /mic_layout/i.test(updateError.message || '')) {
+        return res.status(503).json({ error: 'Room layout database migration is required before this setting can be used.' });
       }
-
-      if (error.message.includes('INVALID_MIC_COUNT')) {
-        return res.status(400).json({
-          error: 'Invalid microphone count.'
-        });
-      }
-
-      if (error.message.includes('ROOM_NOT_FOUND')) {
-        return res.status(404).json({
-          error: 'Room not found or closed.'
-        });
-      }
-
-      throw error;
+      throw updateError;
     }
+
+    const { error: cleanupError } = await supabase
+      .from('talkzy_room_mic_seats')
+      .delete()
+      .eq('room_id', room.id)
+      .gt('seat_number', micCount);
+    if (cleanupError) throw cleanupError;
 
     res.set('Cache-Control', 'no-store').json({
       success: true,
-      micCount: data
+      micCount: updatedRoom.mic_count,
+      micLayout: updatedRoom.mic_layout
     });
   } catch (error) {
-    console.error('Could not change microphone count:', error.message);
-    res.status(500).json({
-      error: 'Could not change microphone count.'
-    });
+    console.error('Could not change microphone layout:', error.message);
+    res.status(500).json({ error: 'Could not change microphone layout.' });
   }
 });
 
