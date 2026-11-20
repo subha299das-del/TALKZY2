@@ -634,6 +634,12 @@ useEffect(() => {
     .on('postgres_changes', {
       event: 'INSERT', schema: 'public', table: 'talkzy_room_messages', filter: `room_id=eq.${roomId}`
     }, () => loadRoomMessages(roomId))
+    .on('postgres_changes', {
+      event: 'DELETE', schema: 'public', table: 'talkzy_room_messages', filter: `room_id=eq.${roomId}`
+    }, payload => {
+      const deletedId = payload?.old?.id;
+      if (deletedId) setRoomChatMessages(prev => prev.filter(item => item.id !== deletedId));
+    })
     .subscribe();
   return () => { supabase.removeChannel(channel); };
 }, [selectedRoom?.id]);
@@ -3037,7 +3043,14 @@ onContentSizeChange={() =>
                       if (tool.title === 'Clear Chat') {
                         Alert.alert('Clear Room Chat', 'Are you sure you want to clear all chat messages?', [
                           { text: 'Cancel', style: 'cancel' },
-                          { text: 'Clear', style: 'destructive', onPress: () => setRoomChatMessages([]) }
+                          { text: 'Clear', style: 'destructive', onPress: async () => {
+                            try {
+                              await api(`/api/rooms/${selectedRoom.id}/messages`, { method: 'DELETE' });
+                              setRoomChatMessages([]);
+                            } catch (error) {
+                              Alert.alert('Clear Chat', error.message || 'Could not clear room chat.');
+                            }
+                          } }
                         ]);
                       } else if (tool.title === 'Activity') {
                         openRoomDetails(selectedRoom);
