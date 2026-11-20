@@ -8246,9 +8246,14 @@ if (screen === 'profile' || profileIncomplete) {
           {/* RESTORE ROOM */}
           <TouchableOpacity
             onPress={() => {
-              setIsRoomMinimized(false);
-              setScreen('roomInterior');
-            }}
+  setIsRoomMinimized(false);
+
+  if (selectedRoom?.id) {
+    loadRoomMicSeats(selectedRoom.id);
+  }
+
+  setScreen('roomInterior');
+}}
             style={{
               flexDirection: 'row',
               alignItems: 'center',
