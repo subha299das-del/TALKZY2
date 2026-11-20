@@ -1109,35 +1109,31 @@ app.patch('/api/rooms/:roomId/mic-count', userAuth, async (req, res) => {
       return res.status(400).json({ error: 'Choose a valid microphone layout and matching seat count.' });
     }
 
-    // The server authenticates the room owner above. Persist both settings so
-    // the room UPDATE realtime event distributes the same layout to everyone.
-    const { data: updatedRoom, error: updateError } = await supabase
-      .from('talkzy_rooms')
-      .update({ mic_count: micCount, mic_layout: micLayout })
-      .eq('id', room.id)
-      .eq('owner_id', req.talkzyUser.id)
-      .eq('status', 'active')
-      .select('mic_count, mic_layout')
-      .single();
+    // The RPC changes room settings and removes excess seats atomically.
+    const { data, error } = await supabase.rpc('talkzy_set_room_mic_count', {
+      p_room_id: room.id,
+      p_user_id: req.talkzyUser.id,
+      p_mic_count: micCount,
+      p_mic_layout: micLayout
+    });
 
-    if (updateError) {
-      if (updateError.code === '42703' || /mic_layout/i.test(updateError.message || '')) {
+    if (error) {
+      if (/OWNER_ONLY/.test(error.message || '')) {
+        return res.status(403).json({ error: 'Only the room owner can change microphone layout.' });
+      }
+      if (/ROOM_NOT_FOUND/.test(error.message || '')) {
+        return res.status(409).json({ error: 'This room is no longer active.' });
+      }
+      if (error.code === '42883' || /talkzy_set_room_mic_count|mic_layout/i.test(error.message || '')) {
         return res.status(503).json({ error: 'Room layout database migration is required before this setting can be used.' });
       }
-      throw updateError;
+      throw error;
     }
-
-    const { error: cleanupError } = await supabase
-      .from('talkzy_room_mic_seats')
-      .delete()
-      .eq('room_id', room.id)
-      .gt('seat_number', micCount);
-    if (cleanupError) throw cleanupError;
 
     res.set('Cache-Control', 'no-store').json({
       success: true,
-      micCount: updatedRoom.mic_count,
-      micLayout: updatedRoom.mic_layout
+      micCount: data.micCount,
+      micLayout: data.micLayout
     });
   } catch (error) {
     console.error('Could not change microphone layout:', error.message);
