@@ -596,6 +596,7 @@ app.get('/api/rooms/:roomId/messages', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
+    if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
     if (!await canEnterRoom(room, req.talkzyUser.id)) return res.status(403).json({ error: 'Enter the room first.' });
     const { data, error } = await supabase.from('talkzy_room_messages')
       .select('id, sender_id, message_type, message_text, image_url, created_at')
