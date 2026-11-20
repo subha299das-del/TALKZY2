@@ -601,6 +601,7 @@ app.post('/api/rooms/:roomId/messages', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
+    if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
     const userId = req.talkzyUser.id;
     const member = room.owner_id === userId || await isRoomAdmin(room.id, userId) || await isRoomMember(room.id, userId);
     const tourist = !member && await isRoomVisitor(room.id, userId);
@@ -1346,8 +1347,12 @@ app.post('/api/rooms/:roomId/members/:userId/kick', userAuth, async (req, res) =
     const { error: memberError } = await supabase.from('talkzy_room_members').delete()
       .eq('room_id', room.id).eq('user_id', req.params.userId);
     if (memberError) throw memberError;
-    await supabase.from('talkzy_room_admins').delete().eq('room_id', room.id).eq('user_id', req.params.userId);
-    await supabase.from('talkzy_room_mic_seats').delete().eq('room_id', room.id).eq('user_id', req.params.userId);
+    const { error: adminDeleteError } = await supabase.from('talkzy_room_admins').delete().eq('room_id', room.id).eq('user_id', req.params.userId);
+    if (adminDeleteError) throw adminDeleteError;
+    const { error: visitorDeleteError } = await supabase.from('talkzy_room_visitors').delete().eq('room_id', room.id).eq('user_id', req.params.userId);
+    if (visitorDeleteError) throw visitorDeleteError;
+    const { error: seatDeleteError } = await supabase.from('talkzy_room_mic_seats').delete().eq('room_id', room.id).eq('user_id', req.params.userId);
+    if (seatDeleteError) throw seatDeleteError;
     res.json({ kicked: true });
   } catch (error) {
     console.error('Could not kick room member:', error.message);
