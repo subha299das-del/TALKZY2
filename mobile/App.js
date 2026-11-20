@@ -2404,7 +2404,7 @@ function renderRoomInterior() {
     );
   })}
 </View>
-                    : 
+                    
 
             {/* ROOM CHAT MESSAGES */}
 {roomChatMessages.length > 0 && (
@@ -2870,14 +2870,150 @@ borderTopWidth: 1,
               Exit Room
             </Text>
           </TouchableOpacity>
-
         </View>
       )}
 
+      {/* MICROPHONE COUNT PICKER */}
+      <Modal
+        visible={showMicCountPicker}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowMicCountPicker(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.65)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 25
+          }}
+        >
+          <View
+            style={{
+              width: '100%',
+              backgroundColor: C.card,
+              borderRadius: 18,
+              borderWidth: 1,
+              borderColor: C.line,
+              padding: 20
+            }}
+          >
+            <Text
+              style={{
+                color: C.text,
+                fontSize: 19,
+                fontWeight: 'bold',
+                textAlign: 'center'
+              }}
+            >
+              🎙 Microphone Settings
+            </Text>
+
+            <Text
+              style={{
+                color: C.muted,
+                fontSize: 13,
+                textAlign: 'center',
+                marginTop: 8,
+                marginBottom: 20
+              }}
+            >
+              Choose the number of microphone seats in your room.
+            </Text>
+
+            <View
+              style={{
+                flexDirection: 'row',
+                flexWrap: 'wrap',
+                justifyContent: 'center'
+              }}
+            >
+              {[7, 8, 10, 11, 12, 14, 17].map((count) => (
+                <TouchableOpacity
+                  key={count}
+                  onPress={async () => {
+                    try {
+                      const result = await api(
+                        `/api/rooms/${selectedRoom.id}/mic-count`,
+                        {
+                          method: 'PATCH',
+                          body: JSON.stringify({
+                            micCount: count
+                          })
+                        }
+                      );
+
+                      setMicCount(result.micCount || count);
+                      setShowMicCountPicker(false);
+
+                      await loadRoomMicSeats(selectedRoom.id);
+
+                    } catch (error) {
+                      Alert.alert(
+                        'Mic Settings',
+                        error.message || 'Could not change microphone count.'
+                      );
+                    }
+                  }}
+                  style={{
+                    width: '22%',
+                    margin: '1.5%',
+                    paddingVertical: 15,
+                    borderRadius: 12,
+                    alignItems: 'center',
+                    backgroundColor:
+                      micCount === count ? C.accent : C.panel2,
+                    borderWidth: 1,
+                    borderColor:
+                      micCount === count ? C.accent : C.line
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: C.text,
+                      fontSize: 18,
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    {count}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text
+              style={{
+                color: C.muted,
+                fontSize: 11,
+                textAlign: 'center',
+                marginTop: 12
+              }}
+            >
+              Seats above the selected limit will be removed automatically.
+            </Text>
+
+            <TouchableOpacity
+              onPress={() => setShowMicCountPicker(false)}
+              style={{
+                marginTop: 18,
+                padding: 12,
+                borderRadius: 10,
+                backgroundColor: C.panel2,
+                alignItems: 'center'
+              }}
+            >
+              <Text style={{ color: C.text, fontWeight: 'bold' }}>
+                Cancel
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
     </View>
   );
-}
-
+                 }
 
   // =========================================
   // ROOM: SETTINGS SCREEN
