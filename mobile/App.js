@@ -468,6 +468,7 @@ const [roomDpUploading, setRoomDpUploading] = useState(false);
  const [isRoomMinimized, setIsRoomMinimized] = useState(false);
  const [showRoomMenu, setShowRoomMenu] = useState(false);
  const [isOnMic, setIsOnMic] = useState(false);
+ const [myMicSeat, setMyMicSeat] = useState(null);
  const [isMicMuted, setIsMicMuted] = useState(false);
 const [isRoomSpeakerOn, setIsRoomSpeakerOn] = useState(true);
 const [isRoomBellOn, setIsRoomBellOn] = useState(true);
