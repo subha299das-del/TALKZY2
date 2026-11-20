@@ -5474,7 +5474,7 @@ function renderEvents() {
       { name: 'Room', icon: '🎙️' },
       { name: 'Games', icon: '🎮' },
       { name: 'Moment', icon: '📸' },
-      { name: 'Message', icon: '💬' },
+      { name: 'Message', icon: '🔔' },
       { name: 'Me', icon: '👤' }
     ];
 
