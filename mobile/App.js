@@ -2322,7 +2322,7 @@ setScreen('roomInterior');
 function extractYouTubeVideoId(value) {
   const raw = String(value || '').trim();
   if (/^[A-Za-z0-9_-]{11}$/.test(raw)) return raw;
-  const match = raw.match(/(?:youtu\\.be\\/|youtube\\.com\\/(?:watch\\?(?:.*&)?v=|embed\\/|shorts\\/|live\\/))([A-Za-z0-9_-]{11})/i);
+  const match = raw.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/))([A-Za-z0-9_-]{11})/i);
   return match ? match[1] : null;
 }
 
