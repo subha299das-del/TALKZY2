@@ -616,6 +616,8 @@ const [roomChatText, setRoomChatText] = useState('');
 const [joinPassword, setJoinPassword] = useState('');
 const [joiningRoom, setJoiningRoom] = useState(false);
   const [joinTargetRoom, setJoinTargetRoom] = useState(null);
+const [joinMode, setJoinMode] = useState('member');
+const [isRoomTourist, setIsRoomTourist] = useState(false);
 
   // ---------------------------------
   // OTHER TAB STATES
@@ -1549,59 +1551,81 @@ async function toggleFollowRoom(room) {
   // =========================================
 
   async function joinRoom(room) {
-    if (!session?.access_token) {
-      Alert.alert('Login required', 'Please sign in again.');
-      return;
-    }
-
+    if (!session?.access_token) return Alert.alert('Login required', 'Please sign in again.');
+    setJoinTargetRoom(room);
+    setJoinPassword('');
     if (room.room_type === 'locked') {
-      setJoinTargetRoom(room);
-      setJoinPassword('');
+      setJoinMode('member');
       setShowJoinPassword(true);
       return;
     }
-
-    await submitRoomJoin(room, '');
+    Alert.alert(
+      room.room_name,
+      'How would you like to enter this room?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Visit as Tourist', onPress: () => submitRoomVisit(room, '') },
+        { text: 'Join as Member', onPress: () => submitRoomJoin(room, '') }
+      ]
+    );
   }
 
   async function submitRoomJoin(room, password) {
-    if (!room || !session?.access_token) {
-      Alert.alert('Error', 'Please sign in again.');
-      return;
-    }
-
+    if (!room || !session?.access_token) return Alert.alert('Error', 'Please sign in again.');
     try {
       setJoiningRoom(true);
-
       await api(`/api/rooms/${room.id}/join`, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
-        },
         body: JSON.stringify({ password })
       });
       await loadJoinedRooms();
-      
-      setShowJoinPassword(false);
-      setJoinPassword('');
-      setJoinTargetRoom(null);
-
-      Alert.alert(
-        'Success',
-        `You have joined ${room.room_name}.`
-      );
-
+      setIsRoomTourist(false);
+      setShowJoinPassword(false); setJoinPassword(''); setJoinTargetRoom(null);
+      Alert.alert('Success', `You have joined ${room.room_name} as a member.`);
     } catch (error) {
-      Alert.alert(
-        'Unable to join',
-        error.message || 'Could not join this room.'
-      );
-    } finally {
-      setJoiningRoom(false);
-    }
+      Alert.alert('Unable to join', error.message || 'Could not join this room.');
+    } finally { setJoiningRoom(false); }
   }
-  
-  
+
+  async function submitRoomVisit(room, password) {
+    if (!room || !session?.access_token) return Alert.alert('Error', 'Please sign in again.');
+    try {
+      setJoiningRoom(true);
+      const result = await api(`/api/rooms/${room.id}/visit`, {
+        method: 'POST',
+        body: JSON.stringify({ password })
+      });
+      setShowJoinPassword(false); setJoinPassword(''); setJoinTargetRoom(null);
+      setSelectedRoom(room);
+      setIsRoomTourist(result.mode === 'tourist');
+      setIsRoomMinimized(false); setShowRoomMenu(false);
+      setMicCount(8); setMicSeats([]); setIsOnMic(false); setMyMicSeat(null); setIsMicMuted(false);
+      setRoomChatMessages([]);
+      setScreen('roomInterior');
+      loadRoomMicSeats(room.id);
+      loadRoomMessages(room.id);
+    } catch (error) {
+      Alert.alert('Unable to visit', error.message || 'Could not enter this room as a tourist.');
+    } finally { setJoiningRoom(false); }
+  }
+
+  async function loadRoomMessages(roomId) {
+    if (!roomId) return;
+    try {
+      const result = await api(`/api/rooms/${roomId}/messages`);
+      setRoomChatMessages((result.messages || []).map(item => ({
+        id: item.id,
+        text: item.message_type === 'image' ? '📷 Photo' : item.message_text,
+        sender: item.sender?.display_name || 'TALKZY User',
+        senderId: item.sender_id,
+        avatar_url: item.sender?.avatar_url || null,
+        time: item.created_at ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+        message_type: item.message_type,
+        image_url: item.image_url
+      })));
+    } catch (error) { console.log('Room chat loading error:', error.message); }
+  }
+
   // =========================================
   // ROOM: CREATE ROOM
   // =========================================
@@ -1946,6 +1970,7 @@ function renderRoomCard(room, showJoin = true) {
     }
 
     setSelectedRoom(room);
+setIsRoomTourist(false);
 setIsRoomMinimized(false);
 
 // Reset previous room microphone data
@@ -1955,8 +1980,10 @@ setIsOnMic(false);
 setMyMicSeat(null);
 setIsMicMuted(false);
 
-// Load this room's microphone data
+// Load this room's microphone data and room chat
 loadRoomMicSeats(room.id);
+loadRoomMessages(room.id);
+setRoomChatMessages([]);
 
 setScreen('roomInterior');
   }}
@@ -2140,26 +2167,27 @@ setScreen('roomInterior');
 // ROOM: ROOM INTERIOR
 // =========================================
 
-function sendRoomChatMessage() {
+async function sendRoomChatMessage() {
   const message = roomChatText.trim();
-
-  if (!message) return;
-
-  setRoomChatMessages(prev => [
-    ...prev,
-    {
-      id: Date.now().toString(),
-      text: message,
-      sender: 'You',
-     time: new Date().toLocaleTimeString([], {
-  hour: '2-digit',
-  minute: '2-digit'
-})
-    }
-  ]);
-
-  setRoomChatText('');
-             }
+  if (!message || !selectedRoom?.id) return;
+  if (isRoomTourist && !touristsSendText) {
+    return Alert.alert('Text messages disabled', 'The room owner does not allow tourists to send text messages.');
+  }
+  try {
+    const result = await api(`/api/rooms/${selectedRoom.id}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ type: 'text', text: message })
+    });
+    const item = result.message;
+    setRoomChatMessages(prev => [...prev, {
+      id: item.id, text: item.message_text, sender: profile?.display_name || displayName || 'You',
+      senderId: session?.user?.id, time: new Date(item.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }]);
+    setRoomChatText('');
+  } catch (error) {
+    Alert.alert('Message not sent', error.message || 'Could not send your message.');
+  }
+}
 
 function renderRoomInterior() {
   if (!selectedRoom) {
@@ -2556,7 +2584,7 @@ onContentSizeChange={() =>
             marginBottom: 3
           }}
         >
-          {message.sender}
+          {message.sender?.display_name || message.sender || 'TALKZY User'}
         </Text>
 
         <Text
@@ -2565,7 +2593,7 @@ onContentSizeChange={() =>
     fontSize: 14
   }}
 >
-  {message.text}
+  {message.text || message.message_text}
 </Text>
 
 <Text
@@ -2716,9 +2744,10 @@ borderTopWidth: 1,
     <TextInput
       value={roomChatText}
       onChangeText={setRoomChatText}
-      placeholder="Message..."
+      placeholder={isRoomTourist && !touristsSendText ? 'Tourist chat disabled' : 'Message...'}
       placeholderTextColor={C.muted}
       onSubmitEditing={sendRoomChatMessage}
+      editable={!(isRoomTourist && !touristsSendText)}
       returnKeyType="send"
       style={{
         color: C.text,
@@ -2730,7 +2759,8 @@ borderTopWidth: 1,
 
   <TouchableOpacity
     onPress={sendRoomChatMessage}
-    style={{
+    disabled={isRoomTourist && !touristsSendText}
+    style={{ opacity: isRoomTourist && !touristsSendText ? 0.4 : 1,
       width: 34,
       height: 38,
       alignItems: 'center',
@@ -2928,13 +2958,14 @@ borderTopWidth: 1,
             onPress={async () => {
   try {
     if (selectedRoom?.id) {
-      await api(
-        `/api/rooms/${selectedRoom.id}/mic-seats`,
-        { method: 'DELETE' }
-      );
+      if (isRoomTourist) {
+        await api(`/api/rooms/${selectedRoom.id}/leave-visit`, { method: 'POST' });
+      } else {
+        await api(`/api/rooms/${selectedRoom.id}/mic-seats`, { method: 'DELETE' });
+      }
     }
   } catch (error) {
-    console.log('Seat release error:', error.message);
+    console.log('Room exit cleanup error:', error.message);
   }
 
   setShowRoomMenu(false);
@@ -8969,7 +9000,7 @@ if (screen === 'profile' || profileIncomplete) {
           marginBottom: 18
         }}
       >
-        Enter the password to join
+        Enter the password to {joinMode === 'tourist' ? 'visit' : 'join'}
         {joinTargetRoom
           ? ` ${joinTargetRoom.room_name}`
           : ' this room'}.
@@ -8994,11 +9025,16 @@ if (screen === 'profile' || profileIncomplete) {
       />
 
       <Button
-        title={joiningRoom ? 'Joining...' : 'Join Room'}
-        onPress={() =>
-          submitRoomJoin(joinTargetRoom, joinPassword)
-        }
+        title={joiningRoom ? 'Please wait...' : joinMode === 'tourist' ? 'Visit as Tourist' : 'Join as Member'}
+        onPress={() => joinMode === 'tourist' ? submitRoomVisit(joinTargetRoom, joinPassword) : submitRoomJoin(joinTargetRoom, joinPassword)}
         disabled={joiningRoom || !joinPassword.trim()}
+      />
+
+      <Button
+        title="Visit as Tourist"
+        secondary
+        onPress={() => setJoinMode('tourist')}
+        disabled={joiningRoom || joinMode === 'tourist'}
       />
 
       <Button
