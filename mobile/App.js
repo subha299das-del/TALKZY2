@@ -473,13 +473,19 @@ const [roomDpUploading, setRoomDpUploading] = useState(false);
  const [isMicMuted, setIsMicMuted] = useState(false);
  const [micCount, setMicCount] = useState(8);
 const [micSeats, setMicSeats] = useState([]);
+const micSeatLoadVersionRef = useRef(0);
  const [showMicCountPicker, setShowMicCountPicker] = useState(false);
  
 async function loadRoomMicSeats(roomId) {
   if (!roomId) return;
 
+  const requestVersion = ++micSeatLoadVersionRef.current;
+
   try {
     const result = await api(`/api/rooms/${roomId}/mic-seats`);
+
+    // Ignore stale requests that finish after a newer seat update/load.
+    if (requestVersion !== micSeatLoadVersionRef.current) return;
 
     setMicCount(result.micCount || 8);
     setMicSeats(result.seats || []);
@@ -493,17 +499,19 @@ async function loadRoomMicSeats(roomId) {
     if (mySeat) {
       setIsOnMic(true);
       setMyMicSeat(mySeat.seat_number);
-      setIsMicMuted(mySeat.is_muted);
+      setIsMicMuted(!!mySeat.is_muted);
     } else {
       setIsOnMic(false);
       setMyMicSeat(null);
       setIsMicMuted(false);
     }
   } catch (error) {
-    console.log(
-      'Microphone seats loading error:',
-      error.message
-    );
+    if (requestVersion === micSeatLoadVersionRef.current) {
+      console.log(
+        'Microphone seats loading error:',
+        error.message
+      );
+    }
   }
 }
 
@@ -2287,6 +2295,9 @@ function renderRoomInterior() {
           const userId = session?.user?.id;
           const previousSeats = micSeats;
 
+          // Invalidate any in-flight seat fetch before applying this tap.
+          ++micSeatLoadVersionRef.current;
+
           try {
             // Optimistic UI: update the seat immediately.
             if (isMySeat) {
@@ -2726,28 +2737,51 @@ borderTopWidth: 1,
 {isOnMic && (
   <TouchableOpacity
     onPress={async () => {
-  try {
-    const nextMuted = !isMicMuted;
+      const nextMuted = !isMicMuted;
+      const previousMuted = isMicMuted;
+      const roomId = selectedRoom.id;
+      const userId = session?.user?.id;
 
-    await api(
-      `/api/rooms/${selectedRoom.id}/mic-seats/mute`,
-      {
-        method: 'PATCH',
-        body: JSON.stringify({
-          isMuted: nextMuted
-        })
+      // Immediate visual response while the server saves the mute state.
+      ++micSeatLoadVersionRef.current;
+      setIsMicMuted(nextMuted);
+      setMicSeats(current => current.map(item =>
+        item.user_id === userId
+          ? { ...item, is_muted: nextMuted }
+          : item
+      ));
+
+      try {
+        const result = await api(
+          `/api/rooms/${roomId}/mic-seats/mute`,
+          {
+            method: 'PATCH',
+            body: JSON.stringify({ isMuted: nextMuted })
+          }
+        );
+
+        if (result?.seat) {
+          setMicSeats(current => current.map(item =>
+            item.user_id === userId
+              ? { ...item, is_muted: !!result.seat.is_muted }
+              : item
+          ));
+          setIsMicMuted(!!result.seat.is_muted);
+        }
+      } catch (error) {
+        setIsMicMuted(previousMuted);
+        setMicSeats(current => current.map(item =>
+          item.user_id === userId
+            ? { ...item, is_muted: previousMuted }
+            : item
+        ));
+        await loadRoomMicSeats(roomId);
+        Alert.alert(
+          'Microphone',
+          error.message || 'Could not change mute status.'
+        );
       }
-    );
-
-    await loadRoomMicSeats(selectedRoom.id);
-
-  } catch (error) {
-    Alert.alert(
-      'Microphone',
-      error.message || 'Could not change mute status.'
-    );
-  }
-}}
+    }}
     style={{
       width: 38,
       height: 38,
