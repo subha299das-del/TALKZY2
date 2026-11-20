@@ -1036,12 +1036,43 @@ const { data, error } = await supabase
   .eq('room_id', room.id)
   .order('seat_number');
 
+
 if (error) throw error;
+
+// LOAD PROFILES OF MICROPHONE SEAT OCCUPANTS
+const userIds = (data || []).map(seat => seat.user_id);
+
+let profiles = [];
+
+if (userIds.length > 0) {
+  const { data: profileData, error: profileError } = await supabase
+    .from('talkzy_profiles')
+    .select('id, display_name, avatar_url')
+    .in('id', userIds);
+
+  if (profileError) throw profileError;
+
+  profiles = profileData || [];
+}
+
+// ATTACH PROFILE DETAILS TO EACH SEAT
+const seatsWithProfiles = (data || []).map(seat => {
+  const profile = profiles.find(
+    item => item.id === seat.user_id
+  );
+
+  return {
+    ...seat,
+    display_name: profile?.display_name || 'User',
+    avatar_url: profile?.avatar_url || null
+  };
+});
 
 res.set('Cache-Control', 'no-store').json({
   micCount: roomSettings.mic_count,
-  seats: data || []
+  seats: seatsWithProfiles
 });
+    
   } catch (error) {
     console.error('Could not load microphone seats:', error.message);
     res.status(500).json({ error: 'Could not load microphone seats.' });
