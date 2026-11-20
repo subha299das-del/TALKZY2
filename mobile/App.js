@@ -3180,7 +3180,16 @@ if (item === 'Follow') {
                 description="New public rooms will appear here."
               />
             ) : (
-              rooms.map(room => renderRoomCard(room))
+              rooms.map(room => (
+                <View key={room.id}>
+                  {renderRoomCard(room)}
+                  <Button
+                    title={followedRooms.some(item => item.id === room.id) ? '✓ Following' : '＋ Follow Room'}
+                    secondary
+                    onPress={() => toggleFollowRoom(room)}
+                  />
+                </View>
+              ))
             )}
           </>
         )}
@@ -4457,6 +4466,7 @@ function renderEvents() {
   if (item === 'Popular' || item === 'Mine') {
     loadPublicRooms();
     loadMyRooms();
+    if (item === 'Mine') loadFollowedRooms();
   }
 
   if (item === 'Events') {
