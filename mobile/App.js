@@ -659,6 +659,7 @@ useEffect(() => {
 
 const [isRoomSpeakerOn, setIsRoomSpeakerOn] = useState(true);
 const [isRoomBellOn, setIsRoomBellOn] = useState(true);
+const [showRoomMessageMenu, setShowRoomMessageMenu] = useState(false);
 const [showRoomTools, setShowRoomTools] = useState(false);
  const [showRoomInfo, setShowRoomInfo] = useState(false);
 const [showRoomGiftPanel, setShowRoomGiftPanel] = useState(false);
@@ -2983,9 +2984,9 @@ borderTopWidth: 1,
     </Text>
   </TouchableOpacity>
 
-  {/* BELL */}
+  {/* BELL - OPEN ROOM MESSAGE OPTIONS */}
   <TouchableOpacity
-    onPress={() => setIsRoomBellOn(!isRoomBellOn)}
+    onPress={() => setShowRoomMessageMenu(true)}
     style={{
       width: 38,
       height: 38,
@@ -2995,9 +2996,7 @@ borderTopWidth: 1,
       justifyContent: 'center'
     }}
   >
-    <Text style={{ fontSize: 19 }}>
-      {isRoomBellOn ? '🔔' : '🔕'}
-    </Text>
+    <Text style={{ fontSize: 19 }}>🔔</Text>
   </TouchableOpacity>
 
   {/* FOUR-SQUARE TOOLS */}
@@ -3148,6 +3147,29 @@ borderTopWidth: 1,
             <TouchableOpacity onPress={() => setShowMicCountPicker(false)} style={{ marginTop:12, padding:12, borderRadius:10, backgroundColor:C.panel2, alignItems:'center' }}><Text style={{ color:C.text, fontWeight:'bold' }}>Close</Text></TouchableOpacity>
           </View>
         </View>
+      </Modal>
+
+      {/* ROOM MESSAGE / FRIENDS POPUP */}
+      <Modal visible={showRoomMessageMenu} transparent animationType="fade" onRequestClose={() => setShowRoomMessageMenu(false)}>
+        <Pressable onPress={() => setShowRoomMessageMenu(false)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.68)', justifyContent: 'center', paddingHorizontal: 28 }}>
+          <Pressable onPress={() => {}} style={{ backgroundColor: C.card, borderRadius: 18, borderWidth: 1, borderColor: C.line, padding: 14 }}>
+            <Text style={{ color: C.text, fontSize: 16, fontWeight: '900', marginBottom: 10 }}>Messages</Text>
+            <TouchableOpacity
+              onPress={() => { setShowRoomMessageMenu(false); setMessageTab('Message'); setActiveTab('Message'); }}
+              style={{ minHeight: 52, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, borderRadius: 11, backgroundColor: C.panel, marginBottom: 8 }}
+            >
+              <Text style={{ fontSize: 18, marginRight: 11 }}>💬</Text>
+              <Text style={{ color: C.text, fontSize: 14, fontWeight: '800' }}>Message</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => { setShowRoomMessageMenu(false); setMessageTab('Friends'); setActiveTab('Message'); }}
+              style={{ minHeight: 52, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, borderRadius: 11, backgroundColor: C.panel }}
+            >
+              <Text style={{ fontSize: 18, marginRight: 11 }}>👥</Text>
+              <Text style={{ color: C.text, fontSize: 14, fontWeight: '800' }}>Friends</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
       </Modal>
 
       {/* LIVE ROOM USERS LIST */}
@@ -5474,7 +5496,7 @@ function renderEvents() {
       { name: 'Room', icon: '🎙️' },
       { name: 'Games', icon: '🎮' },
       { name: 'Moment', icon: '📸' },
-      { name: 'Message', icon: '🔔' },
+      { name: 'Message', icon: '💬' },
       { name: 'Me', icon: '👤' }
     ];
 
