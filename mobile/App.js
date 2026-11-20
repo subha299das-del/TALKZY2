@@ -363,6 +363,13 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('Room');
   const [roomSettingsType, setRoomSettingsType] = useState('public');
 const [roomSettingsPassword, setRoomSettingsPassword] = useState('');
+const [roomSettingName, setRoomSettingName] = useState('');
+const [roomSettingAnnouncement, setRoomSettingAnnouncement] = useState('');
+const [roomSettingDp, setRoomSettingDp] = useState(null);
+const [touristsOnMic, setTouristsOnMic] = useState(true);
+const [touristsSendText, setTouristsSendText] = useState(true);
+const [touristsSendPic, setTouristsSendPic] = useState(false);
+
 
   // ---------------------------------
   // LOGIN / SIGNUP STATES
@@ -2959,89 +2966,116 @@ borderTopWidth: 1,
   function renderRoomSettings() {
     if (!selectedRoom) {
       return (
-        <Card>
-          <Heading>Room not selected</Heading>
-          <Button
-            title="Back to Rooms"
-            onPress={() => setScreen('main')}
-          />
-        </Card>
+        <View style={{ flex: 1, backgroundColor: C.bg, padding: 18 }}>
+          <Button title="Back to Rooms" onPress={() => setScreen('main')} />
+        </View>
       );
     }
 
+    const SettingCard = ({ icon, title, subtitle, children }) => (
+      <View style={{ backgroundColor: '#121B2C', borderRadius: 18, borderWidth: 1, borderColor: '#273650', padding: 16, marginBottom: 14 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: children ? 14 : 0 }}>
+          <View style={{ width: 42, height: 42, borderRadius: 13, backgroundColor: '#28234B', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+            <Text style={{ fontSize: 20 }}>{icon}</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: C.text, fontSize: 15, fontWeight: '900' }}>{title}</Text>
+            {!!subtitle && <Text style={{ color: C.muted, fontSize: 11, marginTop: 3 }}>{subtitle}</Text>}
+          </View>
+        </View>
+        {children}
+      </View>
+    );
+
+    const SettingRow = ({ icon, title, hint, onPress }) => (
+      <TouchableOpacity onPress={onPress} activeOpacity={0.75} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 13, borderTopWidth: 1, borderTopColor: '#26334A' }}>
+        <Text style={{ width: 30, fontSize: 17 }}>{icon}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: C.text, fontWeight: '700', fontSize: 13 }}>{title}</Text>
+          {!!hint && <Text style={{ color: C.muted, fontSize: 11, marginTop: 3 }}>{hint}</Text>}
+        </View>
+        <Text style={{ color: C.muted, fontSize: 21 }}>›</Text>
+      </TouchableOpacity>
+    );
+
+    const ApprovalRow = ({ title, subtitle, value, onChange }) => (
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, borderTopWidth: 1, borderTopColor: '#26334A' }}>
+        <View style={{ flex: 1, paddingRight: 10 }}>
+          <Text style={{ color: C.text, fontSize: 13, fontWeight: '800' }}>{title}</Text>
+          <Text style={{ color: C.muted, fontSize: 11, marginTop: 3 }}>{subtitle}</Text>
+        </View>
+        <View style={{ flexDirection: 'row', backgroundColor: '#0A1020', borderRadius: 10, padding: 3, borderWidth: 1, borderColor: C.line }}>
+          {[true, false].map(option => (
+            <TouchableOpacity key={String(option)} onPress={() => onChange(option)} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, backgroundColor: value === option ? (option ? '#246B58' : '#633448') : 'transparent' }}>
+              <Text style={{ color: C.text, fontSize: 11, fontWeight: '900' }}>{option ? 'YES' : 'NO'}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    );
+
     return (
-      <Card>
-        <Heading>Room Settings</Heading>
-
-        {selectedRoom.room_dp_url ? (
-          <Image
-            source={{ uri: selectedRoom.room_dp_url }}
-            style={{
-              width: 100,
-              height: 100,
-              borderRadius: 50,
-              alignSelf: 'center',
-              marginVertical: 15
-            }}
-          />
-        ) : null}
-
-        <Text
-          style={{
-            color: C.text,
-            fontSize: 18,
-            fontWeight: '900',
-            textAlign: 'center',
-            marginBottom: 20
-          }}
-        >
-          {selectedRoom.room_name}
-        </Text>
-
-        <SectionTitle>Room Privacy</SectionTitle>
-
-        <View style={{ flexDirection: 'row', marginBottom: 18 }}>
-          <Chip
-            title="Public"
-            active={roomSettingsType === 'public'}
-            onPress={() => {
-              setRoomSettingsType('public');
-              setRoomSettingsPassword('');
-            }}
-          />
-
-          <Chip
-            title="Locked"
-            active={roomSettingsType === 'locked'}
-            onPress={() => setRoomSettingsType('locked')}
-          />
+      <View style={{ flex: 1, backgroundColor: C.bg }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: '#10182A' }}>
+          <TouchableOpacity onPress={() => setScreen('roomInterior')} style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: '#202A40', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+            <Text style={{ color: C.text, fontSize: 25, marginTop: -2 }}>‹</Text>
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: C.text, fontSize: 20, fontWeight: '900' }}>Room Setting</Text>
+            <Text style={{ color: C.muted, fontSize: 11, marginTop: 2 }}>Manage your room your way</Text>
+          </View>
+          <View style={{ backgroundColor: '#29234B', paddingHorizontal: 10, paddingVertical: 7, borderRadius: 20 }}>
+            <Text style={{ color: '#C8BFFF', fontSize: 10, fontWeight: '900' }}>OWNER</Text>
+          </View>
         </View>
 
-        {roomSettingsType === 'locked' && (
-          <Field
-            label="Room Password"
-            value={roomSettingsPassword}
-            onChangeText={setRoomSettingsPassword}
-            placeholder="Enter a new password (4–64 characters)"
-            secureTextEntry
-          />
-        )}
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 35 }} keyboardShouldPersistTaps="handled">
+          <View style={{ borderRadius: 20, padding: 17, marginBottom: 17, backgroundColor: '#211D42', borderWidth: 1, borderColor: '#5546A1' }}>
+            <Text style={{ color: '#C8BFFF', fontSize: 10, fontWeight: '900', letterSpacing: 1.5 }}>ROOM CONTROL CENTRE</Text>
+            <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '900', marginTop: 7 }}>{selectedRoom.room_name || 'Your Room'}</Text>
+            <Text style={{ color: '#B9B4D8', fontSize: 12, marginTop: 5 }}>Personalise details, manage members and control room access.</Text>
+          </View>
 
-        <Button
-          title={saving ? 'Saving...' : 'Save Settings'}
-          onPress={saveRoomSettings}
-          disabled={saving}
-        />
+          <SettingCard icon="🏠" title="1. Room Information" subtitle="Update the identity and details of your room">
+            <TouchableOpacity onPress={chooseRoomDp} activeOpacity={0.8} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderTopWidth: 1, borderTopColor: '#26334A' }}>
+              {roomSettingDp || selectedRoom.room_dp_url ? <Image source={{ uri: roomSettingDp || selectedRoom.room_dp_url }} style={{ width: 48, height: 48, borderRadius: 14, marginRight: 12 }} /> : <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: '#29344A', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}><Text style={{ fontSize: 22 }}>📷</Text></View>}
+              <View style={{ flex: 1 }}><Text style={{ color: C.text, fontWeight: '800', fontSize: 13 }}>Room DP</Text><Text style={{ color: C.muted, fontSize: 11, marginTop: 3 }}>Change your room picture</Text></View>
+              <Text style={{ color: C.muted, fontSize: 20 }}>›</Text>
+            </TouchableOpacity>
+            <View style={{ marginTop: 12 }}>
+              <Text style={{ color: C.muted, fontSize: 11, fontWeight: '800', marginBottom: 6 }}>ROOM NAME</Text>
+              <TextInput value={roomSettingName} onChangeText={setRoomSettingName} placeholder={selectedRoom.room_name || 'Enter room name'} placeholderTextColor="#71809A" style={{ color: C.text, backgroundColor: '#0B1221', borderWidth: 1, borderColor: C.line, borderRadius: 12, padding: 13 }} />
+            </View>
+            <View style={{ marginTop: 12 }}>
+              <Text style={{ color: C.muted, fontSize: 11, fontWeight: '800', marginBottom: 6 }}>ROOM ANNOUNCEMENT</Text>
+              <TextInput value={roomSettingAnnouncement} onChangeText={setRoomSettingAnnouncement} multiline placeholder="Write an announcement for your room..." placeholderTextColor="#71809A" style={{ color: C.text, minHeight: 78, textAlignVertical: 'top', backgroundColor: '#0B1221', borderWidth: 1, borderColor: C.line, borderRadius: 12, padding: 13 }} />
+            </View>
+            <View style={{ marginTop: 12 }}>
+              <Text style={{ color: C.muted, fontSize: 11, fontWeight: '800', marginBottom: 6 }}>ROOM PASSWORD</Text>
+              <TextInput value={roomSettingsPassword} onChangeText={setRoomSettingsPassword} secureTextEntry placeholder="Set or change room password" placeholderTextColor="#71809A" style={{ color: C.text, backgroundColor: '#0B1221', borderWidth: 1, borderColor: C.line, borderRadius: 12, padding: 13 }} />
+              <Text style={{ color: C.muted, fontSize: 10, marginTop: 6 }}>Room privacy: {selectedRoom.room_type === 'locked' ? 'Locked' : 'Public'}</Text>
+            </View>
+          </SettingCard>
 
-        <Button
-          title="Back to Rooms"
-          secondary
-          onPress={() => setScreen('main')}
-        />
-      </Card>
+          <SettingCard icon="🛡️" title="2. Room Management" subtitle="Manage trusted people and room access">
+            <SettingRow icon="👑" title="Room Administrator List" hint="View and manage room administrators" onPress={() => Alert.alert('Room Administrators', 'Administrator management will be connected here.')} />
+            <SettingRow icon="🚫" title="Kick List" hint="View members removed from this room" onPress={() => Alert.alert('Kick List', 'The room kick list will be connected here.')} />
+          </SettingCard>
+
+          <SettingCard icon="🎮" title="3. Tools Game Settings" subtitle="More room tools and game controls">
+            <View style={{ minHeight: 32 }} />
+          </SettingCard>
+
+          <SettingCard icon="🔐" title="4. Room Approval" subtitle="Choose what visitors are allowed to do">
+            <ApprovalRow title="Tourists on mic" subtitle="Allow visitors to take a microphone seat" value={touristsOnMic} onChange={setTouristsOnMic} />
+            <ApprovalRow title="Tourists send text" subtitle="Allow visitors to send chat messages" value={touristsSendText} onChange={setTouristsSendText} />
+            <ApprovalRow title="Tourists send pic" subtitle="Allow visitors to share pictures in chat" value={touristsSendPic} onChange={setTouristsSendPic} />
+          </SettingCard>
+          <Text style={{ color: '#71809A', fontSize: 10, textAlign: 'center', marginTop: 2 }}>Room controls are reserved for the room creator.</Text>
+        </ScrollView>
+      </View>
     );
-          }
-
+  }
 
 
   // =========================================
@@ -8736,6 +8770,25 @@ if (screen === 'profile' || profileIncomplete) {
                 </View>
               </View>
             )}
+
+                {roomDetails.owner_id === session?.user?.id && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSelectedRoom(roomDetails);
+                      setRoomSettingsType(roomDetails.room_type || 'public');
+                      setRoomSettingsPassword('');
+                      setRoomSettingName(roomDetails.room_name || '');
+                      setRoomSettingAnnouncement(roomDetails.announcement || '');
+                      setRoomSettingDp(roomDetails.room_dp_url || null);
+                      setRoomDetailsVisible(false);
+                      setScreen('roomSettings');
+                    }}
+                    activeOpacity={0.85}
+                    style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#5B45C7', paddingVertical: 13, borderRadius: 13, marginTop: 16 }}
+                  >
+                    <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '900' }}>⚙️  Settings</Text>
+                  </TouchableOpacity>
+                )}
 
             {/* MEMBERS TAB */}
             {roomDetailsTab === 'Members' && (
