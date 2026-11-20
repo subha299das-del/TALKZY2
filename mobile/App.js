@@ -3367,6 +3367,25 @@ borderTopWidth: 1,
             </Text>
           </TouchableOpacity>
 
+          {/* FOLLOW / UNFOLLOW ROOM */}
+          <TouchableOpacity
+            style={{
+              padding: 14,
+              borderBottomWidth: 1,
+              borderBottomColor: C.line
+            }}
+            onPress={() => {
+              setShowRoomMenu(false);
+              toggleFollowRoom(selectedRoom);
+            }}
+          >
+            <Text style={{ color: C.text, fontSize: 15 }}>
+              {followedRooms.some(item => item.id === selectedRoom?.id)
+                ? 'Unfollow Room'
+                : 'Follow Room'}
+            </Text>
+          </TouchableOpacity>
+
           {/* EXIT */}
           <TouchableOpacity
             style={{ padding: 14 }}
@@ -3755,11 +3774,6 @@ if (item === 'Follow') {
               rooms.map(room => (
                 <View key={room.id}>
                   {renderRoomCard(room)}
-                  <Button
-                    title={followedRooms.some(item => item.id === room.id) ? '✓ Following' : '＋ Follow Room'}
-                    secondary
-                    onPress={() => toggleFollowRoom(room)}
-                  />
                 </View>
               ))
             )}
