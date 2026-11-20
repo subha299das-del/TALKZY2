@@ -273,6 +273,8 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
     }
   };
 
+  useEffect(() => { if (visible) setMinimized(false); }, [visible]);
+
   useEffect(() => {
     if (!roomId) return undefined;
     let active = true;
@@ -306,7 +308,7 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
     };
   }, [roomId]);
 
-  if (!visible && !minimized) return null;
+  if (!visible) return null;
 
   const currentTitle = queue[currentIndex]?.title || 'My Music';
   const otherStreams = streams.filter(item => item.user_id !== userId && item.is_playing);
