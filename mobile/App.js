@@ -2543,174 +2543,97 @@ onContentSizeChange={() =>
 {/* EMPTY ROOM SPACE */}
 <View style={{ flexGrow: 1, minHeight: 120 }} />
 
-      {/* ROOM GIFT PANEL */}
-      {showRoomGiftPanel && (
+      {/* ROOM POPUPS: overlay the room without resizing or scrolling the full screen */}
+      {(showRoomGiftPanel || showRoomTools) && (
         <View
           style={{
+            position: 'absolute',
+            left: 12,
+            right: 12,
+            bottom: 86,
+            maxHeight: showRoomTools ? '48%' : '58%',
             backgroundColor: C.card,
             borderRadius: 14,
-            marginHorizontal: 12,
-            marginBottom: 10,
             padding: 14,
             borderWidth: 1,
-            borderColor: C.line
+            borderColor: C.line,
+            zIndex: 30,
+            elevation: 18
           }}
         >
-          <Text
-            style={{
-              color: C.text,
-              fontSize: 15,
-              fontWeight: 'bold',
-              marginBottom: 12
-            }}
-          >
-            Send a Gift 🎁
-          </Text>
-
-          <View
-            style={{
-              flexDirection: 'row',
-              flexWrap: 'wrap'
-            }}
-          >
-            {[
-              { icon: '🌹', name: 'Rose' },
-              { icon: '❤️', name: 'Heart' },
-              { icon: '💎', name: 'Diamond' },
-              { icon: '🎂', name: 'Cake' },
-              { icon: '🎸', name: 'Guitar' },
-              { icon: '👑', name: 'Crown' },
-              { icon: '🚗', name: 'Car' },
-              { icon: '🎁', name: 'Gift Box' }
-            ].map((gift) => (
-              <TouchableOpacity
-                key={gift.name}
-                onPress={() => {
-                  Alert.alert(
-                    gift.name,
-                    `${gift.name} gifting will be available soon.`
-                  );
-                }}
-                style={{
-                  width: '25%',
-                  alignItems: 'center',
-                  paddingVertical: 12
-                }}
-              >
-                <Text style={{ fontSize: 27 }}>
-                  {gift.icon}
-                </Text>
-
-                <Text
-                  style={{
-                    color: C.text,
-                    fontSize: 11,
-                    marginTop: 5
-                  }}
-                >
-                  {gift.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <Text style={{ color: C.text, fontSize: 15, fontWeight: 'bold' }}>
+              {showRoomGiftPanel ? 'Send a Gift 🎁' : 'Room Tools'}
+            </Text>
+            <TouchableOpacity onPress={() => { setShowRoomGiftPanel(false); setShowRoomTools(false); }} style={{ paddingHorizontal: 6, paddingVertical: 2 }}>
+              <Text style={{ color: C.muted, fontSize: 20 }}>✕</Text>
+            </TouchableOpacity>
           </View>
-        </View>
-      )}
-
-      {/* ROOM TOOLS PANEL */}
-      {showRoomTools && (
-        <View
-          style={{
-            backgroundColor: C.card,
-            borderRadius: 14,
-            marginHorizontal: 12,
-            marginBottom: 10,
-            padding: 14,
-            borderWidth: 1,
-            borderColor: C.line
-          }}
-        >
-          <Text
-            style={{
-              color: C.text,
-              fontSize: 15,
-              fontWeight: 'bold',
-              marginBottom: 12
-            }}
+          <ScrollView
+            style={{ flexShrink: 1 }}
+            contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap' }}
+            nestedScrollEnabled
+            showsVerticalScrollIndicator
+            keyboardShouldPersistTaps="handled"
           >
-            Room Tools
-          </Text>
-
-          <View
-            style={{
-              flexDirection: 'row',
-              flexWrap: 'wrap'
-            }}
-          >
-            {[
-              { icon: '👥', title: 'Members' },
-              { icon: 'ℹ️', title: 'Room Info' },
-              { icon: '📜', title: 'Room Rules' },
-              { icon: '🔗', title: 'Share Room' },
-             { icon: '🗑️', title: 'Clear Chat' }
-            ].map((tool) => (
-              <TouchableOpacity
-                onPress={() => {
-  if (tool.title === 'Share Room') {
-    Share.share({
-      message: `Join my room "${selectedRoom.room_name}" on TALKZY!`
-    });
-  } else if (tool.title === 'Clear Chat') {
-    Alert.alert(
-      'Clear Room Chat',
-      'Are you sure you want to clear all chat messages?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel'
-        },
-        {
-          text: 'Clear',
-          style: 'destructive',
-          onPress: () => setRoomChatMessages([])
-        }
-      ]
-    );
-  } else if (tool.title === 'Members') {
-    openRoomDetails(selectedRoom);
-    setRoomDetailsTab('Members');
-  } else if (tool.title === 'Room Info') {
-    openRoomDetails(selectedRoom);
-    setRoomDetailsTab('Information');
-  } else if (tool.title === 'Room Rules') {
-    const rules = selectedRoom?.rules || selectedRoom?.room_rules;
-    Alert.alert(
-      'Room Rules',
-      rules || 'No custom room rules have been published by the owner yet.'
-    );
-  }
-}}
-                style={{
-                  width: '50%',
-                  paddingVertical: 12,
-                  alignItems: 'center'
-                }}
-              >
-                <Text style={{ fontSize: 25 }}>
-                  {tool.icon}
-                </Text>
-
-                <Text
-                  style={{
-                    color: C.text,
-                    fontSize: 12,
-                    marginTop: 5
-                  }}
+            {showRoomGiftPanel ? (
+              [
+                { icon: '🌹', name: 'Rose' },
+                { icon: '❤️', name: 'Heart' },
+                { icon: '💎', name: 'Diamond' },
+                { icon: '🎂', name: 'Cake' },
+                { icon: '🎸', name: 'Guitar' },
+                { icon: '👑', name: 'Crown' },
+                { icon: '🚗', name: 'Car' },
+                { icon: '🎁', name: 'Gift Box' }
+              ].map(gift => (
+                <TouchableOpacity
+                  key={gift.name}
+                  onPress={() => Alert.alert(gift.name, `${gift.name} gifting will be available soon.`)}
+                  style={{ width: '25%', alignItems: 'center', paddingVertical: 12 }}
                 >
-                  {tool.title}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+                  <Text style={{ fontSize: 27 }}>{gift.icon}</Text>
+                  <Text style={{ color: C.text, fontSize: 11, marginTop: 5 }}>{gift.name}</Text>
+                </TouchableOpacity>
+              ))
+            ) : (
+              [
+                { icon: '👥', title: 'Members' },
+                { icon: 'ℹ️', title: 'Room Info' },
+                { icon: '📜', title: 'Room Rules' },
+                { icon: '🔗', title: 'Share Room' },
+                { icon: '🗑️', title: 'Clear Chat' }
+              ].map(tool => (
+                <TouchableOpacity
+                  key={tool.title}
+                  onPress={() => {
+                    setShowRoomTools(false);
+                    if (tool.title === 'Share Room') {
+                      Share.share({ message: `Join my room "${selectedRoom.room_name}" on TALKZY!` });
+                    } else if (tool.title === 'Clear Chat') {
+                      Alert.alert('Clear Room Chat', 'Are you sure you want to clear all chat messages?', [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Clear', style: 'destructive', onPress: () => setRoomChatMessages([]) }
+                      ]);
+                    } else if (tool.title === 'Members') {
+                      openRoomDetails(selectedRoom);
+                      setRoomDetailsTab('Members');
+                    } else if (tool.title === 'Room Info') {
+                      openRoomDetails(selectedRoom);
+                      setRoomDetailsTab('Information');
+                    } else if (tool.title === 'Room Rules') {
+                      const rules = selectedRoom?.rules || selectedRoom?.room_rules;
+                      Alert.alert('Room Rules', rules || 'No custom room rules have been published by the owner yet.');
+                    }
+                  }}
+                  style={{ width: '50%', paddingVertical: 12, alignItems: 'center' }}
+                >
+                  <Text style={{ fontSize: 25 }}>{tool.icon}</Text>
+                  <Text style={{ color: C.text, fontSize: 12, marginTop: 5 }}>{tool.title}</Text>
+                </TouchableOpacity>
+              ))
+            )}
+          </ScrollView>
         </View>
       )}
 
@@ -8459,17 +8382,21 @@ if (screen === 'profile' || profileIncomplete) {
       <View style={{ flex: 1 }}>
         {/* Main app header hidden: branding is reserved for the login screen. */}
 
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{
-  paddingHorizontal: screen === 'roomInterior' ? 0 : 15,
-  paddingBottom: screen === 'roomInterior' ? 0 : 25,
-  flexGrow: 1
-}}
-          keyboardShouldPersistTaps="handled"
-        >
-          {renderMainContent()}
-        </ScrollView>
+        {screen === 'roomInterior' ? (
+          renderMainContent()
+        ) : (
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{
+              paddingHorizontal: 15,
+              paddingBottom: 25,
+              flexGrow: 1
+            }}
+            keyboardShouldPersistTaps="handled"
+          >
+            {renderMainContent()}
+          </ScrollView>
+        )}
       </View>
 
                  {/* FLOATING MINI ROOM */}
