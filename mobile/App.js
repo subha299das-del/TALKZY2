@@ -3174,6 +3174,11 @@ borderTopWidth: 1,
               <ScrollView showsVerticalScrollIndicator={false}>
                 {roomPresence.map((person) => (
                   <View key={person.user_id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: C.line }}>
+                    <View style={{ width: 25, height: 44, alignItems: 'center', justifyContent: 'center', marginRight: 7 }}>
+                      <Text style={{ fontSize: 17 }}>
+                        {person.presence_role === 'owner' ? '👑' : person.presence_role === 'admin' ? '🛡️' : person.presence_role === 'tourist' ? '🌐' : '👤'}
+                      </Text>
+                    </View>
                     {person.avatar_url ? (
                       <Image source={{ uri: person.avatar_url }} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.line }} />
                     ) : (
