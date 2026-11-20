@@ -3102,6 +3102,7 @@ borderTopWidth: 1,
             onPress={async () => {
   try {
     if (selectedRoom?.id) {
+      await api(`/api/rooms/${selectedRoom.id}/presence/leave`, { method: 'POST' });
       if (isRoomTourist) {
         await api(`/api/rooms/${selectedRoom.id}/leave-visit`, { method: 'POST' });
       } else {
