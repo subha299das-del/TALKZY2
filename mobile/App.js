@@ -2523,22 +2523,24 @@ borderTopWidth: 1,
   </TouchableOpacity>
 </View>
 
-  {/* MIC - ONLY WHEN ON MIC */}
-  {isOnMic && (
-    <TouchableOpacity
-      onPress={() => setIsOnMic(false)}
-      style={{
-        width: 38,
-        height: 38,
-        borderRadius: 20,
-        backgroundColor: '#D94B4B',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}
-    >
-      <Text style={{ fontSize: 19 }}>🎤</Text>
-    </TouchableOpacity>
-  )}
+  {/* MIC - MUTE / UNMUTE WHILE REMAINING ON SEAT */}
+{isOnMic && (
+  <TouchableOpacity
+    onPress={() => setIsMicMuted(!isMicMuted)}
+    style={{
+      width: 38,
+      height: 38,
+      borderRadius: 20,
+      backgroundColor: isMicMuted ? '#555555' : '#D94B4B',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}
+  >
+    <Text style={{ fontSize: 19 }}>
+      {isMicMuted ? '🔇' : '🎤'}
+    </Text>
+  </TouchableOpacity>
+)}
 
   {/* SPEAKER */}
   <TouchableOpacity
