@@ -9023,7 +9023,7 @@ if (screen === 'profile' || profileIncomplete) {
       if (roomDpUrl && !roomDpUrl.startsWith('http')) {
         const response = await fetch(roomDpUrl);
         const bytes = await response.arrayBuffer();
-        const path = `rooms/${selectedRoom.id}/${Date.now()}.jpg`;
+        const path = `${session.user.id}/rooms/${selectedRoom.id}/${Date.now()}.jpg`;
         const { error } = await supabase.storage.from(BUCKET).upload(path, bytes, { contentType: 'image/jpeg', upsert: true });
         if (error) throw error;
         roomDpUrl = supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
@@ -9077,7 +9077,7 @@ if (screen === 'profile' || profileIncomplete) {
       if (posterUrl && !posterUrl.startsWith('http')) {
         const response = await fetch(posterUrl);
         const bytes = await response.arrayBuffer();
-        const path = `rooms/${selectedRoom.id}/activities/${Date.now()}.jpg`;
+        const path = `${session.user.id}/rooms/${selectedRoom.id}/activities/${Date.now()}.jpg`;
         const { error } = await supabase.storage.from(BUCKET).upload(path, bytes, { contentType: 'image/jpeg', upsert: true });
         if (error) throw error;
         posterUrl = supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
