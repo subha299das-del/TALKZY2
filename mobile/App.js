@@ -2248,7 +2248,7 @@ function renderRoomInterior() {
         </Text>
       </View>
 
-            {/* MICROPHONE SEATS */}
+           {/* MICROPHONE SEATS */}
 <View
   style={{
     flexDirection: 'row',
@@ -2258,21 +2258,56 @@ function renderRoomInterior() {
     paddingTop: 25
   }}
 >
-  {[1, 2, 3, 4, 5, 6, 7, 8].map((seat) => {
-    const isMySeat = isOnMic && myMicSeat === seat;
+  {Array.from({ length: micCount }, (_, index) => index + 1).map((seat) => {
+
+    const occupiedSeat = micSeats.find(
+      item => item.seat_number === seat
+    );
+
+    const isMySeat =
+      occupiedSeat?.user_id === session?.user?.id;
+
+    const isOccupied = !!occupiedSeat;
 
     return (
       <TouchableOpacity
         key={seat}
-        onPress={() => {
-          if (isMySeat) {
-            setIsOnMic(false);
-            setMyMicSeat(null);
-            setIsMicMuted(false);
-          } else {
-            setIsOnMic(true);
-            setMyMicSeat(seat);
-            setIsMicMuted(false);
+        onPress={async () => {
+          try {
+
+            // LEAVE MY CURRENT SEAT
+            if (isMySeat) {
+              await api(
+                `/api/rooms/${selectedRoom.id}/mic-seats`,
+                { method: 'DELETE' }
+              );
+
+              await loadRoomMicSeats(selectedRoom.id);
+              return;
+            }
+
+            // SEAT IS OCCUPIED BY SOMEONE ELSE
+            if (isOccupied) {
+              Alert.alert(
+                'Seat occupied',
+                `${occupiedSeat.display_name || 'Someone'} is already on this microphone.`
+              );
+              return;
+            }
+
+            // TAKE FREE SEAT OR SWITCH TO IT
+            await api(
+              `/api/rooms/${selectedRoom.id}/mic-seats/${seat}`,
+              { method: 'POST' }
+            );
+
+            await loadRoomMicSeats(selectedRoom.id);
+
+          } catch (error) {
+            Alert.alert(
+              'Microphone error',
+              error.message || 'Could not change microphone seat.'
+            );
           }
         }}
         style={{
@@ -2289,7 +2324,9 @@ function renderRoomInterior() {
             borderWidth: 1.5,
             borderColor: isMySeat
               ? '#FF5B5B'
-              : C.line,
+              : isOccupied
+                ? C.accent
+                : C.line,
             backgroundColor: isMySeat
               ? 'rgba(255,91,91,0.12)'
               : 'transparent',
@@ -2298,12 +2335,12 @@ function renderRoomInterior() {
             overflow: 'hidden'
           }}
         >
-          {isMySeat ? (
+          {isOccupied ? (
             <>
               <Image
                 source={
-                  avatarUri
-                    ? { uri: avatarUri }
+                  occupiedSeat.avatar_url
+                    ? { uri: occupiedSeat.avatar_url }
                     : MIC_ON_ICON
                 }
                 style={{
@@ -2314,7 +2351,7 @@ function renderRoomInterior() {
                 }}
               />
 
-              {isMicMuted && (
+              {occupiedSeat.is_muted && (
                 <View
                   style={{
                     position: 'absolute',
@@ -2356,14 +2393,17 @@ function renderRoomInterior() {
             fontWeight: isMySeat ? 'bold' : 'normal'
           }}
         >
-          {isMySeat
-            ? (displayName || 'You')
+          {isOccupied
+            ? (isMySeat
+                ? (displayName || 'You')
+                : (occupiedSeat.display_name || 'User'))
             : seat}
         </Text>
       </TouchableOpacity>
     );
   })}
 </View>
+                    : 
 
             {/* ROOM CHAT MESSAGES */}
 {roomChatMessages.length > 0 && (
