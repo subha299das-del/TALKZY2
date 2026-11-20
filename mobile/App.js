@@ -2176,70 +2176,111 @@ function renderRoomInterior() {
     paddingTop: 25
   }}
 >
-  {[1, 2, 3, 4, 5, 6, 7, 8].map((seat) => (
-    <TouchableOpacity
-      key={seat}
-      onPress={() => {
-        if (seat === 1) {
-          setIsOnMic(!isOnMic);
-        } else {
-          Alert.alert(
-            'Microphone Seat',
-            'Other microphone seats will be available soon.'
-          );
-        }
-      }}
-      style={{
-        width: '25%',
-        alignItems: 'center',
-        marginBottom: 24
-      }}
-    >
-      <View
+  {[1, 2, 3, 4, 5, 6, 7, 8].map((seat) => {
+    const isMySeat = isOnMic && myMicSeat === seat;
+
+    return (
+      <TouchableOpacity
+        key={seat}
+        onPress={() => {
+          if (isMySeat) {
+            setIsOnMic(false);
+            setMyMicSeat(null);
+            setIsMicMuted(false);
+          } else {
+            setIsOnMic(true);
+            setMyMicSeat(seat);
+            setIsMicMuted(false);
+          }
+        }}
         style={{
-          width: 58,
-          height: 58,
-          borderRadius: 29,
-          borderWidth: 1.5,
-          borderColor:
-            seat === 1 && isOnMic
-              ? '#FF5B5B'
-              : C.line,
-          backgroundColor:
-            seat === 1 && isOnMic
-              ? 'rgba(255,91,91,0.12)'
-              : 'transparent',
+          width: '25%',
           alignItems: 'center',
-          justifyContent: 'center'
+          marginBottom: 24
         }}
       >
-        <Image
-  source={
-    seat === 1 && isOnMic
-      ? (isMicMuted ? MIC_OFF_ICON : MIC_ON_ICON)
-      : MIC_ON_ICON
-  }
-  style={{
-    width: 26,
-    height: 26,
-    resizeMode: 'contain'
-  }}
-/>
-      </View>
+        <View
+          style={{
+            width: 58,
+            height: 58,
+            borderRadius: 29,
+            borderWidth: 1.5,
+            borderColor: isMySeat
+              ? '#FF5B5B'
+              : C.line,
+            backgroundColor: isMySeat
+              ? 'rgba(255,91,91,0.12)'
+              : 'transparent',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden'
+          }}
+        >
+          {isMySeat ? (
+            <>
+              <Image
+                source={
+                  avatarUri
+                    ? { uri: avatarUri }
+                    : MIC_ON_ICON
+                }
+                style={{
+                  width: 55,
+                  height: 55,
+                  borderRadius: 28,
+                  resizeMode: 'cover'
+                }}
+              />
 
-      {seat === 1 && isOnMic && (
+              {isMicMuted && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    bottom: 2,
+                    right: 2,
+                    backgroundColor: '#222222',
+                    borderRadius: 12,
+                    padding: 3
+                  }}
+                >
+                  <Image
+                    source={MIC_OFF_ICON}
+                    style={{
+                      width: 15,
+                      height: 15,
+                      resizeMode: 'contain'
+                    }}
+                  />
+                </View>
+              )}
+            </>
+          ) : (
+            <Image
+              source={MIC_ON_ICON}
+              style={{
+                width: 26,
+                height: 26,
+                resizeMode: 'contain'
+              }}
+            />
+          )}
+        </View>
+
         <Text
           style={{
             color: C.text,
             fontSize: 11,
-            marginTop: 5
+            marginTop: 5,
+            fontWeight: isMySeat ? 'bold' : 'normal'
           }}
         >
-          You
+          {isMySeat
+            ? (displayName || 'You')
+            : seat}
         </Text>
-      )}
-    </TouchableOpacity>
-  ))}
+      </TouchableOpacity>
+    );
+  })}
 </View>
 
             {/* ROOM CHAT MESSAGES */}
