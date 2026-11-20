@@ -1022,17 +1022,26 @@ app.get('/api/rooms/:roomId/mic-seats', userAuth, async (req, res) => {
       return res.status(403).json({ error: 'Join the room first.' });
     }
 
-    const { data, error } = await supabase
-      .from('talkzy_room_mic_seats')
-      .select('room_id, seat_number, user_id, is_muted, updated_at')
-      .eq('room_id', room.id)
-      .order('seat_number');
+    const { data: roomSettings, error: settingsError } = await supabase
+  .from('talkzy_rooms')
+  .select('mic_count')
+  .eq('id', room.id)
+  .single();
 
-    if (error) throw error;
+if (settingsError) throw settingsError;
 
-    res.set('Cache-Control', 'no-store').json({
-      seats: data || []
-    });
+const { data, error } = await supabase
+  .from('talkzy_room_mic_seats')
+  .select('room_id, seat_number, user_id, is_muted, updated_at')
+  .eq('room_id', room.id)
+  .order('seat_number');
+
+if (error) throw error;
+
+res.set('Cache-Control', 'no-store').json({
+  micCount: roomSettings.mic_count,
+  seats: data || []
+});
   } catch (error) {
     console.error('Could not load microphone seats:', error.message);
     res.status(500).json({ error: 'Could not load microphone seats.' });
