@@ -1033,6 +1033,7 @@ async function loadUserProfile(currentSession) {
 
       if (!result.canceled && result.assets?.[0]?.uri) {
         setRoomDpUri(result.assets[0].uri);
+        setRoomSettingDp(result.assets[0].uri);
       }
     } catch (error) {
       Alert.alert(
