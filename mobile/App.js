@@ -1401,7 +1401,7 @@ async function openRoomDetails(room) {
   setMemberSearch('');
   setRoomDetailMembers([]);
   setRoomDetailsVisible(true);
-  if (!session?.access_token || !room?.id) return;
+  if (isRoomTourist || !session?.access_token || !room?.id) return;
   setLoadingRoomDetailMembers(true);
   try {
     const result = await api(`/api/rooms/${room.id}/members`, {
