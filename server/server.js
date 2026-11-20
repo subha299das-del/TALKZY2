@@ -1159,6 +1159,78 @@ app.post('/api/rooms/:roomId/presence/ping', userAuth, async (req, res) => {
   }
 });
 
+// Shared YouTube room state. Any room participant can view; only owner/admin can control.
+app.get('/api/rooms/:roomId/youtube', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+    if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
+    if (!(await canEnterRoom(room, req.talkzyUser.id))) {
+      return res.status(403).json({ error: 'Enter the room to view its YouTube player.' });
+    }
+    const { data, error } = await supabase.from('talkzy_room_youtube_state')
+      .select('room_id, video_id, queue, is_playing, current_time_seconds, updated_by, updated_at')
+      .eq('room_id', room.id).maybeSingle();
+    if (error) throw error;
+    res.set('Cache-Control', 'no-store').json({
+      state: data || { room_id: room.id, video_id: null, queue: [], is_playing: false, current_time_seconds: 0, updated_by: null, updated_at: null }
+    });
+  } catch (error) {
+    console.error('Could not load shared YouTube state:', error.message);
+    res.status(500).json({ error: 'Could not load the room YouTube player.' });
+  }
+});
+
+app.put('/api/rooms/:roomId/youtube', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+    if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
+    if (!(await canManageRoom(room, req.talkzyUser.id))) {
+      return res.status(403).json({ error: 'Only the room owner or an admin can control YouTube.' });
+    }
+    const body = req.body || {};
+    const videoId = body.video_id == null || body.video_id === '' ? null : String(body.video_id);
+    if (videoId && !/^[A-Za-z0-9_-]{11}$/.test(videoId)) {
+      return res.status(400).json({ error: 'Enter a valid YouTube video link or ID.' });
+    }
+    const queueInput = body.queue === undefined ? [] : body.queue;
+    if (!Array.isArray(queueInput) || queueInput.length > 10) {
+      return res.status(400).json({ error: 'The YouTube queue can contain up to 10 videos.' });
+    }
+    const queue = [];
+    for (const item of queueInput) {
+      const id = String(item?.video_id || '');
+      if (!/^[A-Za-z0-9_-]{11}$/.test(id)) {
+        return res.status(400).json({ error: 'The queue contains an invalid YouTube video.' });
+      }
+      queue.push({ video_id: id, title: String(item?.title || 'YouTube video').slice(0, 120) });
+    }
+    const currentTime = Number(body.current_time_seconds ?? 0);
+    if (!Number.isFinite(currentTime) || currentTime < 0 || currentTime > 86400) {
+      return res.status(400).json({ error: 'Invalid YouTube playback position.' });
+    }
+    const payload = {
+      room_id: room.id,
+      video_id: videoId,
+      queue,
+      is_playing: Boolean(body.is_playing),
+      current_time_seconds: currentTime,
+      updated_by: req.talkzyUser.id,
+      updated_at: new Date().toISOString()
+    };
+    const { data, error } = await supabase.from('talkzy_room_youtube_state')
+      .upsert(payload, { onConflict: 'room_id' })
+      .select('room_id, video_id, queue, is_playing, current_time_seconds, updated_by, updated_at')
+      .single();
+    if (error) throw error;
+    res.set('Cache-Control', 'no-store').json({ state: data });
+  } catch (error) {
+    console.error('Could not update shared YouTube state:', error.message);
+    res.status(500).json({ error: 'Could not update the room YouTube player.' });
+  }
+});
+
 app.get('/api/rooms/:roomId/presence', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
