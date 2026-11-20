@@ -8910,6 +8910,7 @@ if (screen === 'profile' || profileIncomplete) {
                       <Text style={{ color: C.text, fontWeight: '900', fontSize: 14 }}>{activity.title}</Text>
                       {!!activity.description && <Text style={{ color: C.muted, fontSize: 12, marginTop: 5 }}>{activity.description}</Text>}
                       <Text style={{ color: C.gold, fontSize: 10, fontWeight: '800', marginTop: 8 }}>{String(activity.status || '').toUpperCase()}</Text>
+                      {roomDetails?.owner_id === session?.user?.id && activity.status === 'published' && <TouchableOpacity onPress={() => completeRoomActivity(activity.id)} style={{ marginTop: 10, backgroundColor: '#244E43', borderRadius: 9, padding: 9, alignItems: 'center' }}><Text style={{ color: '#9CF0C9', fontSize: 11, fontWeight: '900' }}>Mark as completed</Text></TouchableOpacity>}
                     </View>
                   ))}
               </View>
@@ -9131,6 +9132,13 @@ if (screen === 'profile' || profileIncomplete) {
       }}
     ]);
   }
+  async function completeRoomActivity(activityId) {
+    try {
+      await api(`/api/rooms/${selectedRoom.id}/activities/${activityId}/complete`, { method: 'POST' });
+      await loadRoomActivities(selectedRoom.id);
+    } catch (e) { Alert.alert('Activity', e.message); }
+  }
+
   async function loadRoomActivities(roomId) {
     if (!roomId) return;
     setLoadingRoomActivities(true);
