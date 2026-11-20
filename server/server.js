@@ -136,13 +136,6 @@ app.use((req, res, next) => {
 
 app.use(express.json({ limit: '20kb', strict: true }));
 
-// TEMP MIC-SEAT DIAGNOSTIC: log method + path only (never headers or tokens).
-app.use((req, res, next) => {
-  console.log('[TALKZY REQUEST]', req.method, req.path);
-  next();
-});
-
-
 app.use(express.static(path.join(__dirname, 'public'), {
   etag: true,
   maxAge: production ? '1h' : 0
@@ -1011,7 +1004,7 @@ app.get('/api/rooms/:roomId/members', userAuth, async (req, res) => {
 // TALKZY MICROPHONE SEAT API
 // =========================================
 
-// GET ALL 8 MICROPHONE SEATS
+// GET ROOM MICROPHONE SEATS
 app.get('/api/rooms/:roomId/mic-seats', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
