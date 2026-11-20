@@ -2634,14 +2634,11 @@ onContentSizeChange={() =>
           {message.sender?.display_name || message.sender || 'TALKZY User'}
         </Text>
 
-        <Text
-  style={{
-    color: C.text,
-    fontSize: 14
-  }}
->
-  {message.image_url ? <Image source={{ uri: message.image_url }} style={{ width: 190, height: 140, borderRadius: 9 }} resizeMode="cover" /> : (message.text || message.message_text)}
-</Text>
+        {message.image_url ? (
+          <Image source={{ uri: message.image_url }} style={{ width: 190, height: 140, borderRadius: 9, marginTop: 2 }} resizeMode="cover" />
+        ) : (
+          <Text style={{ color: C.text, fontSize: 14 }}>{message.text || message.message_text}</Text>
+        )}
 
 <Text
   style={{
