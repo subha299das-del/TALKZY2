@@ -240,6 +240,32 @@ async function isRoomMember(roomId, userId) {
   return Boolean(data);
 }
 
+async function isRoomVisitor(roomId, userId) {
+  const { data, error } = await supabase
+    .from('talkzy_room_visitors')
+    .select('room_id')
+    .eq('room_id', roomId)
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error) throw error;
+  return Boolean(data);
+}
+
+async function getRoomTouristPermissions(roomId) {
+  const { data, error } = await supabase.from('talkzy_room_settings')
+    .select('tourists_on_mic, tourists_send_text, tourists_send_pic')
+    .eq('room_id', roomId).maybeSingle();
+  if (error) throw error;
+  return data || { tourists_on_mic: true, tourists_send_text: true, tourists_send_pic: false };
+}
+
+async function canEnterRoom(room, userId) {
+  return room.owner_id === userId ||
+    await isRoomAdmin(room.id, userId) ||
+    await isRoomMember(room.id, userId) ||
+    await isRoomVisitor(room.id, userId);
+}
+
 async function canManageRoom(room, userId) {
   return room.owner_id === userId || await isRoomAdmin(room.id, userId);
 }
@@ -498,6 +524,106 @@ app.post('/api/rooms', userAuth, roomCreateLimiter, async (req, res) => {
 
 
 // Join a public room, or join a locked room with its password.
+
+// ENTER A PUBLIC/LOCKED ROOM AS A VISITOR WITHOUT CREATING MEMBERSHIP
+app.post('/api/rooms/:roomId/visit', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+    if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
+    const userId = req.talkzyUser.id;
+    const { data: kicked, error: kickError } = await supabase.from('talkzy_room_kicklist')
+      .select('user_id').eq('room_id', room.id).eq('user_id', userId).maybeSingle();
+    if (kickError) throw kickError;
+    if (kicked) return res.status(403).json({ error: 'You are on this room’s Kick List.' });
+    if (room.owner_id === userId || await isRoomAdmin(room.id, userId) || await isRoomMember(room.id, userId)) {
+      return res.status(200).json({ visited: true, mode: 'member', roomId: room.id });
+    }
+    if (room.room_type === 'locked') {
+      const password = String(req.body?.password || '');
+      const { data, error } = await supabase.from('talkzy_rooms').select('password_hash').eq('id', room.id).single();
+      if (error) throw error;
+      if (!await checkPassword(password, data.password_hash)) return res.status(403).json({ error: 'Incorrect room password.' });
+    }
+    const { error } = await supabase.from('talkzy_room_visitors').upsert({
+      room_id: room.id, user_id: userId, visited_at: new Date().toISOString(), last_seen_at: new Date().toISOString()
+    }, { onConflict: 'room_id,user_id' });
+    if (error) throw error;
+    res.json({ visited: true, mode: 'tourist', roomId: room.id });
+  } catch (error) {
+    console.error('Could not enter room as tourist:', error.message);
+    res.status(500).json({ error: 'Could not enter this room as a tourist.' });
+  }
+});
+
+app.post('/api/rooms/:roomId/leave-visit', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+    const userId = req.talkzyUser.id;
+    const { error: seatError } = await supabase.from('talkzy_room_mic_seats')
+      .delete().eq('room_id', room.id).eq('user_id', userId);
+    if (seatError) throw seatError;
+    const { error } = await supabase.from('talkzy_room_visitors').delete()
+      .eq('room_id', room.id).eq('user_id', userId);
+    if (error) throw error;
+    res.json({ left: true });
+  } catch (error) {
+    console.error('Could not leave tourist visit:', error.message);
+    res.status(500).json({ error: 'Could not leave this room.' });
+  }
+});
+
+app.get('/api/rooms/:roomId/messages', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+    if (!await canEnterRoom(room, req.talkzyUser.id)) return res.status(403).json({ error: 'Enter the room first.' });
+    const { data, error } = await supabase.from('talkzy_room_messages')
+      .select('id, sender_id, message_type, message_text, image_url, created_at')
+      .eq('room_id', room.id).order('created_at', { ascending: true }).limit(100);
+    if (error) throw error;
+    const ids = [...new Set((data || []).map(m => m.sender_id))];
+    const { data: profiles, error: profileError } = ids.length
+      ? await supabase.from('talkzy_profiles').select('id, display_name, avatar_url, talkzy_id').in('id', ids)
+      : { data: [], error: null };
+    if (profileError) throw profileError;
+    res.set('Cache-Control', 'no-store').json({ messages: (data || []).map(m => ({
+      ...m, sender: (profiles || []).find(p => p.id === m.sender_id) || null
+    })) });
+  } catch (error) {
+    console.error('Could not load room messages:', error.message);
+    res.status(500).json({ error: 'Could not load room messages.' });
+  }
+});
+
+app.post('/api/rooms/:roomId/messages', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+    const userId = req.talkzyUser.id;
+    const member = room.owner_id === userId || await isRoomAdmin(room.id, userId) || await isRoomMember(room.id, userId);
+    const tourist = !member && await isRoomVisitor(room.id, userId);
+    if (!member && !tourist) return res.status(403).json({ error: 'Enter the room first.' });
+    const type = req.body?.type === 'image' ? 'image' : 'text';
+    const permissions = tourist ? await getRoomTouristPermissions(room.id) : null;
+    if (tourist && type === 'text' && !permissions.tourists_send_text) return res.status(403).json({ error: 'The room owner has disabled text messages for tourists.' });
+    if (tourist && type === 'image' && !permissions.tourists_send_pic) return res.status(403).json({ error: 'The room owner has disabled picture sharing for tourists.' });
+    const messageText = type === 'text' ? String(req.body?.text || '').trim() : '';
+    const imageUrl = type === 'image' ? String(req.body?.imageUrl || '').trim() : null;
+    if (type === 'text' && (!messageText || messageText.length > 1000)) return res.status(400).json({ error: 'Text must be 1–1000 characters.' });
+    if (type === 'image' && !/^https:\/\/\S+$/i.test(imageUrl || '')) return res.status(400).json({ error: 'A secure image URL is required.' });
+    const { data, error } = await supabase.from('talkzy_room_messages').insert({
+      room_id: room.id, sender_id: userId, message_type: type, message_text: messageText, image_url: imageUrl
+    }).select('id, sender_id, message_type, message_text, image_url, created_at').single();
+    if (error) throw error;
+    res.status(201).json({ message: data });
+  } catch (error) {
+    console.error('Could not send room message:', error.message);
+    res.status(500).json({ error: 'Could not send room message.' });
+  }
+});
+
 app.post('/api/rooms/:roomId/join', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
@@ -543,8 +669,9 @@ app.post('/api/rooms/:roomId/join', userAuth, async (req, res) => {
       );
 
     if (error) throw error;
+    await supabase.from('talkzy_room_visitors').delete().eq('room_id', room.id).eq('user_id', userId);
 
-    return res.status(200).json({ joined: true, roomId: room.id });
+    return res.status(200).json({ joined: true, roomId: room.id, mode: 'member' });
   } catch (error) {
     console.error('Could not join room:', error.message);
     res.status(500).json({ error: 'Could not join this room.' });
@@ -1223,7 +1350,8 @@ app.get('/api/rooms/:roomId/activities', userAuth, async (req, res) => {
     if (!room) return;
     const owner = room.owner_id === req.talkzyUser.id;
     const member = owner || await isRoomMember(room.id, req.talkzyUser.id);
-    if (!member) return res.status(403).json({ error: 'Join the room to view its activities.' });
+    const tourist = !member && await isRoomVisitor(room.id, req.talkzyUser.id);
+    if (!member && !tourist) return res.status(403).json({ error: 'Enter the room to view its activities.' });
     let query = supabase.from('talkzy_room_activities')
       .select('id, room_id, created_by, title, description, poster_url, starts_at, ends_at, status, published_at, created_at')
       .eq('room_id', room.id).order('starts_at', { ascending: true, nullsFirst: false });
@@ -1354,11 +1482,12 @@ app.get('/api/rooms/:roomId/mic-seats', userAuth, async (req, res) => {
     }
 
     const userId = req.talkzyUser.id;
-    const allowed = await canManageRoom(room, userId) ||
-      await isRoomMember(room.id, userId);
-
-    if (!allowed) {
-      return res.status(403).json({ error: 'Join the room first.' });
+    const member = await canManageRoom(room, userId) || await isRoomMember(room.id, userId);
+    const tourist = !member && await isRoomVisitor(room.id, userId);
+    if (!member && !tourist) return res.status(403).json({ error: 'Enter the room first.' });
+    if (tourist) {
+      const permissions = await getRoomTouristPermissions(room.id);
+      if (!permissions.tourists_on_mic) return res.status(403).json({ error: 'The room owner has disabled microphone access for tourists.' });
     }
 
     const { data: roomSettings, error: settingsError } = await supabase
@@ -1484,12 +1613,8 @@ app.post('/api/rooms/:roomId/mic-seats/:seatNumber', userAuth, async (req, res) 
     }
 
     const userId = req.talkzyUser.id;
-    const allowed = await canManageRoom(room, userId) ||
-      await isRoomMember(room.id, userId);
-
-    if (!allowed) {
-      return res.status(403).json({ error: 'Join the room first.' });
-    }
+    const allowed = await canEnterRoom(room, userId);
+    if (!allowed) return res.status(403).json({ error: 'Enter the room first.' });
 
     const seatNumber = Number(req.params.seatNumber);
 
