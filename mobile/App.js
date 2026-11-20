@@ -698,6 +698,7 @@ const [isRoomSpeakerOn, setIsRoomSpeakerOn] = useState(true);
 const [isRoomBellOn, setIsRoomBellOn] = useState(true);
 const [showRoomMessageMenu, setShowRoomMessageMenu] = useState(false);
 const [showRoomTools, setShowRoomTools] = useState(false);
+const [showRoomThemeMenu, setShowRoomThemeMenu] = useState(false);
 const [showYoutubePanel, setShowYoutubePanel] = useState(false);
 const [showMusicPanel, setShowMusicPanel] = useState(false);
 const [youtubeUrlInput, setYoutubeUrlInput] = useState('');
@@ -2428,7 +2429,7 @@ function renderRoomInterior() {
   const roomIsLocked = selectedRoom.room_type === 'locked';
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, minHeight: 0 }}>
+    <View style={{ flex: 1, backgroundColor: 'transparent', minHeight: 0 }}>
 
       {/* ROOM HEADER */}
       <View
@@ -3016,7 +3017,7 @@ onContentSizeChange={() =>
                   { icon: '🎲', title: 'Dice' },
                   { icon: '🎁', title: 'Lucky Bag' },
                   ...(isCurrentRoomAdmin || isCurrentRoomOwner ? [{ icon: '🗑️', title: 'Clear Chat' }] : []),
-                  ...(isCurrentRoomOwner ? [{ icon: '🎉', title: 'Activity' }] : [])
+                  ...(isCurrentRoomOwner ? [{ icon: '🎉', title: 'Activity' }, { icon: '🎨', title: 'Theme' }] : [])
                 ];
                 return roomToolItems.map(tool => (
                   <TouchableOpacity
@@ -3036,6 +3037,8 @@ onContentSizeChange={() =>
                         loadYoutubeState(true);
                       } else if (tool.title === 'Music') {
                         setShowMusicPanel(true);
+                      } else if (tool.title === 'Theme') {
+                        setShowRoomThemeMenu(true);
                       } else {
                         Alert.alert(tool.title, `${tool.title} will be available here soon.`);
                       }
@@ -3049,6 +3052,35 @@ onContentSizeChange={() =>
               })()
             )}
           </ScrollView>
+        </View>
+      )}
+
+
+      {showRoomThemeMenu && selectedRoom?.owner_id === session?.user?.id && (
+        <View style={{
+          position: 'absolute',
+          left: 12,
+          right: 12,
+          bottom: 86,
+          backgroundColor: 'rgba(15, 19, 31, 0.96)',
+          borderRadius: 16,
+          padding: 15,
+          borderWidth: 1,
+          borderColor: C.line,
+          zIndex: 42,
+          elevation: 24
+        }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <Text style={{ color: C.text, fontSize: 15, fontWeight: '900' }}>🎨 Room Theme</Text>
+            <TouchableOpacity onPress={() => setShowRoomThemeMenu(false)} style={{ paddingHorizontal: 7, paddingVertical: 3 }}>
+              <Text style={{ color: C.muted, fontSize: 20 }}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={{ minHeight: 112, borderRadius: 12, borderWidth: 1, borderColor: C.line, backgroundColor: 'rgba(255,255,255,0.035)', alignItems: 'center', justifyContent: 'center', padding: 14 }}>
+            <Text style={{ fontSize: 30, marginBottom: 7 }}>🖼️</Text>
+            <Text style={{ color: C.text, fontSize: 13, fontWeight: '800' }}>Room themes are coming soon</Text>
+            <Text style={{ color: C.muted, fontSize: 11, textAlign: 'center', marginTop: 5 }}>Theme selection and customization will be added here later.</Text>
+          </View>
         </View>
       )}
 
@@ -3294,6 +3326,7 @@ borderTopWidth: 1,
   setShowRoomMenu(false);
   setShowRoomTools(false);
   setShowRoomGiftPanel(false);
+  setShowRoomThemeMenu(false);
   setIsRoomMinimized(true);
   setScreen('main');
 }}
@@ -8956,12 +8989,12 @@ if (screen === 'profile' || profileIncomplete) {
     >
       <StatusBar barStyle="light-content" />
 
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, backgroundColor: screen === 'roomInterior' ? 'transparent' : C.bg }}>
         {/* Main app header hidden: branding is reserved for the login screen. */}
 
         <ScrollView
-          style={{ flex: 1 }}
-          scrollEnabled={!(screen === 'roomInterior' && (showRoomTools || showRoomGiftPanel || showMusicPanel))}
+          style={{ flex: 1, backgroundColor: screen === 'roomInterior' ? 'transparent' : C.bg }}
+          scrollEnabled={!(screen === 'roomInterior' && (showRoomTools || showRoomGiftPanel || showMusicPanel || showRoomThemeMenu))}
           contentContainerStyle={{
             paddingHorizontal: screen === 'roomInterior' ? 0 : 15,
             paddingBottom: screen === 'roomInterior' ? 0 : 25,
