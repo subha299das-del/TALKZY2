@@ -1831,8 +1831,19 @@ function renderRoomCard(room, showJoin = true) {
     }
 
     setSelectedRoom(room);
-    setIsRoomMinimized(false);
-    setScreen('roomInterior');
+setIsRoomMinimized(false);
+
+// Reset previous room microphone data
+setMicCount(8);
+setMicSeats([]);
+setIsOnMic(false);
+setMyMicSeat(null);
+setIsMicMuted(false);
+
+// Load this room's microphone data
+loadRoomMicSeats(room.id);
+
+setScreen('roomInterior');
   }}
 >
   <Card
