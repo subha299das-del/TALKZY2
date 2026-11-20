@@ -1040,6 +1040,67 @@ app.get('/api/rooms/:roomId/mic-seats', userAuth, async (req, res) => {
 });
 
 
+// CHANGE ROOM MICROPHONE COUNT (OWNER ONLY)
+app.patch('/api/rooms/:roomId/mic-count', userAuth, async (req, res) => {
+  try {
+    const room = await requireRoom(req, res);
+    if (!room) return;
+
+    if (room.status !== 'active') {
+      return res.status(409).json({ error: 'This room is closed.' });
+    }
+
+    const micCount = req.body?.micCount;
+
+    if (![7, 8, 10, 11, 12, 14, 17].includes(micCount)) {
+      return res.status(400).json({
+        error: 'Choose 7, 8, 10, 11, 12, 14, or 17 microphones.'
+      });
+    }
+
+    const { data, error } = await supabase.rpc(
+      'talkzy_set_room_mic_count',
+      {
+        p_room_id: room.id,
+        p_user_id: req.talkzyUser.id,
+        p_mic_count: micCount
+      }
+    );
+
+    if (error) {
+      if (error.message.includes('OWNER_ONLY')) {
+        return res.status(403).json({
+          error: 'Only the room owner can change microphone count.'
+        });
+      }
+
+      if (error.message.includes('INVALID_MIC_COUNT')) {
+        return res.status(400).json({
+          error: 'Invalid microphone count.'
+        });
+      }
+
+      if (error.message.includes('ROOM_NOT_FOUND')) {
+        return res.status(404).json({
+          error: 'Room not found or closed.'
+        });
+      }
+
+      throw error;
+    }
+
+    res.set('Cache-Control', 'no-store').json({
+      success: true,
+      micCount: data
+    });
+  } catch (error) {
+    console.error('Could not change microphone count:', error.message);
+    res.status(500).json({
+      error: 'Could not change microphone count.'
+    });
+  }
+});
+
 // TAKE OR SWITCH MICROPHONE SEAT
 app.post('/api/rooms/:roomId/mic-seats/:seatNumber', userAuth, async (req, res) => {
   try {
