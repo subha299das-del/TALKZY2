@@ -1,11 +1,7 @@
 name: TALKZY Android APK
 
 on:
-  # One-time validation trigger; restored to manual-only after dispatch.
-  push:
-    paths:
-      - ".github/workflows/android-apk.yml"
-      - "mobile/App.js"
+  # APK builds must be explicitly started by the project owner.
   workflow_dispatch:
 
 jobs:
