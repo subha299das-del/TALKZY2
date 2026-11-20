@@ -1,7 +1,10 @@
 name: TALKZY Android APK
 
 on:
-  # APK builds must be explicitly started by the project owner.
+  # Temporary one-time validation of the SDK 54 expo-asset pin.
+  push:
+    paths:
+      - '.github/workflows/android-apk.yml'
   workflow_dispatch:
 
 jobs:
