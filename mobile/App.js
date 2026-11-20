@@ -2212,11 +2212,18 @@ function renderRoomInterior() {
           justifyContent: 'center'
         }}
       >
-        <Text style={{ fontSize: 23 }}>
-          {seat === 1 && isOnMic
-  ? (isMicMuted ? '🔇' : '🎤')
-  : '🎙️'}
-        </Text>
+        <Image
+  source={
+    seat === 1 && isOnMic
+      ? (isMicMuted ? MIC_OFF_ICON : MIC_ON_ICON)
+      : MIC_ON_ICON
+  }
+  style={{
+    width: 26,
+    height: 26,
+    resizeMode: 'contain'
+  }}
+/>
       </View>
 
       {seat === 1 && isOnMic && (
@@ -2539,9 +2546,14 @@ borderTopWidth: 1,
       justifyContent: 'center'
     }}
   >
-    <Text style={{ fontSize: 19 }}>
-      {isMicMuted ? '🔇' : '🎤'}
-    </Text>
+    <Image
+  source={isMicMuted ? MIC_OFF_ICON : MIC_ON_ICON}
+  style={{
+    width: 22,
+    height: 22,
+    resizeMode: 'contain'
+  }}
+/>
   </TouchableOpacity>
 )}
 
