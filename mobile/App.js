@@ -2005,7 +2005,20 @@ setScreen('roomInterior');
     )}
   </View>
 
-  {/* COUNTRY */}
+  {/* ROOM ID */}
+  <Text
+    numberOfLines={1}
+    style={{
+      color: C.gold,
+      fontSize: 10,
+      fontWeight: '800',
+      marginTop: 3
+    }}
+  >
+    Room ID: {room.room_talkzy_id || '—'}
+  </Text>
+
+  {/* CREATOR'S COUNTRY */}
   <Text
     numberOfLines={1}
     style={{
@@ -2014,7 +2027,7 @@ setScreen('roomInterior');
       marginTop: 2
     }}
   >
-    {room.country_flag || '🌍'} {room.country_name || 'Country not set'}
+    🌍 {room.country_name || 'Country not set'}
   </Text>
 
   {/* ANNOUNCEMENT - ONE LINE */}
