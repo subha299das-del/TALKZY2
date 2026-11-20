@@ -2910,25 +2910,6 @@ borderTopWidth: 1,
             </Text>
           </TouchableOpacity>
 
-          {/* MIC SETTINGS - OWNER ONLY */}
-          {selectedRoom?.owner_id === session?.user?.id && (
-            <TouchableOpacity
-              style={{
-                padding: 14,
-                borderBottomWidth: 1,
-                borderBottomColor: C.line
-              }}
-              onPress={() => {
-                setShowRoomMenu(false);
-                setShowMicCountPicker(true);
-              }}
-            >
-              <Text style={{ color: C.gold, fontSize: 15 }}>
-                🎙 Mic Settings
-              </Text>
-            </TouchableOpacity>
-          )}
-
           {/* EXIT */}
           <TouchableOpacity
             style={{ padding: 14 }}
