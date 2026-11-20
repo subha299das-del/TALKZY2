@@ -376,6 +376,12 @@ const [roomSettingKicked, setRoomSettingKicked] = useState([]);
 const [roomSettingMembers, setRoomSettingMembers] = useState([]);
 const [roomActivities, setRoomActivities] = useState([]);
 const [loadingRoomActivities, setLoadingRoomActivities] = useState(false);
+const [showRoomActivityComposer, setShowRoomActivityComposer] = useState(false);
+const [roomActivityTitle, setRoomActivityTitle] = useState('');
+const [roomActivityDescription, setRoomActivityDescription] = useState('');
+const [roomActivityPoster, setRoomActivityPoster] = useState(null);
+const [roomActivitySaving, setRoomActivitySaving] = useState(false);
+
 
 
 
@@ -3062,13 +3068,18 @@ borderTopWidth: 1,
             <View style={{ marginTop: 12 }}>
               <Text style={{ color: C.muted, fontSize: 11, fontWeight: '800', marginBottom: 6 }}>ROOM PASSWORD</Text>
               <TextInput value={roomSettingsPassword} onChangeText={setRoomSettingsPassword} secureTextEntry placeholder="Set or change room password" placeholderTextColor="#71809A" style={{ color: C.text, backgroundColor: '#0B1221', borderWidth: 1, borderColor: C.line, borderRadius: 12, padding: 13 }} />
-              <Text style={{ color: C.muted, fontSize: 10, marginTop: 6 }}>Room privacy: {selectedRoom.room_type === 'locked' ? 'Locked' : 'Public'}</Text>
+              <Text style={{ color: C.muted, fontSize: 10, marginTop: 6 }}>Room privacy</Text>
+              <View style={{ flexDirection: 'row', marginTop: 7, backgroundColor: '#0A1020', borderRadius: 11, padding: 4 }}>
+                {['public','locked'].map(type => <TouchableOpacity key={type} onPress={() => setRoomSettingsType(type)} style={{ flex: 1, padding: 10, borderRadius: 8, alignItems: 'center', backgroundColor: roomSettingsType === type ? C.accent : 'transparent' }}><Text style={{ color: C.text, fontWeight: '900', fontSize: 12 }}>{type === 'public' ? 'PUBLIC' : 'LOCKED'}</Text></TouchableOpacity>)}
+              </View>
+
             </View>
           </SettingCard>
 
           <SettingCard icon="🛡️" title="2. Room Management" subtitle="Manage trusted people and room access">
             <SettingRow icon="👑" title="Room Administrator List" hint="View and manage room administrators" onPress={() => loadRoomSettingsSubpage('admins')} />
             <SettingRow icon="🚫" title="Kick List" hint="View members removed from this room" onPress={() => loadRoomSettingsSubpage('kicklist')} />
+            <SettingRow icon="👥" title="Manage Room Members" hint="Promote members or add administrators" onPress={() => loadRoomSettingsSubpage('members')} />
           </SettingCard>
 
           <SettingCard icon="🎮" title="3. Tools Game Settings" subtitle="More room tools and game controls">
@@ -3083,6 +3094,19 @@ borderTopWidth: 1,
           <TouchableOpacity onPress={saveRoomSettings} disabled={roomSettingSaving} style={{ backgroundColor: '#7657F6', padding: 15, borderRadius: 14, alignItems: 'center', marginBottom: 14 }}>
             <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>{roomSettingSaving ? 'Saving...' : 'Save Room Settings'}</Text>
           </TouchableOpacity>
+        <Modal visible={showRoomActivityComposer} transparent animationType="slide" onRequestClose={() => setShowRoomActivityComposer(false)}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.82)', justifyContent: 'center', padding: 18 }}>
+            <View style={{ backgroundColor: C.panel, borderRadius: 20, padding: 18, borderWidth: 1, borderColor: C.line }}>
+              <Text style={{ color: C.text, fontSize: 18, fontWeight: '900', marginBottom: 12 }}>Create Room Activity</Text>
+              <TextInput value={roomActivityTitle} onChangeText={setRoomActivityTitle} placeholder="Activity title" placeholderTextColor={C.muted} style={{ color: C.text, backgroundColor: C.bg, borderRadius: 11, padding: 12, marginBottom: 10 }} />
+              <TextInput value={roomActivityDescription} onChangeText={setRoomActivityDescription} multiline placeholder="Description (optional)" placeholderTextColor={C.muted} style={{ color: C.text, backgroundColor: C.bg, borderRadius: 11, padding: 12, minHeight: 75, textAlignVertical: 'top', marginBottom: 10 }} />
+              <TouchableOpacity onPress={chooseRoomActivityPoster} style={{ padding: 12, borderRadius: 11, backgroundColor: C.panel2, marginBottom: 12, alignItems: 'center' }}><Text style={{ color: C.text, fontWeight: '800' }}>{roomActivityPoster ? '✓ Poster selected · Change poster' : '＋ Choose activity poster'}</Text></TouchableOpacity>
+              {roomActivityPoster && <Image source={{ uri: roomActivityPoster }} style={{ width: '100%', height: 120, borderRadius: 10, marginBottom: 12 }} resizeMode="cover" />}
+              <TouchableOpacity onPress={createAndPublishRoomActivity} disabled={roomActivitySaving} style={{ backgroundColor: C.accent, padding: 13, borderRadius: 11, alignItems: 'center' }}><Text style={{ color: '#FFFFFF', fontWeight: '900' }}>{roomActivitySaving ? 'Publishing...' : 'Publish Activity'}</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowRoomActivityComposer(false)} style={{ padding: 12, alignItems: 'center' }}><Text style={{ color: C.muted, fontWeight: '800' }}>Cancel</Text></TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
         <Modal visible={!!roomSettingsSubpage} transparent animationType="slide" onRequestClose={() => setRoomSettingsSubpage(null)}>
           <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.82)', justifyContent: 'flex-end' }}>
             <View style={{ height: '78%', backgroundColor: C.panel, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 18 }}>
@@ -3097,7 +3121,10 @@ borderTopWidth: 1,
                     <View style={{ flex: 1 }}><Text style={{ color: C.text, fontWeight: '800' }}>{item.display_name || 'TALKZY User'}</Text><Text style={{ color: C.muted, fontSize: 11 }}>TALKZY ID: {item.talkzy_id || '—'}</Text></View>
                     {roomSettingsSubpage === 'admins' && <TouchableOpacity onPress={() => removeRoomAdmin(item.user_id)}><Text style={{ color: C.danger, fontWeight: '800' }}>Remove</Text></TouchableOpacity>}
                     {roomSettingsSubpage === 'kicklist' && <TouchableOpacity onPress={() => unkickRoomMember(item.user_id)}><Text style={{ color: '#65D6A5', fontWeight: '800' }}>Unblock</Text></TouchableOpacity>}
-                    {roomSettingsSubpage === 'members' && <TouchableOpacity onPress={() => kickRoomMember(item.user_id)}><Text style={{ color: C.danger, fontWeight: '800' }}>Kick</Text></TouchableOpacity>}
+                    {roomSettingsSubpage === 'members' && <View style={{ alignItems: 'flex-end' }}>
+                      {!item.is_admin && <TouchableOpacity onPress={() => addRoomAdmin(item.user_id)}><Text style={{ color: '#65D6A5', fontWeight: '800', marginBottom: 8 }}>Make Admin</Text></TouchableOpacity>}
+                      <TouchableOpacity onPress={() => kickRoomMember(item.user_id)}><Text style={{ color: C.danger, fontWeight: '800' }}>Kick</Text></TouchableOpacity>
+                    </View>}
                   </View>
                 ))}
                 {((roomSettingsSubpage === 'admins' && !roomSettingAdmins.length) || (roomSettingsSubpage === 'kicklist' && !roomSettingKicked.length) || (roomSettingsSubpage === 'members' && !roomSettingMembers.length)) && <Text style={{ color: C.muted, padding: 16 }}>No entries to show.</Text>}
@@ -8851,6 +8878,7 @@ if (screen === 'profile' || profileIncomplete) {
               <View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                   <Text style={{ color: C.text, fontWeight: '900', fontSize: 16 }}>Room Activities</Text>
+                  {roomDetails?.owner_id === session?.user?.id && <TouchableOpacity onPress={() => setShowRoomActivityComposer(true)}><Text style={{ color: C.accent, fontWeight: '900' }}>＋ Create</Text></TouchableOpacity>}
                   <TouchableOpacity onPress={() => loadRoomActivities(roomDetails?.id)}><Text style={{ color: C.accent, fontWeight: '800' }}>Refresh</Text></TouchableOpacity>
                 </View>
                 {loadingRoomActivities ? <ActivityIndicator color={C.accent} /> :
@@ -9024,6 +9052,45 @@ if (screen === 'profile' || profileIncomplete) {
       else if (page === 'kicklist') setRoomSettingKicked(result.kicked || []);
       else setRoomSettingMembers(result.members || []);
     } catch (e) { Alert.alert('Room Management', e.message); }
+  }
+
+  async function addRoomAdmin(userId) {
+    try {
+      await api(`/api/rooms/${selectedRoom.id}/admins`, { method: 'POST', body: { userId } });
+      Alert.alert('Administrator added', 'This member is now a room administrator.');
+      await loadRoomSettingsSubpage('admins');
+    } catch (e) { Alert.alert('Could not add administrator', e.message); }
+  }
+
+  async function chooseRoomActivityPoster() {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) return Alert.alert('Permission required', 'Allow photo access to choose an activity poster.');
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [16, 9], quality: 0.85 });
+    if (!result.canceled && result.assets?.[0]?.uri) setRoomActivityPoster(result.assets[0].uri);
+  }
+
+  async function createAndPublishRoomActivity() {
+    if (!roomActivityTitle.trim()) return Alert.alert('Title required', 'Enter an activity title.');
+    try {
+      setRoomActivitySaving(true);
+      let posterUrl = roomActivityPoster;
+      if (posterUrl && !posterUrl.startsWith('http')) {
+        const response = await fetch(posterUrl);
+        const bytes = await response.arrayBuffer();
+        const path = `rooms/${selectedRoom.id}/activities/${Date.now()}.jpg`;
+        const { error } = await supabase.storage.from(BUCKET).upload(path, bytes, { contentType: 'image/jpeg', upsert: true });
+        if (error) throw error;
+        posterUrl = supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+      }
+      const created = await api(`/api/rooms/${selectedRoom.id}/activities`, {
+        method: 'POST', body: { title: roomActivityTitle.trim(), description: roomActivityDescription, posterUrl }
+      });
+      await api(`/api/rooms/${selectedRoom.id}/activities/${created.activity.id}/publish`, { method: 'POST' });
+      setShowRoomActivityComposer(false); setRoomActivityTitle(''); setRoomActivityDescription(''); setRoomActivityPoster(null);
+      await loadRoomActivities(selectedRoom.id);
+      Alert.alert('Published', 'Your room activity is now visible to room members. Its poster is locked.');
+    } catch (e) { Alert.alert('Activity error', e.message); }
+    finally { setRoomActivitySaving(false); }
   }
 
   async function removeRoomAdmin(userId) {
