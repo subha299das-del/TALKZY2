@@ -1,7 +1,10 @@
 name: TALKZY Android APK
 
 on:
-  # APK builds must be explicitly started by the project owner.
+  # One-time diagnostic run; restore manual-only trigger after diagnosis.
+  push:
+    paths:
+      - '.github/workflows/android-apk.yml'
   workflow_dispatch:
 
 jobs:
