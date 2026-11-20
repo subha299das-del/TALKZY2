@@ -2,11 +2,8 @@
 name: TALKZY Android APK
 
 on:
+  # APK builds must be explicitly started by the project owner.
   workflow_dispatch:
-  push:
-    paths:
-      - 'mobile/**'
-      - '.github/workflows/android.yml'
 
 jobs:
   build:
