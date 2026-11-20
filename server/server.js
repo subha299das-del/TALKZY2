@@ -1482,13 +1482,8 @@ app.get('/api/rooms/:roomId/mic-seats', userAuth, async (req, res) => {
     }
 
     const userId = req.talkzyUser.id;
-    const member = await canManageRoom(room, userId) || await isRoomMember(room.id, userId);
-    const tourist = !member && await isRoomVisitor(room.id, userId);
-    if (!member && !tourist) return res.status(403).json({ error: 'Enter the room first.' });
-    if (tourist) {
-      const permissions = await getRoomTouristPermissions(room.id);
-      if (!permissions.tourists_on_mic) return res.status(403).json({ error: 'The room owner has disabled microphone access for tourists.' });
-    }
+    const allowed = await canEnterRoom(room, userId);
+    if (!allowed) return res.status(403).json({ error: 'Enter the room first.' });
 
     const { data: roomSettings, error: settingsError } = await supabase
   .from('talkzy_rooms')
@@ -1613,8 +1608,13 @@ app.post('/api/rooms/:roomId/mic-seats/:seatNumber', userAuth, async (req, res) 
     }
 
     const userId = req.talkzyUser.id;
-    const allowed = await canEnterRoom(room, userId);
-    if (!allowed) return res.status(403).json({ error: 'Enter the room first.' });
+    const member = await canManageRoom(room, userId) || await isRoomMember(room.id, userId);
+    const tourist = !member && await isRoomVisitor(room.id, userId);
+    if (!member && !tourist) return res.status(403).json({ error: 'Enter the room first.' });
+    if (tourist) {
+      const permissions = await getRoomTouristPermissions(room.id);
+      if (!permissions.tourists_on_mic) return res.status(403).json({ error: 'The room owner has disabled microphone access for tourists.' });
+    }
 
     const seatNumber = Number(req.params.seatNumber);
 
