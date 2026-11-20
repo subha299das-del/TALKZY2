@@ -2856,13 +2856,27 @@ borderTopWidth: 1,
           {/* EXIT */}
           <TouchableOpacity
             style={{ padding: 14 }}
-            onPress={() => {
+            onPress={async () => {
+  try {
+    if (selectedRoom?.id) {
+      await api(
+        `/api/rooms/${selectedRoom.id}/mic-seats`,
+        { method: 'DELETE' }
+      );
+    }
+  } catch (error) {
+    console.log('Seat release error:', error.message);
+  }
+
   setShowRoomMenu(false);
   setShowRoomTools(false);
   setShowRoomGiftPanel(false);
   setIsOnMic(false);
+  setMyMicSeat(null);
+  setIsMicMuted(false);
   setIsRoomMinimized(false);
   setSelectedRoom(null);
+  setMicSeats([]);
   setScreen('main');
 }}
           >
