@@ -1168,6 +1168,9 @@ app.get('/api/rooms/:roomId/presence', userAuth, async (req, res) => {
       await isRoomMember(room.id, userId) || await isRoomVisitor(room.id, userId);
     if (!allowed) return res.status(403).json({ error: 'Enter the room to view its live users.' });
     const cutoff = new Date(Date.now() - 75000).toISOString();
+    const { error: staleCleanupError } = await supabase.from('talkzy_room_presence')
+      .delete().eq('room_id', room.id).lt('last_seen_at', cutoff);
+    if (staleCleanupError) throw staleCleanupError;
     const { data, error } = await supabase.from('talkzy_room_presence')
       .select('user_id, presence_role, last_seen_at').eq('room_id', room.id)
       .gte('last_seen_at', cutoff).order('last_seen_at', { ascending: false });
