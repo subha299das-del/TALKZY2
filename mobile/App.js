@@ -24,6 +24,7 @@ import 'react-native-url-polyfill/auto';
 import * as ImagePicker from 'expo-image-picker';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
+import { WebView } from 'react-native-webview';
 
 WebBrowser.maybeCompleteAuthSession();
 const MIC_ON_ICON = require('./assets/mic_on.png');
@@ -40,6 +41,8 @@ const API_BASE_URL = (
 ).replace(/\/+$/, '');
 
 const BUCKET = 'talkzy-profiles';
+
+const YOUTUBE_PLAYER_HTML = `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><style>html,body,#player{margin:0;width:100%;height:100%;background:#000;overflow:hidden}</style></head><body><div id="player"></div><script src="https://www.youtube.com/iframe_api"></script><script>let player;function onYouTubeIframeAPIReady(){player=new YT.Player('player',{height:'100%',width:'100%',videoId:'',playerVars:{playsinline:1,controls:0,rel:0,modestbranding:1,fs:0,disablekb:1},events:{onReady:function(){window.ReactNativeWebView&&window.ReactNativeWebView.postMessage('ready')}}})}function talkzyLoad(id,seconds,playing){if(!player||!player.loadVideoById)return;if(id){player.loadVideoById({videoId:id,startSeconds:Math.max(0,seconds||0)});if(!playing)player.pauseVideo()}}function talkzySync(seconds,playing){if(!player||!player.getCurrentTime)return;let current=player.getCurrentTime();if(Math.abs(current-(seconds||0))>3)player.seekTo(seconds||0,true);if(playing)player.playVideo();else player.pauseVideo()}function talkzyPlay(){if(player)player.playVideo()}function talkzyPause(){if(player)player.pauseVideo()}</script></body></html>`;
 
 
 const C = {
@@ -661,6 +664,13 @@ const [isRoomSpeakerOn, setIsRoomSpeakerOn] = useState(true);
 const [isRoomBellOn, setIsRoomBellOn] = useState(true);
 const [showRoomMessageMenu, setShowRoomMessageMenu] = useState(false);
 const [showRoomTools, setShowRoomTools] = useState(false);
+const [showYoutubePanel, setShowYoutubePanel] = useState(false);
+const [youtubeUrlInput, setYoutubeUrlInput] = useState('');
+const [youtubeState, setYoutubeState] = useState({ video_id: null, queue: [], is_playing: false, current_time_seconds: 0, updated_at: null });
+const [youtubeLoading, setYoutubeLoading] = useState(false);
+const [youtubeSaving, setYoutubeSaving] = useState(false);
+const youtubeWebViewRef = useRef(null);
+const youtubeLastUpdateRef = useRef(null);
  const [showRoomInfo, setShowRoomInfo] = useState(false);
 const [showRoomGiftPanel, setShowRoomGiftPanel] = useState(false);
 const [roomChatText, setRoomChatText] = useState('');
@@ -2254,6 +2264,87 @@ setScreen('roomInterior');
 // ROOM: ROOM INTERIOR
 // =========================================
 
+function extractYouTubeVideoId(value) {
+  const raw = String(value || '').trim();
+  if (/^[A-Za-z0-9_-]{11}$/.test(raw)) return raw;
+  const match = raw.match(/(?:youtu\\.be\\/|youtube\\.com\\/(?:watch\\?(?:.*&)?v=|embed\\/|shorts\\/|live\\/))([A-Za-z0-9_-]{11})/i);
+  return match ? match[1] : null;
+}
+
+async function loadYoutubeState(showErrors = false) {
+  if (!selectedRoom?.id) return;
+  try {
+    setYoutubeLoading(true);
+    const result = await api(`/api/rooms/${selectedRoom.id}/youtube`);
+    const state = result.state || { video_id: null, queue: [], is_playing: false, current_time_seconds: 0 };
+    setYoutubeState(state);
+    if (state.video_id) setShowYoutubePanel(true);
+    if (state.updated_at && state.updated_at !== youtubeLastUpdateRef.current) {
+      youtubeLastUpdateRef.current = state.updated_at;
+      const command = state.video_id
+        ? `window.talkzySync && window.talkzySync(${Number(state.current_time_seconds || 0)}, ${state.is_playing ? 'true' : 'false'});`
+        : '';
+      if (command) youtubeWebViewRef.current?.injectJavaScript(command + 'true;');
+    }
+  } catch (error) {
+    if (showErrors) Alert.alert('YouTube', error.message || 'Could not open YouTube for this room.');
+  } finally {
+    setYoutubeLoading(false);
+  }
+}
+
+async function saveYoutubeState(nextState) {
+  if (!selectedRoom?.id || youtubeSaving) return;
+  try {
+    setYoutubeSaving(true);
+    const result = await api(`/api/rooms/${selectedRoom.id}/youtube`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        video_id: nextState.video_id || null,
+        queue: Array.isArray(nextState.queue) ? nextState.queue.slice(0, 10) : [],
+        is_playing: Boolean(nextState.is_playing),
+        current_time_seconds: Math.max(0, Number(nextState.current_time_seconds || 0))
+      })
+    });
+    setYoutubeState(result.state);
+    youtubeLastUpdateRef.current = result.state.updated_at;
+    if (result.state.video_id) {
+      youtubeWebViewRef.current?.injectJavaScript(
+        `window.talkzySync && window.talkzySync(0, ${result.state.is_playing ? 'true' : 'false'});` + 'true;'
+      );
+    }
+  } catch (error) {
+    Alert.alert('YouTube control', error.message || 'Could not update YouTube.');
+  } finally {
+    setYoutubeSaving(false);
+  }
+}
+
+async function addYoutubeVideo() {
+  const videoId = extractYouTubeVideoId(youtubeUrlInput);
+  if (!videoId) return Alert.alert('Invalid YouTube link', 'Paste a valid YouTube video URL or 11-character video ID.');
+  if (youtubeState.queue.length >= 10 && youtubeState.video_id) {
+    return Alert.alert('Queue full', 'You can add up to 10 videos to the queue.');
+  }
+  const next = youtubeState.video_id
+    ? { ...youtubeState, queue: [...(youtubeState.queue || []), { video_id: videoId, title: 'YouTube video' }] }
+    : { ...youtubeState, video_id: videoId, is_playing: true, current_time_seconds: 0 };
+  setYoutubeUrlInput('');
+  await saveYoutubeState(next);
+}
+
+async function advanceYoutubeQueue() {
+  const queue = [...(youtubeState.queue || [])];
+  const nextVideo = queue.shift();
+  await saveYoutubeState({
+    ...youtubeState,
+    video_id: nextVideo?.video_id || null,
+    queue,
+    is_playing: Boolean(nextVideo),
+    current_time_seconds: 0
+  });
+}
+
 async function sendRoomChatMessage() {
   const message = roomChatText.trim();
   if (!message || !selectedRoom?.id) return;
@@ -2453,6 +2544,65 @@ function renderRoomInterior() {
 
             </View>
 
+      {showYoutubePanel && (
+        <View style={{ marginHorizontal: 12, marginTop: 10, padding: 10, borderRadius: 14, backgroundColor: C.card, borderWidth: 1, borderColor: C.line }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+            <Text style={{ color: C.text, fontWeight: '900', fontSize: 13, flex: 1 }}>▶ YouTube Room Player</Text>
+            {youtubeLoading && <ActivityIndicator color={C.accent} size="small" />}
+            <TouchableOpacity onPress={() => setShowYoutubePanel(false)} style={{ paddingHorizontal: 8, paddingVertical: 3 }}>
+              <Text style={{ color: C.muted, fontSize: 18 }}>⌄</Text>
+            </TouchableOpacity>
+          </View>
+          {youtubeState.video_id ? (
+            <View style={{ height: 176, backgroundColor: '#000', borderRadius: 10, overflow: 'hidden' }}>
+              <WebView
+                ref={youtubeWebViewRef}
+                source={{ html: YOUTUBE_PLAYER_HTML }}
+                originWhitelist={['*']}
+                javaScriptEnabled
+                domStorageEnabled
+                allowsInlineMediaPlayback
+                mediaPlaybackRequiresUserAction={false}
+                onMessage={(event) => {
+                  if (event.nativeEvent.data === 'ready' && youtubeState.video_id) {
+                    youtubeWebViewRef.current?.injectJavaScript(
+                      `window.talkzyLoad && window.talkzyLoad('${youtubeState.video_id}', ${Number(youtubeState.current_time_seconds || 0)}, ${youtubeState.is_playing ? 'true' : 'false'});` + 'true;'
+                    );
+                  }
+                }}
+                style={{ flex: 1, backgroundColor: '#000' }}
+              />
+            </View>
+          ) : (
+            <View style={{ height: 88, borderRadius: 10, backgroundColor: '#05070C', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: C.muted, fontSize: 12 }}>No video is playing. Owner or admin can add one.</Text>
+            </View>
+          )}
+          {(selectedRoom?.owner_id === session?.user?.id || roomPresence.find(person => person.user_id === session?.user?.id)?.presence_role === 'admin') && (
+            <>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 9 }}>
+                <TextInput value={youtubeUrlInput} onChangeText={setYoutubeUrlInput} placeholder="Paste YouTube link or video ID" placeholderTextColor={C.muted} autoCapitalize="none" style={{ flex: 1, color: C.text, backgroundColor: C.bg, borderRadius: 9, borderWidth: 1, borderColor: C.line, paddingHorizontal: 10, paddingVertical: 9, fontSize: 12 }} />
+                <TouchableOpacity onPress={addYoutubeVideo} disabled={youtubeSaving} style={{ marginLeft: 7, backgroundColor: C.accent, borderRadius: 9, paddingHorizontal: 13, paddingVertical: 11 }}>
+                  <Text style={{ color: '#FFF', fontWeight: '900', fontSize: 12 }}>Add</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', marginTop: 9 }}>
+                <TouchableOpacity onPress={() => saveYoutubeState({ ...youtubeState, is_playing: !youtubeState.is_playing })}><Text style={{ color: C.text, fontWeight: '900' }}>{youtubeState.is_playing ? 'Ⅱ Pause' : '▶ Play'}</Text></TouchableOpacity>
+                <TouchableOpacity onPress={advanceYoutubeQueue}><Text style={{ color: C.text, fontWeight: '900' }}>Next ⏭</Text></TouchableOpacity>
+                <TouchableOpacity onPress={() => saveYoutubeState({ ...youtubeState, video_id: null, is_playing: false, current_time_seconds: 0 })}><Text style={{ color: C.danger, fontWeight: '900' }}>Stop</Text></TouchableOpacity>
+              </View>
+              <Text style={{ color: C.muted, fontSize: 10, marginTop: 7 }}>Queue: {youtubeState.queue?.length || 0}/10 videos</Text>
+              {(youtubeState.queue || []).map((item, index) => (
+                <View key={item.video_id + index} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 5 }}>
+                  <Text style={{ color: C.muted, fontSize: 11, flex: 1 }}>{index + 1}. {item.title || 'YouTube video'}</Text>
+                  <TouchableOpacity onPress={() => saveYoutubeState({ ...youtubeState, queue: youtubeState.queue.filter((_, i) => i !== index) })}><Text style={{ color: C.danger, fontSize: 11 }}>Remove</Text></TouchableOpacity>
+                </View>
+              ))}
+            </>
+          )}
+        </View>
+      )}
+
       {/* ROOM TROPHY / COINS */}
       <View
         style={{
@@ -2478,8 +2628,11 @@ function renderRoomInterior() {
       </View>
 
            {/* MICROPHONE SEATS */}
-<View style={{ paddingHorizontal: 12, paddingTop: 25 }}>
-  {(MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.map((rowSeats, rowIndex) => (
+<View style={{ paddingHorizontal: 12, paddingTop: showYoutubePanel ? 10 : 25 }}>
+  {(showYoutubePanel
+    ? [((MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().slice(0, 8)), ((MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().slice(8, 16))]
+    : (MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows
+  ).filter(rowSeats => rowSeats.length > 0).map((rowSeats, rowIndex) => (
     <View key={rowIndex} style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start' }}>
       {rowSeats.map((seat) => {
 
@@ -2565,7 +2718,7 @@ function renderRoomInterior() {
           opacity: isRoomTourist && !touristsOnMic ? 0.4 : 1,
           width: rowSeats.length >= 5 ? '20%' : '25%',
           alignItems: 'center',
-          marginBottom: 24,
+          marginBottom: showYoutubePanel ? 8 : 24,
           paddingHorizontal: 1
         }}
       >
@@ -2816,6 +2969,9 @@ onContentSizeChange={() =>
                       } else if (tool.title === 'Activity') {
                         openRoomDetails(selectedRoom);
                         setRoomDetailsTab('Activity');
+                      } else if (tool.title === 'YouTube') {
+                        setShowYoutubePanel(true);
+                        loadYoutubeState(true);
                       } else {
                         Alert.alert(tool.title, `${tool.title} will be available here soon.`);
                       }
