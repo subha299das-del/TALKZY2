@@ -2321,6 +2321,11 @@ function renderRoomInterior() {
     </Text>
   ) : null}
 
+  {isRoomTourist && (
+    <Text style={{ color: '#F2C56B', fontSize: 9, fontWeight: '900', marginTop: 3, letterSpacing: 1 }}>
+      TOURIST VISIT · NOT A MEMBER
+    </Text>
+  )}
   <Text
     style={{
       color: C.muted,
