@@ -582,7 +582,28 @@ useEffect(() => {
     supabase.removeChannel(channel);
   };
 }, [selectedRoom?.id]);
- 
+
+// REALTIME ROOM APPROVAL SETTING SYNC
+useEffect(() => {
+  if (!selectedRoom?.id) return;
+  const roomId = selectedRoom.id;
+  let active = true;
+  const loadApproval = async () => {
+    const { data, error } = await supabase.from('talkzy_room_settings')
+      .select('tourists_on_mic, tourists_send_text, tourists_send_pic')
+      .eq('room_id', roomId).maybeSingle();
+    if (!active || error || !data) return;
+    setTouristsOnMic(data.tourists_on_mic);
+    setTouristsSendText(data.tourists_send_text);
+    setTouristsSendPic(data.tourists_send_pic);
+  };
+  loadApproval();
+  const channel = supabase.channel(`room-approval-sync-${roomId}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'talkzy_room_settings', filter: `room_id=eq.${roomId}` }, loadApproval)
+    .subscribe();
+  return () => { active = false; supabase.removeChannel(channel); };
+}, [selectedRoom?.id]);
+
 const [isRoomSpeakerOn, setIsRoomSpeakerOn] = useState(true);
 const [isRoomBellOn, setIsRoomBellOn] = useState(true);
 const [showRoomTools, setShowRoomTools] = useState(false);
