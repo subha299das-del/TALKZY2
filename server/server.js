@@ -1090,6 +1090,9 @@ app.patch('/api/rooms/:roomId/settings', userAuth, async (req, res) => {
       passwordHash = await makePasswordHash(password);
       nextType = 'locked';
     }
+    if (nextType === 'locked' && !passwordHash) {
+      return res.status(400).json({ error: 'Set a room password before switching this room to locked.' });
+    }
     if (nextType === 'public') passwordHash = null;
     if (body.roomType !== undefined || body.password !== undefined) {
       patch.room_type = nextType;
