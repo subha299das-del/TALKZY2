@@ -677,7 +677,15 @@ useEffect(() => {
       const result = await api(`/api/rooms/${selectedRoom.id}/youtube`);
       if (!active) return;
       const state = result.state || { video_id: null, queue: [], is_playing: false, current_time_seconds: 0 };
-      setYoutubeState(state);
+      setYoutubeState(previous => {
+        const unchanged =
+          previous?.video_id === state.video_id &&
+          previous?.is_playing === state.is_playing &&
+          previous?.current_time_seconds === state.current_time_seconds &&
+          previous?.updated_at === state.updated_at &&
+          JSON.stringify(previous?.queue || []) === JSON.stringify(state.queue || []);
+        return unchanged ? previous : state;
+      });
       if (state.updated_at && state.updated_at !== youtubeLastUpdateRef.current) {
         youtubeLastUpdateRef.current = state.updated_at;
         if (state.video_id) {
@@ -698,7 +706,7 @@ useEffect(() => {
     }
   };
   refreshYoutube();
-  const interval = setInterval(refreshYoutube, 2500);
+  const interval = setInterval(refreshYoutube, 5000);
   return () => { active = false; clearInterval(interval); };
 }, [selectedRoom?.id]);
 
@@ -9008,7 +9016,8 @@ if (screen === 'profile' || profileIncomplete) {
     <SafeAreaView
       style={{
         flex: 1,
-        backgroundColor: screen === 'roomInterior' ? 'transparent' : C.bg
+        backgroundColor: screen === 'roomInterior' ? 'transparent' : C.bg,
+        paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0
       }}
     >
       <StatusBar barStyle="light-content" />
