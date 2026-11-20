@@ -2675,10 +2675,17 @@ onContentSizeChange={() =>
         }
       ]
     );
-  } else {
+  } else if (tool.title === 'Members') {
+    openRoomDetails(selectedRoom);
+    setRoomDetailsTab('Members');
+  } else if (tool.title === 'Room Info') {
+    openRoomDetails(selectedRoom);
+    setRoomDetailsTab('Information');
+  } else if (tool.title === 'Room Rules') {
+    const rules = selectedRoom?.rules || selectedRoom?.room_rules;
     Alert.alert(
-      tool.title,
-      `${tool.title} will be available soon.`
+      'Room Rules',
+      rules || 'No custom room rules have been published by the owner yet.'
     );
   }
 }}
@@ -3795,10 +3802,10 @@ function renderHotRooms() {
       ) : rooms.length === 0 ? (
         <ComingSoon
           title="No hot rooms yet"
-          description="Popular live rooms will appear here."
+          description="Public rooms will appear here when owners create them."
         />
       ) : (
-        rooms.map(room => renderRoomCard(room))
+        rooms.slice().sort((a, b) => (Number(b.active_users) || 0) - (Number(a.active_users) || 0)).map(room => renderRoomCard(room))
       )}
 
       <Button
