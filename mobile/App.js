@@ -6373,8 +6373,8 @@ function renderEvents() {
 
           <Text style={{ color: C.muted, marginBottom: 10, lineHeight: 20, fontSize: 13 }}>
             {authMode === 'login'
-              ? 'Sign in to continue to TALKZY.'
-              : 'Join TALKZY and connect with people.'}
+              ? 'Your conversations, communities and favourite rooms are waiting.'
+              : 'Find your people, join the conversation and make every moment count.'}
           </Text>
 
           <Field
@@ -6536,15 +6536,16 @@ function renderEvents() {
             }}
           />
 
-          <Text
-            style={{
-              color: C.text,
-              fontSize: 21, fontWeight: '900',
-              letterSpacing: 3, marginLeft: 9
-            }}
-          >
-            TALKZY
-          </Text>
+          <View style={{ marginLeft: 9, justifyContent: 'center' }}>
+            <Text style={{
+              color: C.text, fontSize: 21, fontWeight: '900',
+              letterSpacing: 3
+            }}>TALKZY</Text>
+            <Text style={{
+              color: C.teal, fontSize: 8, fontWeight: '900',
+              letterSpacing: 1.55, marginTop: 1
+            }}>VOICE • ROOMS • COMMUNITY</Text>
+          </View>
         </View>
 
         <TouchableOpacity
