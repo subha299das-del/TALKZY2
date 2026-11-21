@@ -277,6 +277,7 @@ async function getRoomTouristPermissions(roomId) {
 }
 
 async function canEnterRoom(room, userId) {
+  if (!room || room.status !== 'active') return false;
   return room.owner_id === userId ||
     await isRoomAdmin(room.id, userId) ||
     await isRoomMember(room.id, userId) ||
@@ -284,6 +285,7 @@ async function canEnterRoom(room, userId) {
 }
 
 async function canManageRoom(room, userId) {
+  if (!room || room.status !== 'active') return false;
   return room.owner_id === userId || await isRoomAdmin(room.id, userId);
 }
 
@@ -1797,6 +1799,7 @@ app.get('/api/rooms/:roomId/admins', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
+    if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
     if (room.owner_id !== req.talkzyUser.id) return res.status(403).json({ error: 'Only the room creator can manage administrators.' });
     const { data, error } = await supabase.from('talkzy_room_admins')
       .select('user_id, created_at').eq('room_id', room.id).order('created_at', { ascending: false });
@@ -1817,6 +1820,7 @@ app.get('/api/rooms/:roomId/kicklist', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
+    if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
     if (room.owner_id !== req.talkzyUser.id) return res.status(403).json({ error: 'Only the room creator can view the kick list.' });
     const { data, error } = await supabase.from('talkzy_room_kicklist')
       .select('user_id, kicked_by, reason, created_at').eq('room_id', room.id).order('created_at', { ascending: false });
@@ -1837,6 +1841,7 @@ app.delete('/api/rooms/:roomId/kicklist/:userId', userAuth, async (req, res) => 
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
+    if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
     if (room.owner_id !== req.talkzyUser.id) return res.status(403).json({ error: 'Only the room creator can remove people from the kick list.' });
     const { error } = await supabase.from('talkzy_room_kicklist').delete()
       .eq('room_id', room.id).eq('user_id', req.params.userId);
@@ -1852,7 +1857,8 @@ app.post('/api/rooms/:roomId/members/:userId/kick', userAuth, async (req, res) =
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
-    if (room.owner_id !== req.talkzyUser.id) return res.status(403).json({ error: 'Only the room creator can kick members.' });
+    if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
+    if (room.owner_id !== req.talkzyUser.id) return res.status(403).json({ error: 'Only the room creator can kick members.' };
     if (req.params.userId === room.owner_id) return res.status(400).json({ error: 'The room creator cannot be kicked.' });
     const reason = String(req.body?.reason || '').trim().slice(0, 200);
     const { error: insertError } = await supabase.from('talkzy_room_kicklist')
@@ -1904,6 +1910,7 @@ app.post('/api/rooms/:roomId/activities', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
+        if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
     if (room.owner_id !== req.talkzyUser.id) return res.status(403).json({ error: 'Only the room creator can create room activities.' });
     const title = String(req.body?.title || '').trim();
     const description = String(req.body?.description || '').trim();
@@ -1926,6 +1933,7 @@ app.patch('/api/rooms/:roomId/activities/:activityId', userAuth, async (req, res
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
+        if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
     if (room.owner_id !== req.talkzyUser.id) return res.status(403).json({ error: 'Only the room creator can edit activities.' });
     const { data: existing, error: readError } = await supabase.from('talkzy_room_activities')
       .select('*').eq('id', req.params.activityId).eq('room_id', room.id).maybeSingle();
@@ -1953,6 +1961,7 @@ app.post('/api/rooms/:roomId/activities/:activityId/publish', userAuth, async (r
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
+        if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
     if (room.owner_id !== req.talkzyUser.id) return res.status(403).json({ error: 'Only the room creator can publish activities.' });
     const { data, error } = await supabase.from('talkzy_room_activities')
       .update({ status: 'published', published_at: new Date().toISOString() })
@@ -1971,6 +1980,7 @@ app.post('/api/rooms/:roomId/activities/:activityId/complete', userAuth, async (
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
+        if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
     if (room.owner_id !== req.talkzyUser.id) return res.status(403).json({ error: 'Only the room creator can complete activities.' });
     const { data, error } = await supabase.from('talkzy_room_activities')
       .update({ status: 'completed' })
@@ -1989,6 +1999,7 @@ app.delete('/api/rooms/:roomId/activities/:activityId', userAuth, async (req, re
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
+        if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
     if (room.owner_id !== req.talkzyUser.id) return res.status(403).json({ error: 'Only the room creator can delete activities.' });
     const { data, error } = await supabase.from('talkzy_room_activities').delete()
       .eq('id', req.params.activityId).eq('room_id', room.id).eq('status', 'draft')
