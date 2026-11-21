@@ -3515,8 +3515,18 @@ onContentSizeChange={() =>
                           } }
                         ]);
                       } else if (tool.title === 'Activity') {
-                        openRoomDetails(selectedRoom);
-                        setRoomDetailsTab('Activity');
+                        // Open the same Create Activity page used by Subscribe Activities (+).
+                        setActivityPoster(null);
+                        setActivityPosterTemplate(null);
+                        setShowPosterOptions(false);
+                        setShowPosterTemplates(false);
+                        setShowPosterEditor(false);
+                        setActivityTitle('');
+                        setActivityDescription('');
+                        setActivityDate('');
+                        setActivityStartTime('');
+                        setActivityEndTime('');
+                        setShowCreateRoomActivity(true);
                       } else if (tool.title === 'YouTube') {
                         setShowYoutubePanel(true);
                         loadYoutubeState(true);
