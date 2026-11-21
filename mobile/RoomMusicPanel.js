@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import * as MediaLibrary from 'expo-media-library';
+import { File as ExpoFile } from 'expo-file-system';
 
 export default function RoomMusicPanel({ visible, roomId, userId, api, supabase, colors, onClose }) {
   const [minimized, setMinimized] = useState(false);
@@ -182,18 +183,32 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
       const additions = [];
       for (let i = 0; i < selected.length; i += 1) {
         const asset = selected[i]; const info = await MediaLibrary.getAssetInfoAsync(asset); const uri = info.localUri || asset.uri;
-        const blob = await (await fetch(uri)).blob(); const name = asset.filename || ('track-' + (i + 1) + '.mp3');
-        if (blob.size && blob.size > 20 * 1024 * 1024) throw new Error(name + ' is larger than the 20 MB limit.');
+        const file = new ExpoFile(uri); const name = asset.filename || ('track-' + (i + 1) + '.mp3');
+        const fileSize = Number(file.size || asset.fileSize || 0);
+        if (fileSize > 20 * 1024 * 1024) throw new Error(name + ' is larger than the 20 MB limit.');
+        const bytes = await file.bytes();
+        if (!bytes?.length) throw new Error('Could not read ' + name + ' from your phone. Please choose another file.');
+        if (bytes.byteLength > 20 * 1024 * 1024) throw new Error(name + ' is larger than the 20 MB limit.');
         const safeName = String(name).replace(/[^A-Za-z0-9._-]/g, '_').slice(-90); const path = userId + '/' + roomId + '/' + Date.now() + '-' + i + '-' + safeName;
-        const result = await supabase.storage.from('talkzy-room-music').upload(path, blob, { contentType: asset.mimeType || 'audio/mpeg', upsert: false });
-        if (result.error) throw result.error;
+        let result; let lastUploadError;
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+          result = await supabase.storage.from('talkzy-room-music').upload(path, bytes, { contentType: asset.mimeType || 'audio/mpeg', upsert: false });
+          if (!result.error) break;
+          lastUploadError = result.error;
+          if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 900 * (attempt + 1)));
+        }
+        if (result?.error) throw new Error('Upload failed after 3 attempts: ' + (lastUploadError.message || 'Network connection failed.'));
         additions.push({ object_path: path, title: String(name).replace(/\.[^.]+$/, '').slice(0, 120) });
       }
       const nextQueue = [...existing, ...additions]; const first = existing.length === 0;
       const state = await saveState({ queue: nextQueue, current_index: first ? 0 : indexRef.current, is_playing: first ? true : playingRef.current, current_time_seconds: first ? 0 : currentTime });
       if (first && state?.queue?.[0]?.url) { queueRef.current = state.queue; await playAt(0, true); }
       setSelectedLocalIds([]); setMusicPage('library'); setMinimized(false);
-    } catch (error) { Alert.alert('Music upload', error.message || 'Could not upload selected songs.'); }
+    } catch (error) {
+      const message = error?.message || 'Could not upload selected songs.';
+      const networkLike = /network|fetch|timeout|connection|offline/i.test(message);
+      Alert.alert('Music upload', networkLike ? message + '\n\nPlease check your internet connection and try again. Your selected songs are still selected.' : message);
+    }
     finally { setUploading(false); }
   };
   const chooseFiles = () => openMyMusic();
