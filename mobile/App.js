@@ -597,6 +597,7 @@ const micSeatLoadVersionRef = useRef(0);
 const roomLeaveCleanupRef = useRef({});
 const roomExitInProgressRef = useRef({});
 const roomChatLocalCutoffRef = useRef({});
+const worldLuckyBagSeenRef = useRef(new Set());
  const [showMicCountPicker, setShowMicCountPicker] = useState(false);
  const [micLayout, setMicLayout] = useState('eight');
  const MIC_LAYOUTS = {
@@ -667,25 +668,48 @@ useEffect(() => {
   if (!session?.user?.id) return;
   const channel = supabase.channel('talkzy-world-lucky-bag-notifications')
     .on('broadcast', { event: 'world_lucky_bag' }, ({ payload }) => {
-      if (payload) {
-        const nextNotification = {
-          id: payload.id || Date.now().toString(),
-          senderName: payload.senderName,
-          coinAmount: payload.coinAmount,
-          roomNumber: payload.roomNumber,
-          roomId: payload.roomId,
-          room: payload.room
-        };
-        setWorldLuckyBagNotification(current => {
-          if (!current) return nextNotification;
-          setWorldLuckyBagQueue(queue => [...queue, nextNotification]);
-          return current;
-        });
-      }
+      const bagId = String(payload?.id || '');
+      if (!bagId || worldLuckyBagSeenRef.current.has(bagId)) return;
+      worldLuckyBagSeenRef.current.add(bagId);
+      (async () => {
+        try {
+          const { data: bag, error } = await supabase.from('talkzy_lucky_bags')
+            .select('id,sender_id,room_id,scope,status,expires_at,total_coins')
+            .eq('id', bagId).maybeSingle();
+          if (error || !bag || bag.scope !== 'world' || bag.status !== 'active' ||
+              new Date(bag.expires_at).getTime() <= Date.now() ||
+              bag.sender_id === session.user.id ||
+              (payload.roomId && payload.roomId !== bag.room_id)) {
+            worldLuckyBagSeenRef.current.delete(bagId);
+            return;
+          }
+          const { data: sender } = await supabase.from('talkzy_profiles')
+            .select('display_name').eq('id', bag.sender_id).maybeSingle();
+          const cachedRoom = [rooms, joinedRooms, followedRooms, myRooms]
+            .flat().find(item => item?.id === bag.room_id) || null;
+          const roomFromPayload = payload.room?.id === bag.room_id ? payload.room : null;
+          const nextNotification = {
+            id: bag.id,
+            senderName: sender?.display_name || 'TALKZY User',
+            coinAmount: Number(bag.total_coins || 0),
+            roomNumber: cachedRoom?.room_talkzy_id || cachedRoom?.room_name || roomFromPayload?.room_talkzy_id || roomFromPayload?.room_name || 'Room',
+            roomId: bag.room_id,
+            room: cachedRoom || roomFromPayload
+          };
+          setWorldLuckyBagNotification(current => {
+            if (!current) return nextNotification;
+            setWorldLuckyBagQueue(queue => queue.length < 20 ? [...queue, nextNotification] : queue);
+            return current;
+          });
+        } catch (validationError) {
+          worldLuckyBagSeenRef.current.delete(bagId);
+          console.log('World Lucky Bag notification validation:', validationError.message);
+        }
+      })();
     })
     .subscribe();
   return () => { supabase.removeChannel(channel); };
-}, [session?.user?.id]);
+}, [session?.user?.id, rooms, joinedRooms, followedRooms, myRooms]);
 
 // Rotate queued World Lucky Bag notices instead of overlapping them.
 useEffect(() => {
@@ -2140,13 +2164,21 @@ async function toggleFollowRoom(room) {
 
   async function openWorldLuckyBagRoom(notification) {
     if (!notification) return;
-    const room = notification.room || rooms.find(item => item.id === notification.roomId) ||
-      joinedRooms.find(item => item.id === notification.roomId) ||
-      followedRooms.find(item => item.id === notification.roomId) ||
-      myRooms.find(item => item.id === notification.roomId);
-    if (!room) {
-      return Alert.alert('Room unavailable', 'This room could not be found or may have closed.');
-    }
+    try {
+      const { data: bag, error } = await supabase.from('talkzy_lucky_bags')
+        .select('id,room_id,scope,status,expires_at')
+        .eq('id', notification.id).maybeSingle();
+      if (error || !bag || bag.scope !== 'world' || bag.status !== 'active' ||
+          new Date(bag.expires_at).getTime() <= Date.now()) {
+        return Alert.alert('Lucky Bag Expired', 'This World Lucky Bag is no longer active.');
+      }
+      const actualRoomId = bag.room_id;
+      const room = [rooms, joinedRooms, followedRooms, myRooms]
+        .flat().find(item => item?.id === actualRoomId) ||
+        (notification.room?.id === actualRoomId ? notification.room : null);
+      if (!room) {
+        return Alert.alert('Room unavailable', 'This room could not be found or may have closed.');
+      }
     if (room.room_type === 'locked') {
       setJoinTargetRoom(room);
       setJoinMode('tourist');
@@ -2155,6 +2187,9 @@ async function toggleFollowRoom(room) {
       return;
     }
     await submitRoomVisit(room, '');
+    } catch (validationError) {
+      Alert.alert('Lucky Bag', validationError.message || 'Could not verify this notification.');
+    }
   }
 
   async function sendRoomImage() {
