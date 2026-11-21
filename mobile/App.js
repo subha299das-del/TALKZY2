@@ -3231,7 +3231,7 @@ function renderRoomInterior() {
     return (
       <TouchableOpacity
         key={seat}
-        disabled={isRoomTourist && !touristsOnMic}
+        disabled={isRoomTourist && !touristsOnMic && !canControlMics}
         onPress={async () => {
           if (canControlMics) { setMicControlSeat(seat); setShowMicControlPopup(true); return; }
           if (seatIsClosed) { Alert.alert('Seat closed', 'The room owner or admin has closed this seat.'); return; }
@@ -3397,7 +3397,7 @@ function renderRoomInterior() {
             />
           )}
           {seatIsClosed && (
-            <View style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(15,8,27,0.78)', alignItems: 'center', justifyContent: 'center', borderRadius: 30 }}>
+            <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(15,8,27,0.78)', alignItems: 'center', justifyContent: 'center', borderRadius: 30 }}>
               <View style={{ width: 26, height: 20, borderWidth: 2, borderColor: '#C28BFF', borderRadius: 4, transform: [{ rotate: '-8deg' }] }}>
                 <View style={{ position: 'absolute', width: 33, height: 3, backgroundColor: '#FF6685', top: 8, left: -4, transform: [{ rotate: '42deg' }] }} />
               </View>
@@ -3450,6 +3450,7 @@ function renderRoomInterior() {
       <TouchableOpacity onPress={() => {
         setShowMicControlPopup(false);
         const occupied = micSeats.find(item => item.seat_number === micControlSeat);
+        if (micControls.find(x => x.seat_number === micControlSeat)?.seat_closed) { Alert.alert('Seat closed', 'Open the seat first before taking it.'); return; }
         if (occupied && occupied.user_id !== session?.user?.id) { Alert.alert('Seat occupied', 'This mic is already occupied. Takeover is not enabled.'); return; }
         (async () => { try {
           if (occupied?.user_id === session?.user?.id) await api(`/api/rooms/${selectedRoom.id}/mic-seats`, { method: 'DELETE' });
