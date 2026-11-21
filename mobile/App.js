@@ -720,7 +720,16 @@ useEffect(() => {
         table: 'talkzy_rooms',
         filter: `id=eq.${roomId}`
       },
-      () => loadRoomMicSeats(roomId)
+      payload => {
+        if (payload?.new?.status && payload.new.status !== 'active') {
+          if (selectedRoom?.id === roomId) {
+            exitCurrentRoom();
+            Alert.alert('Room Closed', 'The Main Owner has closed this room.');
+          }
+          return;
+        }
+        loadRoomMicSeats(roomId);
+      }
     )
     .on('postgres_changes', { event: '*', schema: 'public', table: 'talkzy_room_mic_controls', filter: `room_id=eq.${roomId}` }, () => loadRoomMicSeats(roomId))
     .subscribe();
@@ -783,6 +792,11 @@ useEffect(() => {
       await api(`/api/rooms/${roomId}/presence/ping`, { method: 'POST' });
       if (active) await loadRoomPresence(roomId);
     } catch (error) {
+      if (active && selectedRoom?.id === roomId && /room is closed/i.test(error?.message || '')) {
+        exitCurrentRoom();
+        Alert.alert('Room Closed', 'The Main Owner has closed this room.');
+        return;
+      }
       console.log('Room presence refresh:', error.message);
     }
   };
@@ -10513,9 +10527,33 @@ if (screen === 'profile' || profileIncomplete) {
     setShowRoomThemeMenu(false);
     setShowRoomUsers(false);
     setShowRoomMessageMenu(false);
+    setShowRoomInfo(false);
+    setRoomDetailsVisible(false);
+    setRoomDetails(null);
+    setShowMicControlPopup(false);
+    setMicControlSeat(null);
+    setShowLuckyBagPopup(false);
+    setLuckyBagHistoryView(false);
     setShowYoutubePanel(false);
+    setShowYoutubePicker(false);
+    setYoutubePickedItem(null);
+    setYoutubeSelectedVideo(null);
+    setYoutubePreviewVideoId(null);
+    setYoutubeUrlInput('');
+    setYoutubeSearchQuery('');
+    setShowMusicPanel(false);
+    setMusicMinimized(false);
+    setShowRoomActivityComposer(false);
+    setShowCreateRoomActivity(false);
+    setActivitySelectedRoom(null);
+    setShowPosterOptions(false);
+    setShowPosterTemplates(false);
+    setShowPosterEditor(false);
     setShowMicCountPicker(false);
     setShowJoinPassword(false);
+    setRoomChatText('');
+    setMicGame(null);
+    setRoomSettingsSubpage(null);
     setIsOnMic(false);
     setMyMicSeat(null);
     setIsMicMuted(false);
