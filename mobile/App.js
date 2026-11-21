@@ -50,17 +50,12 @@ const YOUTUBE_PLAYER_HTML = `<!DOCTYPE html><html><head><meta name="viewport" co
 
 
 const C = {
-  bg: '#090D18',
-  panel: '#141B2B',
-  panel2: '#1B2538',
-  text: '#F4F7FF',
-  muted: '#9AA8C0',
-  accent: '#7C5CFC',
-  primary: '#7C5CFC',
-  card: '#141B2B',
-  line: '#29344A',
-  danger: '#FF6B78',
-  gold: '#FFC857'
+  // TALKZY signature palette: Midnight Aurora
+  bg: '#080B18', panel: '#11172B', panel2: '#1A2340',
+  text: '#F5F6FF', muted: '#9CA9C9',
+  accent: '#9366FF', primary: '#9366FF', card: '#11172B',
+  line: '#293453', danger: '#FF6685', gold: '#FFD27A',
+  teal: '#43DCC5', pink: '#F27BC2', glow: 'rgba(147,102,255,0.22)'
 };
 
 
@@ -205,41 +200,41 @@ function WorldLuckyBagTicker({ notification, onPress }) {
 }
 
 function Brand({ small = false }) {
-  const size = small ? 48 : 100;
-
+  const size = small ? 48 : 92;
   return (
-    <View
-      style={{
-        alignItems: 'center',
-        marginBottom: small ? 8 : 22
-      }}
-    >
-      <Image
-        source={require('./assets/talkzy-icon.png')}
-        style={{
-          width: size,
-          height: size,
-          resizeMode: 'contain'
-        }}
-      />
-
-      <Text
-        style={{
-          color: C.text,
-          fontSize: small ? 21 : 30,
-          fontWeight: '900',
-          letterSpacing: 3,
-          marginTop: 5
-        }}
-      >
+    <View style={{ alignItems: 'center', marginBottom: small ? 8 : 24 }}>
+      {!small && <View style={{
+        width: 142, height: 142, borderRadius: 71, alignItems: 'center',
+        justifyContent: 'center', marginBottom: 8,
+        backgroundColor: 'rgba(147,102,255,0.09)',
+        borderWidth: 1, borderColor: 'rgba(147,102,255,0.28)'
+      }}>
+        <View style={{ position: 'absolute', width: 122, height: 122,
+          borderRadius: 61, borderWidth: 1, borderColor: 'rgba(67,220,197,0.34)' }} />
+        <View style={{ position: 'absolute', width: 106, height: 106,
+          borderRadius: 53, backgroundColor: 'rgba(147,102,255,0.16)' }} />
+        <Image source={require('./assets/talkzy-icon.png')} style={{
+          width: size, height: size, resizeMode: 'contain'
+        }} />
+        <View style={{ position: 'absolute', right: 12, top: 23, width: 10,
+          height: 10, borderRadius: 5, backgroundColor: C.teal }} />
+        <View style={{ position: 'absolute', left: 13, bottom: 25, width: 7,
+          height: 7, borderRadius: 4, backgroundColor: C.pink }} />
+      </View>}
+      {small && <Image source={require('./assets/talkzy-icon.png')} style={{
+        width: size, height: size, resizeMode: 'contain'
+      }} />}
+      <Text style={{ color: C.text, fontSize: small ? 21 : 32,
+        fontWeight: '900', letterSpacing: small ? 3 : 5, marginTop: small ? 5 : 0 }}>
         TALKZY
       </Text>
-
-      {!small && (
-        <Text style={{ color: C.muted, marginTop: 4 }}>
+      {!small && <>
+        <Text style={{ color: C.teal, marginTop: 8, fontSize: 10,
+          fontWeight: '900', letterSpacing: 2.4 }}>YOUR VOICE. YOUR PEOPLE.</Text>
+        <Text style={{ color: C.muted, marginTop: 7, fontSize: 13 }}>
           Talk. Connect. Belong.
         </Text>
-      )}
+      </>}
     </View>
   );
 }
@@ -256,23 +251,20 @@ function Button({
       disabled={disabled}
       onPress={onPress}
       style={{
-        backgroundColor: secondary
-          ? C.panel2
-          : danger
-          ? '#632B3A'
-          : C.accent,
-        padding: 14,
-        borderRadius: 13,
-        alignItems: 'center',
-        marginTop: 10,
-        opacity: disabled ? 0.55 : 1
+        backgroundColor: secondary ? C.panel2 : danger ? '#482238' : C.accent,
+        borderWidth: 1,
+        borderColor: secondary ? '#354365' : danger ? '#8D3B60' : '#B69AFF',
+        paddingVertical: 15, paddingHorizontal: 16, borderRadius: 16,
+        alignItems: 'center', justifyContent: 'center', marginTop: 11,
+        opacity: disabled ? 0.48 : 1,
+        shadowColor: secondary ? 'transparent' : C.accent,
+        shadowOpacity: secondary ? 0 : 0.28, shadowRadius: 12,
+        shadowOffset: { width: 0, height: 5 }, elevation: secondary ? 0 : 4
       }}
     >
       <Text
         style={{
-          color: C.text,
-          fontWeight: '800',
-          fontSize: 15
+          color: C.text, fontWeight: '900', fontSize: 14, letterSpacing: 0.45
         }}
       >
         {title}
@@ -290,8 +282,9 @@ function Field({
   keyboardType
 }) {
   return (
-    <View style={{ marginTop: 12 }}>
-      <Text style={{ color: C.muted, marginBottom: 6, fontSize: 13 }}>
+    <View style={{ marginTop: 14 }}>
+      <Text style={{ color: C.teal, marginBottom: 8, fontSize: 10,
+        fontWeight: '900', letterSpacing: 1.25 }}>
         {label}
       </Text>
 
@@ -299,18 +292,14 @@ function Field({
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder || label}
-        placeholderTextColor="#71809A"
+        placeholderTextColor="#7885A7"
         secureTextEntry={secureTextEntry}
         keyboardType={keyboardType}
         autoCapitalize="none"
         style={{
-          backgroundColor: C.panel2,
-          color: C.text,
-          borderWidth: 1,
-          borderColor: C.line,
-          borderRadius: 12,
-          paddingHorizontal: 14,
-          paddingVertical: 13
+          backgroundColor: '#0C1225', color: C.text,
+          borderWidth: 1, borderColor: '#303D60', borderRadius: 15,
+          paddingHorizontal: 16, paddingVertical: 15, fontSize: 14
         }}
       />
     </View>
@@ -321,13 +310,10 @@ function Card({ children, style = {} }) {
   return (
     <View
       style={{
-        backgroundColor: C.panel,
-        borderWidth: 1,
-        borderColor: C.line,
-        borderRadius: 16,
-        padding: 15,
-        marginBottom: 12,
-        ...style
+        backgroundColor: C.panel, borderWidth: 1, borderColor: '#263252',
+        borderRadius: 21, padding: 17, marginBottom: 14,
+        shadowColor: '#000000', shadowOpacity: 0.18, shadowRadius: 12,
+        shadowOffset: { width: 0, height: 5 }, elevation: 2, ...style
       }}
     >
       {children}
@@ -339,10 +325,8 @@ function Heading({ children }) {
   return (
     <Text
       style={{
-        color: C.text,
-        fontSize: 23,
-        fontWeight: '900',
-        marginBottom: 8
+        color: C.text, fontSize: 25, fontWeight: '900',
+        letterSpacing: -0.55, marginBottom: 9
       }}
     >
       {children}
@@ -354,11 +338,8 @@ function SectionTitle({ children }) {
   return (
     <Text
       style={{
-        color: C.text,
-        fontSize: 17,
-        fontWeight: '900',
-        marginTop: 20,
-        marginBottom: 10
+        color: C.text, fontSize: 16, fontWeight: '900',
+        letterSpacing: 0.25, marginTop: 22, marginBottom: 12
       }}
     >
       {children}
@@ -371,16 +352,16 @@ function Chip({ title, active, onPress }) {
     <TouchableOpacity
       onPress={onPress}
       style={{
-        backgroundColor: active ? C.accent : C.panel2,
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 20,
-        marginRight: 8,
-        borderWidth: 1,
-        borderColor: active ? C.accent : C.line
+        backgroundColor: active ? 'rgba(147,102,255,0.22)' : '#121A30',
+        paddingHorizontal: 17, paddingVertical: 11, borderRadius: 15,
+        marginRight: 8, borderWidth: 1,
+        borderColor: active ? C.accent : '#2A3655',
+        shadowColor: active ? C.accent : 'transparent',
+        shadowOpacity: active ? 0.22 : 0, shadowRadius: 8, elevation: active ? 2 : 0
       }}
     >
-      <Text style={{ color: C.text, fontWeight: '700' }}>
+      <Text style={{ color: active ? '#D7C7FF' : C.muted,
+        fontWeight: '900', fontSize: 12, letterSpacing: 0.25 }}>
         {title}
       </Text>
     </TouchableOpacity>
@@ -2523,9 +2504,8 @@ setScreen('roomInterior');
 >
   <Card
       style={{
-        padding: 10,
-        marginBottom: 9,
-        borderRadius: 12
+        padding: 12, marginBottom: 11, borderRadius: 18,
+        borderColor: '#2B385B'
       }}
     >
       <View
@@ -4386,10 +4366,10 @@ borderTopWidth: 1,
           <TouchableOpacity
             onPress={() => setScreen('createRoom')}
             style={{
-              backgroundColor: C.accent,
-              padding: 17,
-              borderRadius: 15,
-              marginBottom: 15
+              backgroundColor: '#6F4BD9', borderWidth: 1,
+              borderColor: '#B69AFF', padding: 19, borderRadius: 19,
+              marginBottom: 17, shadowColor: C.accent,
+              shadowOpacity: 0.28, shadowRadius: 14, elevation: 4
             }}
           >
             <Text style={{ color: 'white', fontSize: 17, fontWeight: '900', textAlign: 'center' }}>
@@ -5707,7 +5687,8 @@ function renderEvents() {
   function renderRoom() {
     return (
       <>
-        <View style={{ flexDirection: 'row', marginBottom: 18 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 5, paddingRight: 6 }}>
           {['Mine', 'Popular', 'Discover', 'Events'].map(item => (
             <Chip
               key={item}
@@ -5728,7 +5709,7 @@ function renderEvents() {
 }}
             />
           ))}
-        </View>
+        </ScrollView>
 
         {roomTab === 'Mine' && renderMine()}
         {roomTab === 'Popular' && renderPopular()}
@@ -6366,22 +6347,31 @@ function renderEvents() {
     return (
       <ScrollView
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          flexGrow: 1,
-          justifyContent: 'center',
-          paddingBottom: 35
+          flexGrow: 1, justifyContent: 'center',
+          paddingTop: 22, paddingBottom: 42
         }}
       >
         <Brand />
-
-        <Card>
+        <View style={{ flexDirection: 'row', alignItems: 'center',
+          justifyContent: 'center', marginBottom: 14 }}>
+          <View style={{ width: 25, height: 1, backgroundColor: C.teal, opacity: 0.7 }} />
+          <Text style={{ color: C.teal, fontSize: 9, fontWeight: '900',
+            letterSpacing: 2, marginHorizontal: 10 }}>A WORLD OF VOICES</Text>
+          <View style={{ width: 25, height: 1, backgroundColor: C.teal, opacity: 0.7 }} />
+        </View>
+        <Card style={{ padding: 20, backgroundColor: '#10172D',
+          borderColor: '#35416A', borderRadius: 25 }}>
+          <View style={{ width: 42, height: 4, borderRadius: 3,
+            backgroundColor: C.teal, marginBottom: 17 }} />
           <Heading>
             {authMode === 'login'
               ? 'Welcome Back!'
               : 'Create Account'}
           </Heading>
 
-          <Text style={{ color: C.muted, marginBottom: 10 }}>
+          <Text style={{ color: C.muted, marginBottom: 10, lineHeight: 20, fontSize: 13 }}>
             {authMode === 'login'
               ? 'Sign in to continue to TALKZY.'
               : 'Join TALKZY and connect with people.'}
@@ -6476,11 +6466,11 @@ function renderEvents() {
       <View
         style={{
           flexDirection: 'row',
-          backgroundColor: '#111827',
-          borderTopWidth: 1,
-          borderTopColor: C.line,
+          backgroundColor: '#0D1326',
+          borderTopWidth: 1, borderTopColor: '#263252',
           paddingTop: 9,
-paddingBottom: Platform.OS === 'android' ? 28 : 8
+          paddingBottom: Platform.OS === 'android' ? 28 : 10,
+          paddingHorizontal: 7
         }}
       >
         {tabs.map(tab => {
@@ -6492,24 +6482,28 @@ paddingBottom: Platform.OS === 'android' ? 28 : 8
               onPress={() => setActiveTab(tab.name)}
               style={{
                 flex: 1,
-                alignItems: 'center',
-                paddingVertical: 5
+                alignItems: 'center', justifyContent: 'center',
+                paddingVertical: 7, marginHorizontal: 2, borderRadius: 15,
+                backgroundColor: active ? 'rgba(147,102,255,0.16)' : 'transparent',
+                borderWidth: 1,
+                borderColor: active ? 'rgba(147,102,255,0.30)' : 'transparent'
               }}
             >
-              <Text style={{ fontSize: 21 }}>
+              <Text style={{ fontSize: 20, opacity: active ? 1 : 0.72 }}>
                 {tab.icon}
               </Text>
 
               <Text
                 style={{
-                  color: active ? C.accent : C.muted,
-                  fontWeight: active ? '900' : '600',
-                  fontSize: 11,
-                  marginTop: 4
+                  color: active ? '#D9CBFF' : '#8793B2',
+                  fontWeight: active ? '900' : '700',
+                  fontSize: 10, marginTop: 4, letterSpacing: 0.2
                 }}
               >
                 {tab.name}
               </Text>
+              {active && <View style={{ width: 13, height: 3, borderRadius: 2,
+                backgroundColor: C.teal, marginTop: 4 }} />}
             </TouchableOpacity>
           );
         })}
@@ -6545,10 +6539,8 @@ paddingBottom: Platform.OS === 'android' ? 28 : 8
           <Text
             style={{
               color: C.text,
-              fontSize: 20,
-              fontWeight: '900',
-              letterSpacing: 2,
-              marginLeft: 8
+              fontSize: 21, fontWeight: '900',
+              letterSpacing: 3, marginLeft: 9
             }}
           >
             TALKZY
@@ -6560,9 +6552,8 @@ paddingBottom: Platform.OS === 'android' ? 28 : 8
           style={{
             flexDirection: 'row',
             alignItems: 'center',
-            backgroundColor: C.panel,
-            padding: 7,
-            borderRadius: 25
+            backgroundColor: '#151D35', padding: 7, borderRadius: 25,
+          borderWidth: 1, borderColor: '#303D60'
           }}
         >
           {profile?.avatar_url ? (
@@ -9717,7 +9708,9 @@ if (screen === 'profile' || profileIncomplete) {
             contentContainerStyle={{ paddingHorizontal: 15, paddingBottom: 25, flexGrow: 1 }}
             keyboardShouldPersistTaps="handled"
             nestedScrollEnabled
+            showsVerticalScrollIndicator={false}
           >
+            {renderMainHeader()}
             {renderMainContent()}
           </ScrollView>
         )}
