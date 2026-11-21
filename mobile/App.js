@@ -2080,7 +2080,7 @@ async function toggleFollowRoom(room) {
     } finally { setJoiningRoom(false); }
   }
 
-  async async function openWorldLuckyBagRoom(notification) {
+  async function openWorldLuckyBagRoom(notification) {
     if (!notification) return;
     const room = notification.room || rooms.find(item => item.id === notification.roomId) ||
       joinedRooms.find(item => item.id === notification.roomId) ||
