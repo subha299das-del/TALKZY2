@@ -9696,7 +9696,18 @@ if (screen === 'profile' || profileIncomplete) {
       <StatusBar barStyle="light-content" />
 
       <View style={{ flex: 1, backgroundColor: screen === 'roomInterior' ? 'transparent' : C.bg }}>
-        {/* Main app header hidden: branding is reserved for the login screen. */}
+        {screen !== 'roomInterior' && <>
+          <View pointerEvents="none" style={{
+            position: 'absolute', top: -95, left: -105,
+            width: 250, height: 250, borderRadius: 125,
+            backgroundColor: 'rgba(147,102,255,0.075)'
+          }} />
+          <View pointerEvents="none" style={{
+            position: 'absolute', top: 170, right: -145,
+            width: 245, height: 245, borderRadius: 123,
+            backgroundColor: 'rgba(67,220,197,0.045)'
+          }} />
+        </>}
 
         {screen === 'roomInterior' ? (
           // Room interior stays fixed: only designated inner panels may scroll.
