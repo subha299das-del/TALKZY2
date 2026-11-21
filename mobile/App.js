@@ -4385,27 +4385,31 @@ borderTopWidth: 1,
         )}
 
 
-        <View style={{ flexDirection: 'row', marginBottom: 15 }}>
-          {['Recent', 'Joined', 'Follow'].map(item => (
-            <Chip
-              key={item}
-              title={item}
-              active={mineTab === item}
-              onPress={() => {
-  
-setMineTab(item);
-
-if (item === 'Joined') {
-  loadJoinedRooms();
-}
-
-if (item === 'Follow') {
-  loadFollowedRooms();
-}
-}}
-
-            />
-          ))}
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15, paddingHorizontal: 4 }}>
+          {['Recent', 'Joined', 'Follow'].map(item => {
+            const active = mineTab === item;
+            return (
+              <TouchableOpacity
+                key={item}
+                activeOpacity={0.8}
+                onPress={() => {
+                  setMineTab(item);
+                  if (item === 'Joined') loadJoinedRooms();
+                  if (item === 'Follow') loadFollowedRooms();
+                }}
+                style={{ flex: 1, minWidth: 0, minHeight: 38, alignItems: 'center', justifyContent: 'center', paddingVertical: 5 }}
+              >
+                <Text numberOfLines={1} adjustsFontSizeToFit style={{
+                  color: active ? '#F2ECFF' : '#9CA9C9',
+                  fontSize: active ? 14 : 10,
+                  fontWeight: active ? '900' : '600',
+                  letterSpacing: active ? 0.2 : 0,
+                  transform: [{ scale: active ? 1.06 : 1 }]
+                }}>{item}</Text>
+                {active && <View style={{ width: 18, height: 2, borderRadius: 2, backgroundColor: '#43DCC5', marginTop: 4 }} />}
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {mineTab === 'Recent' && (
@@ -5919,21 +5923,23 @@ function renderEvents() {
       <>
         {/* MOMENT TABS */}
 
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            marginBottom: 15
-          }}
-        >
-          {momentTabs.map(item => (
-            <Chip
-              key={item}
-              title={item}
-              active={momentTab === item}
-              onPress={() => setMomentTab(item)}
-            />
-          ))}
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15, paddingHorizontal: 4 }}>
+          {momentTabs.map(item => {
+            const active = momentTab === item;
+            return (
+              <TouchableOpacity key={item} activeOpacity={0.8} onPress={() => setMomentTab(item)}
+                style={{ flex: 1, minWidth: 0, minHeight: 38, alignItems: 'center', justifyContent: 'center', paddingVertical: 5 }}>
+                <Text numberOfLines={1} adjustsFontSizeToFit style={{
+                  color: active ? '#F2ECFF' : '#9CA9C9',
+                  fontSize: active ? 14 : 10,
+                  fontWeight: active ? '900' : '600',
+                  letterSpacing: active ? 0.2 : 0,
+                  transform: [{ scale: active ? 1.06 : 1 }]
+                }}>{item}</Text>
+                {active && <View style={{ width: 18, height: 2, borderRadius: 2, backgroundColor: '#43DCC5', marginTop: 4 }} />}
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {/* WEEKLY TOPIC */}
@@ -6085,24 +6091,23 @@ function renderEvents() {
 
         {/* MESSAGE / FRIEND TABS */}
 
-        <View
-          style={{
-            flexDirection: 'row',
-            marginTop: 8,
-            marginBottom: 18
-          }}
-        >
-          <Chip
-            title="Message"
-            active={messageTab === 'Message'}
-            onPress={() => setMessageTab('Message')}
-          />
-
-          <Chip
-            title="Friends"
-            active={messageTab === 'Friends'}
-            onPress={() => setMessageTab('Friends')}
-          />
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 18, paddingHorizontal: 4 }}>
+          {['Message', 'Friends'].map(item => {
+            const active = messageTab === item;
+            return (
+              <TouchableOpacity key={item} activeOpacity={0.8} onPress={() => setMessageTab(item)}
+                style={{ flex: 1, minWidth: 0, minHeight: 38, alignItems: 'center', justifyContent: 'center', paddingVertical: 5 }}>
+                <Text numberOfLines={1} adjustsFontSizeToFit style={{
+                  color: active ? '#F2ECFF' : '#9CA9C9',
+                  fontSize: active ? 14 : 10,
+                  fontWeight: active ? '900' : '600',
+                  letterSpacing: active ? 0.2 : 0,
+                  transform: [{ scale: active ? 1.06 : 1 }]
+                }}>{item}</Text>
+                {active && <View style={{ width: 18, height: 2, borderRadius: 2, backgroundColor: '#43DCC5', marginTop: 4 }} />}
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {/* MESSAGE LIST */}
