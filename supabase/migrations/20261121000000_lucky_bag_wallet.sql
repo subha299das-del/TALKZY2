@@ -28,6 +28,7 @@ begin
  if p_scope not in('room','world') or p_coin_amount_per_bag<1 or p_bag_count<1 or p_bag_count>99 or p_coin_amount_per_bag>1000000000 then raise exception 'Invalid amount or quantity'; end if;
  total:=p_coin_amount_per_bag*p_bag_count;
  if p_room_id is null or not exists(select 1 from public.talkzy_rooms where id=p_room_id and status='active') then raise exception 'Room unavailable'; end if;
+ if not exists(select 1 from public.talkzy_room_presence where room_id=p_room_id and user_id=u) then raise exception 'You must be inside this room to send a Lucky Bag'; end if;
  insert into public.talkzy_wallets(user_id,balance) values(u,0) on conflict do nothing;
  select balance into bal from public.talkzy_wallets where user_id=u for update;
  if bal<total then raise exception 'Insufficient coins'; end if;
@@ -45,7 +46,9 @@ begin
  if u is null then raise exception 'Login required'; end if;
  select * into b from public.talkzy_lucky_bags where id=p_bag_id for update;
  if not found then raise exception 'Bag not found'; end if;
- if b.status<>'active' or b.expires_at<=now() then raise exception 'Bag expired'; end if;
+ if b.status<>'active' then raise exception 'Bag is no longer active'; end if;
+ if b.expires_at<=now() then perform public.talkzy_lucky_bag_expire(); return jsonb_build_object('expired',true,'message','Expired bag is being refunded'); end if;
+ if b.sender_id=u then raise exception 'Cannot open your own bag'; end if;
  if b.remaining_bags<=0 or b.remaining_coins<=0 then raise exception 'Bag empty'; end if;
  if b.scope='room' and b.room_id is distinct from(select room_id from public.talkzy_room_presence where user_id=u limit 1) then raise exception 'Enter sender room first'; end if;
  if exists(select 1 from public.talkzy_lucky_bag_claims where bag_id=p_bag_id and claimer_id=u) then raise exception 'Already claimed'; end if;
