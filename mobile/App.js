@@ -10581,18 +10581,8 @@ if (screen === 'profile' || profileIncomplete) {
             
   async function exitCurrentRoom() {
     const roomId = selectedRoom?.id;
-    const wasTourist = isRoomTourist;
-    // Complete the server-side personal chat cutoff before allowing another room entry.
-    // This prevents a fast re-entry from racing the leave request and loading stale chat.
-    if (roomId) {
-      try {
-        await api(`/api/rooms/${roomId}/presence/leave`, { method: 'POST' });
-      } catch (error) {
-        console.log('Room exit cleanup error:', error.message);
-        Alert.alert('Room exited', 'You left on this device, but server cleanup did not finish. Old chat may return until you reconnect.');
-      }
-    }
-    // Clear local room UI after the personal cutoff is recorded.
+
+    // Exit locally first so a slow server request cannot trap the user in the room.
     setShowRoomMenu(false);
     setShowRoomTools(false);
     setShowRoomGiftPanel(false);
@@ -10611,6 +10601,11 @@ if (screen === 'profile' || profileIncomplete) {
     ++micSeatLoadVersionRef.current;
     setScreen('main');
 
+    // Perform server cleanup in the background after the UI has exited.
+    if (roomId) {
+      api(`/api/rooms/${roomId}/presence/leave`, { method: 'POST' })
+        .catch(error => console.log('Room exit cleanup error:', error.message));
+    }
   }
 
   async function openRoomSettings(room) {
