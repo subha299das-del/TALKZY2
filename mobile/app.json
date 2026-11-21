@@ -19,6 +19,12 @@
     "plugins": [
       "expo-image-picker",
       [
+        "expo-audio",
+        {
+          "enableBackgroundPlayback": true
+        }
+      ],
+      [
         "expo-media-library",
         {
           "granularPermissions": [
