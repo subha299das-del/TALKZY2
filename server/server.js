@@ -2074,6 +2074,15 @@ if (
   });
 }
 
+    // Preserve the user's mute state when moving from one mic to another.
+    const { data: previousSeat } = await supabase
+      .from('talkzy_room_mic_seats')
+      .select('is_muted')
+      .eq('room_id', room.id)
+      .eq('user_id', userId)
+      .maybeSingle();
+    const preservedMute = !!previousSeat?.is_muted;
+
     const { data, error } = await supabase.rpc('talkzy_take_mic_seat', {
       p_room_id: room.id,
       p_seat_number: seatNumber,
@@ -2098,12 +2107,13 @@ if (
       .eq('room_id', room.id)
       .eq('seat_number', seatNumber)
       .maybeSingle();
-    if (currentControl?.mic_closed) {
-      await supabase.from('talkzy_room_mic_seats')
-        .update({ is_muted: true, updated_at: new Date().toISOString() })
-        .eq('room_id', room.id)
-        .eq('seat_number', seatNumber);
-    }
+    await supabase.from('talkzy_room_mic_seats')
+      .update({
+        is_muted: currentControl?.mic_closed ? true : preservedMute,
+        updated_at: new Date().toISOString()
+      })
+      .eq('room_id', room.id)
+      .eq('user_id', userId);
 
     res.set('Cache-Control', 'no-store').json({
       success: true,
