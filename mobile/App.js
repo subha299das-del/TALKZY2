@@ -1,6 +1,7 @@
  import React, { useEffect, useState, useRef } from 'react';
 import {
   SafeAreaView,
+  KeyboardAvoidingView,
   View,
   Text,
   TextInput,
@@ -3164,25 +3165,20 @@ borderTopWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    maxWidth: 150,
+    maxWidth: 190,
     marginRight: 4
   }}
 >
-  <TouchableOpacity
-    onPress={sendRoomImage}
-    disabled={isRoomTourist && !touristsSendPic}
-    style={{ width: 30, height: 38, alignItems: 'center', justifyContent: 'center', opacity: isRoomTourist && !touristsSendPic ? 0.35 : 1 }}
-  >
-    <Text style={{ fontSize: 18 }}>📷</Text>
-  </TouchableOpacity>
   <View
     style={{
       flex: 1,
       height: 38,
+      flexDirection: 'row',
+      alignItems: 'center',
       backgroundColor: C.card,
       borderRadius: 20,
-      paddingHorizontal: 10,
-      justifyContent: 'center'
+      paddingLeft: 10,
+      paddingRight: 5
     }}
   >
     <TextInput
@@ -3193,12 +3189,15 @@ borderTopWidth: 1,
       onSubmitEditing={sendRoomChatMessage}
       editable={!(isRoomTourist && !touristsSendText)}
       returnKeyType="send"
-      style={{
-        color: C.text,
-        fontSize: 12,
-        padding: 0
-      }}
+      style={{ color: C.text, fontSize: 12, padding: 0, flex: 1 }}
     />
+    <TouchableOpacity
+      onPress={sendRoomImage}
+      disabled={isRoomTourist && !touristsSendPic}
+      style={{ width: 30, height: 32, alignItems: 'center', justifyContent: 'center', opacity: isRoomTourist && !touristsSendPic ? 0.35 : 1 }}
+    >
+      <Text style={{ fontSize: 17 }}>▣</Text>
+    </TouchableOpacity>
   </View>
 
   <TouchableOpacity
