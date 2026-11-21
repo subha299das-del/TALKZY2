@@ -400,7 +400,7 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
             </TouchableOpacity>
             <TouchableOpacity onPress={() => skip(1)}><Text style={{ color: colors.text, fontSize: 21 }}>⏭</Text></TouchableOpacity>
             <TouchableOpacity onPress={chooseFiles} disabled={uploading}>
-              {uploading ? <ActivityIndicator size="small" color={colors.accent} /> : <Text style={{ color: colors.gold, fontSize: 11, fontWeight: '900' }}>My Music</Text>}
+              {uploading ? <ActivityIndicator size="small" color={colors.accent} /> : <Text style={{ color: colors.gold, fontSize: 20, fontWeight: '900' }}>♫</Text>}
             </TouchableOpacity>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 9 }}>
