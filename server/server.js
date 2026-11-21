@@ -1858,7 +1858,7 @@ app.post('/api/rooms/:roomId/members/:userId/kick', userAuth, async (req, res) =
     const room = await requireRoom(req, res);
     if (!room) return;
     if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
-    if (room.owner_id !== req.talkzyUser.id) return res.status(403).json({ error: 'Only the room creator can kick members.' };
+    if (room.owner_id !== req.talkzyUser.id) return res.status(403).json({ error: 'Only the room creator can kick members.' });
     if (req.params.userId === room.owner_id) return res.status(400).json({ error: 'The room creator cannot be kicked.' });
     const reason = String(req.body?.reason || '').trim().slice(0, 200);
     const { error: insertError } = await supabase.from('talkzy_room_kicklist')
