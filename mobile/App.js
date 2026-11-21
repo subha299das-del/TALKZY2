@@ -3196,12 +3196,12 @@ function renderRoomInterior() {
       </View>
 
            {/* MICROPHONE SEATS */}
-<View style={{ paddingHorizontal: 12, paddingTop: youtubeState.video_id ? 4 : 16 }}>
+<View style={{ paddingHorizontal: 12, paddingTop: (youtubeState.video_id || youtubePreviewVideoId) ? 4 : 16 }}>
   {(youtubeState.video_id
     ? [((MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().slice(0, 8)), ((MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().slice(8, 16))]
     : (MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows
   ).filter(rowSeats => rowSeats.length > 0).map((rowSeats, rowIndex) => (
-    <View key={rowIndex} style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'stretch', backgroundColor: '#360D14', borderWidth: 1.5, borderColor: '#B88743', borderRadius: 17, paddingHorizontal: 3, paddingTop: 5, paddingBottom: 4, marginBottom: youtubeState.video_id ? 4 : 14, shadowColor: '#D5A64E', shadowOpacity: 0.22, shadowRadius: 7, elevation: 4 }}>
+    <View key={rowIndex} style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'stretch', backgroundColor: '#360D14', borderWidth: 1.5, borderColor: '#B88743', borderRadius: 17, paddingHorizontal: 3, paddingTop: 5, paddingBottom: 4, marginBottom: (youtubeState.video_id || youtubePreviewVideoId) ? 4 : 14, shadowColor: '#D5A64E', shadowOpacity: 0.22, shadowRadius: 7, elevation: 4 }}>
       {rowSeats.map((seat) => {
 
     const occupiedSeat = micSeats.find(
@@ -3293,12 +3293,12 @@ function renderRoomInterior() {
         style={{
           opacity: (isRoomTourist && !touristsOnMic) || (seatIsClosed && !canControlMics) ? 0.4 : 1,
           width: `${100 / rowSeats.length}%`,
-          height: youtubeState.video_id ? 42 : 88,
+          height: (youtubeState.video_id || youtubePreviewVideoId) ? 42 : 88,
           alignItems: 'center',
           justifyContent: 'flex-start',
           marginBottom: 0,
           paddingHorizontal: 1,
-          paddingTop: youtubeState.video_id ? 0 : 2,
+          paddingTop: (youtubeState.video_id || youtubePreviewVideoId) ? 0 : 2,
           backgroundColor: '#581822',
           borderLeftWidth: 1,
           borderRightWidth: 1,
@@ -3310,9 +3310,9 @@ function renderRoomInterior() {
       >
         <View
           style={{
-            width: youtubeState.video_id ? (micCount >= 17 ? 22 : 26) : (micCount >= 17 ? 42 : micCount >= 14 ? 46 : 50),
-            height: youtubeState.video_id ? (micCount >= 17 ? 22 : 26) : (micCount >= 17 ? 42 : micCount >= 14 ? 46 : 50),
-            borderRadius: youtubeState.video_id ? (micCount >= 17 ? 11 : 13) : (micCount >= 17 ? 21 : micCount >= 14 ? 23 : 25),
+            width: (youtubeState.video_id || youtubePreviewVideoId) ? (micCount >= 17 ? 22 : 26) : (micCount >= 17 ? 42 : micCount >= 14 ? 46 : 50),
+            height: (youtubeState.video_id || youtubePreviewVideoId) ? (micCount >= 17 ? 22 : 26) : (micCount >= 17 ? 42 : micCount >= 14 ? 46 : 50),
+            borderRadius: (youtubeState.video_id || youtubePreviewVideoId) ? (micCount >= 17 ? 11 : 13) : (micCount >= 17 ? 21 : micCount >= 14 ? 23 : 25),
             borderWidth: 2,
             borderColor: isMySeat ? '#F6D37B' : isOccupied ? '#D5A64E' : '#9A613E',
             backgroundColor: '#320C13',
@@ -3334,9 +3334,9 @@ function renderRoomInterior() {
                     : MIC_ON_ICON
                 }
                 style={{
-                  width: youtubeState.video_id ? (micCount >= 17 ? 20 : 24) : (micCount >= 17 ? 39 : micCount >= 14 ? 43 : 47),
-                  height: youtubeState.video_id ? (micCount >= 17 ? 20 : 24) : (micCount >= 17 ? 39 : micCount >= 14 ? 43 : 47),
-                  borderRadius: youtubeState.video_id ? (micCount >= 17 ? 10 : 12) : (micCount >= 17 ? 20 : micCount >= 14 ? 22 : 24),
+                  width: (youtubeState.video_id || youtubePreviewVideoId) ? (micCount >= 17 ? 20 : 24) : (micCount >= 17 ? 39 : micCount >= 14 ? 43 : 47),
+                  height: (youtubeState.video_id || youtubePreviewVideoId) ? (micCount >= 17 ? 20 : 24) : (micCount >= 17 ? 39 : micCount >= 14 ? 43 : 47),
+                  borderRadius: (youtubeState.video_id || youtubePreviewVideoId) ? (micCount >= 17 ? 10 : 12) : (micCount >= 17 ? 20 : micCount >= 14 ? 22 : 24),
                   resizeMode: 'cover'
                 }}
               />
@@ -3411,8 +3411,8 @@ function renderRoomInterior() {
         <Text
           style={{
             color: C.text,
-            fontSize: youtubeState.video_id ? 7 : 11,
-            marginTop: youtubeState.video_id ? 1 : 5,
+            fontSize: (youtubeState.video_id || youtubePreviewVideoId) ? 7 : 11,
+            marginTop: (youtubeState.video_id || youtubePreviewVideoId) ? 1 : 5,
             fontWeight: 'bold'
           }}
         >
