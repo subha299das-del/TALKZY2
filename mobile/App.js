@@ -441,6 +441,7 @@ const [touristsSendText, setTouristsSendText] = useState(true);
 const [touristsSendPic, setTouristsSendPic] = useState(false);
 const [roomSettingSaving, setRoomSettingSaving] = useState(false);
 const [roomSettingsSubpage, setRoomSettingsSubpage] = useState(null);
+const [roomSettingsReturnScreen, setRoomSettingsReturnScreen] = useState('main');
 const [roomSettingAdmins, setRoomSettingAdmins] = useState([]);
 const [roomSettingKicked, setRoomSettingKicked] = useState([]);
 const [roomSettingMembers, setRoomSettingMembers] = useState([]);
@@ -4307,7 +4308,7 @@ borderTopWidth: 1,
     return (
       <View style={{ flex: 1, backgroundColor: C.bg }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: '#10182A' }}>
-          <TouchableOpacity onPress={() => setScreen('roomInterior')} style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: '#202A40', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+          <TouchableOpacity onPress={() => setScreen(roomSettingsReturnScreen || 'main')} style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: '#202A40', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
             <Text style={{ color: C.text, fontSize: 25, marginTop: -2 }}>‹</Text>
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
@@ -4322,7 +4323,7 @@ borderTopWidth: 1,
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 35 }} keyboardShouldPersistTaps="handled">
           <View style={{ borderRadius: 20, padding: 17, marginBottom: 17, backgroundColor: '#211D42', borderWidth: 1, borderColor: '#5546A1' }}>
             <Text style={{ color: '#C8BFFF', fontSize: 10, fontWeight: '900', letterSpacing: 1.5 }}>ROOM CONTROL CENTRE</Text>
-            <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '900', marginTop: 7 }}>{selectedRoom.room_name || 'Your Room'}</Text>
+            <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '900', marginTop: 7 }}>{roomSettingName || selectedRoom.room_name || selectedRoom.name || 'Your Room'}</Text>
             <Text style={{ color: '#B9B4D8', fontSize: 12, marginTop: 5 }}>Personalise details, manage members and control room access.</Text>
           </View>
 
@@ -10371,21 +10372,51 @@ if (screen === 'profile' || profileIncomplete) {
             }
             
   async function openRoomSettings(room) {
-    if (!room || room.owner_id !== session?.user?.id) return Alert.alert('Room Settings', 'Only the room creator can open these settings.');
-    setSelectedRoom(room); setRoomSettingsSubpage(null);
-    setRoomSettingName(room.room_name || ''); setRoomSettingAnnouncement(room.description || '');
-    setRoomSettingDp(room.room_dp_url || null); setRoomSettingsPassword('');
+    if (!room?.id || room.owner_id !== session?.user?.id) {
+      return Alert.alert('Room Settings', 'Only the original creator of this room can open these settings.');
+    }
+
+    // Open immediately with the room card data so the settings screen never
+    // appears blank while the latest settings are being fetched.
+    const initialRoom = {
+      ...room,
+      room_name: room.room_name || room.name || '',
+      description: room.description || room.announcement || '',
+      room_dp_url: room.room_dp_url || room.roomDpUrl || null
+    };
+    setRoomSettingsReturnScreen(screen === 'roomInterior' ? 'roomInterior' : 'main');
+    setSelectedRoom(initialRoom);
+    setRoomSettingsSubpage(null);
+    setRoomSettingName(initialRoom.room_name);
+    setRoomSettingAnnouncement(initialRoom.description);
+    setRoomSettingDp(initialRoom.room_dp_url);
+    setRoomSettingsPassword('');
+    setRoomSettingsType(initialRoom.room_type || 'public');
+    setTouristsOnMic(true);
+    setTouristsSendText(true);
+    setTouristsSendPic(false);
+    setScreen('roomSettings');
+
     try {
       const result = await api(`/api/rooms/${room.id}/settings`);
+      const latestRoom = {
+        ...initialRoom,
+        ...(result.room || {}),
+        room_name: result.room?.room_name || initialRoom.room_name || 'Your Room',
+        description: result.room?.description ?? initialRoom.description,
+        room_dp_url: result.room?.room_dp_url ?? initialRoom.room_dp_url
+      };
+      setSelectedRoom(latestRoom);
       setTouristsOnMic(result.settings?.tourists_on_mic !== false);
       setTouristsSendText(result.settings?.tourists_send_text !== false);
       setTouristsSendPic(result.settings?.tourists_send_pic === true);
-      setRoomSettingName(result.room?.room_name || room.room_name || '');
-      setRoomSettingAnnouncement(result.room?.description || room.description || '');
-      setRoomSettingDp(result.room?.room_dp_url || room.room_dp_url || null);
-      setRoomSettingsType(result.room?.room_type || room.room_type || 'public');
-      setScreen('roomSettings');
-    } catch (e) { Alert.alert('Room Settings', e.message); }
+      setRoomSettingName(latestRoom.room_name);
+      setRoomSettingAnnouncement(latestRoom.description || '');
+      setRoomSettingDp(latestRoom.room_dp_url || null);
+      setRoomSettingsType(latestRoom.room_type || 'public');
+    } catch (e) {
+      Alert.alert('Room Settings', e.message || 'Could not load room settings. You can still view the room details already loaded.');
+    }
   }
 
   async function saveRoomSettings() {
