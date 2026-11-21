@@ -5692,13 +5692,11 @@ function renderEvents() {
           style={{
             flexDirection: 'row',
             alignItems: 'center',
-            backgroundColor: '#0E1529',
-            borderWidth: 1,
-            borderColor: '#273452',
-            borderRadius: 18,
-            padding: 5,
-            marginBottom: 16,
-            minHeight: 54
+            justifyContent: 'space-between',
+            paddingHorizontal: 4,
+            paddingTop: 2,
+            paddingBottom: 10,
+            marginBottom: 12
           }}
         >
           {['Mine', 'Popular', 'Discover', 'Events'].map(item => {
@@ -5706,7 +5704,7 @@ function renderEvents() {
             return (
               <TouchableOpacity
                 key={item}
-                activeOpacity={0.82}
+                activeOpacity={0.8}
                 onPress={() => {
                   setRoomTab(item);
 
@@ -5723,15 +5721,11 @@ function renderEvents() {
                 style={{
                   flex: 1,
                   minWidth: 0,
-                  minHeight: 42,
+                  minHeight: 38,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  paddingHorizontal: 2,
-                  paddingVertical: 9,
-                  borderRadius: 13,
-                  backgroundColor: active ? 'rgba(147,102,255,0.22)' : 'transparent',
-                  borderWidth: 1,
-                  borderColor: active ? 'rgba(160,126,255,0.48)' : 'transparent'
+                  paddingHorizontal: 1,
+                  paddingVertical: 5
                 }}
               >
                 <Text
@@ -5739,9 +5733,10 @@ function renderEvents() {
                   adjustsFontSizeToFit
                   style={{
                     color: active ? '#F2ECFF' : '#9CA9C9',
-                    fontSize: 11,
-                    fontWeight: active ? '900' : '700',
-                    letterSpacing: 0.1
+                    fontSize: active ? 14 : 10,
+                    fontWeight: active ? '900' : '600',
+                    letterSpacing: active ? 0.2 : 0,
+                    transform: [{ scale: active ? 1.06 : 1 }]
                   }}
                 >
                   {item}
@@ -5749,11 +5744,11 @@ function renderEvents() {
                 {active && (
                   <View
                     style={{
-                      width: 16,
-                      height: 3,
-                      borderRadius: 3,
+                      width: 18,
+                      height: 2,
+                      borderRadius: 2,
                       backgroundColor: '#43DCC5',
-                      marginTop: 5
+                      marginTop: 4
                     }}
                   />
                 )}
