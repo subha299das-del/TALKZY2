@@ -4264,14 +4264,24 @@ borderTopWidth: 1,
           )}
 
           {/* EXIT */}
-          <TouchableOpacity
-            style={{ padding: 14 }}
-            onPress={exitCurrentRoom}
+          <Pressable
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={() => {
+              console.log('[TALKZY] Exit Room tapped');
+              exitCurrentRoom();
+            }}
+            style={({ pressed }) => ({
+              padding: 16,
+              minHeight: 48,
+              justifyContent: 'center',
+              backgroundColor: pressed ? 'rgba(255,91,91,0.12)' : 'transparent'
+            })}
           >
-            <Text style={{ color: '#FF5B5B', fontSize: 15 }}>
+            <Text style={{ color: '#FF5B5B', fontSize: 15, fontWeight: '700' }}>
               Exit Room
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       )}
 
