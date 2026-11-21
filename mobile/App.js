@@ -117,7 +117,7 @@ async function api(path, options = {}) {
 
 
 
-function WorldLuckyBagTicker({ notification, onPress }) {
+function seatShortName(value) {\n  const name = String(value || 'User').trim();\n  if (!name || name.toLowerCase() === 'you') return 'YO...';\n  return name.slice(0, 2).toUpperCase() + '...';\n}\n\nfunction WorldLuckyBagTicker({ notification, onPress }) {
   const translateX = useRef(new Animated.Value(Dimensions.get('window').width)).current;
 
   useEffect(() => {
@@ -3263,7 +3263,7 @@ function renderRoomInterior() {
     ? [((MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().slice(0, 8)), ((MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().slice(8, 16))]
     : (MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows
   ).filter(rowSeats => rowSeats.length > 0).map((rowSeats, rowIndex) => (
-    <View key={rowIndex} style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start' }}>
+    <View key={rowIndex} style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'stretch', backgroundColor: '#360D14', borderWidth: 1.5, borderColor: '#B88743', borderRadius: 17, paddingHorizontal: 3, paddingTop: 5, paddingBottom: 4, marginBottom: showYoutubePanel ? 8 : 14, shadowColor: '#D5A64E', shadowOpacity: 0.22, shadowRadius: 7, elevation: 4 }}>
       {rowSeats.map((seat) => {
 
     const occupiedSeat = micSeats.find(
@@ -3355,26 +3355,33 @@ function renderRoomInterior() {
         style={{
           opacity: (isRoomTourist && !touristsOnMic) || (seatIsClosed && !canControlMics) ? 0.4 : 1,
           width: `${100 / rowSeats.length}%`,
-          height: 86,
+          height: 88,
           alignItems: 'center',
-          marginBottom: showYoutubePanel ? 8 : 24,
-          paddingHorizontal: 1
+          justifyContent: 'flex-start',
+          marginBottom: 0,
+          paddingHorizontal: 1,
+          paddingTop: 2,
+          backgroundColor: '#581822',
+          borderLeftWidth: 1,
+          borderRightWidth: 1,
+          borderColor: '#7E3B32',
+          borderTopLeftRadius: 15,
+          borderTopRightRadius: 15,
+          overflow: 'hidden
         }}
       >
         <View
           style={{
-            width: micCount >= 17 ? 50 : micCount >= 14 ? 54 : 58,
-            height: micCount >= 17 ? 50 : micCount >= 14 ? 54 : 58,
-            borderRadius: micCount >= 17 ? 25 : micCount >= 14 ? 27 : 29,
-            borderWidth: 1.5,
-            borderColor: isMySeat
-              ? '#FF5B5B'
-              : isOccupied
-                ? C.accent
-                : C.line,
-            backgroundColor: isMySeat
-              ? 'rgba(255,91,91,0.12)'
-              : 'transparent',
+            width: micCount >= 17 ? 42 : micCount >= 14 ? 46 : 50,
+            height: micCount >= 17 ? 42 : micCount >= 14 ? 46 : 50,
+            borderRadius: micCount >= 17 ? 21 : micCount >= 14 ? 23 : 25,
+            borderWidth: 2,
+            borderColor: isMySeat ? '#F6D37B' : isOccupied ? '#D5A64E' : '#9A613E',
+            backgroundColor: '#320C13',
+            shadowColor: '#D5A64E',
+            shadowOpacity: 0.18,
+            shadowRadius: 4,
+            elevation: 2,
             alignItems: 'center',
             justifyContent: 'center',
             overflow: 'hidden'
@@ -3483,7 +3490,7 @@ function renderRoomInterior() {
               textAlign: 'center'
             }}
           >
-            {isOccupied ? (isMySeat ? (displayName || 'You') : (occupiedSeat.display_name || 'User')) : ' '}
+            {isOccupied ? seatShortName(isMySeat ? (displayName || profile?.display_name || 'You') : (occupiedSeat.display_name || 'User')) : ' '}
           </Text>
         )}
       </TouchableOpacity>
