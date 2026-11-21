@@ -1,0 +1,2 @@
+alter table public.talkzy_room_youtube_state drop constraint if exists talkzy_room_youtube_queue_max_10;
+alter table public.talkzy_room_youtube_state add constraint talkzy_room_youtube_queue_max_20 check (jsonb_array_length(queue)<=20);
