@@ -208,7 +208,7 @@ async function userAuth(req, res, next) {
 async function getRoom(roomId) {
   const { data, error } = await supabase
     .from('talkzy_rooms')
-    .select('id, owner_id, room_name, description, room_dp_url, room_type, password_hash, status, created_at, closed_at, room_talkzy_id, country_name')
+    .select('id, owner_id, room_name, description, room_dp_url, room_type, status, created_at, closed_at, room_talkzy_id, country_name')
     .eq('id', roomId)
     .maybeSingle();
 
@@ -523,7 +523,6 @@ app.post('/api/rooms', userAuth, roomCreateLimiter, async (req, res) => {
         room_name: roomName,
         description,
         room_type: roomType,
-        password_hash: passwordHash,
         room_dp_url: roomDpUrl || null
       })
       .select(
@@ -539,6 +538,14 @@ app.post('/api/rooms', userAuth, roomCreateLimiter, async (req, res) => {
       }
 
       throw error;
+    }
+    if (passwordHash) {
+      const { error: passwordError } = await supabase.from('talkzy_room_passwords')
+        .insert({ room_id: data.id, password_hash: passwordHash });
+      if (passwordError) {
+        await supabase.from('talkzy_rooms').delete().eq('id', data.id);
+        throw passwordError;
+      }
     }
 
     return res.status(201).json({ room: data });
@@ -570,9 +577,9 @@ app.post('/api/rooms/:roomId/visit', userAuth, async (req, res) => {
     }
     if (room.room_type === 'locked') {
       const password = String(req.body?.password || '');
-      const { data, error } = await supabase.from('talkzy_rooms').select('password_hash').eq('id', room.id).single();
+      const { data, error } = await supabase.from('talkzy_room_passwords').select('password_hash').eq('room_id', room.id).maybeSingle();
       if (error) throw error;
-      if (!await checkPassword(password, data.password_hash)) return res.status(403).json({ error: 'Incorrect room password.' });
+      if (!data || !await checkPassword(password, data.password_hash)) return res.status(403).json({ error: 'Incorrect room password.' });
     }
     const { error } = await supabase.from('talkzy_room_visitors').upsert({
       room_id: room.id, user_id: userId, visited_at: new Date().toISOString(), last_seen_at: new Date().toISOString()
@@ -740,15 +747,11 @@ app.post('/api/rooms/:roomId/join', userAuth, async (req, res) => {
 
     if (room.room_type === 'locked' && !manager && !alreadyMember) {
       const password = String(req.body?.password || '');
-      const { data, error } = await supabase
-        .from('talkzy_rooms')
-        .select('password_hash')
-        .eq('id', room.id)
-        .single();
-
+      const { data, error } = await supabase.from('talkzy_room_passwords')
+        .select('password_hash').eq('room_id', room.id).maybeSingle();
       if (error) throw error;
 
-      const valid = await checkPassword(password, data.password_hash);
+      const valid = Boolean(data) && await checkPassword(password, data.password_hash);
       if (!valid) {
         return res.status(403).json({ error: 'Incorrect room password.' });
       }
@@ -1060,19 +1063,25 @@ app.patch('/api/rooms/:roomId/type', userAuth, async (req, res) => {
       });
     }
 
-    const passwordHash = roomType === 'locked'
-      ? await makePasswordHash(password)
-      : null;
+    const passwordHash = roomType === 'locked' ? await makePasswordHash(password) : null;
+    if (roomType === 'locked') {
+      const { error: passwordError } = await supabase.from('talkzy_room_passwords')
+        .upsert({ room_id: room.id, password_hash: passwordHash }, { onConflict: 'room_id' });
+      if (passwordError) throw passwordError;
+    }
 
-    const { data, error } = await supabase
-      .from('talkzy_rooms')
-      .update({ room_type: roomType, password_hash: passwordHash })
+    const { data, error } = await supabase.from('talkzy_rooms')
+      .update({ room_type: roomType })
       .eq('id', room.id)
       .select('id, room_name, description, room_type, status')
       .single();
-
     if (error) throw error;
 
+    if (roomType === 'public') {
+      const { error: deletePasswordError } = await supabase.from('talkzy_room_passwords')
+        .delete().eq('room_id', room.id);
+      if (deletePasswordError) throw deletePasswordError;
+    }
     res.json({ room: data });
   } catch (error) {
     console.error('Could not change room privacy:', error.message);
@@ -1675,7 +1684,13 @@ app.patch('/api/rooms/:roomId/settings', userAuth, async (req, res) => {
       if (!['public','locked'].includes(body.roomType)) return res.status(400).json({ error: 'Room type must be public or locked.' });
       nextType = body.roomType;
     }
-    let passwordHash = room.password_hash;
+    let passwordHash = null;
+    if (room.room_type === 'locked') {
+      const { data: savedPassword, error: passwordReadError } = await supabase.from('talkzy_room_passwords')
+        .select('password_hash').eq('room_id', room.id).maybeSingle();
+      if (passwordReadError) throw passwordReadError;
+      passwordHash = savedPassword?.password_hash || null;
+    }
     if (body.password !== undefined && String(body.password).length) {
       const password = String(body.password);
       if (password.length < 4 || password.length > 64) return res.status(400).json({ error: 'Room password must be 4–64 characters.' });
@@ -1685,11 +1700,7 @@ app.patch('/api/rooms/:roomId/settings', userAuth, async (req, res) => {
     if (nextType === 'locked' && !passwordHash) {
       return res.status(400).json({ error: 'Set a room password before switching this room to locked.' });
     }
-    if (nextType === 'public') passwordHash = null;
-    if (body.roomType !== undefined || body.password !== undefined) {
-      patch.room_type = nextType;
-      patch.password_hash = passwordHash;
-    }
+    if (body.roomType !== undefined || body.password !== undefined) patch.room_type = nextType;
     const approval = {};
     for (const [key, column] of [
       ['touristsOnMic','tourists_on_mic'],
@@ -1709,6 +1720,17 @@ app.patch('/api/rooms/:roomId/settings', userAuth, async (req, res) => {
         .single();
       if (error) throw error;
       updatedRoom = data;
+    }
+    if (body.roomType !== undefined || body.password !== undefined) {
+      if (nextType === 'locked' && passwordHash) {
+        const { error: passwordWriteError } = await supabase.from('talkzy_room_passwords')
+          .upsert({ room_id: room.id, password_hash: passwordHash }, { onConflict: 'room_id' });
+        if (passwordWriteError) throw passwordWriteError;
+      } else if (nextType === 'public') {
+        const { error: passwordDeleteError } = await supabase.from('talkzy_room_passwords')
+          .delete().eq('room_id', room.id);
+        if (passwordDeleteError) throw passwordDeleteError;
+      }
     }
     let settings = null;
     if (Object.keys(approval).length) {
