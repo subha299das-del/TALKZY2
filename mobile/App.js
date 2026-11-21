@@ -3501,6 +3501,12 @@ onContentSizeChange={() =>
                   <TouchableOpacity
                     key={tool.title}
                     onPress={() => {
+                      // Activity is exclusive to the original creator of this room.
+                      // Admin and Main Owner roles never grant this permission.
+                      if (tool.title === 'Activity' && selectedRoom?.owner_id !== session?.user?.id) {
+                        setShowRoomTools(false);
+                        return;
+                      }
                       setShowRoomTools(false);
                       if (tool.title === 'Clear Chat') {
                         Alert.alert('Clear Room Chat', 'Are you sure you want to clear all chat messages?', [
