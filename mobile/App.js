@@ -2617,7 +2617,10 @@ setScreen('roomInterior');
 
     {isOwner && (
       <TouchableOpacity
-        onPress={() => openRoomSettings(room)}
+        onPress={(event) => {
+          event.stopPropagation?.();
+          openRoomSettings(room);
+        }}
         style={{ marginLeft: 5 }}
       >
         <Text style={{ color: C.gold, fontSize: 15 }}>
@@ -10406,7 +10409,8 @@ if (screen === 'profile' || profileIncomplete) {
 
                 {roomDetails.owner_id === session?.user?.id && (
                   <TouchableOpacity
-                    onPress={() => {
+                    onPress={(event) => {
+                      event.stopPropagation?.();
                       setRoomDetailsVisible(false);
                       openRoomSettings(roomDetails);
                     }}
