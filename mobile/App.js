@@ -1022,6 +1022,8 @@ async function sendLuckyBag() {
 
 const [showRoomThemeMenu, setShowRoomThemeMenu] = useState(false);
 const [showYoutubePanel, setShowYoutubePanel] = useState(false);
+const [showYoutubePicker, setShowYoutubePicker] = useState(false);
+const [youtubePickedItem, setYoutubePickedItem] = useState(null);
 const [showMusicPanel, setShowMusicPanel] = useState(false);
  const [musicMinimized, setMusicMinimized] = useState(false);
 const [youtubeUrlInput, setYoutubeUrlInput] = useState('');
@@ -2777,7 +2779,10 @@ async function addYoutubeItem(item) {
     : { ...youtubeState, video_id: videoId, is_playing: true, current_time_seconds: 0, queue: youtubeState.queue || [] };
   await saveYoutubeState(next);
   setYoutubeSelectedVideo(null);
+  setYoutubePickedItem(null);
   setYoutubeUrlInput('');
+  setShowYoutubePicker(false);
+  setShowYoutubePanel(true);
   Alert.alert('Added to playlist', meta.title || 'Video added');
 }
 
@@ -3112,73 +3117,56 @@ function renderRoomInterior() {
         </View>
       )}
 
-      {/* YOUTUBE PANEL — controller search/add; shared player for the room */}
-      {showYoutubePanel && (
-        (() => {
-          const isYoutubeController = selectedRoom?.owner_id === session?.user?.id || roomPresence.some(person => person.user_id === session?.user?.id && person.presence_role === 'admin');
-          const searchUrl = youtubeBrowseUrl || ('https://www.youtube.com/results?search_query=' + encodeURIComponent(youtubeBrowseTab === 'Music' ? 'music' : 'video'));
-          return (
-            <View style={{ marginHorizontal: 10, marginTop: 5, marginBottom: 5, backgroundColor: '#10172A', borderRadius: 13, borderWidth: 1, borderColor: '#354466', overflow: 'hidden' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 11, paddingVertical: 9, backgroundColor: '#17213A' }}>
-                <Text style={{ color: '#E8E9FF', fontSize: 13, fontWeight: '900' }}>▶ YouTube</Text>
-                <TouchableOpacity onPress={() => { youtubePanelDismissedRef.current = true; setShowYoutubePanel(false); setYoutubeSelectedVideo(null); }} style={{ paddingHorizontal: 6, paddingVertical: 2 }}>
-                  <Text style={{ color: '#AEB9D5', fontSize: 19, fontWeight: '800' }}>✕</Text>
+      {/* YOUTUBE SEARCH PICKER — separate popup for controllers */}
+      <Modal visible={showYoutubePicker} transparent animationType="slide" onRequestClose={() => { setShowYoutubePicker(false); setYoutubePickedItem(null); }}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(2,4,12,0.88)', justifyContent: 'flex-end' }}>
+          <View style={{ height: '88%', backgroundColor: '#10172A', borderTopLeftRadius: 22, borderTopRightRadius: 22, borderWidth: 1, borderColor: '#6B54C7', overflow: 'hidden' }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 13, backgroundColor: '#17213A' }}>
+              <Text style={{ color: '#E8E9FF', fontSize: 15, fontWeight: '900' }}>Choose YouTube content</Text>
+              <TouchableOpacity onPress={() => { setShowYoutubePicker(false); setYoutubePickedItem(null); }}><Text style={{ color: '#C5CFEA', fontSize: 22 }}>✕</Text></TouchableOpacity>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 8, gap: 6 }}>
+              {['Music', 'Video'].map(tab => (
+                <TouchableOpacity key={tab} onPress={() => { setYoutubeBrowseTab(tab); setYoutubeSearchQuery(''); setYoutubePickedItem(null); setYoutubeBrowseUrl('https://www.youtube.com/results?search_query=' + encodeURIComponent(tab === 'Music' ? 'music' : 'video')); }}
+                  style={{ flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center', backgroundColor: youtubeBrowseTab === tab ? '#6B54C7' : '#202B45', borderWidth: 1, borderColor: youtubeBrowseTab === tab ? '#9C8AFF' : '#354466' }}>
+                  <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '900' }}>{tab === 'Music' ? '♫ MUSIC' : '▶ VIDEO'}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 9, marginBottom: 8, gap: 6 }}>
+              <TextInput value={youtubeSearchQuery} onChangeText={setYoutubeSearchQuery} placeholder={youtubeBrowseTab === 'Music' ? 'Search music…' : 'Search videos…'} placeholderTextColor="#8290AE" autoCapitalize="none" returnKeyType="search"
+                onSubmitEditing={() => { const q = youtubeSearchQuery.trim() || (youtubeBrowseTab === 'Music' ? 'music' : 'video'); setYoutubePickedItem(null); setYoutubeBrowseUrl('https://www.youtube.com/results?search_query=' + encodeURIComponent(q)); }}
+                style={{ flex: 1, color: '#FFFFFF', fontSize: 12, paddingVertical: 10, paddingHorizontal: 10, backgroundColor: '#080B18', borderRadius: 8, borderWidth: 1, borderColor: '#354466' }} />
+              <TouchableOpacity onPress={() => { const q = youtubeSearchQuery.trim() || (youtubeBrowseTab === 'Music' ? 'music' : 'video'); setYoutubePickedItem(null); setYoutubeBrowseUrl('https://www.youtube.com/results?search_query=' + encodeURIComponent(q)); }}
+                style={{ paddingHorizontal: 12, paddingVertical: 10, borderRadius: 8, backgroundColor: '#D8B45D' }}>
+                <Text style={{ color: '#211A12', fontSize: 11, fontWeight: '900' }}>SEARCH</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={{ flex: 1, marginHorizontal: 9, marginBottom: 8, borderRadius: 9, overflow: 'hidden', backgroundColor: '#FFFFFF' }}>
+              <WebView ref={youtubeBrowseWebViewRef} source={{ uri: youtubeBrowseUrl || ('https://www.youtube.com/results?search_query=' + encodeURIComponent(youtubeBrowseTab === 'Music' ? 'music' : 'video')) }} javaScriptEnabled domStorageEnabled allowsInlineMediaPlayback
+                onShouldStartLoadWithRequest={(request) => {
+                  const url = String(request?.url || '');
+                  const id = extractYouTubeVideoId(url);
+                  if (id && /(?:watch|youtu\.be|shorts|\/embed\/)/i.test(url)) {
+                    setYoutubePickedItem({ video_id: id, title: 'Selected YouTube item' });
+                    getYoutubeMetadata(id).then(meta => setYoutubePickedItem(meta));
+                    return false;
+                  }
+                  return true;
+                }}
+                style={{ flex: 1 }} />
+            </View>
+            {youtubePickedItem && (
+              <View style={{ paddingHorizontal: 12, paddingBottom: 12, paddingTop: 4, backgroundColor: '#17213A' }}>
+                <Text numberOfLines={2} style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 12, marginBottom: 8 }}>Selected: {youtubePickedItem.title || 'YouTube item'}</Text>
+                <TouchableOpacity disabled={youtubeSaving} onPress={() => addYoutubeItem(youtubePickedItem)} style={{ backgroundColor: '#6B54C7', borderColor: '#B9A8FF', borderWidth: 1, borderRadius: 12, paddingVertical: 12, alignItems: 'center', opacity: youtubeSaving ? 0.6 : 1 }}>
+                  <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '900' }}>＋ ADD {youtubeBrowseTab === 'Music' ? 'SONG' : 'VIDEO'}</Text>
                 </TouchableOpacity>
               </View>
-              <View style={{ flexDirection: 'row', padding: 7, gap: 7 }}>
-                {['Music', 'Video'].map(tab => (
-                  <TouchableOpacity key={tab} onPress={() => { setYoutubeBrowseTab(tab); setYoutubeSearchQuery(''); setYoutubeBrowseUrl('https://www.youtube.com/results?search_query=' + encodeURIComponent(tab === 'Music' ? 'music' : 'video')); }}
-                    style={{ flex: 1, paddingVertical: 9, borderRadius: 9, alignItems: 'center', backgroundColor: youtubeBrowseTab === tab ? '#6B54C7' : '#202B45', borderWidth: 1, borderColor: youtubeBrowseTab === tab ? '#9C8AFF' : '#354466' }}>
-                    <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '900' }}>{tab === 'Music' ? '♫  MUSIC' : '▶  VIDEO'}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              {isYoutubeController && (
-                <>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 8, marginBottom: 7, gap: 6 }}>
-                    <TextInput value={youtubeSearchQuery} onChangeText={setYoutubeSearchQuery} placeholder={youtubeBrowseTab === 'Music' ? 'Search YouTube music…' : 'Search YouTube videos…'} placeholderTextColor="#8290AE" autoCapitalize="none" returnKeyType="search"
-                      onSubmitEditing={() => { const q = youtubeSearchQuery.trim() || (youtubeBrowseTab === 'Music' ? 'music' : 'video'); setYoutubeBrowseUrl('https://www.youtube.com/results?search_query=' + encodeURIComponent(q)); }}
-                      style={{ flex: 1, color: '#FFFFFF', fontSize: 12, paddingVertical: 9, paddingHorizontal: 10, backgroundColor: '#080B18', borderRadius: 8, borderWidth: 1, borderColor: '#354466' }} />
-                    <TouchableOpacity onPress={() => { const q = youtubeSearchQuery.trim() || (youtubeBrowseTab === 'Music' ? 'music' : 'video'); setYoutubeBrowseUrl('https://www.youtube.com/results?search_query=' + encodeURIComponent(q)); }}
-                      style={{ paddingHorizontal: 12, paddingVertical: 9, borderRadius: 8, backgroundColor: '#D8B45D' }}>
-                      <Text style={{ color: '#211A12', fontSize: 11, fontWeight: '900' }}>SEARCH</Text>
-                    </TouchableOpacity>
-                  </View>
-                  <View style={{ height: 220, marginHorizontal: 8, marginBottom: 8, borderRadius: 9, overflow: 'hidden', backgroundColor: '#FFFFFF' }}>
-                    <WebView ref={youtubeBrowseWebViewRef} source={{ uri: searchUrl }} javaScriptEnabled domStorageEnabled allowsInlineMediaPlayback
-                      onShouldStartLoadWithRequest={(request) => {
-                        const url = String(request?.url || '');
-                        const id = extractYouTubeVideoId(url);
-                        if (id && /(?:watch|youtu\.be|shorts|\/embed\/)/i.test(url)) {
-                          addYoutubeItem({ video_id: id });
-                          return false;
-                        }
-                        return true;
-                      }}
-                      style={{ flex: 1 }} />
-                  </View>
-                  <Text style={{ color: '#8FA0C2', fontSize: 9, textAlign: 'center', paddingBottom: 7 }}>Tap a result to add it to the room playlist</Text>
-                </>
-              )}
-              {youtubeState.queue?.length > 0 && isYoutubeController && (
-                <View style={{ paddingHorizontal: 9, paddingBottom: 9 }}>
-                  <Text style={{ color: '#C5CFEA', fontSize: 10, fontWeight: '900', marginBottom: 4 }}>PLAYLIST MANAGEMENT</Text>
-                  {youtubeState.queue.map((item, index) => (
-                    <View key={item.video_id || index} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 5 }}>
-                      <Text numberOfLines={1} style={{ flex: 1, color: '#AAB7D4', fontSize: 10 }}>{index + 1}. {item.title || 'YouTube video'}</Text>
-                      <TouchableOpacity onPress={() => saveYoutubeState({ ...youtubeState, queue: youtubeState.queue.filter((_, queueIndex) => queueIndex !== index) })} style={{ paddingHorizontal: 8, paddingVertical: 4 }}>
-                        <Text style={{ color: '#FF829A', fontSize: 10, fontWeight: '900' }}>REMOVE</Text>
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-                </View>
-              )}
-            </View>
-          );
-        })()
-      )}
-
+            )}
+          </View>
+        </View>
+      </Modal>
       {/* ROOM TROPHY / COINS */}
       <View
         style={{
@@ -3665,6 +3653,8 @@ onContentSizeChange={() =>
                         setShowYoutubePanel(true);
                         setYoutubeBrowseTab('Music');
                         setYoutubeBrowseUrl('https://www.youtube.com/results?search_query=music');
+                        setYoutubePickedItem(null);
+                        setShowYoutubePicker(true);
                         loadYoutubeState(true);
                       } else if (tool.title === 'Music') {
                         setShowMusicPanel(true);
