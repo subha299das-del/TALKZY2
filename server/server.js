@@ -1475,6 +1475,14 @@ app.post('/api/rooms/:roomId/presence/leave', userAuth, async (req, res) => {
     if (!room) return;
     const userId = req.talkzyUser.id;
 
+    // Write the personal chat cutoff FIRST. Even if presence/mic cleanup fails,
+    // this user's old messages stay hidden. Shared messages are never deleted.
+    const { data: clearMarker, error: clearMarkerError } = await supabase.from('talkzy_room_chat_clears')
+      .upsert({ room_id: room.id, user_id: userId, cleared_at: new Date().toISOString() },
+        { onConflict: 'room_id,user_id' })
+      .select('cleared_at').single();
+    if (clearMarkerError) throw clearMarkerError;
+
     // One exit endpoint cleans up both member and tourist room state.
     // Membership itself is intentionally preserved for ordinary members.
     const { error: seatError } = await supabase.from('talkzy_room_mic_seats')
@@ -1489,14 +1497,7 @@ app.post('/api/rooms/:roomId/presence/leave', userAuth, async (req, res) => {
       .delete().eq('room_id', room.id).eq('user_id', userId);
     if (presenceError) throw presenceError;
 
-    // Personal chat cutoff: hide this room's messages from this user after leaving,
-    // without deleting shared messages or affecting other participants.
-    const { error: clearMarkerError } = await supabase.from('talkzy_room_chat_clears')
-      .upsert({ room_id: room.id, user_id: userId, cleared_at: new Date().toISOString() },
-        { onConflict: 'room_id,user_id' });
-    if (clearMarkerError) throw clearMarkerError;
-
-    res.json({ left: true });
+    res.set('Cache-Control', 'no-store').json({ left: true, clearedAt: clearMarker.cleared_at });
   } catch (error) {
     console.error('Could not complete room exit cleanup:', error.message);
     res.status(500).json({ error: 'Could not complete room exit cleanup.' });
