@@ -2332,6 +2332,7 @@ app.patch('/api/rooms/:roomId/mic-seats/mute', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
+    if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
     const userId = req.talkzyUser.id;
     const member = await canManageRoom(room, userId) || await isRoomMember(room.id, userId);
     const tourist = !member && await isRoomVisitor(room.id, userId);
