@@ -825,8 +825,57 @@ const [luckyBagCoins, setLuckyBagCoins] = useState(500);
 const [luckyBagQuantity, setLuckyBagQuantity] = useState(1);
 const [luckyBagCustomCoins, setLuckyBagCustomCoins] = useState('500');
 const [luckyBagHistoryView, setLuckyBagHistoryView] = useState(false);
+const [walletBalance, setWalletBalance] = useState(0);
+const [luckyBagSending, setLuckyBagSending] = useState(false);
 const luckyBagPulse = useRef(new Animated.Value(1)).current;
 useEffect(() => { const pulse = Animated.loop(Animated.sequence([Animated.timing(luckyBagPulse, { toValue: 1.06, duration: 850, useNativeDriver: true }), Animated.timing(luckyBagPulse, { toValue: 1, duration: 850, useNativeDriver: true })])); pulse.start(); return () => pulse.stop(); }, [luckyBagPulse]);
+useEffect(() => {
+  let active = true;
+  async function refreshWallet() {
+    if (!session?.user?.id) { setWalletBalance(0); return; }
+    const { data, error } = await supabase.from('talkzy_wallets').select('balance').eq('user_id', session.user.id).maybeSingle();
+    if (!active) return;
+    if (error) { console.log('Wallet balance load:', error.message); return; }
+    setWalletBalance(Number(data?.balance || 0));
+  }
+  refreshWallet();
+  const walletChannel = supabase.channel('talkzy-wallet-' + session?.user?.id)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'talkzy_wallets', filter: 'user_id=eq.' + session?.user?.id }, refreshWallet)
+    .subscribe();
+  return () => { active = false; supabase.removeChannel(walletChannel); };
+}, [session?.user?.id]);
+
+async function sendLuckyBag() {
+  if (!session?.user?.id) return Alert.alert('Login required', 'Please sign in again.');
+  if (!selectedRoom?.id) return Alert.alert('Room required', 'Enter a room before sending a Lucky Bag.');
+  const amount = Math.floor(Number(luckyBagCoins));
+  const quantity = Math.floor(Number(luckyBagQuantity));
+  if (!Number.isFinite(amount) || amount < 1 || !Number.isFinite(quantity) || quantity < 1 || quantity > 99) {
+    return Alert.alert('Invalid amount', 'Please choose a valid coin amount and bag quantity.');
+  }
+  const total = amount * quantity;
+  if (total > walletBalance) return Alert.alert('Insufficient coins', 'Your balance is ' + walletBalance.toLocaleString() + ' coins. You need ' + total.toLocaleString() + ' coins.');
+  setLuckyBagSending(true);
+  try {
+    const { data, error } = await supabase.rpc('talkzy_lucky_bag_send', {
+      p_room_id: selectedRoom.id,
+      p_scope: luckyBagTab.toLowerCase(),
+      p_coin_amount_per_bag: amount,
+      p_bag_count: quantity
+    });
+    if (error) throw error;
+    setWalletBalance(Number(data?.balance ?? walletBalance - total));
+    setShowLuckyBagPopup(false);
+    Alert.alert('Lucky Bag sent! 🎉', total.toLocaleString() + ' coins deducted. Unclaimed coins will be refunded after 3 minutes.');
+  } catch (error) {
+    Alert.alert('Could not send Lucky Bag', error?.message || 'Please try again.');
+    const { data } = await supabase.from('talkzy_wallets').select('balance').eq('user_id', session.user.id).maybeSingle();
+    if (data) setWalletBalance(Number(data.balance || 0));
+  } finally {
+    setLuckyBagSending(false);
+  }
+}
+
 const [showRoomThemeMenu, setShowRoomThemeMenu] = useState(false);
 const [showYoutubePanel, setShowYoutubePanel] = useState(false);
 const [showMusicPanel, setShowMusicPanel] = useState(false);
@@ -3474,15 +3523,15 @@ onContentSizeChange={() =>
                       </View>
                     </View>
 
-                    <TouchableOpacity onPress={() => Alert.alert('Lucky Bag', 'The sending and coin balance system will be connected in the next implementation step.')} style={{ marginTop: 14, paddingVertical: 15, borderRadius: 16, backgroundColor: '#8D51D6', borderWidth: 1, borderColor: '#C99BFF', alignItems: 'center', shadowColor: '#A56BFF', shadowOpacity: 0.35, shadowRadius: 10, elevation: 5 }}>
-                      <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '900' }}>🎁  SEND LUCKY BAG</Text>
+                    <TouchableOpacity disabled={luckyBagSending} onPress={sendLuckyBag} style={{ marginTop: 14, paddingVertical: 15, borderRadius: 16, backgroundColor: '#8D51D6', borderWidth: 1, borderColor: '#C99BFF', alignItems: 'center', shadowColor: '#A56BFF', shadowOpacity: 0.35, shadowRadius: 10, elevation: 5 }}>
+                      <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '900' }}>{luckyBagSending ? '⏳ SENDING...' : '🎁  SEND LUCKY BAG'}</Text>
                     </TouchableOpacity>
                   </>
                 )}
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#38284C' }}>
                   <View>
                     <Text style={{ color: '#AA9BC5', fontSize: 10, fontWeight: '800' }}>YOUR COIN BALANCE</Text>
-                    <Text style={{ color: '#D9C9F4', fontSize: 13, fontWeight: '800', marginTop: 3 }}>🪙 Balance sync coming</Text>
+                    <Text style={{ color: '#D9C9F4', fontSize: 13, fontWeight: '800', marginTop: 3 }}>🪙 {walletBalance.toLocaleString()} coins</Text>
                   </View>
                   <TouchableOpacity onPress={() => setLuckyBagHistoryView(true)} style={{ borderRadius: 12, paddingHorizontal: 13, paddingVertical: 10, backgroundColor: '#2A1B42', borderWidth: 1, borderColor: '#594071' }}>
                     <Text style={{ color: '#DCC5FF', fontSize: 11, fontWeight: '900' }}>📜 HISTORY</Text>
@@ -5538,11 +5587,11 @@ function renderEvents() {
                   marginTop: 3
                 }}
               >
-                🪙 0
+                🪙 {walletBalance.toLocaleString()}
               </Text>
 
               <Text style={{ color: C.muted, fontSize: 11 }}>
-                Wallet connection coming soon
+                Your TALKZY wallet balance
               </Text>
             </View>
           </View>
