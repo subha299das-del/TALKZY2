@@ -10128,16 +10128,84 @@ if (screen === 'profile' || profileIncomplete) {
             {/* INFORMATION TAB */}
             {roomDetailsTab === 'Information' && (
               <View>
-                <Text
+                {/* ROOM IDENTITY HEADER: DP left, aligned details right */}
+                <View
                   style={{
-                    color: C.text,
-                    fontSize: 20,
-                    fontWeight: '900',
-                    marginBottom: 18
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    padding: 13,
+                    marginBottom: 14,
+                    borderRadius: 16,
+                    backgroundColor: '#101A31',
+                    borderWidth: 1,
+                    borderColor: '#354466'
                   }}
                 >
-                  {roomDetails.room_name || 'Room'}
-                </Text>
+                  {roomDetails.room_dp_url ? (
+                    <Image
+                      source={{ uri: roomDetails.room_dp_url }}
+                      style={{
+                        width: 76,
+                        height: 76,
+                        borderRadius: 18,
+                        marginRight: 13,
+                        backgroundColor: C.panel2
+                      }}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View
+                      style={{
+                        width: 76,
+                        height: 76,
+                        borderRadius: 18,
+                        marginRight: 13,
+                        backgroundColor: '#252044',
+                        borderWidth: 1,
+                        borderColor: C.accent,
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <Text style={{ fontSize: 30 }}>🏠</Text>
+                    </View>
+                  )}
+                  <View style={{ flex: 1, minWidth: 0, justifyContent: 'center' }}>
+                    <Text
+                      numberOfLines={2}
+                      ellipsizeMode="tail"
+                      style={{
+                        color: C.text,
+                        fontSize: 18,
+                        fontWeight: '900',
+                        lineHeight: 22
+                      }}
+                    >
+                      {roomDetails.room_name || 'Room'}
+                    </Text>
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        color: C.muted,
+                        fontSize: 12,
+                        marginTop: 6
+                      }}
+                    >
+                      🌍 {roomDetails.country_name || 'Country not set'}
+                    </Text>
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        color: C.teal,
+                        fontSize: 11,
+                        fontWeight: '800',
+                        marginTop: 5
+                      }}
+                    >
+                      Room ID: {roomDetails.room_talkzy_id || '—'}
+                    </Text>
+                  </View>
+                </View>
 
                 <View
                   style={{
