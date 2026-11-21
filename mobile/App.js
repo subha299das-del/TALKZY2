@@ -3367,7 +3367,7 @@ function renderRoomInterior() {
           borderColor: '#7E3B32',
           borderTopLeftRadius: 15,
           borderTopRightRadius: 15,
-          overflow: 'hidden
+          overflow: 'hidden'
         }}
       >
         <View
@@ -3396,9 +3396,9 @@ function renderRoomInterior() {
                     : MIC_ON_ICON
                 }
                 style={{
-                  width: micCount >= 17 ? 47 : micCount >= 14 ? 51 : 55,
-                  height: micCount >= 17 ? 47 : micCount >= 14 ? 51 : 55,
-                  borderRadius: micCount >= 17 ? 24 : micCount >= 14 ? 26 : 28,
+                  width: micCount >= 17 ? 39 : micCount >= 14 ? 43 : 47,
+                  height: micCount >= 17 ? 39 : micCount >= 14 ? 43 : 47,
+                  borderRadius: micCount >= 17 ? 20 : micCount >= 14 ? 22 : 24,
                   resizeMode: 'cover'
                 }}
               />
