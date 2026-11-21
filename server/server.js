@@ -614,6 +614,7 @@ app.post('/api/rooms/:roomId/visit/ping', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
+    if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
     const { data, error } = await supabase.from('talkzy_room_visitors')
       .update({ last_seen_at: new Date().toISOString() })
       .eq('room_id', room.id).eq('user_id', req.talkzyUser.id)
