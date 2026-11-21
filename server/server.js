@@ -963,14 +963,47 @@ app.post('/api/rooms/:roomId/leave', userAuth, async (req, res) => {
 
 
 // =========================================
-// CLOSE ROOM
-// MAIN OWNER ADMIN PANEL ONLY — TO BE CONNECTED LATER
+// CLOSE ROOM — MAIN OWNER ONLY
 // =========================================
 
-app.post('/api/rooms/:roomId/close', (req, res) => {
-  return res.status(403).json({
-    error: 'Room closure is restricted to the TALKZY Main Owner.'
-  });
+app.post('/api/rooms/:roomId/close', ownerAuth, async (req, res) => {
+  const roomId = req.params.roomId;
+  try {
+    const { data: room, error: roomError } = await supabase
+      .from('talkzy_rooms')
+      .select('id, status')
+      .eq('id', roomId)
+      .maybeSingle();
+    if (roomError) throw roomError;
+    if (!room) return res.status(404).json({ error: 'Room not found.' });
+    if (room.status === 'closed') {
+      return res.json({ closed: true, roomId, alreadyClosed: true });
+    }
+
+    const { error: closeError } = await supabase
+      .from('talkzy_rooms')
+      .update({ status: 'closed', closed_at: new Date().toISOString() })
+      .eq('id', roomId)
+      .eq('status', 'active');
+    if (closeError) throw closeError;
+
+    // Remove live presence and mic occupancy so the closed room is not
+    // represented as active anywhere in the app.
+    const cleanupResults = await Promise.all([
+      supabase.from('talkzy_room_mic_seats').delete().eq('room_id', roomId),
+      supabase.from('talkzy_room_presence').delete().eq('room_id', roomId),
+      supabase.from('talkzy_room_visitors').delete().eq('room_id', roomId)
+    ]);
+    const cleanupError = cleanupResults.find(result => result.error)?.error;
+    if (cleanupError) {
+      console.error('Room closed but presence cleanup incomplete:', cleanupError.message);
+    }
+
+    return res.json({ closed: true, roomId });
+  } catch (error) {
+    console.error('Could not close room:', error.message);
+    return res.status(500).json({ error: 'Could not close room.' });
+  }
 });
 
 
