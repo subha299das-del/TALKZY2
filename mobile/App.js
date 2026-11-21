@@ -2080,6 +2080,11 @@ async function toggleFollowRoom(room) {
         body: JSON.stringify({ password })
       });
       setShowJoinPassword(false); setJoinPassword(''); setJoinTargetRoom(null);
+      // A room entry never restores a previous microphone seat. Clear any stale
+      // seat for this user before loading the room state, so sitting is manual.
+      try { await api(`/api/rooms/${room.id}/mic-seats`, { method: 'DELETE' }); } catch (seatCleanupError) {
+        console.log('Stale mic seat cleanup on entry:', seatCleanupError.message);
+      }
       setSelectedRoom(room);
       setIsRoomTourist(result.mode === 'tourist');
       setIsRoomMinimized(false); setShowRoomMenu(false);
@@ -2499,12 +2504,16 @@ function renderRoomCard(room, showJoin = true) {
   <TouchableOpacity
   key={room.id}
   activeOpacity={0.85}
-  onPress={() => {
+  onPress={async () => {
     if (showJoin) {
       joinRoom(room);
       return;
     }
 
+    // Never carry a previous microphone seat into a new room entry.
+    try { await api(`/api/rooms/${room.id}/mic-seats`, { method: 'DELETE' }); } catch (seatCleanupError) {
+      console.log('Stale mic seat cleanup on entry:', seatCleanupError.message);
+    }
     setSelectedRoom(room);
 setIsRoomTourist(false);
 setIsRoomMinimized(false);
@@ -3325,13 +3334,14 @@ function renderRoomInterior() {
               return;
             }
 
+            const preservedMute = isMicMuted;
             const optimisticSeat = {
               room_id: roomId,
               seat_number: seat,
               user_id: userId,
               display_name: profile?.display_name || displayName || 'You',
               avatar_url: profile?.avatar_url || avatarUri || null,
-              is_muted: false
+              is_muted: preservedMute
             };
 
             setMicSeats(current => [
@@ -3340,7 +3350,7 @@ function renderRoomInterior() {
             ]);
             setIsOnMic(true);
             setMyMicSeat(seat);
-            setIsMicMuted(false);
+            setIsMicMuted(preservedMute);
 
             await api(
               `/api/rooms/${roomId}/mic-seats/${seat}`,
