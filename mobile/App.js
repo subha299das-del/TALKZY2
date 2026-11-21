@@ -2264,14 +2264,7 @@ setScreen('roomInterior');
 
     {isOwner && (
       <TouchableOpacity
-        onPress={() => {
-          setSelectedRoom(room);
-          setRoomSettingsType(
-            room.room_type || 'public'
-          );
-          setRoomSettingsPassword('');
-          setScreen('roomSettings');
-        }}
+        onPress={() => openRoomSettings(room)}
         style={{ marginLeft: 5 }}
       >
         <Text style={{ color: C.gold, fontSize: 15 }}>
