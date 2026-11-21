@@ -10561,8 +10561,7 @@ if (screen === 'profile' || profileIncomplete) {
       
           </SafeAreaView>
   );
-            }
-            
+
   function exitCurrentRoom() {
     const roomId = selectedRoom?.id || null;
     const userId = session?.user?.id || 'unknown';
@@ -10792,5 +10791,4 @@ if (screen === 'profile' || profileIncomplete) {
     catch (e) { setRoomActivities([]); console.log('Room activities:', e.message); }
     finally { setLoadingRoomActivities(false); }
   }
-
-
+}
