@@ -4101,32 +4101,7 @@ borderTopWidth: 1,
           {/* EXIT */}
           <TouchableOpacity
             style={{ padding: 14 }}
-            onPress={async () => {
-  try {
-    if (selectedRoom?.id) {
-      await api(`/api/rooms/${selectedRoom.id}/presence/leave`, { method: 'POST' });
-      if (isRoomTourist) {
-        await api(`/api/rooms/${selectedRoom.id}/leave-visit`, { method: 'POST' });
-      } else {
-        await api(`/api/rooms/${selectedRoom.id}/mic-seats`, { method: 'DELETE' });
-      }
-    }
-  } catch (error) {
-    console.log('Room exit cleanup error:', error.message);
-  }
-
-  setShowRoomMenu(false);
-  setShowRoomTools(false);
-  setShowRoomGiftPanel(false);
-  setShowRoomUsers(false);
-  setIsOnMic(false);
-  setMyMicSeat(null);
-  setIsMicMuted(false);
-  setIsRoomMinimized(false);
-  setSelectedRoom(null);
-  setMicSeats([]);
-  setScreen('main');
-}}
+            onPress={exitCurrentRoom}
           >
             <Text style={{ color: '#FF5B5B', fontSize: 15 }}>
               Exit Room
@@ -9950,14 +9925,7 @@ if (screen === 'profile' || profileIncomplete) {
 
           {/* EXIT MINI ROOM */}
           <TouchableOpacity
-            onPress={() => {
-              setIsRoomMinimized(false);
-              setIsOnMic(false);
-              setSelectedRoom(null);
-              setShowRoomMenu(false);
-              setShowRoomTools(false);
-              setShowRoomGiftPanel(false);
-            }}
+            onPress={exitCurrentRoom}
             style={{
               paddingHorizontal: 8,
               paddingVertical: 6
@@ -10371,6 +10339,38 @@ if (screen === 'profile' || profileIncomplete) {
   );
             }
             
+  async function exitCurrentRoom() {
+    const roomId = selectedRoom?.id;
+    const wasTourist = isRoomTourist;
+    // Clear local room UI immediately so Exit always responds to the tap.
+    setShowRoomMenu(false);
+    setShowRoomTools(false);
+    setShowRoomGiftPanel(false);
+    setShowRoomUsers(false);
+    setShowRoomMessageMenu(false);
+    setShowYoutubePanel(false);
+    setIsOnMic(false);
+    setMyMicSeat(null);
+    setIsMicMuted(false);
+    setIsRoomMinimized(false);
+    setSelectedRoom(null);
+    setMicSeats([]);
+    setRoomPresence([]);
+    setRoomChatMessages([]);
+    setIsRoomTourist(false);
+    ++micSeatLoadVersionRef.current;
+    setScreen('main');
+
+    if (roomId) {
+      try {
+        await api(`/api/rooms/${roomId}/presence/leave`, { method: 'POST' });
+      } catch (error) {
+        console.log('Room exit cleanup error:', error.message);
+        Alert.alert('Room exited', 'You left the room on this device, but server cleanup did not finish. Please check your connection.');
+      }
+    }
+  }
+
   async function openRoomSettings(room) {
     if (!room?.id || room.owner_id !== session?.user?.id) {
       return Alert.alert('Room Settings', 'Only the original creator of this room can open these settings.');
