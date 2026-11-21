@@ -1087,6 +1087,10 @@ const [isRoomTourist, setIsRoomTourist] = useState(false);
   useEffect(() => {
     let mounted = true;
 
+    // Wake the Render backend while the login screen is opening.
+    // This lets the service start before the user finishes signing in.
+    fetch(`${API_BASE_URL}/api/health`).catch(() => {});
+
     async function loadSession() {
       try {
         if (!SUPABASE_URL || !SUPABASE_KEY) {
@@ -1217,6 +1221,10 @@ async function loadUserProfile(currentSession) {
 
   if (!userId) return;
 
+  // Start loading the creator's room in parallel with the profile lookup.
+  // The local cache can populate Mine before the backend request completes.
+  loadMyRooms(currentSession);
+
   // Prevent duplicate profile loading for the same user
   if (
     profileLoadRef.current &&
@@ -1266,7 +1274,6 @@ async function loadUserProfile(currentSession) {
       setScreen('main');
 
       loadPublicRooms();
-      loadMyRooms(currentSession);
       loadJoinedRooms(currentSession);
       loadFollowedRooms(currentSession);
 
