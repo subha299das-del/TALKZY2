@@ -47,7 +47,15 @@ begin
  select * into b from public.talkzy_lucky_bags where id=p_bag_id for update;
  if not found then raise exception 'Bag not found'; end if;
  if b.status<>'active' then raise exception 'Bag is no longer active'; end if;
- if b.expires_at<=now() then perform public.talkzy_lucky_bag_expire(); return jsonb_build_object('expired',true,'message','Expired bag is being refunded'); end if;
+ if b.expires_at<=now() then
+  if b.remaining_coins>0 then
+   insert into public.talkzy_wallets(user_id,balance) values(b.sender_id,0) on conflict do nothing;
+   update public.talkzy_wallets set balance=balance+b.remaining_coins,updated_at=now() where user_id=b.sender_id returning balance into bal;
+   insert into public.talkzy_coin_ledger(user_id,amount,balance_after,event_type,reference_id,note) values(b.sender_id,b.remaining_coins,bal,'lucky_bag_refund',b.id,'Expired Lucky Bag refund');
+  end if;
+  update public.talkzy_lucky_bags set remaining_coins=0,remaining_bags=0,status='expired',closed_at=now() where id=b.id;
+  return jsonb_build_object('expired',true,'message','Expired Lucky Bag has been refunded');
+ end if;
  if b.sender_id=u then raise exception 'Cannot open your own bag'; end if;
  if b.remaining_bags<=0 or b.remaining_coins<=0 then raise exception 'Bag empty'; end if;
  if b.scope='room' and b.room_id is distinct from(select room_id from public.talkzy_room_presence where user_id=u limit 1) then raise exception 'Enter sender room first'; end if;
