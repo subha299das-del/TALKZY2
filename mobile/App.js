@@ -826,11 +826,52 @@ const [luckyBagQuantity, setLuckyBagQuantity] = useState(1);
 const [luckyBagCustomCoins, setLuckyBagCustomCoins] = useState('500');
 const [luckyBagHistoryView, setLuckyBagHistoryView] = useState(false);
 const [walletBalance, setWalletBalance] = useState(0);
+const [luckyBagHistoryItems, setLuckyBagHistoryItems] = useState([]);
+const [luckyBagHistoryLoading, setLuckyBagHistoryLoading] = useState(false);
 const [luckyBagSending, setLuckyBagSending] = useState(false);
 const [activeLuckyBags, setActiveLuckyBags] = useState([]);
 const [claimingLuckyBagId, setClaimingLuckyBagId] = useState(null);
 const luckyBagPulse = useRef(new Animated.Value(1)).current;
 useEffect(() => { const pulse = Animated.loop(Animated.sequence([Animated.timing(luckyBagPulse, { toValue: 1.06, duration: 850, useNativeDriver: true }), Animated.timing(luckyBagPulse, { toValue: 1, duration: 850, useNativeDriver: true })])); pulse.start(); return () => pulse.stop(); }, [luckyBagPulse]);
+async function loadLuckyBagHistory() {
+  if (!session?.user?.id) return;
+  setLuckyBagHistoryLoading(true);
+  try {
+    const uid=session.user.id;
+    const [{data:ledger,error:ledgerError},{data:sent,error:sentError},{data:claims,error:claimsError}] = await Promise.all([
+      supabase.from('talkzy_coin_ledger').select('id,amount,balance_after,event_type,reference_id,note,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(100),
+      supabase.from('talkzy_lucky_bags').select('id,sender_id,room_id,scope,total_coins,remaining_coins,remaining_bags,status,created_at,expires_at').eq('sender_id',uid).order('created_at',{ascending:false}).limit(50),
+      supabase.from('talkzy_lucky_bag_claims').select('id,bag_id,claimer_id,reward_coins,claimed_at').eq('claimer_id',uid).order('claimed_at',{ascending:false}).limit(50)
+    ]);
+    if(ledgerError) throw ledgerError;
+    if(sentError) throw sentError;
+    if(claimsError) throw claimsError;
+    const bagIds=[...new Set([...(sent||[]).map(x=>x.id),...(claims||[]).map(x=>x.bag_id)])];
+    let bagDetails=[];
+    if(bagIds.length) {
+      const {data,error}=await supabase.from('talkzy_lucky_bags').select('id,sender_id,room_id,scope,total_coins,status,created_at').in('id',bagIds);
+      if(error) throw error;
+      bagDetails=data||[];
+    }
+    const senderIds=[...new Set(bagDetails.map(x=>x.sender_id))];
+    let names={};
+    if(senderIds.length) {
+      const {data,error}=await supabase.from('talkzy_profiles').select('id,display_name').in('id',senderIds);
+      if(error) throw error;
+      names=Object.fromEntries((data||[]).map(p=>[p.id,p.display_name||'TALKZY User']));
+    }
+    const bagMap=Object.fromEntries(bagDetails.map(b=>[b.id,b]));
+    const events=[
+      ...(ledger||[]).map(x=>({key:'ledger-'+x.id,type:x.event_type,amount:x.amount,created_at:x.created_at,note:x.note,reference_id:x.reference_id,balance_after:x.balance_after,bag:bagMap[x.reference_id]})),
+      ...(claims||[]).map(x=>({key:'claim-'+x.id,type:'lucky_bag_received',amount:x.reward_coins,created_at:x.claimed_at,bag:bagMap[x.bag_id],senderName:names[bagMap[x.bag_id]?.sender_id]||'TALKZY User'}))
+    ];
+    events.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+    setLuckyBagHistoryItems(events.slice(0,100));
+  } catch(error) {
+    Alert.alert('History unavailable',error?.message||'Please try again.');
+  } finally { setLuckyBagHistoryLoading(false); }
+}
+
 async function refreshActiveLuckyBags() {
   if (!session?.user?.id || !selectedRoom?.id) { setActiveLuckyBags([]); return; }
   try {
@@ -3543,13 +3584,32 @@ onContentSizeChange={() =>
 
               <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 18 }}>
                 {luckyBagHistoryView ? (
-                  <View style={{ alignItems: 'center', paddingVertical: 24 }}>
-                    <Text style={{ fontSize: 42 }}>📜</Text>
-                    <Text style={{ color: '#F3E9FF', fontSize: 16, fontWeight: '900', marginTop: 12 }}>Lucky Bag History</Text>
-                    <Text style={{ color: '#AA9BC5', fontSize: 12, textAlign: 'center', marginTop: 7 }}>Your sent bags, received bags and rewards will appear here.</Text>
-                    <TouchableOpacity onPress={() => setLuckyBagHistoryView(false)} style={{ marginTop: 18, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, backgroundColor: '#39205D' }}>
-                      <Text style={{ color: '#DCC8FF', fontWeight: '800' }}>Back to Lucky Bag</Text>
-                    </TouchableOpacity>
+                  <View style={{ paddingBottom: 12 }}>
+                    <View style={{ flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:12 }}>
+                      <Text style={{ color:'#F3E9FF',fontSize:16,fontWeight:'900' }}>📜 Transaction History</Text>
+                      <TouchableOpacity onPress={loadLuckyBagHistory} style={{ paddingHorizontal:11,paddingVertical:7,borderRadius:10,backgroundColor:'#39205D' }}><Text style={{ color:'#DCC8FF',fontWeight:'800',fontSize:11 }}>↻ REFRESH</Text></TouchableOpacity>
+                    </View>
+                    {luckyBagHistoryLoading ? <Text style={{color:'#AA9BC5',textAlign:'center',padding:24}}>Loading history…</Text> : luckyBagHistoryItems.length===0 ? (
+                      <View style={{alignItems:'center',paddingVertical:25}}><Text style={{fontSize:38}}>📭</Text><Text style={{color:'#AA9BC5',marginTop:8,textAlign:'center'}}>No Lucky Bag transactions yet.</Text></View>
+                    ) : luckyBagHistoryItems.map(item => {
+                      const isReceived=item.type==='lucky_bag_received'||item.type==='lucky_bag_claim';
+                      const isRefund=item.type==='lucky_bag_refund';
+                      const isSend=item.type==='lucky_bag_send';
+                      const label=isReceived?'Lucky Bag Reward':isRefund?'Unclaimed Coins Refunded':isSend?'Lucky Bag Sent':item.type.replace(/_/g,' ');
+                      const positive=item.amount>0;
+                      const bag=item.bag;
+                      return <View key={item.key} style={{padding:12,marginBottom:9,borderRadius:14,backgroundColor:'#211630',borderWidth:1,borderColor:'#49345F'}}>
+                        <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
+                          <Text style={{color:'#EDE0FF',fontWeight:'900',fontSize:12,flex:1}}>{label}</Text>
+                          <Text style={{color:positive?'#74E0A7':'#FF9A9A',fontWeight:'900',fontSize:14}}>{positive?'+':''}{Number(item.amount||0).toLocaleString()} 🪙</Text>
+                        </View>
+                        {isReceived && <Text style={{color:'#BDA8DA',fontSize:11,marginTop:5}}>From: {item.senderName||'TALKZY User'}</Text>}
+                        {bag && <Text style={{color:'#BDA8DA',fontSize:11,marginTop:4}}>{bag.scope==='world'?'🌍 World':'🏠 Room'} · Bag {bag.status||''}</Text>}
+                        {item.note && <Text style={{color:'#9F8AB9',fontSize:10,marginTop:4}}>{item.note}</Text>}
+                        <Text style={{color:'#8C789F',fontSize:10,marginTop:5}}>{new Date(item.created_at).toLocaleString()} · Balance {Number(item.balance_after||0).toLocaleString()}</Text>
+                      </View>;
+                    })}
+                    <TouchableOpacity onPress={() => setLuckyBagHistoryView(false)} style={{marginTop:8,alignSelf:'center',paddingHorizontal:20,paddingVertical:10,borderRadius:12,backgroundColor:'#39205D'}}><Text style={{color:'#DCC8FF',fontWeight:'800'}}>Back to Lucky Bag</Text></TouchableOpacity>
                   </View>
                 ) : (
                   <>
@@ -3623,7 +3683,7 @@ onContentSizeChange={() =>
                     <Text style={{ color: '#AA9BC5', fontSize: 10, fontWeight: '800' }}>YOUR COIN BALANCE</Text>
                     <Text style={{ color: '#D9C9F4', fontSize: 13, fontWeight: '800', marginTop: 3 }}>🪙 {walletBalance.toLocaleString()} coins</Text>
                   </View>
-                  <TouchableOpacity onPress={() => setLuckyBagHistoryView(true)} style={{ borderRadius: 12, paddingHorizontal: 13, paddingVertical: 10, backgroundColor: '#2A1B42', borderWidth: 1, borderColor: '#594071' }}>
+                  <TouchableOpacity onPress={() => { setLuckyBagHistoryView(true); loadLuckyBagHistory(); }} style={{ borderRadius: 12, paddingHorizontal: 13, paddingVertical: 10, backgroundColor: '#2A1B42', borderWidth: 1, borderColor: '#594071' }}>
                     <Text style={{ color: '#DCC5FF', fontSize: 11, fontWeight: '900' }}>📜 HISTORY</Text>
                   </TouchableOpacity>
                 </View>
@@ -8912,7 +8972,7 @@ function renderEventDetail() {
               fontWeight: '900'
             }}
           >
-            0
+            {walletBalance.toLocaleString()}
           </Text>
 
           <Text
