@@ -51,7 +51,26 @@ jobs:
 
       - name: Install JavaScript dependencies
         working-directory: mobile
-        run: npm install --no-audit --no-fund
+        run: npm install --no-fund
+
+      - name: Check Expo dependency compatibility
+        working-directory: mobile
+        run: npx expo install --check
+
+      - name: Run Expo Doctor
+        working-directory: mobile
+        run: npx expo-doctor
+
+      - name: Audit JavaScript dependencies
+        working-directory: mobile
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Set Android versionCode from workflow run
+        working-directory: mobile
+        env:
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          node -e "const fs=require('fs'); const p='app.json'; const a=JSON.parse(fs.readFileSync(p,'utf8')); a.expo.android.versionCode=Math.max(a.expo.android.versionCode,Number(process.env.GITHUB_RUN_NUMBER)); fs.writeFileSync(p,JSON.stringify(a,null,2)+'\\n'); console.log('Android versionCode:',a.expo.android.versionCode);"
 
       - name: Generate Android native project
         working-directory: mobile
