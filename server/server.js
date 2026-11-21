@@ -2163,11 +2163,13 @@ app.patch('/api/rooms/:roomId/mic-seats/:seatNumber/control', userAuth, async (r
     if (error) throw error;
 
     if (action === 'close_seat') {
-      await supabase.from('talkzy_room_mic_seats').delete()
+      const { error: removeSeatError } = await supabase.from('talkzy_room_mic_seats').delete()
         .eq('room_id', room.id).eq('seat_number', seatNumber);
+      if (removeSeatError) throw removeSeatError;
     } else if (action === 'close_mic') {
-      await supabase.from('talkzy_room_mic_seats').update({ is_muted: true, updated_at: new Date().toISOString() })
+      const { error: forceMuteError } = await supabase.from('talkzy_room_mic_seats').update({ is_muted: true, updated_at: new Date().toISOString() })
         .eq('room_id', room.id).eq('seat_number', seatNumber);
+      if (forceMuteError) throw forceMuteError;
     }
     res.set('Cache-Control', 'no-store').json({ success: true, control: data });
   } catch (error) {
