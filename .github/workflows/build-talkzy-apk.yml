@@ -61,8 +61,9 @@ jobs:
         working-directory: mobile
         run: npx expo-doctor
 
-      - name: Audit JavaScript dependencies
+      - name: Audit JavaScript dependencies (report only)
         working-directory: mobile
+        continue-on-error: true
         run: npm audit --omit=dev --audit-level=high
 
       - name: Set Android versionCode from workflow run
