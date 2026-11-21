@@ -2924,20 +2924,21 @@ function renderRoomInterior() {
         )}
 
         {/* ROOM DETAILS */}
-<View style={{ flex: 1 }}>
+<View style={{ flex: 1, minWidth: 0, justifyContent: 'center' }}>
   <TouchableOpacity
     onPress={() => openRoomDetails(selectedRoom)}
-    style={{ alignSelf: 'flex-start' }}
+    style={{ alignSelf: 'stretch', minWidth: 0 }}
   >
     <Text
       style={{
         color: C.text,
-        fontSize: 17,
-        fontWeight: 'bold'
+        fontSize: 16,
+        fontWeight: 'bold',
+        flexShrink: 1
       }}
-      numberOfLines={1}
+      numberOfLines={2}
     >
-      {selectedRoom.room_name}
+      {selectedRoom.room_name || selectedRoom.name || 'Room'}
     </Text>
   </TouchableOpacity>
 
@@ -2965,7 +2966,7 @@ function renderRoomInterior() {
       marginTop: 3
     }}
   >
-    Room ID: {selectedRoom.id}
+    Room ID: {selectedRoom.room_talkzy_id || '—'}
   </Text>
 
   <Text
