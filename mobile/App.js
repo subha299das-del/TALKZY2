@@ -15,7 +15,9 @@ import {
   Image,
   ActivityIndicator,
 Modal,
-Platform
+Platform,
+Animated,
+Dimensions
 
 } from 'react-native';
 
@@ -119,6 +121,88 @@ async function api(path, options = {}) {
 }
 
 
+
+function WorldLuckyBagTicker({ notification, onPress }) {
+  const translateX = useRef(new Animated.Value(Dimensions.get('window').width)).current;
+
+  useEffect(() => {
+    if (!notification) return;
+    translateX.setValue(Dimensions.get('window').width);
+    const loop = Animated.loop(
+      Animated.timing(translateX, {
+        toValue: -430,
+        duration: 10500,
+        useNativeDriver: true
+      })
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [notification?.id, translateX]);
+
+  if (!notification) return null;
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.88}
+      onPress={onPress}
+      style={{
+        marginHorizontal: 9,
+        marginTop: 5,
+        marginBottom: 5,
+        height: 48,
+        overflow: 'hidden',
+        borderRadius: 15,
+        borderWidth: 1.5,
+        borderColor: '#C18BFF',
+        backgroundColor: '#210B43',
+        shadowColor: '#A855F7',
+        shadowOpacity: 0.42,
+        shadowRadius: 8,
+        elevation: 8
+      }}
+    >
+      <View style={{
+        position: 'absolute',
+        left: 0, right: 0, top: 0, bottom: 0,
+        backgroundColor: '#3B126C',
+        opacity: 0.72
+      }} />
+      <Animated.View
+        style={{
+          height: 48,
+          flexDirection: 'row',
+          alignItems: 'center',
+          width: 430,
+          transform: [{ translateX }]
+        }}
+      >
+        <Text style={{ fontSize: 25, marginLeft: 7, marginRight: 9 }}>🎁</Text>
+        <Text style={{ color: '#FFE7A0', fontSize: 13, fontWeight: '900' }}>
+          {notification.senderName || 'Someone'}
+        </Text>
+        <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#F8D56B', marginHorizontal: 8 }} />
+        <Text style={{ fontSize: 17 }}>🪙</Text>
+        <Text style={{ color: '#FFD95C', fontSize: 14, fontWeight: '900', marginLeft: 4 }}>
+          {Number(notification.coinAmount || 0).toLocaleString()}
+        </Text>
+        <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#F8D56B', marginHorizontal: 8 }} />
+        <View style={{
+          backgroundColor: '#5A2497',
+          borderWidth: 1,
+          borderColor: '#C18BFF',
+          borderRadius: 12,
+          paddingHorizontal: 9,
+          paddingVertical: 5
+        }}>
+          <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '900' }}>
+            Room #{notification.roomNumber || '—'}
+          </Text>
+        </View>
+        <Text style={{ color: '#E7C7FF', fontSize: 22, fontWeight: '900', marginLeft: 13, marginRight: 15 }}>››</Text>
+      </Animated.View>
+    </TouchableOpacity>
+  );
+}
 
 function Brand({ small = false }) {
   const size = small ? 48 : 100;
@@ -496,6 +580,7 @@ const [memberSearch, setMemberSearch] = useState('');
 const [roomDpUploading, setRoomDpUploading] = useState(false);
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
+  const [worldLuckyBagNotification, setWorldLuckyBagNotification] = useState(null);
  const [isRoomMinimized, setIsRoomMinimized] = useState(false);
  const [showRoomMenu, setShowRoomMenu] = useState(false);
  const [isOnMic, setIsOnMic] = useState(false);
@@ -571,6 +656,24 @@ async function loadRoomPresence(roomId, showLoader = false) {
     if (showLoader) setRoomPresenceLoading(false);
   }
 }
+
+// WORLD LUCKY BAG BROADCAST RECEIVER (sender integration will publish on this channel)
+useEffect(() => {
+  if (!session?.user?.id) return;
+  const channel = supabase.channel('talkzy-world-lucky-bag-notifications')
+    .on('broadcast', { event: 'world_lucky_bag' }, ({ payload }) => {
+      if (payload) setWorldLuckyBagNotification({
+        id: payload.id || Date.now().toString(),
+        senderName: payload.senderName,
+        coinAmount: payload.coinAmount,
+        roomNumber: payload.roomNumber,
+        roomId: payload.roomId,
+        room: payload.room
+      });
+    })
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
+}, [session?.user?.id]);
 
 // REALTIME MICROPHONE SEAT SYNC
 useEffect(() => {
@@ -1769,6 +1872,25 @@ async function toggleFollowRoom(room) {
     } finally { setJoiningRoom(false); }
   }
 
+  async function openWorldLuckyBagRoom(notification) {
+    if (!notification) return;
+    const room = notification.room || rooms.find(item => item.id === notification.roomId) ||
+      joinedRooms.find(item => item.id === notification.roomId) ||
+      followedRooms.find(item => item.id === notification.roomId) ||
+      myRooms.find(item => item.id === notification.roomId);
+    if (!room) {
+      return Alert.alert('Room unavailable', 'This room could not be found or may have closed.');
+    }
+    if (room.room_type === 'locked') {
+      setJoinTargetRoom(room);
+      setJoinMode('tourist');
+      setJoinPassword('');
+      setShowJoinPassword(true);
+      return;
+    }
+    await submitRoomVisit(room, '');
+  }
+
   async function sendRoomImage() {
     if (!selectedRoom?.id) return;
     if (isRoomTourist && !touristsSendPic) {
@@ -2533,6 +2655,13 @@ function renderRoomInterior() {
 
   return (
     <View style={{ flex: 1, backgroundColor: 'transparent', minHeight: 0 }}>
+
+      {worldLuckyBagNotification && (
+        <WorldLuckyBagTicker
+          notification={worldLuckyBagNotification}
+          onPress={() => openWorldLuckyBagRoom(worldLuckyBagNotification)}
+        />
+      )}
 
       {/* ROOM HEADER */}
       <View
