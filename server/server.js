@@ -1890,6 +1890,7 @@ app.get('/api/rooms/:roomId/activities', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
+    if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
     const owner = room.owner_id === req.talkzyUser.id;
     const member = owner || await isRoomMember(room.id, req.talkzyUser.id);
     const tourist = !member && await isRoomVisitor(room.id, req.talkzyUser.id);
@@ -1916,11 +1917,17 @@ app.post('/api/rooms/:roomId/activities', userAuth, async (req, res) => {
     const title = String(req.body?.title || '').trim();
     const description = String(req.body?.description || '').trim();
     const posterUrl = req.body?.posterUrl ? String(req.body.posterUrl).trim() : null;
+    const startsAt = req.body?.startsAt ? String(req.body.startsAt) : null;
+    const endsAt = req.body?.endsAt ? String(req.body.endsAt) : null;
     if (!title || title.length > 100) return res.status(400).json({ error: 'Activity title must be 1–100 characters.' });
-    if (posterUrl && !/^https:\/\/\S+$/i.test(posterUrl)) return res.status(400).json({ error: 'Poster must be a secure image URL.' });
+    if (description.length > 2000) return res.status(400).json({ error: 'Activity description must be 2,000 characters or less.' });
+    if (posterUrl && (posterUrl.length > 2048 || !/^https:\/\/\S+$/i.test(posterUrl))) return res.status(400).json({ error: 'Poster must be a secure URL under 2,048 characters.' });
+    if (startsAt && Number.isNaN(Date.parse(startsAt))) return res.status(400).json({ error: 'Activity start time is invalid.' });
+    if (endsAt && Number.isNaN(Date.parse(endsAt))) return res.status(400).json({ error: 'Activity end time is invalid.' });
+    if (startsAt && endsAt && Date.parse(endsAt) <= Date.parse(startsAt)) return res.status(400).json({ error: 'Activity end time must be after its start time.' });
     const { data, error } = await supabase.from('talkzy_room_activities').insert({
       room_id: room.id, created_by: req.talkzyUser.id, title, description,
-      poster_url: posterUrl, starts_at: req.body?.startsAt || null, ends_at: req.body?.endsAt || null
+      poster_url: posterUrl, starts_at: startsAt, ends_at: endsAt
     }).select('*').single();
     if (error) throw error;
     res.status(201).json({ activity: data });
@@ -1942,11 +1949,30 @@ app.patch('/api/rooms/:roomId/activities/:activityId', userAuth, async (req, res
     if (!existing) return res.status(404).json({ error: 'Room activity not found.' });
     if (existing.status !== 'draft') return res.status(409).json({ error: 'Published activities are locked. Their poster cannot be changed.' });
     const patch = {};
-    if (req.body?.title !== undefined) patch.title = String(req.body.title).trim();
-    if (req.body?.description !== undefined) patch.description = String(req.body.description).trim();
-    if (req.body?.posterUrl !== undefined) patch.poster_url = req.body.posterUrl || null;
-    if (req.body?.startsAt !== undefined) patch.starts_at = req.body.startsAt || null;
-    if (req.body?.endsAt !== undefined) patch.ends_at = req.body.endsAt || null;
+    if (req.body?.title !== undefined) {
+      patch.title = String(req.body.title).trim();
+      if (!patch.title || patch.title.length > 100) return res.status(400).json({ error: 'Activity title must be 1–100 characters.' });
+    }
+    if (req.body?.description !== undefined) {
+      patch.description = String(req.body.description).trim();
+      if (patch.description.length > 2000) return res.status(400).json({ error: 'Activity description must be 2,000 characters or less.' });
+    }
+    if (req.body?.posterUrl !== undefined) {
+      patch.poster_url = req.body.posterUrl ? String(req.body.posterUrl).trim() : null;
+      if (patch.poster_url && (patch.poster_url.length > 2048 || !/^https:\/\/\S+$/i.test(patch.poster_url))) return res.status(400).json({ error: 'Poster must be a secure URL under 2,048 characters.' });
+    }
+    if (req.body?.startsAt !== undefined) {
+      patch.starts_at = req.body.startsAt ? String(req.body.startsAt) : null;
+      if (patch.starts_at && Number.isNaN(Date.parse(patch.starts_at))) return res.status(400).json({ error: 'Activity start time is invalid.' });
+    }
+    if (req.body?.endsAt !== undefined) {
+      patch.ends_at = req.body.endsAt ? String(req.body.endsAt) : null;
+      if (patch.ends_at && Number.isNaN(Date.parse(patch.ends_at))) return res.status(400).json({ error: 'Activity end time is invalid.' });
+    }
+    const nextStart = patch.starts_at !== undefined ? patch.starts_at : existing.starts_at;
+    const nextEnd = patch.ends_at !== undefined ? patch.ends_at : existing.ends_at;
+    if (nextStart && nextEnd && Date.parse(nextEnd) <= Date.parse(nextStart)) return res.status(400).json({ error: 'Activity end time must be after its start time.' });
+    if (!Object.keys(patch).length) return res.status(400).json({ error: 'No activity changes provided.' });
     const { data, error } = await supabase.from('talkzy_room_activities').update(patch)
       .eq('id', existing.id).select('*').single();
     if (error) throw error;
