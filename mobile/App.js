@@ -3269,7 +3269,12 @@ function renderRoomInterior() {
       </View>
 
            {/* MICROPHONE SEATS */}
-<View style={{ paddingHorizontal: 12, paddingTop: youtubeScreenVisible ? 4 : 16 }}>
+<ScrollView
+  style={{ maxHeight: micCount >= 16 ? 205 : micCount >= 14 ? 245 : 300, flexShrink: 0 }}
+  contentContainerStyle={{ paddingHorizontal: 12, paddingTop: youtubeScreenVisible ? 4 : 8, paddingBottom: 2 }}
+  showsVerticalScrollIndicator={micCount >= 16}
+  nestedScrollEnabled
+>
   {(youtubeScreenVisible
     ? Array.from({ length: Math.ceil((MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().length / 8) }, (_, index) => (MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().slice(index * 8, (index + 1) * 8))
     : (MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows
@@ -3511,7 +3516,7 @@ function renderRoomInterior() {
       })}
     </View>
   ))}
-</View>
+</ScrollView>
 
 <Modal visible={showMicControlPopup} transparent animationType="fade" onRequestClose={() => setShowMicControlPopup(false)}>
   <View style={{ flex: 1, backgroundColor: 'rgba(3,5,14,0.78)', justifyContent: 'center', padding: 22 }}>
@@ -3566,9 +3571,9 @@ onContentSizeChange={() =>
   roomChatScrollRef.current?.scrollToEnd({ animated: true })
  }
     style={{
-      maxHeight: 160,
-      marginTop: 10,
-      marginBottom: 10
+      maxHeight: micCount >= 16 ? 95 : 160,
+      marginTop: 6,
+      marginBottom: 5
     }}
     contentContainerStyle={{
       paddingHorizontal: 12
@@ -3620,7 +3625,7 @@ onContentSizeChange={() =>
 )}
 
 {/* EMPTY ROOM SPACE */}
-<View style={{ flexGrow: 1, minHeight: 120 }} />
+<View style={{ flexGrow: 1, minHeight: 12 }} />
 
       {/* ROOM POPUPS: overlay the room without resizing or scrolling the full screen */}
       {(showRoomGiftPanel || showRoomTools) && (
