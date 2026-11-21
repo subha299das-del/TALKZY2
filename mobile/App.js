@@ -2766,7 +2766,7 @@ async function addYoutubeItem(item) {
   if (count >= 20) return Alert.alert('Playlist full', 'The room playlist is limited to 20 videos.');
   const meta = item?.title ? item : await getYoutubeMetadata(videoId);
   const next = youtubeState.video_id
-    ? { ...youtubeState, queue: [...(youtubeState.queue || []), { video_id: videoId, title: String(meta.title || 'YouTube video').slice(0, 120) }] }
+    ? { ...youtubeState, queue: [...(youtubeState.queue || []), { video_id: videoId, title: String(meta.title || 'YouTube video').slice(0, 120), added_by: profile?.display_name || session?.user?.email?.split('@')[0] || 'Member' }] }
     : { ...youtubeState, video_id: videoId, is_playing: true, current_time_seconds: 0, queue: youtubeState.queue || [] };
   await saveYoutubeState(next);
   setYoutubeSelectedVideo(null);
@@ -3214,7 +3214,7 @@ function renderRoomInterior() {
                 <Image source={{ uri: 'https://img.youtube.com/vi/' + item.video_id + '/hqdefault.jpg' }} style={{ width: 86, height: 56, borderRadius: 7, backgroundColor: '#000' }} />
                 <View style={{ flex: 1, marginLeft: 8 }}>
                   <Text numberOfLines={2} style={{ color: C.text, fontSize: 10, fontWeight: '800' }}>{item.title || 'YouTube video'}</Text>
-                  <Text style={{ color: C.muted, fontSize: 9, marginTop: 3 }}>Added to queue · {index + 1}</Text>
+                  <Text style={{ color: C.muted, fontSize: 9, marginTop: 3 }}>Added by {item.added_by || 'Member'}</Text>
                 </View>
                 {(selectedRoom?.owner_id === session?.user?.id || roomPresence.find(person => person.user_id === session?.user?.id)?.presence_role === 'admin') && (
                   <TouchableOpacity onPress={() => saveYoutubeState({ ...youtubeState, queue: youtubeState.queue.filter((_, i) => i !== index })} style={{ padding: 5 }}><Text style={{ color: C.danger, fontSize: 11, fontWeight: '900' }}>✕</Text></TouchableOpacity>
