@@ -1383,8 +1383,9 @@ app.put('/api/rooms/:roomId/youtube', userAuth, async (req, res) => {
       return res.status(400).json({ error: 'Enter a valid YouTube video link or ID.' });
     }
     const queueInput = body.queue === undefined ? [] : body.queue;
-    if (!Array.isArray(queueInput) || queueInput.length > 10) {
-      return res.status(400).json({ error: 'The YouTube queue can contain up to 10 videos.' });
+    const maxQueuedItems = videoId ? 19 : 20;
+    if (!Array.isArray(queueInput) || queueInput.length > maxQueuedItems) {
+      return res.status(400).json({ error: 'The room YouTube playlist can contain up to 20 videos including the current video.' });
     }
     const queue = [];
     for (const item of queueInput) {
