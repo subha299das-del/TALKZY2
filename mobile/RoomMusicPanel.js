@@ -12,7 +12,7 @@ import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import * as MediaLibrary from 'expo-media-library';
 import { File as ExpoFile } from 'expo-file-system';
 
-export default function RoomMusicPanel({ visible, roomId, userId, api, supabase, colors, onClose }) {
+export default function RoomMusicPanel({ visible, roomId, userId, api, supabase, colors, onClose, onMinimize }) {
   const [minimized, setMinimized] = useState(false);
   const [queue, setQueue] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -395,8 +395,8 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
           <Text style={{ color: colors.muted, fontSize: 19 }}>{musicPage === 'player' ? '✕' : '‹'}</Text>
         </TouchableOpacity>
         <Text numberOfLines={1} style={{ color: colors.text, fontSize: 14, fontWeight: '900', flex: 1, textAlign: 'center' }}>{musicPage === 'local' ? 'My Local Music' : musicPage === 'library' ? 'My Music' : '🎵 ' + currentTitle}</Text>
-        {musicPage === 'player' ? <TouchableOpacity onPress={() => setMinimized(!minimized)} style={{ paddingHorizontal: 8, paddingVertical: 4 }}>
-          <Text style={{ color: colors.muted, fontSize: 20 }}>{minimized ? '▢' : '－'}</Text>
+        {musicPage === 'player' ? <TouchableOpacity onPress={() => { setMinimized(true); onMinimize?.(); }} style={{ paddingHorizontal: 8, paddingVertical: 4 }}>
+          <Text style={{ color: colors.muted, fontSize: 20 }}>－</Text>
         </TouchableOpacity> : <View style={{ width: 28 }} />}
       </View>
       {!minimized ? (
