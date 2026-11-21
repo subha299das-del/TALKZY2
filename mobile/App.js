@@ -3205,7 +3205,7 @@ function renderRoomInterior() {
 
            {/* MICROPHONE SEATS */}
 <View style={{ paddingHorizontal: 12, paddingTop: showYoutubePanel ? 4 : 16 }}>
-  {(youtubeState.video_id
+  {(showYoutubePanel
     ? [((MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().slice(0, 8)), ((MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().slice(8, 16))]
     : (MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows
   ).filter(rowSeats => rowSeats.length > 0).map((rowSeats, rowIndex) => (
