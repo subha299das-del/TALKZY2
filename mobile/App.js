@@ -594,8 +594,8 @@ const roomChatLocalCutoffRef = useRef({});
  seven:{count:7,label:'7 Mics',rows:[[1,2],[3,4,5,6,7]]}, eight:{count:8,label:'8 Mics',rows:[[1,2,3,4],[5,6,7,8]]},
  ten_couple:{count:10,label:'10 Mics · Couple',rows:[[1,2],[3,4,5,6],[7,8,9,10]]}, ten_standard:{count:10,label:'10 Mics · Standard',rows:[[1,2,3,4,5],[6,7,8,9,10]]},
  eleven:{count:11,label:'11 Mics',rows:[[1],[2,3,4,5,6],[7,8,9,10,11]]}, twelve:{count:12,label:'12 Mics',rows:[[1,2],[3,4,5,6,7],[8,9,10,11,12]]},
- fourteen:{count:14,label:'14 Mics',rows:[[1,2],[3,4,5,6],[7,8,9,10],[11,12,13,14]]}, fifteen:{count:15,label:'15 Mics',rows:[[1,2,3,4,5],[6,7,8,9,10],[11,12,13,14,15]]},
- sixteen:{count:16,label:'16 Mics',rows:[[1],[2,3,4,5,6],[7,8,9,10,11],[12,13,14,15,16]]}, seventeen:{count:17,label:'17 Mics',rows:[[1,2],[3,4,5,6,7],[8,9,10,11,12],[13,14,15,16,17]]}
+ fourteen:{count:14,label:'14 Mics',rows:[[1,2],[3,4,5,6],[7,8,9,10],[11,12,13,14]]},
+ seventeen:{count:17,label:'17 Mics',rows:[[1,2],[3,4,5,6,7],[8,9,10,11,12],[13,14,15,16,17]]}
  };
 
  
@@ -2285,83 +2285,6 @@ password: roomType === 'locked' ? roomPassword : null,
     setSaving(false);
   }
 }
-  
-  // =========================================
-  // ROOM: SAVE ROOM SETTINGS
-  // =========================================
-
-  async function saveRoomSettings() {
-    if (!selectedRoom) {
-      Alert.alert('Error', 'No room selected.');
-      return;
-    }
-
-    if (!session?.access_token) {
-      Alert.alert('Login required', 'Please sign in again.');
-      return;
-    }
-
-    if (
-      roomSettingsType === 'locked' &&
-      (
-        roomSettingsPassword.length < 4 ||
-        roomSettingsPassword.length > 64
-      )
-    ) {
-      Alert.alert(
-        'Password required',
-        'Room password must be 4 to 64 characters.'
-      );
-      return;
-    }
-
-    try {
-      setSaving(true);
-
-      const result = await api(
-        `/api/rooms/${selectedRoom.id}/type`,
-        {
-          method: 'PATCH',
-          headers: {
-            Authorization: `Bearer ${session.access_token}`
-          },
-          body: JSON.stringify({
-            roomType: roomSettingsType,
-            password:
-              roomSettingsType === 'locked'
-                ? roomSettingsPassword
-                : undefined
-          })
-        }
-      );
-
-      setSelectedRoom({
-        ...selectedRoom,
-        ...result.room
-      });
-
-      setRoomSettingsPassword('');
-
-      await loadPublicRooms();
-      await loadMyRooms();
-
-      Alert.alert(
-        'Success',
-        'Room privacy settings updated.'
-      );
-
-      setScreen('main');
-
-    } catch (error) {
-      Alert.alert(
-        'Update failed',
-        error.message || 'Could not update room settings.'
-      );
-    } finally {
-      setSaving(false);
-    }
-  }
-
   
   // =========================================
   // ROOM: JOIN ROOM
