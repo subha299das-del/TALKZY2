@@ -606,9 +606,14 @@ app.get('/api/rooms/:roomId/messages', userAuth, async (req, res) => {
     if (!room) return;
     if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
     if (!await canEnterRoom(room, req.talkzyUser.id)) return res.status(403).json({ error: 'Enter the room first.' });
-    const { data, error } = await supabase.from('talkzy_room_messages')
+    const { data: clearMarker, error: markerError } = await supabase.from('talkzy_room_chat_clears')
+      .select('cleared_at').eq('room_id', room.id).eq('user_id', req.talkzyUser.id).maybeSingle();
+    if (markerError) throw markerError;
+    let messageQuery = supabase.from('talkzy_room_messages')
       .select('id, sender_id, message_type, message_text, image_url, created_at')
       .eq('room_id', room.id).order('created_at', { ascending: true }).limit(100);
+    if (clearMarker?.cleared_at) messageQuery = messageQuery.gt('created_at', clearMarker.cleared_at);
+    const { data, error } = await messageQuery;
     if (error) throw error;
     const ids = [...new Set((data || []).map(m => m.sender_id))];
     const { data: profiles, error: profileError } = ids.length
@@ -1483,6 +1488,13 @@ app.post('/api/rooms/:roomId/presence/leave', userAuth, async (req, res) => {
     const { error: presenceError } = await supabase.from('talkzy_room_presence')
       .delete().eq('room_id', room.id).eq('user_id', userId);
     if (presenceError) throw presenceError;
+
+    // Personal chat cutoff: hide this room's messages from this user after leaving,
+    // without deleting shared messages or affecting other participants.
+    const { error: clearMarkerError } = await supabase.from('talkzy_room_chat_clears')
+      .upsert({ room_id: room.id, user_id: userId, cleared_at: new Date().toISOString() },
+        { onConflict: 'room_id,user_id' });
+    if (clearMarkerError) throw clearMarkerError;
 
     res.json({ left: true });
   } catch (error) {
