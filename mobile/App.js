@@ -586,6 +586,7 @@ const [roomPresenceLoading, setRoomPresenceLoading] = useState(false);
 const [showRoomUsers, setShowRoomUsers] = useState(false);
 const micSeatLoadVersionRef = useRef(0);
 const roomLeaveCleanupRef = useRef({});
+const roomExitInProgressRef = useRef({});
 const roomChatLocalCutoffRef = useRef({});
  const [showMicCountPicker, setShowMicCountPicker] = useState(false);
  const [micLayout, setMicLayout] = useState('eight');
@@ -4264,24 +4265,21 @@ borderTopWidth: 1,
           )}
 
           {/* EXIT */}
-          <Pressable
+          <TouchableOpacity
+            activeOpacity={0.65}
             accessibilityRole="button"
-            hitSlop={8}
-            onPress={() => {
-              console.log('[TALKZY] Exit Room tapped');
-              exitCurrentRoom();
-            }}
-            style={({ pressed }) => ({
+            onPress={exitCurrentRoom}
+            style={{
               padding: 16,
-              minHeight: 48,
+              minHeight: 50,
               justifyContent: 'center',
-              backgroundColor: pressed ? 'rgba(255,91,91,0.12)' : 'transparent'
-            })}
+              backgroundColor: 'transparent'
+            }}
           >
             <Text style={{ color: '#FF5B5B', fontSize: 15, fontWeight: '700' }}>
               Exit Room
             </Text>
-          </Pressable>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -10565,52 +10563,73 @@ if (screen === 'profile' || profileIncomplete) {
   );
             }
             
-  async function exitCurrentRoom() {
-    const roomId = selectedRoom?.id;
+  function exitCurrentRoom() {
+    const roomId = selectedRoom?.id || null;
+    const userId = session?.user?.id || 'unknown';
 
-    // Exit locally first so a slow server request cannot trap the user in the room.
+    // Ignore rapid duplicate taps for the same room.
+    if (roomId && roomExitInProgressRef.current[roomId]) return;
+    if (roomId) roomExitInProgressRef.current[roomId] = true;
+
+    // Immediately and synchronously leave the room UI. No network/storage wait
+    // is allowed to block navigation.
     setShowRoomMenu(false);
     setShowRoomTools(false);
     setShowRoomGiftPanel(false);
+    setShowRoomThemeMenu(false);
     setShowRoomUsers(false);
     setShowRoomMessageMenu(false);
     setShowYoutubePanel(false);
+    setShowMicCountPicker(false);
+    setShowJoinPassword(false);
     setIsOnMic(false);
     setMyMicSeat(null);
     setIsMicMuted(false);
     setIsRoomMinimized(false);
-    setSelectedRoom(null);
+    setIsRoomTourist(false);
     setMicSeats([]);
     setRoomPresence([]);
     setRoomChatMessages([]);
-    setIsRoomTourist(false);
+    setSelectedRoom(null);
     ++micSeatLoadVersionRef.current;
+    setActiveTab('Room');
     setScreen('main');
 
-    // Save the personal chat cutoff to durable storage immediately, then update
-    // the server marker. This survives app restarts and failed backend requests.
+    // Durable chat cutoff + server leave are best-effort background cleanup.
     if (roomId) {
       const cutoff = Date.now();
       roomChatLocalCutoffRef.current[roomId] = cutoff;
-      const cutoffKey = `talkzy-room-chat-cutoff:${session?.user?.id || 'unknown'}:${roomId}`;
-      const cleanup = AsyncStorage.setItem(cutoffKey, String(cutoff))
-        .then(async () => {
+      const cutoffKey = `talkzy-room-chat-cutoff:${userId}:${roomId}`;
+
+      const cleanup = (async () => {
+        try {
+          await AsyncStorage.setItem(cutoffKey, String(cutoff));
+        } catch (error) {
+          console.log('Room exit cutoff save error:', error?.message || error);
+        }
+
+        try {
+          const response = await api(`/api/rooms/${roomId}/presence/leave`, { method: 'POST' });
+          const serverCutoff = response?.clearedAt ? new Date(response.clearedAt).getTime() : 0;
+          const finalCutoff = Math.max(cutoff, serverCutoff || 0);
+          roomChatLocalCutoffRef.current[roomId] = finalCutoff;
           try {
-            const response = await api(`/api/rooms/${roomId}/presence/leave`, { method: 'POST' });
-            const serverCutoff = response?.clearedAt ? new Date(response.clearedAt).getTime() : 0;
-            const finalCutoff = Math.max(cutoff, serverCutoff || 0);
-            roomChatLocalCutoffRef.current[roomId] = finalCutoff;
             await AsyncStorage.setItem(cutoffKey, String(finalCutoff));
           } catch (error) {
-            console.log('Room exit cleanup error:', error.message);
+            console.log('Room exit cutoff update error:', error?.message || error);
           }
-        })
-        .catch(error => console.log('Room chat cutoff storage error:', error.message));
+        } catch (error) {
+          console.log('Room exit server cleanup error:', error?.message || error);
+        }
+      })();
+
       roomLeaveCleanupRef.current[roomId] = cleanup;
       cleanup.finally(() => {
         if (roomLeaveCleanupRef.current[roomId] === cleanup) {
           delete roomLeaveCleanupRef.current[roomId];
         }
+        // Release the duplicate-tap guard even if the server is unavailable.
+        delete roomExitInProgressRef.current[roomId];
       });
     }
   }
