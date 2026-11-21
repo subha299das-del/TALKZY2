@@ -866,6 +866,21 @@ async function sendLuckyBag() {
     if (error) throw error;
     setWalletBalance(Number(data?.balance ?? walletBalance - total));
     setShowLuckyBagPopup(false);
+    if (luckyBagTab === 'World') {
+      const tickerChannel = supabase.channel('talkzy-world-lucky-bag-notifications');
+      tickerChannel.subscribe(status => {
+        if (status === 'SUBSCRIBED') {
+          tickerChannel.send({ type: 'broadcast', event: 'world_lucky_bag', payload: {
+            id: data?.bag_id,
+            senderName: profile?.display_name || 'TALKZY User',
+            coinAmount: total,
+            roomNumber: selectedRoom.room_talkzy_id || selectedRoom.room_name || 'Room',
+            roomId: selectedRoom.id,
+            room: selectedRoom
+          }}).finally(() => supabase.removeChannel(tickerChannel));
+        }
+      });
+    }
     Alert.alert('Lucky Bag sent! 🎉', total.toLocaleString() + ' coins deducted. Unclaimed coins will be refunded after 3 minutes.');
   } catch (error) {
     Alert.alert('Could not send Lucky Bag', error?.message || 'Please try again.');
