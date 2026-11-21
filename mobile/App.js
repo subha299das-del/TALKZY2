@@ -572,6 +572,9 @@ const [worldLuckyBagQueue, setWorldLuckyBagQueue] = useState([]);
  const [micGame, setMicGame] = useState(null);
  const [micCount, setMicCount] = useState(8);
 const [micSeats, setMicSeats] = useState([]);
+const [micControls, setMicControls] = useState([]);
+const [showMicControlPopup, setShowMicControlPopup] = useState(false);
+const [micControlSeat, setMicControlSeat] = useState(null);
 const [roomPresence, setRoomPresence] = useState([]);
 const [roomPresenceLoading, setRoomPresenceLoading] = useState(false);
 const [showRoomUsers, setShowRoomUsers] = useState(false);
@@ -601,6 +604,7 @@ async function loadRoomMicSeats(roomId) {
     setMicCount(result.micCount || 8);
     setMicLayout(result.micLayout || 'eight');
     setMicSeats(result.seats || []);
+    setMicControls(result.micControls || []);
 
     const myUserId = session?.user?.id;
 
@@ -709,6 +713,7 @@ useEffect(() => {
       },
       () => loadRoomMicSeats(roomId)
     )
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'talkzy_room_mic_controls', filter: `room_id=eq.${roomId}` }, () => loadRoomMicSeats(roomId))
     .subscribe();
 
   return () => {
@@ -3216,12 +3221,20 @@ function renderRoomInterior() {
       occupiedSeat?.user_id === session?.user?.id;
 
     const isOccupied = !!occupiedSeat;
+    const seatControl = micControls.find(item => item.seat_number === seat) || {};
+    const seatIsClosed = !!seatControl.seat_closed;
+    const seatMicIsClosed = !!seatControl.mic_closed;
+    const isRoomOwner = selectedRoom?.owner_id === session?.user?.id;
+    const isRoomAdmin = roomPresence.some(person => person.user_id === session?.user?.id && person.presence_role === 'admin');
+    const canControlMics = isRoomOwner || isRoomAdmin;
 
     return (
       <TouchableOpacity
         key={seat}
         disabled={isRoomTourist && !touristsOnMic}
         onPress={async () => {
+          if (canControlMics) { setMicControlSeat(seat); setShowMicControlPopup(true); return; }
+          if (seatIsClosed) { Alert.alert('Seat closed', 'The room owner or admin has closed this seat.'); return; }
           // Occupied by another person: no request needed.
           if (isOccupied && !isMySeat) {
             Alert.alert(
@@ -3287,7 +3300,7 @@ function renderRoomInterior() {
           }
         }}
         style={{
-          opacity: isRoomTourist && !touristsOnMic ? 0.4 : 1,
+          opacity: (isRoomTourist && !touristsOnMic) || (seatIsClosed && !canControlMics) ? 0.4 : 1,
           width: `${100 / rowSeats.length}%`,
           height: 86,
           alignItems: 'center',
@@ -3383,6 +3396,18 @@ function renderRoomInterior() {
               }}
             />
           )}
+          {seatIsClosed && (
+            <View style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(15,8,27,0.78)', alignItems: 'center', justifyContent: 'center', borderRadius: 30 }}>
+              <View style={{ width: 26, height: 20, borderWidth: 2, borderColor: '#C28BFF', borderRadius: 4, transform: [{ rotate: '-8deg' }] }}>
+                <View style={{ position: 'absolute', width: 33, height: 3, backgroundColor: '#FF6685', top: 8, left: -4, transform: [{ rotate: '42deg' }] }} />
+              </View>
+            </View>
+          )}
+          {seatMicIsClosed && !seatIsClosed && (
+            <View style={{ position: 'absolute', bottom: 2, right: 2, width: 20, height: 20, borderRadius: 10, backgroundColor: '#142B3B', borderWidth: 1, borderColor: '#43DCC5', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: '#43DCC5', fontSize: 11, fontWeight: '900' }}>×</Text>
+            </View>
+          )}
         </View>
 
         <Text
@@ -3414,8 +3439,50 @@ function renderRoomInterior() {
     </View>
   ))}
 </View>
-                    
 
+<Modal visible={showMicControlPopup} transparent animationType="fade" onRequestClose={() => setShowMicControlPopup(false)}>
+  <View style={{ flex: 1, backgroundColor: 'rgba(3,5,14,0.78)', justifyContent: 'center', padding: 22 }}>
+    <View style={{ backgroundColor: '#11172B', borderRadius: 24, borderWidth: 1, borderColor: '#60439A', padding: 18, shadowColor: '#9366FF', shadowOpacity: 0.4, shadowRadius: 18, elevation: 14 }}>
+      <View style={{ alignItems: 'center', marginBottom: 14 }}>
+        <Text style={{ color: '#F5F6FF', fontSize: 18, fontWeight: '900' }}>MIC CONTROL · {micControlSeat}</Text>
+        <Text style={{ color: '#9CA9C9', fontSize: 11, marginTop: 4 }}>Room owner / admin controls</Text>
+      </View>
+      <TouchableOpacity onPress={() => {
+        setShowMicControlPopup(false);
+        const occupied = micSeats.find(item => item.seat_number === micControlSeat);
+        if (occupied && occupied.user_id !== session?.user?.id) { Alert.alert('Seat occupied', 'This mic is already occupied. Takeover is not enabled.'); return; }
+        (async () => { try {
+          if (occupied?.user_id === session?.user?.id) await api(`/api/rooms/${selectedRoom.id}/mic-seats`, { method: 'DELETE' });
+          else await api(`/api/rooms/${selectedRoom.id}/mic-seats/${micControlSeat}`, { method: 'POST' });
+          await loadRoomMicSeats(selectedRoom.id);
+        } catch (e) { Alert.alert('Mic error', e.message); } })();
+      }} style={{ flexDirection: 'row', alignItems: 'center', padding: 13, borderRadius: 15, backgroundColor: '#241B43', borderWidth: 1, borderColor: '#9366FF', marginBottom: 9 }}>
+        <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: '#382564', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}><Text style={{ fontSize: 23, color: '#C6A6FF' }}>♬</Text></View>
+        <View style={{ flex: 1 }}><Text style={{ color: '#F5F6FF', fontWeight: '900', fontSize: 14 }}>Take the mic</Text><Text style={{ color: '#B9A6F5', fontSize: 11, marginTop: 2 }}>Join this seat or leave it if it's yours</Text></View>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={async () => {
+        const closed = !!micControls.find(x => x.seat_number === micControlSeat)?.seat_closed; const action = closed ? 'open_seat' : 'close_seat';
+        try { await api(`/api/rooms/${selectedRoom.id}/mic-seats/${micControlSeat}/control`, { method: 'PATCH', body: JSON.stringify({ action }) }); await loadRoomMicSeats(selectedRoom.id); setShowMicControlPopup(false); } catch (e) { Alert.alert('Control failed', e.message); }
+      }} style={{ flexDirection: 'row', alignItems: 'center', padding: 13, borderRadius: 15, backgroundColor: '#28172F', borderWidth: 1, borderColor: '#B56BFF', marginBottom: 9 }}>
+        <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: '#46204D', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+          <View style={{ width: 24, height: 18, borderWidth: 2, borderColor: '#D5A3FF', borderRadius: 4 }}><View style={{ position: 'absolute', width: 30, height: 3, backgroundColor: '#FF6685', top: 7, left: -4, transform: [{ rotate: '42deg' }] }} /></View>
+        <View style={{ flex: 1 }}><Text style={{ color: '#F5F6FF', fontWeight: '900', fontSize: 14 }}>{micControls.find(x => x.seat_number === micControlSeat)?.seat_closed ? 'Open seat' : 'Close seat'}</Text><Text style={{ color: '#D3A5FF', fontSize: 11, marginTop: 2 }}>{micControls.find(x => x.seat_number === micControlSeat)?.seat_closed ? 'Allow anyone to sit again' : 'Block everyone, including owner/admin'}</Text></View>
+        <Text style={{ color: '#D5A3FF', fontSize: 18 }}>{micControls.find(x => x.seat_number === micControlSeat)?.seat_closed ? '↗' : '⛔'}</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={async () => {
+        const closed = !!micControls.find(x => x.seat_number === micControlSeat)?.mic_closed; const action = closed ? 'open_mic' : 'close_mic';
+        try { await api(`/api/rooms/${selectedRoom.id}/mic-seats/${micControlSeat}/control`, { method: 'PATCH', body: JSON.stringify({ action }) }); await loadRoomMicSeats(selectedRoom.id); setShowMicControlPopup(false); } catch (e) { Alert.alert('Control failed', e.message); }
+      }} style={{ flexDirection: 'row', alignItems: 'center', padding: 13, borderRadius: 15, backgroundColor: '#142B3B', borderWidth: 1, borderColor: '#43DCC5', marginBottom: 9 }}>
+        <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: '#1A4051', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}><Text style={{ color: '#43DCC5', fontSize: 24, fontWeight: '900' }}>♩</Text><View style={{ position: 'absolute', width: 28, height: 2, backgroundColor: '#FF6685', transform: [{ rotate: '45deg' }] }} /></View>
+        <View style={{ flex: 1 }}><Text style={{ color: '#F5F6FF', fontWeight: '900', fontSize: 14 }}>{micControls.find(x => x.seat_number === micControlSeat)?.mic_closed ? 'Open mic' : 'Close mic'}</Text><Text style={{ color: '#A6E8F1', fontSize: 11, marginTop: 2 }}>{micControls.find(x => x.seat_number === micControlSeat)?.mic_closed ? 'Allow the seated user to unmute' : 'Force mute this seat, even for owner'}</Text></View>
+        <Text style={{ color: '#43DCC5', fontSize: 18 }}>{micControls.find(x => x.seat_number === micControlSeat)?.mic_closed ? '↗' : '🔇'}</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => setShowMicControlPopup(false)} style={{ alignItems: 'center', paddingVertical: 11 }}><Text style={{ color: '#9CA9C9', fontWeight: '800' }}>Cancel</Text></TouchableOpacity>
+    </View>
+  </View>
+</Modal>
+
+                    
             {/* ROOM CHAT MESSAGES */}
 {roomChatMessages.length > 0 && (
   <ScrollView
