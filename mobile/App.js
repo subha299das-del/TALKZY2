@@ -581,6 +581,7 @@ const [roomDpUploading, setRoomDpUploading] = useState(false);
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [worldLuckyBagNotification, setWorldLuckyBagNotification] = useState(null);
+const [worldLuckyBagQueue, setWorldLuckyBagQueue] = useState([]);
  const [isRoomMinimized, setIsRoomMinimized] = useState(false);
  const [showRoomMenu, setShowRoomMenu] = useState(false);
  const [isOnMic, setIsOnMic] = useState(false);
@@ -662,18 +663,41 @@ useEffect(() => {
   if (!session?.user?.id) return;
   const channel = supabase.channel('talkzy-world-lucky-bag-notifications')
     .on('broadcast', { event: 'world_lucky_bag' }, ({ payload }) => {
-      if (payload) setWorldLuckyBagNotification({
-        id: payload.id || Date.now().toString(),
-        senderName: payload.senderName,
-        coinAmount: payload.coinAmount,
-        roomNumber: payload.roomNumber,
-        roomId: payload.roomId,
-        room: payload.room
-      });
+      if (payload) {
+        const nextNotification = {
+          id: payload.id || Date.now().toString(),
+          senderName: payload.senderName,
+          coinAmount: payload.coinAmount,
+          roomNumber: payload.roomNumber,
+          roomId: payload.roomId,
+          room: payload.room
+        };
+        setWorldLuckyBagNotification(current => {
+          if (!current) return nextNotification;
+          setWorldLuckyBagQueue(queue => [...queue, nextNotification]);
+          return current;
+        });
+      }
     })
     .subscribe();
   return () => { supabase.removeChannel(channel); };
 }, [session?.user?.id]);
+
+// Rotate queued World Lucky Bag notices instead of overlapping them.
+useEffect(() => {
+  if (!worldLuckyBagNotification) return;
+  const timer=setTimeout(() => {
+    setWorldLuckyBagQueue(queue => {
+      if (queue.length) {
+        setWorldLuckyBagNotification(queue[0]);
+        return queue.slice(1);
+      }
+      setWorldLuckyBagNotification(null);
+      return queue;
+    });
+  }, 12000);
+  return () => clearTimeout(timer);
+}, [worldLuckyBagNotification?.id]);
 
 // REALTIME MICROPHONE SEAT SYNC
 useEffect(() => {
@@ -862,8 +886,8 @@ async function loadLuckyBagHistory() {
     }
     const bagMap=Object.fromEntries(bagDetails.map(b=>[b.id,b]));
     const events=[
-      ...(ledger||[]).map(x=>({key:'ledger-'+x.id,type:x.event_type,amount:x.amount,created_at:x.created_at,note:x.note,reference_id:x.reference_id,balance_after:x.balance_after,bag:bagMap[x.reference_id]})),
-      ...(claims||[]).map(x=>({key:'claim-'+x.id,type:'lucky_bag_received',amount:x.reward_coins,created_at:x.claimed_at,bag:bagMap[x.bag_id],senderName:names[bagMap[x.bag_id]?.sender_id]||'TALKZY User'}))
+      ...(ledger||[]).map(x=>({key:'ledger-'+x.id,type:x.event_type,amount:x.amount,created_at:x.created_at,note:x.note,reference_id:x.reference_id,balance_after:x.balance_after,bag:bagMap[x.reference_id],senderName:names[bagMap[x.reference_id]?.sender_id]||'TALKZY User'})),
+      
     ];
     events.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
     setLuckyBagHistoryItems(events.slice(0,100));
