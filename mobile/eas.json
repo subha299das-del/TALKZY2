@@ -12,14 +12,16 @@
       },
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://talkzy2.onrender.com"
-      }
+      },
+      "node": "22.14.0"
     },
     "production": {
       "environment": "production",
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://talkzy2.onrender.com"
-      }
+      },
+      "node": "22.14.0"
     }
   }
 }
