@@ -1984,6 +1984,9 @@ async function toggleFollowRoom(room) {
     return;
   }
 
+  // Room owners cannot follow their own rooms.
+  if (room.owner_id === session?.user?.id) return;
+
   const isFollowing = followedRooms.some(
     item => item.id === room.id
   );
@@ -4006,24 +4009,26 @@ borderTopWidth: 1,
             </Text>
           </TouchableOpacity>
 
-          {/* FOLLOW / UNFOLLOW ROOM */}
-          <TouchableOpacity
-            style={{
-              padding: 14,
-              borderBottomWidth: 1,
-              borderBottomColor: C.line
-            }}
-            onPress={() => {
-              setShowRoomMenu(false);
-              toggleFollowRoom(selectedRoom);
-            }}
-          >
-            <Text style={{ color: C.text, fontSize: 15 }}>
-              {followedRooms.some(item => item.id === selectedRoom?.id)
-                ? 'Unfollow Room'
-                : 'Follow Room'}
-            </Text>
-          </TouchableOpacity>
+          {/* FOLLOW / UNFOLLOW ROOM - HIDE FOR ROOM OWNER */}
+          {selectedRoom?.owner_id !== session?.user?.id && (
+            <TouchableOpacity
+              style={{
+                padding: 14,
+                borderBottomWidth: 1,
+                borderBottomColor: C.line
+              }}
+              onPress={() => {
+                setShowRoomMenu(false);
+                toggleFollowRoom(selectedRoom);
+              }}
+            >
+              <Text style={{ color: C.text, fontSize: 15 }}>
+                {followedRooms.some(item => item.id === selectedRoom?.id)
+                  ? 'Unfollow Room'
+                  : 'Follow Room'}
+              </Text>
+            </TouchableOpacity>
+          )}
 
           {/* EXIT */}
           <TouchableOpacity
