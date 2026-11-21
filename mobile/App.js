@@ -1221,10 +1221,6 @@ async function loadUserProfile(currentSession) {
 
   if (!userId) return;
 
-  // Start loading the creator's room in parallel with the profile lookup.
-  // The local cache can populate Mine before the backend request completes.
-  loadMyRooms(currentSession);
-
   // Prevent duplicate profile loading for the same user
   if (
     profileLoadRef.current &&
@@ -1232,6 +1228,10 @@ async function loadUserProfile(currentSession) {
   ) {
     return profileLoadRef.current.promise;
   }
+
+  // Start loading the creator's room once, in parallel with the profile lookup.
+  // The local cache can populate Mine before the backend request completes.
+  loadMyRooms(currentSession);
 
   const loadPromise = (async () => {
     try {
