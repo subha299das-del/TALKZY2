@@ -9,7 +9,7 @@ import {
   Alert
 } from 'react-native';
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
-import * as MediaLibrary from 'expo-media-library/legacy';
+import * as MediaLibrary from 'expo-media-library';
 
 export default function RoomMusicPanel({ visible, roomId, userId, api, supabase, colors, onClose }) {
   const [minimized, setMinimized] = useState(false);
@@ -297,7 +297,7 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
     }
   };
 
-  useEffect(() => { if (visible) setMinimized(false); }, [visible]);
+  useEffect(() => { if (visible) { setMinimized(false); setMusicPage('player'); } }, [visible]);
 
   useEffect(() => {
     if (!roomId) return undefined;
