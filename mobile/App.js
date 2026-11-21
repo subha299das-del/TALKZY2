@@ -4358,6 +4358,12 @@ borderTopWidth: 1,
   function renderMine() {
     return (
       <>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, paddingHorizontal: 2 }}>
+          <Text style={{ color: C.text, fontSize: 16, fontWeight: '900', letterSpacing: 0.2 }}>My Room</Text>
+          <View style={{ backgroundColor: 'rgba(67,220,197,0.10)', borderWidth: 1, borderColor: 'rgba(67,220,197,0.30)', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 20 }}>
+            <Text style={{ color: C.teal, fontSize: 9, fontWeight: '900', letterSpacing: 1 }}>MY SPACE</Text>
+          </View>
+        </View>
         {!roomCreationEligibilityLoaded ? (
           <View style={{ paddingVertical: 22, alignItems: 'center' }}>
             <ActivityIndicator color={C.accent} />
@@ -4496,6 +4502,8 @@ borderTopWidth: 1,
 function renderPopular() {
   return (
     <>
+      <Text style={{ color: C.text, fontSize: 17, fontWeight: '900', marginBottom: 3 }}>Trending on TALKZY</Text>
+      <Text style={{ color: C.muted, fontSize: 11, marginBottom: 5 }}>Popular rooms, community highlights and live events.</Text>
       <SectionTitle>🔥 Hot Events</SectionTitle>
 
       
@@ -5258,6 +5266,8 @@ function renderDiscover() {
 // ORIGINAL DISCOVER CODE — KEEP THIS
     return (
     <>
+      <Text style={{ color: C.text, fontSize: 17, fontWeight: '900', marginBottom: 3 }}>Explore Communities</Text>
+      <Text style={{ color: C.muted, fontSize: 11, marginBottom: 8 }}>Discover people, rooms and activities from around the world.</Text>
       
 {/* HISTORY BIG WIN */}
 
@@ -5691,16 +5701,24 @@ function renderEvents() {
   function renderRoom() {
     return (
       <>
+        {/* ROOM SCREEN INTRO */}
+        <View style={{ paddingTop: 3, paddingBottom: 10 }}>
+          <Text style={{ color: C.text, fontSize: 25, fontWeight: '900', letterSpacing: -0.5 }}>Voice Rooms</Text>
+          <Text style={{ color: C.muted, fontSize: 11, marginTop: 4 }}>Find your people. Share your voice.</Text>
+        </View>
+
         {/* ROOM SECTION NAVIGATION */}
         <View
           style={{
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
-            paddingHorizontal: 4,
+            paddingHorizontal: 2,
             paddingTop: 2,
-            paddingBottom: 10,
-            marginBottom: 12
+            paddingBottom: 8,
+            marginBottom: 10,
+            borderBottomWidth: 1,
+            borderBottomColor: 'rgba(41,52,83,0.65)'
           }}
         >
           {['Mine', 'Popular', 'Discover', 'Events'].map(item => {
