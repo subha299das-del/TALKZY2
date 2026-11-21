@@ -3091,29 +3091,40 @@ function renderRoomInterior() {
 
             </View>
 
-      {/* SHARED YOUTUBE PLAYER — visible to every room participant, independent of the browse panel */}
-      {youtubeState.video_id && (
-        <View style={{ marginHorizontal: 10, marginTop: 5, marginBottom: 5, height: 170, backgroundColor: '#000', borderRadius: 13, borderWidth: 1, borderColor: '#354466', overflow: 'hidden' }}>
-          <WebView ref={youtubeWebViewRef} source={{ html: YOUTUBE_PLAYER_HTML }} originWhitelist={['*']} javaScriptEnabled domStorageEnabled allowsInlineMediaPlayback mediaPlaybackRequiresUserAction={false}
-            onMessage={(event) => {
-              const message = String(event.nativeEvent.data || '');
-              if (message === 'ready' && youtubeState.video_id) {
-                youtubeLoadedVideoRef.current = youtubeState.video_id;
-                youtubeWebViewRef.current?.injectJavaScript(`window.talkzyLoad && window.talkzyLoad('${youtubeState.video_id}', ${Number(youtubeState.current_time_seconds || 0)}, ${youtubeState.is_playing ? 'true' : 'false'});window.talkzySetVolume && window.talkzySetVolume(${youtubeVolume});` + 'true;');
-              } else if (message.startsWith('time:')) {
-                const isController = selectedRoom?.owner_id === session?.user?.id || roomPresence.find(person => person.user_id === session?.user?.id)?.presence_role === 'admin';
-                const now = Date.now();
-                if (isController && now - youtubeLastPositionWriteRef.current > 9000) {
-                  youtubeLastPositionWriteRef.current = now;
-                  const seconds = Number(message.slice(5));
-                  if (Number.isFinite(seconds)) saveYoutubeState({ ...youtubeState, current_time_seconds: seconds });
+      {/* SHARED YOUTUBE SCREEN — reserved above microphone seats when YouTube is opened */}
+      {(showYoutubePanel || youtubeState.video_id) && (
+        <View style={{ marginHorizontal: 10, marginTop: 5, marginBottom: 5, height: 170, backgroundColor: '#050914', borderRadius: 13, borderWidth: 1, borderColor: '#6B54C7', overflow: 'hidden' }}>
+          {youtubeState.video_id ? (
+            <WebView key={youtubeState.video_id} ref={youtubeWebViewRef} source={{ html: YOUTUBE_PLAYER_HTML }} originWhitelist={['*']} javaScriptEnabled domStorageEnabled allowsInlineMediaPlayback mediaPlaybackRequiresUserAction={false}
+              onMessage={(event) => {
+                const message = String(event.nativeEvent.data || '');
+                if (message === 'ready' && youtubeState.video_id) {
+                  youtubeLoadedVideoRef.current = youtubeState.video_id;
+                  youtubeWebViewRef.current?.injectJavaScript(`window.talkzyLoad && window.talkzyLoad('${youtubeState.video_id}', ${Number(youtubeState.current_time_seconds || 0)}, ${youtubeState.is_playing ? 'true' : 'false'});window.talkzySetVolume && window.talkzySetVolume(${youtubeVolume});` + 'true;');
+                } else if (message.startsWith('time:')) {
+                  const isController = selectedRoom?.owner_id === session?.user?.id || roomPresence.find(person => person.user_id === session?.user?.id)?.presence_role === 'admin';
+                  const now = Date.now();
+                  if (isController && now - youtubeLastPositionWriteRef.current > 9000) {
+                    youtubeLastPositionWriteRef.current = now;
+                    const seconds = Number(message.slice(5));
+                    if (Number.isFinite(seconds)) saveYoutubeState({ ...youtubeState, current_time_seconds: seconds });
+                  }
+                } else if (message === 'ended') {
+                  const isController = selectedRoom?.owner_id === session?.user?.id || roomPresence.find(person => person.user_id === session?.user?.id)?.presence_role === 'admin';
+                  if (isController) advanceYoutubeQueue();
                 }
-              } else if (message === 'ended') {
-                const isController = selectedRoom?.owner_id === session?.user?.id || roomPresence.find(person => person.user_id === session?.user?.id)?.presence_role === 'admin';
-                if (isController) advanceYoutubeQueue();
-              }
-            }}
-            style={{ flex: 1, backgroundColor: '#000' }} />
+              }}
+              style={{ flex: 1, backgroundColor: '#000' }} />
+          ) : (
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18 }}>
+              <Text style={{ color: '#D9D2FF', fontSize: 13, fontWeight: '900', marginBottom: 6 }}>TALKZY · SHARED YOUTUBE</Text>
+              <Text style={{ color: '#AAB7D4', fontSize: 11, textAlign: 'center' }}>
+                {selectedRoom?.owner_id === session?.user?.id || roomPresence.some(person => person.user_id === session?.user?.id && person.presence_role === 'admin')
+                  ? 'Choose Music or Video, select a result, then press ADD to start playback here.'
+                  : 'Waiting for the Room Owner or an authorized Admin to add music or video.'}
+              </Text>
+            </View>
+          )}
         </View>
       )}
       {/* Shared playlist is viewable by everyone; playlist management remains in the controller panel */}
@@ -3151,11 +3162,22 @@ function renderRoomInterior() {
             </View>
             <View style={{ flex: 1, marginHorizontal: 9, marginBottom: 8, borderRadius: 9, overflow: 'hidden', backgroundColor: '#FFFFFF' }}>
               <WebView ref={youtubeBrowseWebViewRef} source={{ uri: youtubeBrowseUrl || ('https://www.youtube.com/results?search_query=' + encodeURIComponent(youtubeBrowseTab === 'Music' ? 'music' : 'video')) }} javaScriptEnabled domStorageEnabled allowsInlineMediaPlayback
+                injectedJavaScriptBeforeContentLoaded={`(function(){function pick(e){var a=e.target&&e.target.closest?e.target.closest('a[href]'):null;if(!a)return;var h=a.href||'';var m=h.match(/[?&]v=([A-Za-z0-9_-]{11})/)||h.match(/youtu\\.be\\/([A-Za-z0-9_-]{11})/)||h.match(/\\/shorts\\/([A-Za-z0-9_-]{11})/);if(m){e.preventDefault();e.stopPropagation();if(window.ReactNativeWebView){window.ReactNativeWebView.postMessage('talkzy-select:'+m[1]);}}}document.addEventListener('click',pick,true);})();true;`}
+                onMessage={(event) => {
+                  const message = String(event.nativeEvent.data || '');
+                  if (message.startsWith('talkzy-select:')) {
+                    const id = message.slice('talkzy-select:'.length).trim();
+                    if (/^[A-Za-z0-9_-]{11}$/.test(id)) {
+                      setYoutubePickedItem({ video_id: id, title: 'Loading selected video…' });
+                      getYoutubeMetadata(id).then(meta => setYoutubePickedItem(meta));
+                    }
+                  }
+                }}
                 onShouldStartLoadWithRequest={(request) => {
                   const url = String(request?.url || '');
                   const id = extractYouTubeVideoId(url);
-                  if (id && /(?:watch|youtu\.be|shorts|\/embed\/)/i.test(url)) {
-                    setYoutubePickedItem({ video_id: id, title: 'Selected YouTube item' });
+                  if (id && /(?:watch|youtu\\.be|shorts|\\/embed\\/)/i.test(url)) {
+                    setYoutubePickedItem({ video_id: id, title: 'Loading selected video…' });
                     getYoutubeMetadata(id).then(meta => setYoutubePickedItem(meta));
                     return false;
                   }
