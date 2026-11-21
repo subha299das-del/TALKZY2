@@ -82,37 +82,46 @@ async function api(path, options = {}) {
   }
 
   const accessToken = sessionData?.session?.access_token;
-
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(accessToken
-        ? { Authorization: `Bearer ${accessToken}` }
-        : {}),
-      ...(options.headers || {})
-    }
-  });
-
-  const raw = await response.text();
-
-  let data = {};
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20000);
 
   try {
-    data = raw ? JSON.parse(raw) : {};
-  } catch {
-    data = { message: raw };
-  }
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken
+          ? { Authorization: `Bearer ${accessToken}` }
+          : {}),
+        ...(options.headers || {})
+      }
+    });
 
-  if (!response.ok) {
-    throw new Error(
-      data.error ||
-      data.message ||
-      `Request failed (${response.status})`
-    );
-  }
+    const raw = await response.text();
+    let data = {};
+    try {
+      data = raw ? JSON.parse(raw) : {};
+    } catch {
+      data = { message: raw };
+    }
 
-  return data;
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+        data.message ||
+        `Request failed (${response.status})`
+      );
+    }
+    return data;
+  } catch (error) {
+    if (controller.signal.aborted) {
+      throw new Error('The request timed out. Please try again.');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 
@@ -722,7 +731,7 @@ useEffect(() => {
       },
       payload => {
         if (payload?.new?.status && payload.new.status !== 'active') {
-          if (selectedRoom?.id === roomId) {
+          if (selectedRoom?.id === roomId && !roomExitInProgressRef.current[roomId]) {
             exitCurrentRoom();
             Alert.alert('Room Closed', 'The Main Owner has closed this room.');
           }
@@ -792,7 +801,7 @@ useEffect(() => {
       await api(`/api/rooms/${roomId}/presence/ping`, { method: 'POST' });
       if (active) await loadRoomPresence(roomId);
     } catch (error) {
-      if (active && selectedRoom?.id === roomId && /room is closed/i.test(error?.message || '')) {
+      if (active && selectedRoom?.id === roomId && /room is closed/i.test(error?.message || '') && !roomExitInProgressRef.current[roomId]) {
         exitCurrentRoom();
         Alert.alert('Room Closed', 'The Main Owner has closed this room.');
         return;
@@ -2103,6 +2112,8 @@ async function toggleFollowRoom(room) {
   async function submitRoomVisit(room, password) {
     if (!room || !session?.access_token) return Alert.alert('Error', 'Please sign in again.');
     try {
+      const pendingLeave = roomLeaveCleanupRef.current[room.id];
+      if (pendingLeave) await pendingLeave;
       setJoiningRoom(true);
       const result = await api(`/api/rooms/${room.id}/visit`, {
         method: 'POST',
@@ -2469,6 +2480,9 @@ function renderRoomCard(room, showJoin = true) {
       return;
     }
 
+    // Finish the previous room's server cleanup before entering again.
+    const pendingLeave = roomLeaveCleanupRef.current[room.id];
+    if (pendingLeave) await pendingLeave;
     // Never carry a previous microphone seat into a new room entry.
     try { await api(`/api/rooms/${room.id}/mic-seats`, { method: 'DELETE' }); } catch (seatCleanupError) {
       console.log('Stale mic seat cleanup on entry:', seatCleanupError.message);
