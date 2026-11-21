@@ -819,6 +819,11 @@ const [isRoomSpeakerOn, setIsRoomSpeakerOn] = useState(true);
 const [isRoomBellOn, setIsRoomBellOn] = useState(true);
 const [showRoomMessageMenu, setShowRoomMessageMenu] = useState(false);
 const [showRoomTools, setShowRoomTools] = useState(false);
+const [showLuckyBagPopup, setShowLuckyBagPopup] = useState(false);
+const [luckyBagTab, setLuckyBagTab] = useState('Room');
+const [luckyBagCoins, setLuckyBagCoins] = useState(500);
+const [luckyBagQuantity, setLuckyBagQuantity] = useState(1);
+const [luckyBagHistoryView, setLuckyBagHistoryView] = useState(false);
 const [showRoomThemeMenu, setShowRoomThemeMenu] = useState(false);
 const [showYoutubePanel, setShowYoutubePanel] = useState(false);
 const [showMusicPanel, setShowMusicPanel] = useState(false);
@@ -3311,6 +3316,12 @@ onContentSizeChange={() =>
                             value: tool.title === 'Lucky Number' ? '000' : '1'
                           });
                         }
+                      } else if (tool.title === 'Lucky Bag') {
+                        setLuckyBagTab('Room');
+                        setLuckyBagCoins(500);
+                        setLuckyBagQuantity(1);
+                        setLuckyBagHistoryView(false);
+                        setShowLuckyBagPopup(true);
                       } else {
                         Alert.alert(tool.title, `${tool.title} will be available here soon.`);
                       }
@@ -3357,6 +3368,98 @@ onContentSizeChange={() =>
       )}
 
       <RoomMusicPanel visible={showMusicPanel} roomId={selectedRoom?.id} userId={session?.user?.id} api={api} supabase={supabase} colors={C} onClose={() => { setShowMusicPanel(false); setMusicMinimized(false); }} onMinimize={() => { setShowMusicPanel(false); setMusicMinimized(true); }} />
+      {showLuckyBagPopup && (
+        <Modal
+          visible={showLuckyBagPopup}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowLuckyBagPopup(false)}
+        >
+          <View style={{ flex: 1, backgroundColor: 'rgba(3,5,14,0.82)', justifyContent: 'center', paddingHorizontal: 15 }}>
+            <View style={{ borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: '#7044B8', backgroundColor: '#120D25', maxHeight: '88%' }}>
+              <View style={{ paddingHorizontal: 18, paddingTop: 20, paddingBottom: 16, backgroundColor: '#28134B' }}>
+                <TouchableOpacity onPress={() => setShowLuckyBagPopup(false)} style={{ position: 'absolute', right: 15, top: 14, zIndex: 2, width: 30, height: 30, borderRadius: 15, backgroundColor: '#44266B', alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ color: '#E9D8FF', fontSize: 17, fontWeight: '800' }}>×</Text>
+                </TouchableOpacity>
+                <View style={{ alignItems: 'center' }}>
+                  <View style={{ width: 84, height: 84, borderRadius: 25, backgroundColor: '#4B267B', borderWidth: 1, borderColor: '#C69BFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#B56BFF', shadowOpacity: 0.45, shadowRadius: 15, elevation: 8 }}>
+                    <Text style={{ fontSize: 48 }}>🎁</Text>
+                  </View>
+                  <Text style={{ color: '#FFE7A8', fontSize: 22, fontWeight: '900', marginTop: 11, letterSpacing: 0.4 }}>LUCKY BAG</Text>
+                  <Text style={{ color: '#CBB6F4', fontSize: 12, marginTop: 4 }}>Spread luck. Share the sparkle.</Text>
+                </View>
+                <View style={{ flexDirection: 'row', backgroundColor: '#180D32', borderRadius: 15, padding: 4, marginTop: 18 }}>
+                  {['Room', 'World'].map(tab => (
+                    <TouchableOpacity key={tab} onPress={() => setLuckyBagTab(tab)} style={{ flex: 1, paddingVertical: 11, borderRadius: 12, alignItems: 'center', backgroundColor: luckyBagTab === tab ? '#8A55D8' : 'transparent', borderWidth: luckyBagTab === tab ? 1 : 0, borderColor: '#CBA8FF' }}>
+                      <Text style={{ color: luckyBagTab === tab ? '#FFFFFF' : '#B9A5D8', fontWeight: '900', fontSize: 13 }}>{tab === 'World' ? '🌍  WORLD' : '🏠  ROOM'}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 18 }}>
+                {luckyBagHistoryView ? (
+                  <View style={{ alignItems: 'center', paddingVertical: 24 }}>
+                    <Text style={{ fontSize: 42 }}>📜</Text>
+                    <Text style={{ color: '#F3E9FF', fontSize: 16, fontWeight: '900', marginTop: 12 }}>Lucky Bag History</Text>
+                    <Text style={{ color: '#AA9BC5', fontSize: 12, textAlign: 'center', marginTop: 7 }}>Your sent bags, received bags and rewards will appear here.</Text>
+                    <TouchableOpacity onPress={() => setLuckyBagHistoryView(false)} style={{ marginTop: 18, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, backgroundColor: '#39205D' }}>
+                      <Text style={{ color: '#DCC8FF', fontWeight: '800' }}>Back to Lucky Bag</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <>
+                    <Text style={{ color: '#F1E7FF', fontWeight: '900', fontSize: 14, marginBottom: 11 }}>Choose your bag</Text>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+                      {[250, 500, 1000, 5000].map(amount => (
+                        <TouchableOpacity key={amount} onPress={() => setLuckyBagCoins(amount)} style={{ width: '48.5%', marginBottom: 10, paddingVertical: 13, paddingHorizontal: 10, borderRadius: 16, borderWidth: luckyBagCoins === amount ? 1.7 : 1, borderColor: luckyBagCoins === amount ? '#E9BD59' : '#49345F', backgroundColor: luckyBagCoins === amount ? '#39264A' : '#1D1531', alignItems: 'center' }}>
+                          <Text style={{ fontSize: 21 }}>{amount >= 1000 ? '💎' : '🪙'}</Text>
+                          <Text style={{ color: luckyBagCoins === amount ? '#FFE39A' : '#D6C6EF', fontSize: 16, fontWeight: '900', marginTop: 5 }}>{amount.toLocaleString()} Coins</Text>
+                          {luckyBagCoins === amount && <View style={{ position: 'absolute', top: 7, right: 8, width: 17, height: 17, borderRadius: 9, backgroundColor: '#D9A93F', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: '#24152D', fontSize: 10, fontWeight: '900' }}>✓</Text></View>}
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+
+                    <Text style={{ color: '#F1E7FF', fontWeight: '900', fontSize: 14, marginTop: 3, marginBottom: 10 }}>Quantity</Text>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      {[1, 3, 5, 10].map(qty => (
+                        <TouchableOpacity key={qty} onPress={() => setLuckyBagQuantity(qty)} style={{ width: '22%', paddingVertical: 10, borderRadius: 12, alignItems: 'center', borderWidth: luckyBagQuantity === qty ? 1.5 : 1, borderColor: luckyBagQuantity === qty ? '#C9A1FF' : '#433258', backgroundColor: luckyBagQuantity === qty ? '#613B8D' : '#211632' }}>
+                          <Text style={{ color: luckyBagQuantity === qty ? '#FFFFFF' : '#BBA9D4', fontWeight: '900' }}>{qty}×</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+
+                    <View style={{ marginTop: 15, padding: 13, borderRadius: 16, borderWidth: 1, borderColor: '#66502D', backgroundColor: '#30251A', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <View>
+                        <Text style={{ color: '#BFA77D', fontSize: 11, fontWeight: '800' }}>TOTAL COST</Text>
+                        <Text style={{ color: '#FFE19A', fontSize: 20, fontWeight: '900', marginTop: 3 }}>🪙 {(luckyBagCoins * luckyBagQuantity).toLocaleString()}</Text>
+                      </View>
+                      <View style={{ alignItems: 'flex-end' }}>
+                        <Text style={{ color: '#BFA77D', fontSize: 11 }}>BAGS</Text>
+                        <Text style={{ color: '#F5D58A', fontSize: 18, fontWeight: '900', marginTop: 3 }}>{luckyBagQuantity}</Text>
+                      </View>
+                    </View>
+
+                    <TouchableOpacity onPress={() => Alert.alert('Lucky Bag', 'The sending and coin balance system will be connected in the next implementation step.')} style={{ marginTop: 14, paddingVertical: 15, borderRadius: 16, backgroundColor: '#8D51D6', borderWidth: 1, borderColor: '#C99BFF', alignItems: 'center', shadowColor: '#A56BFF', shadowOpacity: 0.35, shadowRadius: 10, elevation: 5 }}>
+                      <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '900' }}>🎁  SEND LUCKY BAG</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#38284C' }}>
+                  <View>
+                    <Text style={{ color: '#AA9BC5', fontSize: 10, fontWeight: '800' }}>YOUR COIN BALANCE</Text>
+                    <Text style={{ color: '#D9C9F4', fontSize: 13, fontWeight: '800', marginTop: 3 }}>🪙 Balance sync coming</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => setLuckyBagHistoryView(true)} style={{ borderRadius: 12, paddingHorizontal: 13, paddingVertical: 10, backgroundColor: '#2A1B42', borderWidth: 1, borderColor: '#594071' }}>
+                    <Text style={{ color: '#DCC5FF', fontSize: 11, fontWeight: '900' }}>📜 HISTORY</Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+      )}
+
       {musicMinimized && screen === 'roomInterior' && selectedRoom && !showRoomTools && !showRoomGiftPanel && !showRoomThemeMenu && !showYoutubePanel && (
         <TouchableOpacity
           onPress={() => { setMusicMinimized(false); setShowMusicPanel(true); }}
