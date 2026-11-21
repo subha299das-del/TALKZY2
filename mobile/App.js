@@ -823,6 +823,7 @@ const [showLuckyBagPopup, setShowLuckyBagPopup] = useState(false);
 const [luckyBagTab, setLuckyBagTab] = useState('Room');
 const [luckyBagCoins, setLuckyBagCoins] = useState(500);
 const [luckyBagQuantity, setLuckyBagQuantity] = useState(1);
+const [luckyBagCustomCoins, setLuckyBagCustomCoins] = useState('500');
 const [luckyBagHistoryView, setLuckyBagHistoryView] = useState(false);
 const [showRoomThemeMenu, setShowRoomThemeMenu] = useState(false);
 const [showYoutubePanel, setShowYoutubePanel] = useState(false);
@@ -3409,10 +3410,10 @@ onContentSizeChange={() =>
                   </View>
                 ) : (
                   <>
-                    <Text style={{ color: '#F1E7FF', fontWeight: '900', fontSize: 14, marginBottom: 11 }}>Choose your bag</Text>
+                    <Text style={{ color: '#F1E7FF', fontWeight: '900', fontSize: 14, marginBottom: 11 }}>Choose your bag amount</Text>
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
                       {[250, 500, 1000, 5000].map(amount => (
-                        <TouchableOpacity key={amount} onPress={() => setLuckyBagCoins(amount)} style={{ width: '48.5%', marginBottom: 10, paddingVertical: 13, paddingHorizontal: 10, borderRadius: 16, borderWidth: luckyBagCoins === amount ? 1.7 : 1, borderColor: luckyBagCoins === amount ? '#E9BD59' : '#49345F', backgroundColor: luckyBagCoins === amount ? '#39264A' : '#1D1531', alignItems: 'center' }}>
+                        <TouchableOpacity key={amount} onPress={() => { setLuckyBagCoins(amount); setLuckyBagCustomCoins(String(amount)); }} style={{ width: '48.5%', marginBottom: 10, paddingVertical: 13, paddingHorizontal: 10, borderRadius: 16, borderWidth: luckyBagCoins === amount ? 1.7 : 1, borderColor: luckyBagCoins === amount ? '#E9BD59' : '#49345F', backgroundColor: luckyBagCoins === amount ? '#39264A' : '#1D1531', alignItems: 'center' }}>
                           <Text style={{ fontSize: 21 }}>{amount >= 1000 ? '💎' : '🪙'}</Text>
                           <Text style={{ color: luckyBagCoins === amount ? '#FFE39A' : '#D6C6EF', fontSize: 16, fontWeight: '900', marginTop: 5 }}>{amount.toLocaleString()} Coins</Text>
                           {luckyBagCoins === amount && <View style={{ position: 'absolute', top: 7, right: 8, width: 17, height: 17, borderRadius: 9, backgroundColor: '#D9A93F', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: '#24152D', fontSize: 10, fontWeight: '900' }}>✓</Text></View>}
@@ -3420,13 +3421,27 @@ onContentSizeChange={() =>
                       ))}
                     </View>
 
-                    <Text style={{ color: '#F1E7FF', fontWeight: '900', fontSize: 14, marginTop: 3, marginBottom: 10 }}>Quantity</Text>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                      {[1, 3, 5, 10].map(qty => (
-                        <TouchableOpacity key={qty} onPress={() => setLuckyBagQuantity(qty)} style={{ width: '22%', paddingVertical: 10, borderRadius: 12, alignItems: 'center', borderWidth: luckyBagQuantity === qty ? 1.5 : 1, borderColor: luckyBagQuantity === qty ? '#C9A1FF' : '#433258', backgroundColor: luckyBagQuantity === qty ? '#613B8D' : '#211632' }}>
-                          <Text style={{ color: luckyBagQuantity === qty ? '#FFFFFF' : '#BBA9D4', fontWeight: '900' }}>{qty}×</Text>
-                        </TouchableOpacity>
-                      ))}
+                    <View style={{ marginTop: 2, marginBottom: 14, padding: 12, borderRadius: 15, borderWidth: 1, borderColor: '#8B67B5', backgroundColor: '#211433' }}>
+                      <Text style={{ color: '#DCC8FF', fontWeight: '900', fontSize: 12, marginBottom: 8 }}>✨ CUSTOM COINS</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#120D25', borderRadius: 12, borderWidth: 1, borderColor: '#57416F', paddingHorizontal: 12 }}>
+                        <Text style={{ fontSize: 18, marginRight: 8 }}>🪙</Text>
+                        <TextInput value={luckyBagCustomCoins} onChangeText={value => { const digits = value.replace(/[^0-9]/g, '').slice(0, 9); setLuckyBagCustomCoins(digits); if (digits) setLuckyBagCoins(Math.max(1, Number(digits))); }} keyboardType="number-pad" placeholder="Enter coin amount" placeholderTextColor="#8D7BA8" style={{ flex: 1, color: '#FFE39A', fontWeight: '900', fontSize: 17, paddingVertical: 12 }} />
+                      </View>
+                      <Text style={{ color: '#9E8AB9', fontSize: 10, marginTop: 6 }}>Enter any amount of coins to personalize your bag.</Text>
+                    </View>
+
+                    <Text style={{ color: '#F1E7FF', fontWeight: '900', fontSize: 14, marginBottom: 10 }}>Bag quantity</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8, paddingHorizontal: 10, borderRadius: 16, backgroundColor: '#211632', borderWidth: 1, borderColor: '#49345F' }}>
+                      <TouchableOpacity onPress={() => setLuckyBagQuantity(q => Math.max(1, q - 1))} style={{ width: 42, height: 42, borderRadius: 13, backgroundColor: '#39264A', borderWidth: 1, borderColor: '#76539C', alignItems: 'center', justifyContent: 'center' }}>
+                        <Text style={{ color: '#E8D4FF', fontSize: 25, fontWeight: '900' }}>−</Text>
+                      </TouchableOpacity>
+                      <View style={{ alignItems: 'center', minWidth: 92, marginHorizontal: 20 }}>
+                        <Text style={{ color: '#FFE39A', fontSize: 25, fontWeight: '900' }}>{luckyBagQuantity}</Text>
+                        <Text style={{ color: '#BBA9D4', fontSize: 10, fontWeight: '800' }}>BAGS</Text>
+                      </View>
+                      <TouchableOpacity onPress={() => setLuckyBagQuantity(q => Math.min(99, q + 1))} style={{ width: 42, height: 42, borderRadius: 13, backgroundColor: '#613B8D', borderWidth: 1, borderColor: '#C9A1FF', alignItems: 'center', justifyContent: 'center' }}>
+                        <Text style={{ color: '#FFFFFF', fontSize: 25, fontWeight: '900' }}>+</Text>
+                      </TouchableOpacity>
                     </View>
 
                     <View style={{ marginTop: 15, padding: 13, borderRadius: 16, borderWidth: 1, borderColor: '#66502D', backgroundColor: '#30251A', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
