@@ -1398,7 +1398,7 @@ app.put('/api/rooms/:roomId/youtube', userAuth, async (req, res) => {
       if (!/^[A-Za-z0-9_-]{11}$/.test(id)) {
         return res.status(400).json({ error: 'The queue contains an invalid YouTube video.' });
       }
-      queue.push({ video_id: id, title: String(item?.title || 'YouTube video').slice(0, 120) });
+      queue.push({ video_id: id, title: String(item?.title || 'YouTube video').slice(0, 120), added_by: String(item?.added_by || 'Member').slice(0, 40) });
     }
     const currentTime = Number(body.current_time_seconds ?? 0);
     if (!Number.isFinite(currentTime) || currentTime < 0 || currentTime > 86400) {
