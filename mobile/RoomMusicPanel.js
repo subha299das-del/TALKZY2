@@ -3,12 +3,13 @@ import {
   ActivityIndicator,
   ScrollView,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
   Alert
 } from 'react-native';
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
-import * as DocumentPicker from 'expo-document-picker';
+import * as MediaLibrary from 'expo-media-library/legacy';
 
 export default function RoomMusicPanel({ visible, roomId, userId, api, supabase, colors, onClose }) {
   const [minimized, setMinimized] = useState(false);
@@ -21,6 +22,12 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [musicPage, setMusicPage] = useState('player');
+  const [localAssets, setLocalAssets] = useState([]);
+  const [selectedLocalIds, setSelectedLocalIds] = useState([]);
+  const [localSearch, setLocalSearch] = useState('');
+  const [librarySearch, setLibrarySearch] = useState('');
+  const [loadingLocal, setLoadingLocal] = useState(false);
   const [streams, setStreams] = useState([]);
   const playerRef = useRef(null);
   const localPathRef = useRef(null);
@@ -154,59 +161,42 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
     }
   };
 
-  const chooseFiles = async () => {
-    if (!roomId || uploading) return;
+  const openMyMusic = () => { setMusicPage('library'); setLibrarySearch(''); };
+  const loadLocalMusic = async () => {
+    if (loadingLocal) return; setLoadingLocal(true);
     try {
-      const picked = await DocumentPicker.getDocumentAsync({
-        type: 'audio/*',
-        multiple: true,
-        copyToCacheDirectory: true
-      });
-      if (picked.canceled || !picked.assets?.length) return;
-      const existing = queueRef.current;
-      if (existing.length + picked.assets.length > 20) {
-        Alert.alert('My Music', 'Your playlist can contain up to 20 songs.');
-        return;
-      }
-      setUploading(true);
-      const additions = [];
-      for (let i = 0; i < picked.assets.length; i += 1) {
-        const asset = picked.assets[i];
-        if (asset.size && asset.size > 20 * 1024 * 1024) {
-          throw new Error(`${asset.name || 'This file'} is larger than the 20 MB limit.`);
-        }
-        const blob = await (await fetch(asset.uri)).blob();
-        const safeName = String(asset.name || `track-${i}.mp3`).replace(/[^A-Za-z0-9._-]/g, '_').slice(-90);
-        const objectPath = `${userId}/${roomId}/${Date.now()}-${i}-${safeName}`;
-        const { error } = await supabase.storage.from('talkzy-room-music').upload(objectPath, blob, {
-          contentType: asset.mimeType || 'audio/mpeg',
-          upsert: false
-        });
-        if (error) throw error;
-        additions.push({
-          object_path: objectPath,
-          title: String(asset.name || 'Audio track').replace(/\.[^.]+$/, '').slice(0, 120)
-        });
-      }
-      const nextQueue = [...existing, ...additions];
-      const firstUpload = existing.length === 0;
-      const state = await saveState({
-        queue: nextQueue,
-        current_index: firstUpload ? 0 : indexRef.current,
-        is_playing: firstUpload ? true : playingRef.current,
-        current_time_seconds: firstUpload ? 0 : currentTime
-      });
-      if (firstUpload && state?.queue?.[0]?.url) {
-        queueRef.current = state.queue;
-        await playAt(0, true);
-      }
-      setMinimized(false);
-    } catch (error) {
-      Alert.alert('Music upload', error.message || 'Could not upload your audio file.');
-    } finally {
-      setUploading(false);
-    }
+      const permission = await MediaLibrary.requestPermissionsAsync(false, ['audio']);
+      if (!permission.granted) { Alert.alert('Permission needed', 'Allow TALKZY to access audio files on your phone.'); return; }
+      const result = await MediaLibrary.getAssetsAsync({ mediaType: MediaLibrary.MediaType.audio, first: 500, sortBy: [MediaLibrary.SortBy.creationTime] });
+      setLocalAssets(result.assets || []); setSelectedLocalIds([]); setLocalSearch(''); setMusicPage('local');
+    } catch (error) { Alert.alert('My Local Music', error.message || 'Could not read music from your phone.'); }
+    finally { setLoadingLocal(false); }
   };
+  const toggleLocalSelection = id => setSelectedLocalIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const uploadSelectedMusic = async () => {
+    if (!roomId || uploading || !selectedLocalIds.length) return;
+    const selected = localAssets.filter(asset => selectedLocalIds.includes(asset.id)); const existing = queueRef.current;
+    if (existing.length + selected.length > 20) { Alert.alert('My Music', 'Your playlist can contain up to 20 songs.'); return; }
+    setUploading(true);
+    try {
+      const additions = [];
+      for (let i = 0; i < selected.length; i += 1) {
+        const asset = selected[i]; const info = await MediaLibrary.getAssetInfoAsync(asset); const uri = info.localUri || asset.uri;
+        const blob = await (await fetch(uri)).blob(); const name = asset.filename || ('track-' + (i + 1) + '.mp3');
+        if (blob.size && blob.size > 20 * 1024 * 1024) throw new Error(name + ' is larger than the 20 MB limit.');
+        const safeName = String(name).replace(/[^A-Za-z0-9._-]/g, '_').slice(-90); const path = userId + '/' + roomId + '/' + Date.now() + '-' + i + '-' + safeName;
+        const result = await supabase.storage.from('talkzy-room-music').upload(path, blob, { contentType: asset.mimeType || 'audio/mpeg', upsert: false });
+        if (result.error) throw result.error;
+        additions.push({ object_path: path, title: String(name).replace(/\.[^.]+$/, '').slice(0, 120) });
+      }
+      const nextQueue = [...existing, ...additions]; const first = existing.length === 0;
+      const state = await saveState({ queue: nextQueue, current_index: first ? 0 : indexRef.current, is_playing: first ? true : playingRef.current, current_time_seconds: first ? 0 : currentTime });
+      if (first && state?.queue?.[0]?.url) { queueRef.current = state.queue; await playAt(0, true); }
+      setSelectedLocalIds([]); setMusicPage('library'); setMinimized(false);
+    } catch (error) { Alert.alert('Music upload', error.message || 'Could not upload selected songs.'); }
+    finally { setUploading(false); }
+  };
+  const chooseFiles = () => openMyMusic();
 
   const stopMyStream = async () => {
     try {
@@ -346,6 +336,8 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
 
   const currentTitle = queue[currentIndex]?.title || 'My Music';
   const otherStreams = streams.filter(item => item.user_id !== userId && item.is_playing);
+  const filteredQueue = queue.filter(item => String(item.title || '').toLowerCase().includes(librarySearch.toLowerCase()));
+  const filteredLocal = localAssets.filter(asset => String(asset.filename || '').toLowerCase().includes(localSearch.toLowerCase()));
   const toggleRepeat = () => {
     const next = repeatMode === 'off' ? 'one' : repeatMode === 'one' ? 'all' : 'off';
     repeatRef.current = next;
@@ -369,21 +361,53 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
   return (
     <View style={{
       position: 'absolute', left: 12, right: 12, bottom: 86,
-      maxHeight: minimized ? undefined : '55%',
+      maxHeight: musicPage === 'player' ? (minimized ? undefined : '55%') : '92%',
       backgroundColor: colors.card, borderRadius: 16, padding: 13,
       borderWidth: 1, borderColor: colors.line, zIndex: 35, elevation: 22
     }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-        <TouchableOpacity onPress={onClose} style={{ paddingHorizontal: 7, paddingVertical: 4 }}>
-          <Text style={{ color: colors.muted, fontSize: 19 }}>✕</Text>
+        <TouchableOpacity onPress={() => musicPage === 'player' ? onClose() : setMusicPage(musicPage === 'local' ? 'library' : 'player')} style={{ paddingHorizontal: 7, paddingVertical: 4 }}>
+          <Text style={{ color: colors.muted, fontSize: 19 }}>{musicPage === 'player' ? '✕' : '‹'}</Text>
         </TouchableOpacity>
-        <Text numberOfLines={1} style={{ color: colors.text, fontSize: 14, fontWeight: '900', flex: 1, textAlign: 'center' }}>🎵 {currentTitle}</Text>
-        <TouchableOpacity onPress={() => setMinimized(!minimized)} style={{ paddingHorizontal: 8, paddingVertical: 4 }}>
+        <Text numberOfLines={1} style={{ color: colors.text, fontSize: 14, fontWeight: '900', flex: 1, textAlign: 'center' }}>{musicPage === 'local' ? 'My Local Music' : musicPage === 'library' ? 'My Music' : '🎵 ' + currentTitle}</Text>
+        {musicPage === 'player' ? <TouchableOpacity onPress={() => setMinimized(!minimized)} style={{ paddingHorizontal: 8, paddingVertical: 4 }}>
           <Text style={{ color: colors.muted, fontSize: 20 }}>{minimized ? '▢' : '－'}</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> : <View style={{ width: 28 }} />}
       </View>
       {!minimized ? (
         <ScrollView nestedScrollEnabled showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          {musicPage === 'library' ? (
+            <View>
+              <TextInput value={librarySearch} onChangeText={setLibrarySearch} placeholder="Search music" placeholderTextColor={colors.muted} style={{ color: colors.text, backgroundColor: colors.background, borderWidth: 1, borderColor: colors.line, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 9 }} />
+              {filteredQueue.length ? filteredQueue.map(item => {
+                const actualIndex = queue.indexOf(item);
+                return <TouchableOpacity key={item.object_path || actualIndex} onPress={() => playAt(actualIndex, true)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.line }}>
+                  <View style={{ width: 38, height: 38, borderRadius: 10, backgroundColor: colors.line, alignItems: 'center', justifyContent: 'center', marginRight: 10 }}><Text style={{ color: colors.gold, fontSize: 17 }}>♫</Text></View>
+                  <View style={{ flex: 1 }}><Text numberOfLines={1} style={{ color: actualIndex === currentIndex ? colors.gold : colors.text, fontWeight: '700', fontSize: 12 }}>{item.title}</Text><Text style={{ color: colors.muted, fontSize: 10, marginTop: 3 }}>{actualIndex === currentIndex && playing ? 'Now playing' : 'Tap to play'}</Text></View>
+                  <Text style={{ color: colors.accent, fontSize: 18 }}>{actualIndex === currentIndex && playing ? 'Ⅱ' : '▶'}</Text>
+                </TouchableOpacity>;
+              }) : <Text style={{ color: colors.muted, textAlign: 'center', padding: 24 }}>{queue.length ? 'No songs match your search.' : 'No songs uploaded yet.'}</Text>}
+              <TouchableOpacity onPress={loadLocalMusic} disabled={loadingLocal} style={{ backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 13, alignItems: 'center', marginTop: 12, marginBottom: 5 }}>{loadingLocal ? <ActivityIndicator color="#FFF" /> : <Text style={{ color: '#FFF', fontWeight: '900' }}>＋ Add Music</Text>}</TouchableOpacity>
+            </View>
+          ) : musicPage === 'local' ? (
+            <View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 9 }}>
+                <TouchableOpacity onPress={() => setSelectedLocalIds(selectedLocalIds.length === filteredLocal.length && filteredLocal.length ? [] : filteredLocal.map(asset => asset.id))}><Text style={{ color: colors.accent, fontWeight: '800', fontSize: 12 }}>{selectedLocalIds.length === filteredLocal.length && filteredLocal.length ? '✓ Deselect All' : 'Select All'}</Text></TouchableOpacity>
+                <Text style={{ color: colors.muted, fontSize: 11 }}>{selectedLocalIds.length} selected</Text>
+              </View>
+              <TextInput value={localSearch} onChangeText={setLocalSearch} placeholder="Search local audio" placeholderTextColor={colors.muted} style={{ color: colors.text, backgroundColor: colors.background, borderWidth: 1, borderColor: colors.line, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 9 }} />
+              {filteredLocal.length ? filteredLocal.map(asset => {
+                const checked = selectedLocalIds.includes(asset.id);
+                return <TouchableOpacity key={asset.id} onPress={() => toggleLocalSelection(asset.id)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.line }}>
+                  <View style={{ width: 24, height: 24, borderRadius: 6, borderWidth: 1, borderColor: checked ? colors.accent : colors.muted, backgroundColor: checked ? colors.accent : 'transparent', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}><Text style={{ color: '#FFF', fontWeight: '900' }}>{checked ? '✓' : ''}</Text></View>
+                  <View style={{ width: 34, height: 34, borderRadius: 8, backgroundColor: colors.line, alignItems: 'center', justifyContent: 'center', marginRight: 9 }}><Text style={{ color: colors.gold }}>♫</Text></View>
+                  <View style={{ flex: 1 }}><Text numberOfLines={1} style={{ color: colors.text, fontSize: 11, fontWeight: '700' }}>{asset.filename || 'Audio file'}</Text><Text style={{ color: colors.muted, fontSize: 10, marginTop: 2 }}>{Math.floor((asset.duration || 0) / 60)}:{String(Math.floor((asset.duration || 0) % 60)).padStart(2, '0')}</Text></View>
+                </TouchableOpacity>;
+              }) : <Text style={{ color: colors.muted, textAlign: 'center', padding: 24 }}>No audio files found on this device.</Text>}
+              <TouchableOpacity onPress={uploadSelectedMusic} disabled={!selectedLocalIds.length || uploading} style={{ backgroundColor: selectedLocalIds.length ? colors.accent : colors.line, borderRadius: 12, paddingVertical: 13, alignItems: 'center', marginTop: 12, marginBottom: 5 }}>{uploading ? <ActivityIndicator color="#FFF" /> : <Text style={{ color: '#FFF', fontWeight: '900' }}>Upload Selected · {selectedLocalIds.length}</Text>}</TouchableOpacity>
+            </View>
+          ) : (
+          <>
           <View style={{ height: 4, backgroundColor: colors.line, borderRadius: 4, overflow: 'hidden', marginBottom: 6 }}>
             <View style={{ width: duration > 0 ? `${Math.min(100, currentTime / duration * 100)}%` : '0%', height: 4, backgroundColor: colors.accent }} />
           </View>
@@ -426,6 +450,8 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
           <TouchableOpacity onPress={stopMyStream} style={{ alignSelf: 'flex-end', paddingVertical: 6, paddingHorizontal: 8 }}>
             <Text style={{ color: colors.danger, fontSize: 11, fontWeight: '900' }}>Stop my stream</Text>
           </TouchableOpacity>
+          </>
+          )}
         </ScrollView>
       ) : (
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
