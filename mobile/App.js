@@ -827,8 +827,58 @@ const [luckyBagCustomCoins, setLuckyBagCustomCoins] = useState('500');
 const [luckyBagHistoryView, setLuckyBagHistoryView] = useState(false);
 const [walletBalance, setWalletBalance] = useState(0);
 const [luckyBagSending, setLuckyBagSending] = useState(false);
+const [activeLuckyBags, setActiveLuckyBags] = useState([]);
+const [claimingLuckyBagId, setClaimingLuckyBagId] = useState(null);
 const luckyBagPulse = useRef(new Animated.Value(1)).current;
 useEffect(() => { const pulse = Animated.loop(Animated.sequence([Animated.timing(luckyBagPulse, { toValue: 1.06, duration: 850, useNativeDriver: true }), Animated.timing(luckyBagPulse, { toValue: 1, duration: 850, useNativeDriver: true })])); pulse.start(); return () => pulse.stop(); }, [luckyBagPulse]);
+async function refreshActiveLuckyBags() {
+  if (!session?.user?.id || !selectedRoom?.id) { setActiveLuckyBags([]); return; }
+  try {
+    const nowIso = new Date().toISOString();
+    const { data: bags, error } = await supabase.from('talkzy_lucky_bags')
+      .select('id,sender_id,room_id,scope,total_coins,remaining_coins,remaining_bags,expires_at,created_at')
+      .eq('status','active').gt('expires_at',nowIso)
+      .or('room_id.eq.' + selectedRoom.id + ',scope.eq.world')
+      .order('created_at',{ascending:false}).limit(20);
+    if (error) throw error;
+    const list = bags || [];
+    if (!list.length) { setActiveLuckyBags([]); return; }
+    const senderIds = [...new Set(list.map(b => b.sender_id))];
+    const bagIds = list.map(b => b.id);
+    const [{ data: profiles }, { data: claims }] = await Promise.all([
+      supabase.from('talkzy_profiles').select('id,display_name').in('id',senderIds),
+      supabase.from('talkzy_lucky_bag_claims').select('bag_id').eq('claimer_id',session.user.id).in('bag_id',bagIds)
+    ]);
+    const nameMap = new Map((profiles || []).map(p => [p.id,p.display_name]));
+    const claimed = new Set((claims || []).map(x => x.bag_id));
+    setActiveLuckyBags(list.map(b => ({...b,senderName:nameMap.get(b.sender_id) || 'TALKZY User',alreadyClaimed:claimed.has(b.id)})));
+  } catch (error) {
+    console.log('Lucky Bag refresh:',error.message);
+  }
+}
+
+async function claimLuckyBag(bag) {
+  if (!bag?.id || claimingLuckyBagId) return;
+  if (bag.alreadyClaimed) return Alert.alert('Lucky Bag', 'You already opened this bag.');
+  setClaimingLuckyBagId(bag.id);
+  try {
+    const {data,error}=await supabase.rpc('talkzy_lucky_bag_claim',{p_bag_id:bag.id});
+    if(error) throw error;
+    if(data?.expired) {
+      Alert.alert('Lucky Bag expired','Unclaimed coins are being refunded to the sender.');
+    } else {
+      setWalletBalance(Number(data?.balance ?? walletBalance));
+      Alert.alert('Lucky Bag opened! 🎉','You received ' + Number(data?.reward_coins || 0).toLocaleString() + ' coins!');
+    }
+    await refreshActiveLuckyBags();
+  } catch(error) {
+    Alert.alert('Could not open Lucky Bag',error?.message || 'Please try again.');
+    await refreshActiveLuckyBags();
+  } finally {
+    setClaimingLuckyBagId(null);
+  }
+}
+
 useEffect(() => {
   let active = true;
   async function refreshWallet() {
@@ -844,6 +894,16 @@ useEffect(() => {
     .subscribe();
   return () => { active = false; supabase.removeChannel(walletChannel); };
 }, [session?.user?.id]);
+
+useEffect(() => {
+  if (!selectedRoom?.id || !session?.user?.id) { setActiveLuckyBags([]); return; }
+  refreshActiveLuckyBags();
+  const channel=supabase.channel('lucky-bag-room-feed-' + selectedRoom.id)
+    .on('postgres_changes',{event:'*',schema:'public',table:'talkzy_lucky_bags'},refreshActiveLuckyBags)
+    .subscribe();
+  const interval=setInterval(refreshActiveLuckyBags,5000);
+  return () => { clearInterval(interval); supabase.removeChannel(channel); };
+}, [selectedRoom?.id,session?.user?.id]);
 
 async function sendLuckyBag() {
   if (!session?.user?.id) return Alert.alert('Login required', 'Please sign in again.');
@@ -2733,6 +2793,21 @@ function renderRoomInterior() {
           notification={worldLuckyBagNotification}
           onPress={() => openWorldLuckyBagRoom(worldLuckyBagNotification)}
         />
+      )}
+
+      {activeLuckyBags.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 10, paddingBottom: 5, gap: 8 }}>
+          {activeLuckyBags.map(bag => (
+            <View key={bag.id} style={{ minWidth: 190, padding: 10, borderRadius: 14, borderWidth: 1, borderColor: bag.scope === 'world' ? '#D7A74D' : '#B68AF2', backgroundColor: bag.scope === 'world' ? '#33210C' : '#26143D' }}>
+              <Text style={{ color: '#FFE5A0', fontWeight: '900', fontSize: 12 }} numberOfLines={1}>🎁 {bag.senderName} · {bag.scope.toUpperCase()}</Text>
+              <Text style={{ color: '#F8D66C', fontWeight: '900', marginTop: 3 }}>🪙 {Number(bag.remaining_coins).toLocaleString()} coins left</Text>
+              <Text style={{ color: '#C7B4DE', fontSize: 10, marginTop: 2 }}>{bag.remaining_bags} claim{bag.remaining_bags===1?'':'s'} · expires in {Math.max(0,Math.ceil((new Date(bag.expires_at).getTime()-Date.now())/1000))}s</Text>
+              <TouchableOpacity disabled={bag.alreadyClaimed || claimingLuckyBagId===bag.id || bag.sender_id===session?.user?.id} onPress={() => claimLuckyBag(bag)} style={{ marginTop: 7, paddingVertical: 7, borderRadius: 9, alignItems: 'center', backgroundColor: bag.alreadyClaimed ? '#51445F' : '#8B51D7', opacity: bag.sender_id===session?.user?.id ? 0.55 : 1 }}>
+                <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 11 }}>{claimingLuckyBagId===bag.id ? 'OPENING…' : bag.alreadyClaimed ? 'ALREADY OPENED' : bag.sender_id===session?.user?.id ? 'YOUR LUCKY BAG' : '🎁 OPEN BAG'}</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </ScrollView>
       )}
 
       {/* ROOM HEADER */}
