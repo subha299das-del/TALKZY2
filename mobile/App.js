@@ -2724,8 +2724,8 @@ function renderRoomInterior() {
           flexDirection: 'row',
           alignItems: 'center',
           paddingHorizontal: 14,
-          paddingTop: 10,
-          paddingBottom: 4
+          paddingTop: 4,
+          paddingBottom: 0
         }}
       >
         <Text style={{ fontSize: 18 }}>🏆</Text>
@@ -2743,7 +2743,7 @@ function renderRoomInterior() {
       </View>
 
            {/* MICROPHONE SEATS */}
-<View style={{ paddingHorizontal: 12, paddingTop: showYoutubePanel ? 10 : 25 }}>
+<View style={{ paddingHorizontal: 12, paddingTop: showYoutubePanel ? 6 : 16 }}>
   {(showYoutubePanel
     ? [((MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().slice(0, 8)), ((MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().slice(8, 16))]
     : (MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows
