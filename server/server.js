@@ -1468,13 +1468,26 @@ app.post('/api/rooms/:roomId/presence/leave', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
-    const { error } = await supabase.from('talkzy_room_presence').delete()
-      .eq('room_id', room.id).eq('user_id', req.talkzyUser.id);
-    if (error) throw error;
+    const userId = req.talkzyUser.id;
+
+    // One exit endpoint cleans up both member and tourist room state.
+    // Membership itself is intentionally preserved for ordinary members.
+    const { error: seatError } = await supabase.from('talkzy_room_mic_seats')
+      .delete().eq('room_id', room.id).eq('user_id', userId);
+    if (seatError) throw seatError;
+
+    const { error: visitorError } = await supabase.from('talkzy_room_visitors')
+      .delete().eq('room_id', room.id).eq('user_id', userId);
+    if (visitorError) throw visitorError;
+
+    const { error: presenceError } = await supabase.from('talkzy_room_presence')
+      .delete().eq('room_id', room.id).eq('user_id', userId);
+    if (presenceError) throw presenceError;
+
     res.json({ left: true });
   } catch (error) {
-    console.error('Could not clear room presence:', error.message);
-    res.status(500).json({ error: 'Could not clear room presence.' });
+    console.error('Could not complete room exit cleanup:', error.message);
+    res.status(500).json({ error: 'Could not complete room exit cleanup.' });
   }
 });
 
