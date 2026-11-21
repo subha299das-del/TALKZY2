@@ -1,0 +1,34 @@
+name: TALKZY Backend and Migration Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'server/**'
+      - 'supabase/migrations/**'
+      - '.github/workflows/audit-backend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install backend dependencies
+        working-directory: server
+        run: npm install --no-fund
+      - name: Syntax check
+        working-directory: server
+        run: node --check server.js
+      - name: Audit backend dependencies
+        working-directory: server
+        run: npm audit --omit=dev --audit-level=high
