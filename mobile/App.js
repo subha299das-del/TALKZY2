@@ -2884,6 +2884,12 @@ function renderRoomInterior() {
         </ScrollView>
       )}
 
+      {/* ROOM NAME — prominent, always-visible interior header */}
+      <View style={{ marginHorizontal: 12, marginTop: 2, marginBottom: 4, paddingHorizontal: 13, paddingVertical: 10, borderRadius: 14, backgroundColor: '#171D38', borderWidth: 1, borderColor: '#6651B8' }}>
+        <Text style={{ color: '#BBA8FF', fontSize: 9, fontWeight: '900', letterSpacing: 1.6, marginBottom: 3 }}>ROOM</Text>
+        <Text style={{ color: '#FFFFFF', fontSize: 19, fontWeight: '900' }} numberOfLines={2}>{selectedRoom.room_name || selectedRoom.name || 'Room'}</Text>
+      </View>
+
       {/* ROOM HEADER */}
       <View
         style={{
@@ -10411,7 +10417,17 @@ if (screen === 'profile' || profileIncomplete) {
   async function exitCurrentRoom() {
     const roomId = selectedRoom?.id;
     const wasTourist = isRoomTourist;
-    // Clear local room UI immediately so Exit always responds to the tap.
+    // Complete the server-side personal chat cutoff before allowing another room entry.
+    // This prevents a fast re-entry from racing the leave request and loading stale chat.
+    if (roomId) {
+      try {
+        await api(`/api/rooms/${roomId}/presence/leave`, { method: 'POST' });
+      } catch (error) {
+        console.log('Room exit cleanup error:', error.message);
+        Alert.alert('Room exited', 'You left on this device, but server cleanup did not finish. Old chat may return until you reconnect.');
+      }
+    }
+    // Clear local room UI after the personal cutoff is recorded.
     setShowRoomMenu(false);
     setShowRoomTools(false);
     setShowRoomGiftPanel(false);
@@ -10430,14 +10446,6 @@ if (screen === 'profile' || profileIncomplete) {
     ++micSeatLoadVersionRef.current;
     setScreen('main');
 
-    if (roomId) {
-      try {
-        await api(`/api/rooms/${roomId}/presence/leave`, { method: 'POST' });
-      } catch (error) {
-        console.log('Room exit cleanup error:', error.message);
-        Alert.alert('Room exited', 'You left the room on this device, but server cleanup did not finish. Please check your connection.');
-      }
-    }
   }
 
   async function openRoomSettings(room) {
