@@ -2927,7 +2927,7 @@ function renderRoomInterior() {
               textAlign: 'center'
             }}
           >
-            {isMySeat ? (displayName || 'You') : (occupiedSeat.display_name || 'User')}
+            {isOccupied ? (isMySeat ? (displayName || 'You') : (occupiedSeat.display_name || 'User')) : ' '}
           </Text>
         )}
       </TouchableOpacity>
