@@ -1,0 +1,10 @@
+update storage.buckets set file_size_limit=5242880,allowed_mime_types=array['image/jpeg'] where id='talkzy-profiles';
+update storage.buckets set file_size_limit=10485760,allowed_mime_types=array['image/jpeg'] where id='talkzy-rooms';
+drop policy if exists "Users can upload own TALKZY profile pictures" on storage.objects;
+drop policy if exists "Users can update own TALKZY profile pictures" on storage.objects;
+drop policy if exists "Users can delete own TALKZY profile pictures" on storage.objects;
+create policy "talkzy_profiles_authenticated_delete_own_folder" on storage.objects for delete to authenticated using (bucket_id='talkzy-profiles' and (storage.foldername(name))[1]=(select auth.uid())::text);
+drop policy if exists "Users upload their own room pictures" on storage.objects;
+drop policy if exists "Users update their own room pictures" on storage.objects;
+drop policy if exists "Users delete their own room pictures" on storage.objects;
+create policy "talkzy_rooms_user_delete_own_folder" on storage.objects for delete to authenticated using (bucket_id='talkzy-rooms' and (storage.foldername(name))[1]=(select auth.uid())::text);
