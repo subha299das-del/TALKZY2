@@ -46,7 +46,7 @@ const API_BASE_URL = (
 
 const BUCKET = 'talkzy-profiles';
 
-const YOUTUBE_PLAYER_HTML = `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><style>html,body,#player{margin:0;width:100%;height:100%;background:#000;overflow:hidden}</style></head><body><div id="player"></div><script src="https://www.youtube.com/iframe_api"></script><script>let player;function onYouTubeIframeAPIReady(){player=new YT.Player('player',{height:'100%',width:'100%',videoId:'',playerVars:{playsinline:1,controls:0,rel:0,modestbranding:1,fs:0,disablekb:1},events:{onReady:function(){window.ReactNativeWebView&&window.ReactNativeWebView.postMessage('ready')},onStateChange:function(e){if(e.data===0&&window.ReactNativeWebView)window.ReactNativeWebView.postMessage('ended')}}})}setInterval(function(){if(player&&player.getCurrentTime&&player.getPlayerState&&player.getPlayerState()===1&&window.ReactNativeWebView)window.ReactNativeWebView.postMessage('time:'+player.getCurrentTime())},2000);function talkzyLoad(id,seconds,playing){if(!player||!player.loadVideoById)return;if(id){player.loadVideoById({videoId:id,startSeconds:Math.max(0,seconds||0)});if(!playing)player.pauseVideo()}}function talkzySync(seconds,playing){if(!player||!player.getCurrentTime)return;let current=player.getCurrentTime();if(Math.abs(current-(seconds||0))>3)player.seekTo(seconds||0,true);if(playing)player.playVideo();else player.pauseVideo()}function talkzyPlay(){if(player)player.playVideo()}function talkzyPause(){if(player)player.pauseVideo()}</script></body></html>`;
+const YOUTUBE_PLAYER_HTML = `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><style>html,body,#player{margin:0;width:100%;height:100%;background:#000;overflow:hidden}</style></head><body><div id="player"></div><script src="https://www.youtube.com/iframe_api"></script><script>let player;function onYouTubeIframeAPIReady(){player=new YT.Player('player',{height:'100%',width:'100%',videoId:'',playerVars:{playsinline:1,controls:0,rel:0,modestbranding:1,fs:0,disablekb:1},events:{onReady:function(){window.ReactNativeWebView&&window.ReactNativeWebView.postMessage('ready')},onStateChange:function(e){if(e.data===0&&window.ReactNativeWebView)window.ReactNativeWebView.postMessage('ended')}}})}setInterval(function(){if(player&&player.getCurrentTime&&player.getPlayerState&&player.getPlayerState()===1&&window.ReactNativeWebView)window.ReactNativeWebView.postMessage('time:'+player.getCurrentTime())},2000);function talkzyLoad(id,seconds,playing){if(!player||!player.loadVideoById)return;if(id){player.loadVideoById({videoId:id,startSeconds:Math.max(0,seconds||0)});if(!playing)player.pauseVideo()}}function talkzySync(seconds,playing){if(!player||!player.getCurrentTime)return;let current=player.getCurrentTime();if(Math.abs(current-(seconds||0))>3)player.seekTo(seconds||0,true);if(playing)player.playVideo();else player.pauseVideo()}function talkzyPlay(){if(player)player.playVideo()}function talkzyPause(){if(player)player.pauseVideo()}function talkzySetVolume(v){if(player&&player.setVolume)player.setVolume(Math.max(0,Math.min(100,Number(v)||0)))}</script></body></html>`;
 
 
 const C = {
@@ -1016,6 +1016,7 @@ const [youtubeUrlInput, setYoutubeUrlInput] = useState('');
 const [youtubeState, setYoutubeState] = useState({ video_id: null, queue: [], is_playing: false, current_time_seconds: 0, updated_at: null });
 const [youtubeLoading, setYoutubeLoading] = useState(false);
 const [youtubeSaving, setYoutubeSaving] = useState(false);
+const [youtubeVolume, setYoutubeVolume] = useState(70);
 const youtubeWebViewRef = useRef(null);
 const youtubeLastUpdateRef = useRef(null);
 const youtubeLoadedVideoRef = useRef(null);
@@ -2710,7 +2711,7 @@ async function saveYoutubeState(nextState) {
       method: 'PUT',
       body: JSON.stringify({
         video_id: nextState.video_id || null,
-        queue: Array.isArray(nextState.queue) ? nextState.queue.slice(0, 10) : [],
+        queue: Array.isArray(nextState.queue) ? nextState.queue.slice(0, nextState.video_id ? 19 : 20) : [],
         is_playing: Boolean(nextState.is_playing),
         current_time_seconds: Math.max(0, Number(nextState.current_time_seconds || 0))
       })
@@ -2739,8 +2740,8 @@ async function saveYoutubeState(nextState) {
 async function addYoutubeVideo() {
   const videoId = extractYouTubeVideoId(youtubeUrlInput);
   if (!videoId) return Alert.alert('Invalid YouTube link', 'Paste a valid YouTube video URL or 11-character video ID.');
-  if (youtubeState.queue.length >= 10 && youtubeState.video_id) {
-    return Alert.alert('Queue full', 'You can add up to 10 videos to the queue.');
+  if ((youtubeState.queue || []).length + (youtubeState.video_id ? 1 : 0) >= 20) {
+    return Alert.alert('Queue full', 'The room playlist can contain up to 20 videos.');
   }
   const next = youtubeState.video_id
     ? { ...youtubeState, queue: [...(youtubeState.queue || []), { video_id: videoId, title: 'YouTube video' }] }
@@ -3058,7 +3059,7 @@ function renderRoomInterior() {
                   if (message === 'ready' && youtubeState.video_id) {
                     youtubeLoadedVideoRef.current = youtubeState.video_id;
                     youtubeWebViewRef.current?.injectJavaScript(
-                      `window.talkzyLoad && window.talkzyLoad('${youtubeState.video_id}', ${Number(youtubeState.current_time_seconds || 0)}, ${youtubeState.is_playing ? 'true' : 'false'});` + 'true;'
+                      `window.talkzyLoad && window.talkzyLoad('${youtubeState.video_id}', ${Number(youtubeState.current_time_seconds || 0)}, ${youtubeState.is_playing ? 'true' : 'false'});window.talkzySetVolume && window.talkzySetVolume(${youtubeVolume});` + 'true;'
                     );
                   } else if (message.startsWith('time:')) {
                     const isController = selectedRoom?.owner_id === session?.user?.id ||
@@ -3098,7 +3099,7 @@ function renderRoomInterior() {
                 <TouchableOpacity onPress={advanceYoutubeQueue}><Text style={{ color: C.text, fontWeight: '900' }}>Next ⏭</Text></TouchableOpacity>
                 <TouchableOpacity onPress={() => saveYoutubeState({ ...youtubeState, video_id: null, is_playing: false, current_time_seconds: 0 })}><Text style={{ color: C.danger, fontWeight: '900' }}>Stop</Text></TouchableOpacity>
               </View>
-              <Text style={{ color: C.muted, fontSize: 10, marginTop: 7 }}>Queue: {youtubeState.queue?.length || 0}/10 videos</Text>
+              <Text style={{ color: C.muted, fontSize: 10, marginTop: 7 }}>Playlist: {(youtubeState.queue?.length || 0) + (youtubeState.video_id ? 1 : 0)}/20 videos</Text>
               {(youtubeState.queue || []).map((item, index) => (
                 <View key={item.video_id + index} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 5 }}>
                   <Text style={{ color: C.muted, fontSize: 11, flex: 1 }}>{index + 1}. {item.title || 'YouTube video'}</Text>
@@ -3107,6 +3108,36 @@ function renderRoomInterior() {
               ))}
             </>
           )}
+          {/* Personal volume: local to this device; never saved to shared room state. */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.line }}>
+            <Text style={{ color: C.muted, fontSize: 11, fontWeight: '800', marginRight: 10 }}>MY VOLUME</Text>
+            <TouchableOpacity
+              onPress={() => {
+                const next = Math.max(0, youtubeVolume - 10);
+                setYoutubeVolume(next);
+                youtubeWebViewRef.current?.injectJavaScript(`window.talkzySetVolume && window.talkzySetVolume(${next});true;`);
+              }}
+              style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: 9, backgroundColor: C.panel2 }}
+            ><Text style={{ color: C.text, fontSize: 17, fontWeight: '900' }}>－</Text></TouchableOpacity>
+            <Text style={{ color: C.teal, width: 48, textAlign: 'center', fontSize: 12, fontWeight: '900' }}>{youtubeVolume}%</Text>
+            <TouchableOpacity
+              onPress={() => {
+                const next = Math.min(100, youtubeVolume + 10);
+                setYoutubeVolume(next);
+                youtubeWebViewRef.current?.injectJavaScript(`window.talkzySetVolume && window.talkzySetVolume(${next});true;`);
+              }}
+              style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: 9, backgroundColor: C.panel2 }}
+            ><Text style={{ color: C.text, fontSize: 17, fontWeight: '900' }}>＋</Text></TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                const next = youtubeVolume === 0 ? 70 : 0;
+                setYoutubeVolume(next);
+                youtubeWebViewRef.current?.injectJavaScript(`window.talkzySetVolume && window.talkzySetVolume(${next});true;`);
+              }}
+              style={{ marginLeft: 8, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 9, backgroundColor: C.panel2 }}
+            ><Text style={{ color: C.text, fontSize: 11, fontWeight: '900' }}>{youtubeVolume === 0 ? 'UNMUTE' : 'MUTE'}</Text></TouchableOpacity>
+          </View>
+          <Text style={{ color: C.muted, fontSize: 9, textAlign: 'center', marginTop: 5 }}>Only changes what you hear on this device.</Text>
         </View>
       )}
 
