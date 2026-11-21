@@ -117,10 +117,10 @@ async function api(path, options = {}) {
 
 
 
-function seatShortName(value) {
-  const name = String(value || 'User').trim();
-  if (!name || name.toLowerCase() === 'you') return 'YO...';
-  return name.slice(0, 2).toUpperCase() + '...';
+function seatDisplayName(value, compact = false) {
+  const name = String(value || 'User').trim() || 'User';
+  if (!compact) return name;
+  return name.split(/\\s+/).filter(Boolean).slice(0, 2).join(' ');
 }
 
 function WorldLuckyBagTicker({ notification, onPress }) {
@@ -3268,7 +3268,7 @@ function renderRoomInterior() {
     ? Array.from({ length: Math.ceil((MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().length / 8) }, (_, index) => (MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().slice(index * 8, (index + 1) * 8))
     : (MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows
   ).filter(rowSeats => rowSeats.length > 0).map((rowSeats, rowIndex) => (
-    <View key={rowIndex} style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'stretch', backgroundColor: '#360D14', borderWidth: 1.5, borderColor: '#B88743', borderRadius: youtubeScreenVisible ? 10 : 17, paddingHorizontal: youtubeScreenVisible ? 2 : 3, paddingTop: youtubeScreenVisible ? 2 : 5, paddingBottom: youtubeScreenVisible ? 2 : 4, marginBottom: youtubeScreenVisible ? 3 : 14, shadowColor: '#D5A64E', shadowOpacity: 0.22, shadowRadius: 7, elevation: 4 }}>
+    <View key={rowIndex} style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'stretch', backgroundColor: youtubeScreenVisible ? '#360D14' : 'transparent', borderWidth: youtubeScreenVisible ? 1.5 : 0, borderColor: '#B88743', borderRadius: youtubeScreenVisible ? 10 : 0, paddingHorizontal: youtubeScreenVisible ? 2 : 0, paddingTop: youtubeScreenVisible ? 2 : 0, paddingBottom: youtubeScreenVisible ? 2 : 0, marginBottom: youtubeScreenVisible ? 3 : 7, shadowColor: youtubeScreenVisible ? '#D5A64E' : 'transparent', shadowOpacity: youtubeScreenVisible ? 0.22 : 0, shadowRadius: youtubeScreenVisible ? 7 : 0, elevation: youtubeScreenVisible ? 4 : 0 }}>
       {rowSeats.map((seat) => {
 
     const occupiedSeat = micSeats.find(
@@ -3366,13 +3366,13 @@ function renderRoomInterior() {
           marginBottom: 0,
           paddingHorizontal: 1,
           paddingTop: youtubeScreenVisible ? 0 : 2,
-          backgroundColor: '#581822',
-          borderLeftWidth: 1,
-          borderRightWidth: 1,
+          backgroundColor: youtubeScreenVisible ? '#581822' : 'transparent',
+          borderLeftWidth: youtubeScreenVisible ? 1 : 0,
+          borderRightWidth: youtubeScreenVisible ? 1 : 0,
           borderColor: '#7E3B32',
-          borderTopLeftRadius: 15,
-          borderTopRightRadius: 15,
-          overflow: 'hidden'
+          borderTopLeftRadius: youtubeScreenVisible ? 15 : 0,
+          borderTopRightRadius: youtubeScreenVisible ? 15 : 0,
+          overflow: youtubeScreenVisible ? 'hidden' : 'visible'
         }}
       >
         <View
@@ -3486,16 +3486,17 @@ function renderRoomInterior() {
           {seat}
         </Text>
         <Text
-            numberOfLines={1}
             style={{
               color: isMySeat ? C.accent : C.muted,
               fontSize: youtubeScreenVisible ? 7 : 9,
+              lineHeight: youtubeScreenVisible ? 8 : 11,
               marginTop: youtubeScreenVisible ? 0 : 2,
-              maxWidth: '100%',
-              textAlign: 'center'
+              width: '100%',
+              textAlign: 'center',
+              flexShrink: 1
             }}
           >
-            {isOccupied ? seatShortName(isMySeat ? (displayName || profile?.display_name || 'You') : (occupiedSeat.display_name || 'User')) : ' '}
+            {isOccupied ? seatDisplayName(isMySeat ? (displayName || profile?.display_name || 'You') : (occupiedSeat.display_name || 'User'), youtubeScreenVisible) : ' '}
           </Text>
         )}
       </TouchableOpacity>
