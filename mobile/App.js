@@ -1563,30 +1563,60 @@ function closeOfficialEvent() {
 
   
 async function loadMyRooms(currentSession = session) {
-  try {
-    if (!currentSession?.access_token) {
-      setRoomCreationEligibilityLoaded(false);
-      return;
-    }
-
+  if (!currentSession?.access_token || !currentSession?.user?.id) {
     setRoomCreationEligibilityLoaded(false);
+    return;
+  }
+
+  const cacheKey = `talkzy_my_rooms_${currentSession.user.id}`;
+
+  // Render cached room details immediately while the server request runs.
+  // This prevents the user's room name/card from waiting for a cold backend.
+  let hasCachedData = false;
+  try {
+    const cachedRaw = await AsyncStorage.getItem(cacheKey);
+    if (cachedRaw) {
+      const cached = JSON.parse(cachedRaw);
+      if (Array.isArray(cached.rooms)) {
+        hasCachedData = true;
+        setMyRooms(cached.rooms);
+        setHasEverCreatedRoom(cached.hasEverCreatedRoom === true);
+        setRoomCreationEligibilityLoaded(true);
+      }
+    }
+  } catch (cacheError) {
+    console.log('My room cache read:', cacheError.message);
+  }
+
+  if (!hasCachedData) setRoomCreationEligibilityLoaded(false);
+
+  // Refresh in the background and update the cache for the next launch.
+  try {
     const result = await api('/api/rooms/mine', {
       headers: {
         Authorization: `Bearer ${currentSession.access_token}`
       }
     });
 
-    const allRooms = Array.isArray(result.rooms)
-      ? result.rooms
-      : [];
+    const allRooms = Array.isArray(result.rooms) ? result.rooms : [];
+    const eligibility = result.hasEverCreatedRoom === true;
 
     setMyRooms(allRooms);
-    setHasEverCreatedRoom(result.hasEverCreatedRoom === true);
+    setHasEverCreatedRoom(eligibility);
     setRoomCreationEligibilityLoaded(true);
 
+    try {
+      await AsyncStorage.setItem(cacheKey, JSON.stringify({
+        rooms: allRooms,
+        hasEverCreatedRoom: eligibility,
+        cachedAt: Date.now()
+      }));
+    } catch (cacheError) {
+      console.log('My room cache write:', cacheError.message);
+    }
   } catch (error) {
-    // Fail closed: never briefly show Create Room when eligibility is unknown.
-    setRoomCreationEligibilityLoaded(false);
+    // Cached room cards remain visible if the backend is asleep/offline.
+    if (!hasCachedData) setRoomCreationEligibilityLoaded(false);
     console.log('My rooms:', error.message);
   }
 }
