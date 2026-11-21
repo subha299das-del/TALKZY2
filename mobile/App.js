@@ -1034,6 +1034,7 @@ const [youtubeSelectedVideo, setYoutubeSelectedVideo] = useState(null);
 const [youtubePreviewVideoId, setYoutubePreviewVideoId] = useState(null);
 const youtubeBrowseWebViewRef = useRef(null);
 const [youtubeState, setYoutubeState] = useState({ video_id: null, queue: [], is_playing: false, current_time_seconds: 0, updated_at: null });
+const youtubeScreenVisible = Boolean(youtubeState.video_id || showYoutubePanel);
 const [youtubeLoading, setYoutubeLoading] = useState(false);
 const [youtubeSaving, setYoutubeSaving] = useState(false);
 const [youtubeVolume, setYoutubeVolume] = useState(70);
@@ -2724,7 +2725,7 @@ async function loadYoutubeState(showErrors = false) {
 }
 
 async function saveYoutubeState(nextState) {
-  if (!selectedRoom?.id || youtubeSaving) return;
+  if (!selectedRoom?.id || youtubeSaving) return false;
   try {
     setYoutubeSaving(true);
     const result = await api(`/api/rooms/${selectedRoom.id}/youtube`, {
@@ -2750,8 +2751,10 @@ async function saveYoutubeState(nextState) {
     } else {
       youtubeLoadedVideoRef.current = null;
     }
+    return true;
   } catch (error) {
     Alert.alert('YouTube control', error.message || 'Could not update YouTube.');
+    return false;
   } finally {
     setYoutubeSaving(false);
   }
@@ -2775,22 +2778,18 @@ async function addYoutubeItem(item) {
   if (count >= 20) return Alert.alert('Playlist full', 'The room playlist is limited to 20 videos.');
   const meta = item?.title ? item : await getYoutubeMetadata(videoId);
   const selectedEntry = { video_id: videoId, title: String(meta.title || 'YouTube video').slice(0, 120), added_by: profile?.display_name || session?.user?.email?.split('@')[0] || 'Member' };
-  const next = {
-    ...youtubeState,
-    video_id: videoId,
-    is_playing: true,
-    current_time_seconds: 0,
-    queue: youtubeState.video_id
-      ? [ { video_id: youtubeState.video_id, title: youtubeState.current_title || 'Previously playing video', added_by: 'Room playlist' }, ...(youtubeState.queue || []) ].slice(0, 19)
-      : (youtubeState.queue || [])
-  };
-  await saveYoutubeState(next);
+  const alreadyPlaying = Boolean(youtubeState.video_id);
+  const next = alreadyPlaying
+    ? { ...youtubeState, queue: [...(youtubeState.queue || []), selectedEntry] }
+    : { ...youtubeState, video_id: videoId, current_title: selectedEntry.title, is_playing: true, current_time_seconds: 0, queue: [...(youtubeState.queue || [])] };
+  const saved = await saveYoutubeState(next);
+  if (!saved) return;
   setYoutubeSelectedVideo(null);
   setYoutubePickedItem(null);
   setYoutubeUrlInput('');
   setShowYoutubePicker(false);
   setShowYoutubePanel(true);
-  Alert.alert('Added to playlist', meta.title || 'Video added');
+  Alert.alert(alreadyPlaying ? 'Added to waiting queue' : 'Now playing', alreadyPlaying ? `${meta.title || 'Video'} will play after the current video.` : (meta.title || 'Video added'));
 }
 
 async function closeYoutubeScreen() {
@@ -2799,19 +2798,11 @@ async function closeYoutubeScreen() {
     Alert.alert('Not allowed', 'Only the Room Owner or an authorized Admin can close the shared YouTube screen.');
     return;
   }
-  if (youtubeState.video_id) {
-    const preservedQueue = [
-      { video_id: youtubeState.video_id, title: youtubeState.current_title || 'Previously playing video', added_by: 'Room playlist' },
-      ...(youtubeState.queue || [])
-    ].slice(0, 20);
-    await saveYoutubeState({
-      ...youtubeState,
-      video_id: null,
-      queue: preservedQueue,
-      is_playing: false,
-      current_time_seconds: 0
-    });
-  }
+  const preservedQueue = youtubeState.video_id
+    ? [{ video_id: youtubeState.video_id, title: youtubeState.current_title || 'Previously playing video', added_by: 'Room playlist' }, ...(youtubeState.queue || [])].slice(0, 20)
+    : [...(youtubeState.queue || [])].slice(0, 20);
+  const saved = await saveYoutubeState({ ...youtubeState, video_id: null, queue: preservedQueue, is_playing: false, current_time_seconds: 0 });
+  if (!saved) return;
   setShowYoutubePanel(false);
   youtubePanelDismissedRef.current = true;
 }
@@ -2823,16 +2814,28 @@ async function addYoutubeVideo() {
   await addYoutubeItem(meta);
 }
 
+async function updateYoutubeQueue(nextQueue) {
+  return saveYoutubeState({ ...youtubeState, queue: nextQueue });
+}
+
+async function removeYoutubeQueueItem(index) {
+  const nextQueue = [...(youtubeState.queue || [])];
+  nextQueue.splice(index, 1);
+  await updateYoutubeQueue(nextQueue);
+}
+
+async function moveYoutubeQueueItem(index, direction) {
+  const nextQueue = [...(youtubeState.queue || [])];
+  const target = index + direction;
+  if (target < 0 || target >= nextQueue.length) return;
+  [nextQueue[index], nextQueue[target]] = [nextQueue[target], nextQueue[index]];
+  await updateYoutubeQueue(nextQueue);
+}
+
 async function advanceYoutubeQueue() {
   const queue = [...(youtubeState.queue || [])];
   const nextVideo = queue.shift();
-  await saveYoutubeState({
-    ...youtubeState,
-    video_id: nextVideo?.video_id || null,
-    queue,
-    is_playing: Boolean(nextVideo),
-    current_time_seconds: 0
-  });
+  await saveYoutubeState({ ...youtubeState, video_id: nextVideo?.video_id || null, current_title: nextVideo?.title || null, queue, is_playing: Boolean(nextVideo), current_time_seconds: 0 });
 }
 
 useEffect(() => {
@@ -3115,7 +3118,7 @@ function renderRoomInterior() {
             </View>
 
       {/* SHARED YOUTUBE SCREEN — visible to the room while active, or locally when opened by a controller */}
-      {(youtubeState.video_id || showYoutubePanel) && (
+      {youtubeScreenVisible && (
       <View style={{ marginHorizontal: 10, marginTop: 5, marginBottom: 5, height: 170, backgroundColor: '#050914', borderRadius: 13, borderWidth: 1, borderColor: '#6B54C7', overflow: 'hidden' }}>
           {(selectedRoom?.owner_id === session?.user?.id || roomPresence.some(person => person.user_id === session?.user?.id && person.presence_role === 'admin')) && (
             <TouchableOpacity onPress={closeYoutubeScreen} style={{ position: 'absolute', zIndex: 5, top: 7, right: 7, width: 27, height: 27, borderRadius: 14, backgroundColor: 'rgba(9,12,25,0.88)', borderWidth: 1, borderColor: '#B9A8FF', alignItems: 'center', justifyContent: 'center' }}>
@@ -3155,11 +3158,22 @@ function renderRoomInterior() {
           )}
         </View>
       )}
-      {/* Shared playlist is viewable by everyone; playlist management remains in the controller panel */}
+      {/* Everyone can view the shared playlist; only this room's creator/admins can manage it. */}
       {youtubeState.queue?.length > 0 && (
         <View style={{ marginHorizontal: 10, marginBottom: 5, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: '#10172A', borderRadius: 12, borderWidth: 1, borderColor: '#354466' }}>
-          <Text style={{ color: '#C5CFEA', fontSize: 10, fontWeight: '900', marginBottom: 4 }}>UP NEXT · {youtubeState.queue.length}</Text>
-          {youtubeState.queue.slice(0, 5).map((item, index) => <Text key={item.video_id || index} numberOfLines={1} style={{ color: '#AAB7D4', fontSize: 10, paddingVertical: 2 }}>{index + 1}. {item.title || 'YouTube video'}</Text>)}
+          <Text style={{ color: '#C5CFEA', fontSize: 10, fontWeight: '900', marginBottom: 5 }}>SAVED PLAYLIST · {youtubeState.queue.length}</Text>
+          {youtubeState.queue.map((item, index) => (
+            <View key={`${item.video_id || 'video'}-${index}`} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 4, borderTopWidth: index ? 1 : 0, borderTopColor: '#27334D' }}>
+              <Text numberOfLines={1} style={{ color: '#AAB7D4', fontSize: 10, flex: 1, paddingRight: 6 }}>{index + 1}. {item.title || 'YouTube video'}</Text>
+              {(selectedRoom?.owner_id === session?.user?.id || roomPresence.some(person => person.user_id === session?.user?.id && person.presence_role === 'admin')) && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <TouchableOpacity disabled={index === 0 || youtubeSaving} onPress={() => moveYoutubeQueueItem(index, -1)} style={{ paddingHorizontal: 7, paddingVertical: 4, borderRadius: 6, backgroundColor: '#263653', opacity: index === 0 ? 0.35 : 1 }}><Text style={{ color: '#E3E8FF', fontSize: 11, fontWeight: '900' }}>↑</Text></TouchableOpacity>
+                  <TouchableOpacity disabled={index === youtubeState.queue.length - 1 || youtubeSaving} onPress={() => moveYoutubeQueueItem(index, 1)} style={{ paddingHorizontal: 7, paddingVertical: 4, borderRadius: 6, backgroundColor: '#263653', opacity: index === youtubeState.queue.length - 1 ? 0.35 : 1 }}><Text style={{ color: '#E3E8FF', fontSize: 11, fontWeight: '900' }}>↓</Text></TouchableOpacity>
+                  <TouchableOpacity disabled={youtubeSaving} onPress={() => removeYoutubeQueueItem(index)} style={{ paddingHorizontal: 7, paddingVertical: 4, borderRadius: 6, backgroundColor: '#48263A' }}><Text style={{ color: '#FFB5C5', fontSize: 10, fontWeight: '900' }}>✕</Text></TouchableOpacity>
+                </View>
+              )}
+            </View>
+          ))}
         </View>
       )}
 
@@ -3249,12 +3263,12 @@ function renderRoomInterior() {
       </View>
 
            {/* MICROPHONE SEATS */}
-<View style={{ paddingHorizontal: 12, paddingTop: showYoutubePanel ? 4 : 16 }}>
-  {(showYoutubePanel
-    ? [((MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().slice(0, 8)), ((MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().slice(8, 16))]
+<View style={{ paddingHorizontal: 12, paddingTop: youtubeScreenVisible ? 4 : 16 }}>
+  {(youtubeScreenVisible
+    ? Array.from({ length: Math.ceil((MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().length / 8) }, (_, index) => (MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().slice(index * 8, (index + 1) * 8))
     : (MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows
   ).filter(rowSeats => rowSeats.length > 0).map((rowSeats, rowIndex) => (
-    <View key={rowIndex} style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'stretch', backgroundColor: '#360D14', borderWidth: 1.5, borderColor: '#B88743', borderRadius: 17, paddingHorizontal: 3, paddingTop: 5, paddingBottom: 4, marginBottom: showYoutubePanel ? 4 : 14, shadowColor: '#D5A64E', shadowOpacity: 0.22, shadowRadius: 7, elevation: 4 }}>
+    <View key={rowIndex} style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'stretch', backgroundColor: '#360D14', borderWidth: 1.5, borderColor: '#B88743', borderRadius: youtubeScreenVisible ? 10 : 17, paddingHorizontal: youtubeScreenVisible ? 2 : 3, paddingTop: youtubeScreenVisible ? 2 : 5, paddingBottom: youtubeScreenVisible ? 2 : 4, marginBottom: youtubeScreenVisible ? 3 : 14, shadowColor: '#D5A64E', shadowOpacity: 0.22, shadowRadius: 7, elevation: 4 }}>
       {rowSeats.map((seat) => {
 
     const occupiedSeat = micSeats.find(
@@ -3346,12 +3360,12 @@ function renderRoomInterior() {
         style={{
           opacity: (isRoomTourist && !touristsOnMic) || (seatIsClosed && !canControlMics) ? 0.4 : 1,
           width: `${100 / rowSeats.length}%`,
-          height: (youtubeState.video_id ||showYoutubePanel) ? 42 : 88,
+          height: youtubeScreenVisible ? 38 : 88,
           alignItems: 'center',
           justifyContent: 'flex-start',
           marginBottom: 0,
           paddingHorizontal: 1,
-          paddingTop: (youtubeState.video_id ||showYoutubePanel) ? 0 : 2,
+          paddingTop: youtubeScreenVisible ? 0 : 2,
           backgroundColor: '#581822',
           borderLeftWidth: 1,
           borderRightWidth: 1,
@@ -3363,9 +3377,9 @@ function renderRoomInterior() {
       >
         <View
           style={{
-            width: (youtubeState.video_id ||showYoutubePanel) ? (micCount >= 17 ? 22 : 26) : (micCount >= 17 ? 42 : micCount >= 14 ? 46 : 50),
-            height: (youtubeState.video_id ||showYoutubePanel) ? (micCount >= 17 ? 22 : 26) : (micCount >= 17 ? 42 : micCount >= 14 ? 46 : 50),
-            borderRadius: (youtubeState.video_id ||showYoutubePanel) ? (micCount >= 17 ? 11 : 13) : (micCount >= 17 ? 21 : micCount >= 14 ? 23 : 25),
+            width: youtubeScreenVisible ? 22 : (micCount >= 17 ? 42 : micCount >= 14 ? 46 : 50),
+            height: youtubeScreenVisible ? 22 : (micCount >= 17 ? 42 : micCount >= 14 ? 46 : 50),
+            borderRadius: youtubeScreenVisible ? 11 : (micCount >= 17 ? 21 : micCount >= 14 ? 23 : 25),
             borderWidth: 2,
             borderColor: isMySeat ? '#F6D37B' : isOccupied ? '#D5A64E' : '#9A613E',
             backgroundColor: '#320C13',
@@ -3387,9 +3401,9 @@ function renderRoomInterior() {
                     : MIC_ON_ICON
                 }
                 style={{
-                  width: (youtubeState.video_id ||showYoutubePanel) ? (micCount >= 17 ? 20 : 24) : (micCount >= 17 ? 39 : micCount >= 14 ? 43 : 47),
-                  height: (youtubeState.video_id ||showYoutubePanel) ? (micCount >= 17 ? 20 : 24) : (micCount >= 17 ? 39 : micCount >= 14 ? 43 : 47),
-                  borderRadius: (youtubeState.video_id ||showYoutubePanel) ? (micCount >= 17 ? 10 : 12) : (micCount >= 17 ? 20 : micCount >= 14 ? 22 : 24),
+                  width: youtubeScreenVisible ? 20 : (micCount >= 17 ? 39 : micCount >= 14 ? 43 : 47),
+                  height: youtubeScreenVisible ? 20 : (micCount >= 17 ? 39 : micCount >= 14 ? 43 : 47),
+                  borderRadius: youtubeScreenVisible ? 10 : (micCount >= 17 ? 20 : micCount >= 14 ? 22 : 24),
                   resizeMode: 'cover'
                 }}
               />
@@ -3464,8 +3478,8 @@ function renderRoomInterior() {
         <Text
           style={{
             color: C.text,
-            fontSize: (youtubeState.video_id ||showYoutubePanel) ? 7 : 11,
-            marginTop: (youtubeState.video_id ||showYoutubePanel) ? 1 : 5,
+            fontSize: youtubeScreenVisible ? 7 : 11,
+            marginTop: youtubeScreenVisible ? 0 : 5,
             fontWeight: 'bold'
           }}
         >
@@ -3475,8 +3489,8 @@ function renderRoomInterior() {
             numberOfLines={1}
             style={{
               color: isMySeat ? C.accent : C.muted,
-              fontSize: 9,
-              marginTop: 2,
+              fontSize: youtubeScreenVisible ? 7 : 9,
+              marginTop: youtubeScreenVisible ? 0 : 2,
               maxWidth: '100%',
               textAlign: 'center'
             }}
