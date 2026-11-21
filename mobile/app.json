@@ -2,7 +2,7 @@
   "expo": {
     "name": "TALKZY",
     "slug": "talkzy",
-    "version": "1.5.0",
+    "version": "1.6.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "scheme": "talkzy",
@@ -10,7 +10,7 @@
     "icon": "./assets/talkzy-icon.png",
     "android": {
       "package": "com.talkzy.app",
-      "versionCode": 6,
+      "versionCode": 7,
       "adaptiveIcon": {
         "foregroundImage": "./assets/talkzy-icon.png",
         "backgroundColor": "#080B18"
