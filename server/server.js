@@ -282,6 +282,29 @@ async function requireRoom(req, res) {
   return room;
 }
 
+async function removeUserRoomMusic(roomId, userId) {
+  const { data: previous, error: readError } = await supabase.from('talkzy_room_music_state')
+    .select('queue').eq('room_id', roomId).eq('user_id', userId).maybeSingle();
+  if (readError) throw readError;
+  const paths = (Array.isArray(previous?.queue) ? previous.queue : [])
+    .map(item => item?.object_path)
+    .filter(path => typeof path === 'string' && path.startsWith(`${userId}/${roomId}/`) && !path.includes('..'));
+  const { error: deleteError } = await supabase.from('talkzy_room_music_state')
+    .delete().eq('room_id', roomId).eq('user_id', userId);
+  if (deleteError) throw deleteError;
+  if (paths.length) {
+    const { error: storageError } = await supabase.storage.from('talkzy-room-music').remove(paths);
+    if (storageError) throw storageError;
+  }
+}
+
+async function clearUserRoomChat(roomId, userId) {
+  const { error } = await supabase.from('talkzy_room_chat_clears')
+    .upsert({ room_id: roomId, user_id: userId, cleared_at: new Date().toISOString() }, { onConflict: 'room_id,user_id' });
+  if (error) throw error;
+}
+
+
 app.get('/api/health', (req, res) =>
   res.set('Cache-Control', 'no-store').json({
     ok: true,
@@ -937,21 +960,23 @@ app.post('/api/rooms/:roomId/leave', userAuth, async (req, res) => {
 
     if (adminError) throw adminError;
 
-    // Remove room membership.
-    const { error: memberError } = await supabase
-      .from('talkzy_room_members')
-      .delete()
-      .eq('room_id', room.id)
-      .eq('user_id', userId);
-
+    // Clear this user's chat history cutoff and all room-bound live state.
+    await clearUserRoomChat(room.id, userId);
+    const { error: memberError } = await supabase.from('talkzy_room_members')
+      .delete().eq('room_id', room.id).eq('user_id', userId);
     if (memberError) throw memberError;
-    const { error: presenceError } = await supabase.from('talkzy_room_presence').delete().eq('room_id', room.id).eq('user_id', userId);
+    const { error: seatError } = await supabase.from('talkzy_room_mic_seats')
+      .delete().eq('room_id', room.id).eq('user_id', userId);
+    if (seatError) throw seatError;
+    const { error: visitorError } = await supabase.from('talkzy_room_visitors')
+      .delete().eq('room_id', room.id).eq('user_id', userId);
+    if (visitorError) throw visitorError;
+    const { error: presenceError } = await supabase.from('talkzy_room_presence')
+      .delete().eq('room_id', room.id).eq('user_id', userId);
     if (presenceError) throw presenceError;
+    await removeUserRoomMusic(room.id, userId);
 
-    return res.json({
-      left: true,
-      roomId: room.id
-    });
+    return res.json({ left: true, roomId: room.id });
 
   } catch (error) {
     console.error('Could not leave room:', error.message);
@@ -1186,20 +1211,24 @@ app.delete('/api/rooms/:roomId/members/:userId', userAuth, async (req, res) => {
       return res.status(400).json({ error: 'The room owner cannot be removed.' });
     }
 
-    const { error } = await supabase
-      .from('talkzy_room_members')
-      .delete()
-      .eq('room_id', room.id)
-      .eq('user_id', req.params.userId);
-
+    const { error } = await supabase.from('talkzy_room_members')
+      .delete().eq('room_id', room.id).eq('user_id', req.params.userId);
     if (error) throw error;
 
-    await supabase
-      .from('talkzy_room_admins')
-      .delete()
-      .eq('room_id', room.id)
-      .eq('user_id', req.params.userId);
-
+    const { error: adminError } = await supabase.from('talkzy_room_admins')
+      .delete().eq('room_id', room.id).eq('user_id', req.params.userId);
+    if (adminError) throw adminError;
+    await clearUserRoomChat(room.id, req.params.userId);
+    const { error: seatError } = await supabase.from('talkzy_room_mic_seats')
+      .delete().eq('room_id', room.id).eq('user_id', req.params.userId);
+    if (seatError) throw seatError;
+    const { error: visitorError } = await supabase.from('talkzy_room_visitors')
+      .delete().eq('room_id', room.id).eq('user_id', req.params.userId);
+    if (visitorError) throw visitorError;
+    const { error: presenceError } = await supabase.from('talkzy_room_presence')
+      .delete().eq('room_id', room.id).eq('user_id', req.params.userId);
+    if (presenceError) throw presenceError;
+    await removeUserRoomMusic(room.id, req.params.userId);
     res.json({ removed: true });
   } catch (error) {
     console.error('Could not remove room member:', error.message);
@@ -1529,6 +1558,7 @@ app.post('/api/rooms/:roomId/presence/leave', userAuth, async (req, res) => {
     const { error: presenceError } = await supabase.from('talkzy_room_presence')
       .delete().eq('room_id', room.id).eq('user_id', userId);
     if (presenceError) throw presenceError;
+    await removeUserRoomMusic(room.id, userId);
 
     res.set('Cache-Control', 'no-store').json({ left: true, clearedAt: clearMarker.cleared_at });
   } catch (error) {
@@ -1778,6 +1808,7 @@ app.post('/api/rooms/:roomId/members/:userId/kick', userAuth, async (req, res) =
       .upsert({ room_id: room.id, user_id: req.params.userId, kicked_by: req.talkzyUser.id, reason },
         { onConflict: 'room_id,user_id' });
     if (insertError) throw insertError;
+    await clearUserRoomChat(room.id, req.params.userId);
     const { error: memberError } = await supabase.from('talkzy_room_members').delete()
       .eq('room_id', room.id).eq('user_id', req.params.userId);
     if (memberError) throw memberError;
@@ -1789,6 +1820,7 @@ app.post('/api/rooms/:roomId/members/:userId/kick', userAuth, async (req, res) =
     if (seatDeleteError) throw seatDeleteError;
     const { error: presenceDeleteError } = await supabase.from('talkzy_room_presence').delete().eq('room_id', room.id).eq('user_id', req.params.userId);
     if (presenceDeleteError) throw presenceDeleteError;
+    await removeUserRoomMusic(room.id, req.params.userId);
     res.json({ kicked: true });
   } catch (error) {
     console.error('Could not kick room member:', error.message);
