@@ -2965,12 +2965,6 @@ function renderRoomInterior() {
         </ScrollView>
       )}
 
-      {/* ROOM NAME — prominent, always-visible interior header */}
-      <View style={{ marginHorizontal: 12, marginTop: 2, marginBottom: 4, paddingHorizontal: 13, paddingVertical: 10, borderRadius: 14, backgroundColor: '#171D38', borderWidth: 1, borderColor: '#6651B8' }}>
-        <Text style={{ color: '#BBA8FF', fontSize: 9, fontWeight: '900', letterSpacing: 1.6, marginBottom: 3 }}>ROOM</Text>
-        <Text style={{ color: '#FFFFFF', fontSize: 19, fontWeight: '900' }} numberOfLines={2}>{selectedRoom.room_name || selectedRoom.name || 'Room'}</Text>
-      </View>
-
       {/* ROOM HEADER */}
       <View
         style={{
