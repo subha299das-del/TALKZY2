@@ -3088,7 +3088,7 @@ function renderRoomInterior() {
             <View style={{ marginHorizontal: 10, marginTop: 5, marginBottom: 5, backgroundColor: '#10172A', borderRadius: 13, borderWidth: 1, borderColor: '#354466', overflow: 'hidden' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 11, paddingVertical: 9, backgroundColor: '#17213A' }}>
                 <Text style={{ color: '#E8E9FF', fontSize: 13, fontWeight: '900' }}>▶ YouTube</Text>
-                <TouchableOpacity onPress={() => { setShowYoutubePanel(false); setYoutubeSelectedVideo(null); }} style={{ paddingHorizontal: 6, paddingVertical: 2 }}>
+                <TouchableOpacity onPress={() => { youtubePanelDismissedRef.current = true; setShowYoutubePanel(false); setYoutubeSelectedVideo(null); }} style={{ paddingHorizontal: 6, paddingVertical: 2 }}>
                   <Text style={{ color: '#AEB9D5', fontSize: 19, fontWeight: '800' }}>✕</Text>
                 </TouchableOpacity>
               </View>
@@ -3132,7 +3132,7 @@ function renderRoomInterior() {
                 <>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 8, marginBottom: 7, gap: 6 }}>
                     <TextInput value={youtubeSearchQuery} onChangeText={setYoutubeSearchQuery} placeholder={youtubeBrowseTab === 'Music' ? 'Search YouTube music…' : 'Search YouTube videos…'} placeholderTextColor="#8290AE" autoCapitalize="none" returnKeyType="search"
-                      onSubmitEditing={() => { const q = youtubeSearchQuery.trim() || (youtubeBrowseTab === 'Music' ? 'music' : 'video'); setYoutubeBrowseUrl('https://www.youtube.com/results?search_query=' + encodeURIComponent(q)); youtubeBrowseWebViewRef.current?.reload(); }}
+                      onSubmitEditing={() => { const q = youtubeSearchQuery.trim() || (youtubeBrowseTab === 'Music' ? 'music' : 'video'); setYoutubeBrowseUrl('https://www.youtube.com/results?search_query=' + encodeURIComponent(q)); }}
                       style={{ flex: 1, color: '#FFFFFF', fontSize: 12, paddingVertical: 9, paddingHorizontal: 10, backgroundColor: '#080B18', borderRadius: 8, borderWidth: 1, borderColor: '#354466' }} />
                     <TouchableOpacity onPress={() => { const q = youtubeSearchQuery.trim() || (youtubeBrowseTab === 'Music' ? 'music' : 'video'); setYoutubeBrowseUrl('https://www.youtube.com/results?search_query=' + encodeURIComponent(q)); }}
                       style={{ paddingHorizontal: 12, paddingVertical: 9, borderRadius: 8, backgroundColor: '#D8B45D' }}>
@@ -3648,6 +3648,7 @@ onContentSizeChange={() =>
                         setActivityEndTime('');
                         setShowCreateRoomActivity(true);
                       } else if (tool.title === 'YouTube') {
+                        youtubePanelDismissedRef.current = false;
                         setShowYoutubePanel(true);
                         setYoutubeBrowseTab('Music');
                         setYoutubeBrowseUrl('https://www.youtube.com/results?search_query=music');
