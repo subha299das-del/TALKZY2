@@ -157,6 +157,22 @@ const roomCreateLimiter = rateLimit({
   message: { error: 'Too many room creation attempts. Please wait and try again.' }
 });
 
+const roomEntryLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { error: 'Too many room entry/password attempts. Wait 15 minutes and try again.' }
+});
+
+const roomMessageLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 20,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { error: 'You are sending messages too quickly. Please wait a moment.' }
+});
+
 function ownerAuth(req, res, next) {
   const header = req.get('authorization') || '';
   const match = /^Bearer\s+(.+)$/i.exec(header);
@@ -562,7 +578,7 @@ app.post('/api/rooms', userAuth, roomCreateLimiter, async (req, res) => {
 // Join a public room, or join a locked room with its password.
 
 // ENTER A PUBLIC/LOCKED ROOM AS A VISITOR WITHOUT CREATING MEMBERSHIP
-app.post('/api/rooms/:roomId/visit', userAuth, async (req, res) => {
+app.post('/api/rooms/:roomId/visit', userAuth, roomEntryLimiter, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
@@ -643,7 +659,7 @@ app.get('/api/rooms/:roomId/messages', userAuth, async (req, res) => {
     if (markerError) throw markerError;
     let messageQuery = supabase.from('talkzy_room_messages')
       .select('id, sender_id, message_type, message_text, image_url, created_at')
-      .eq('room_id', room.id).order('created_at', { ascending: true }).limit(100);
+      .eq('room_id', room.id).order('created_at', { ascending: false }).limit(100);
     if (clearMarker?.cleared_at) messageQuery = messageQuery.gt('created_at', clearMarker.cleared_at);
     const { data, error } = await messageQuery;
     if (error) throw error;
@@ -652,7 +668,8 @@ app.get('/api/rooms/:roomId/messages', userAuth, async (req, res) => {
       ? await supabase.from('talkzy_profiles').select('id, display_name, avatar_url, talkzy_id').in('id', ids)
       : { data: [], error: null };
     if (profileError) throw profileError;
-    res.set('Cache-Control', 'no-store').json({ messages: (data || []).map(m => ({
+    const latestMessagesChronological = (data || []).slice().reverse();
+    res.set('Cache-Control', 'no-store').json({ messages: latestMessagesChronological.map(m => ({
       ...m, sender: (profiles || []).find(p => p.id === m.sender_id) || null
     })) });
   } catch (error) {
@@ -698,7 +715,7 @@ app.delete('/api/rooms/:roomId/messages', userAuth, async (req, res) => {
   }
 });
 
-app.post('/api/rooms/:roomId/messages', userAuth, async (req, res) => {
+app.post('/api/rooms/:roomId/messages', userAuth, roomMessageLimiter, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
@@ -726,7 +743,7 @@ app.post('/api/rooms/:roomId/messages', userAuth, async (req, res) => {
   }
 });
 
-app.post('/api/rooms/:roomId/join', userAuth, async (req, res) => {
+app.post('/api/rooms/:roomId/join', userAuth, roomEntryLimiter, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
