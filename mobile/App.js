@@ -3079,6 +3079,39 @@ function renderRoomInterior() {
 
             </View>
 
+      {/* SHARED YOUTUBE PLAYER — visible to every room participant, independent of the browse panel */}
+      {youtubeState.video_id && (
+        <View style={{ marginHorizontal: 10, marginTop: 5, marginBottom: 5, height: 170, backgroundColor: '#000', borderRadius: 13, borderWidth: 1, borderColor: '#354466', overflow: 'hidden' }}>
+          <WebView ref={youtubeWebViewRef} source={{ html: YOUTUBE_PLAYER_HTML }} originWhitelist={['*']} javaScriptEnabled domStorageEnabled allowsInlineMediaPlayback mediaPlaybackRequiresUserAction={false}
+            onMessage={(event) => {
+              const message = String(event.nativeEvent.data || '');
+              if (message === 'ready' && youtubeState.video_id) {
+                youtubeLoadedVideoRef.current = youtubeState.video_id;
+                youtubeWebViewRef.current?.injectJavaScript(`window.talkzyLoad && window.talkzyLoad('${youtubeState.video_id}', ${Number(youtubeState.current_time_seconds || 0)}, ${youtubeState.is_playing ? 'true' : 'false'});window.talkzySetVolume && window.talkzySetVolume(${youtubeVolume});` + 'true;');
+              } else if (message.startsWith('time:')) {
+                const isController = selectedRoom?.owner_id === session?.user?.id || roomPresence.find(person => person.user_id === session?.user?.id)?.presence_role === 'admin';
+                const now = Date.now();
+                if (isController && now - youtubeLastPositionWriteRef.current > 9000) {
+                  youtubeLastPositionWriteRef.current = now;
+                  const seconds = Number(message.slice(5));
+                  if (Number.isFinite(seconds)) saveYoutubeState({ ...youtubeState, current_time_seconds: seconds });
+                }
+              } else if (message === 'ended') {
+                const isController = selectedRoom?.owner_id === session?.user?.id || roomPresence.find(person => person.user_id === session?.user?.id)?.presence_role === 'admin';
+                if (isController) advanceYoutubeQueue();
+              }
+            }}
+            style={{ flex: 1, backgroundColor: '#000' }} />
+        </View>
+      )}
+      {/* Shared playlist is viewable by everyone; playlist management remains in the controller panel */}
+      {youtubeState.queue?.length > 0 && (
+        <View style={{ marginHorizontal: 10, marginBottom: 5, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: '#10172A', borderRadius: 12, borderWidth: 1, borderColor: '#354466' }}>
+          <Text style={{ color: '#C5CFEA', fontSize: 10, fontWeight: '900', marginBottom: 4 }}>UP NEXT · {youtubeState.queue.length}</Text>
+          {youtubeState.queue.slice(0, 5).map((item, index) => <Text key={item.video_id || index} numberOfLines={1} style={{ color: '#AAB7D4', fontSize: 10, paddingVertical: 2 }}>{index + 1}. {item.title || 'YouTube video'}</Text>)}
+        </View>
+      )}
+
       {/* YOUTUBE PANEL — controller search/add; shared player for the room */}
       {showYoutubePanel && (
         (() => {
@@ -3100,34 +3133,7 @@ function renderRoomInterior() {
                   </TouchableOpacity>
                 ))}
               </View>
-              {youtubeState.video_id ? (
-                <View style={{ height: 155, backgroundColor: '#000', marginHorizontal: 7, marginBottom: 7, borderRadius: 9, overflow: 'hidden' }}>
-                  <WebView ref={youtubeWebViewRef} source={{ html: YOUTUBE_PLAYER_HTML }} originWhitelist={['*']} javaScriptEnabled domStorageEnabled allowsInlineMediaPlayback mediaPlaybackRequiresUserAction={false}
-                    onMessage={(event) => {
-                      const message = String(event.nativeEvent.data || '');
-                      if (message === 'ready' && youtubeState.video_id) {
-                        youtubeLoadedVideoRef.current = youtubeState.video_id;
-                        youtubeWebViewRef.current?.injectJavaScript(`window.talkzyLoad && window.talkzyLoad('${youtubeState.video_id}', ${Number(youtubeState.current_time_seconds || 0)}, ${youtubeState.is_playing ? 'true' : 'false'});window.talkzySetVolume && window.talkzySetVolume(${youtubeVolume});` + 'true;');
-                      } else if (message.startsWith('time:')) {
-                        const isController = selectedRoom?.owner_id === session?.user?.id || roomPresence.find(person => person.user_id === session?.user?.id)?.presence_role === 'admin';
-                        const now = Date.now();
-                        if (isController && now - youtubeLastPositionWriteRef.current > 9000) {
-                          youtubeLastPositionWriteRef.current = now;
-                          const seconds = Number(message.slice(5));
-                          if (Number.isFinite(seconds)) saveYoutubeState({ ...youtubeState, current_time_seconds: seconds });
-                        }
-                      } else if (message === 'ended') {
-                        const isController = selectedRoom?.owner_id === session?.user?.id || roomPresence.find(person => person.user_id === session?.user?.id)?.presence_role === 'admin';
-                        if (isController) advanceYoutubeQueue();
-                      }
-                    }}
-                    style={{ flex: 1, backgroundColor: '#000' }} />
-                </View>
-              ) : (
-                <View style={{ marginHorizontal: 8, marginBottom: 8, padding: 10, borderRadius: 9, backgroundColor: '#080B18', alignItems: 'center' }}>
-                  <Text style={{ color: '#B7C2DE', fontSize: 11, fontWeight: '700' }}>Choose Music or Video, then search to start the room playlist.</Text>
-                </View>
-              )}
+
               {isYoutubeController && (
                 <>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 8, marginBottom: 7, gap: 6 }}>
@@ -3155,10 +3161,17 @@ function renderRoomInterior() {
                   <Text style={{ color: '#8FA0C2', fontSize: 9, textAlign: 'center', paddingBottom: 7 }}>Tap a result to add it to the room playlist</Text>
                 </>
               )}
-              {youtubeState.queue?.length > 0 && (
+              {youtubeState.queue?.length > 0 && isYoutubeController && (
                 <View style={{ paddingHorizontal: 9, paddingBottom: 9 }}>
-                  <Text style={{ color: '#C5CFEA', fontSize: 10, fontWeight: '900', marginBottom: 4 }}>UP NEXT · {youtubeState.queue.length}</Text>
-                  {youtubeState.queue.slice(0, 3).map((item, index) => <Text key={item.video_id || index} numberOfLines={1} style={{ color: '#AAB7D4', fontSize: 10, paddingVertical: 2 }}>{index + 1}. {item.title || 'YouTube video'}</Text>)}
+                  <Text style={{ color: '#C5CFEA', fontSize: 10, fontWeight: '900', marginBottom: 4 }}>PLAYLIST MANAGEMENT</Text>
+                  {youtubeState.queue.map((item, index) => (
+                    <View key={item.video_id || index} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 5 }}>
+                      <Text numberOfLines={1} style={{ flex: 1, color: '#AAB7D4', fontSize: 10 }}>{index + 1}. {item.title || 'YouTube video'}</Text>
+                      <TouchableOpacity onPress={() => saveYoutubeState({ ...youtubeState, queue: youtubeState.queue.filter((_, queueIndex) => queueIndex !== index) })} style={{ paddingHorizontal: 8, paddingVertical: 4 }}>
+                        <Text style={{ color: '#FF829A', fontSize: 10, fontWeight: '900' }}>REMOVE</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ))}
                 </View>
               )}
             </View>
@@ -3191,12 +3204,12 @@ function renderRoomInterior() {
       </View>
 
            {/* MICROPHONE SEATS */}
-<View style={{ paddingHorizontal: 12, paddingTop: (youtubeState.video_id ||showYoutubePanel) ? 4 : 16 }}>
+<View style={{ paddingHorizontal: 12, paddingTop: showYoutubePanel ? 4 : 16 }}>
   {(youtubeState.video_id
     ? [((MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().slice(0, 8)), ((MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().slice(8, 16))]
     : (MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows
   ).filter(rowSeats => rowSeats.length > 0).map((rowSeats, rowIndex) => (
-    <View key={rowIndex} style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'stretch', backgroundColor: '#360D14', borderWidth: 1.5, borderColor: '#B88743', borderRadius: 17, paddingHorizontal: 3, paddingTop: 5, paddingBottom: 4, marginBottom: (youtubeState.video_id ||showYoutubePanel) ? 4 : 14, shadowColor: '#D5A64E', shadowOpacity: 0.22, shadowRadius: 7, elevation: 4 }}>
+    <View key={rowIndex} style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'stretch', backgroundColor: '#360D14', borderWidth: 1.5, borderColor: '#B88743', borderRadius: 17, paddingHorizontal: 3, paddingTop: 5, paddingBottom: 4, marginBottom: showYoutubePanel ? 4 : 14, shadowColor: '#D5A64E', shadowOpacity: 0.22, shadowRadius: 7, elevation: 4 }}>
       {rowSeats.map((seat) => {
 
     const occupiedSeat = micSeats.find(
