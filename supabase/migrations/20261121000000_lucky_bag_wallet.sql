@@ -96,3 +96,21 @@ end $$;
 create index if not exists talkzy_lucky_bags_active_expiry_idx on public.talkzy_lucky_bags(status,expires_at);
 create index if not exists talkzy_lucky_bags_room_status_expiry_idx on public.talkzy_lucky_bags(room_id,status,expires_at);
 create index if not exists talkzy_coin_ledger_user_created_idx on public.talkzy_coin_ledger(user_id,created_at desc);
+
+-- Idempotent service-only wallet credits (payment provider/server integrations).
+create unique index if not exists talkzy_coin_ledger_idempotency_idx on public.talkzy_coin_ledger(user_id,event_type,reference_id) where reference_id is not null;
+create or replace function public.talkzy_wallet_credit_service(p_user_id uuid,p_amount bigint,p_reference_id uuid,p_note text default 'Wallet credit')
+returns jsonb language plpgsql security definer set search_path=public,pg_temp as $$
+declare v_balance bigint; v_existing public.talkzy_coin_ledger;
+begin
+ if p_user_id is null or p_reference_id is null then raise exception 'User and payment reference required'; end if;
+ if p_amount<=0 or p_amount>1000000000000 then raise exception 'Invalid credit amount'; end if;
+ select * into v_existing from public.talkzy_coin_ledger where user_id=p_user_id and event_type='wallet_credit' and reference_id=p_reference_id;
+ if found then return jsonb_build_object('credited',false,'duplicate',true,'balance',v_existing.balance_after,'ledger_id',v_existing.id); end if;
+ insert into public.talkzy_wallets(user_id,balance) values(p_user_id,0) on conflict(user_id) do nothing;
+ update public.talkzy_wallets set balance=balance+p_amount,updated_at=now() where user_id=p_user_id returning balance into v_balance;
+ insert into public.talkzy_coin_ledger(user_id,amount,balance_after,event_type,reference_id,note) values(p_user_id,p_amount,v_balance,'wallet_credit',p_reference_id,p_note);
+ return jsonb_build_object('credited',true,'duplicate',false,'balance',v_balance);
+end $$;
+revoke all on function public.talkzy_wallet_credit_service(uuid,bigint,uuid,text) from public,anon,authenticated;
+grant execute on function public.talkzy_wallet_credit_service(uuid,bigint,uuid,text) to service_role;
