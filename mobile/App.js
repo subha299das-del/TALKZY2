@@ -2492,8 +2492,6 @@ function renderRoomInterior() {
           alignItems: 'center',
           paddingHorizontal: 12,
           paddingVertical: 12,
-          borderBottomWidth: 1,
-          borderBottomColor: C.line
         }}
       >
 
