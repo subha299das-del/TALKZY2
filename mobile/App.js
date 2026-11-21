@@ -3467,6 +3467,7 @@ function renderRoomInterior() {
       }} style={{ flexDirection: 'row', alignItems: 'center', padding: 13, borderRadius: 15, backgroundColor: '#28172F', borderWidth: 1, borderColor: '#B56BFF', marginBottom: 9 }}>
         <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: '#46204D', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
           <View style={{ width: 24, height: 18, borderWidth: 2, borderColor: '#D5A3FF', borderRadius: 4 }}><View style={{ position: 'absolute', width: 30, height: 3, backgroundColor: '#FF6685', top: 7, left: -4, transform: [{ rotate: '42deg' }] }} /></View>
+        </View>
         <View style={{ flex: 1 }}><Text style={{ color: '#F5F6FF', fontWeight: '900', fontSize: 14 }}>{micControls.find(x => x.seat_number === micControlSeat)?.seat_closed ? 'Open seat' : 'Close seat'}</Text><Text style={{ color: '#D3A5FF', fontSize: 11, marginTop: 2 }}>{micControls.find(x => x.seat_number === micControlSeat)?.seat_closed ? 'Allow anyone to sit again' : 'Block everyone, including owner/admin'}</Text></View>
         <Text style={{ color: '#D5A3FF', fontSize: 18 }}>{micControls.find(x => x.seat_number === micControlSeat)?.seat_closed ? '↗' : '⛔'}</Text>
       </TouchableOpacity>
