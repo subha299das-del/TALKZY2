@@ -870,6 +870,13 @@ async function loadLuckyBagHistory() {
     if(ledgerError) throw ledgerError;
     if(sentError) throw sentError;
     if(claimsError) throw claimsError;
+    const sentBagIds=(sent||[]).map(x=>x.id);
+    let sentClaims=[];
+    if(sentBagIds.length) {
+      const {data,error}=await supabase.from('talkzy_lucky_bag_claims').select('bag_id,claimer_id,reward_coins,claimed_at').in('bag_id',sentBagIds).order('claimed_at',{ascending:false});
+      if(error) throw error;
+      sentClaims=data||[];
+    }
     const bagIds=[...new Set([...(sent||[]).map(x=>x.id),...(claims||[]).map(x=>x.bag_id)])];
     let bagDetails=[];
     if(bagIds.length) {
@@ -877,14 +884,18 @@ async function loadLuckyBagHistory() {
       if(error) throw error;
       bagDetails=data||[];
     }
-    const senderIds=[...new Set(bagDetails.map(x=>x.sender_id))];
+    const profileIds=[...new Set([...bagDetails.map(x=>x.sender_id),...sentClaims.map(x=>x.claimer_id)])];
     let names={};
-    if(senderIds.length) {
-      const {data,error}=await supabase.from('talkzy_profiles').select('id,display_name').in('id',senderIds);
+    if(profileIds.length) {
+      const {data,error}=await supabase.from('talkzy_profiles').select('id,display_name').in('id',profileIds);
       if(error) throw error;
       names=Object.fromEntries((data||[]).map(p=>[p.id,p.display_name||'TALKZY User']));
     }
-    const bagMap=Object.fromEntries(bagDetails.map(b=>[b.id,b]));
+    const recipientNamesByBag={};
+    sentClaims.forEach(claim => {
+      (recipientNamesByBag[claim.bag_id] ||= []).push(names[claim.claimer_id]||'TALKZY User');
+    });
+    const bagMap=Object.fromEntries(bagDetails.map(b=>[b.id,{...b,recipientNames:recipientNamesByBag[b.id]||[]} ]));
     const events=[
       ...(ledger||[]).map(x=>({key:'ledger-'+x.id,type:x.event_type,amount:x.amount,created_at:x.created_at,note:x.note,reference_id:x.reference_id,balance_after:x.balance_after,bag:bagMap[x.reference_id],senderName:names[bagMap[x.reference_id]?.sender_id]||'TALKZY User'})),
       
@@ -3629,6 +3640,7 @@ onContentSizeChange={() =>
                         </View>
                         {isReceived && <Text style={{color:'#BDA8DA',fontSize:11,marginTop:5}}>From: {item.senderName||'TALKZY User'}</Text>}
                         {bag && <Text style={{color:'#BDA8DA',fontSize:11,marginTop:4}}>{bag.scope==='world'?'🌍 World':'🏠 Room'} · Bag {bag.status||''}</Text>}
+                        {isSend && bag && <Text style={{color:'#BDA8DA',fontSize:11,marginTop:4}}>Claimed by: {bag.recipientNames.length?bag.recipientNames.join(', '):'No one yet'}</Text>}
                         {item.note && <Text style={{color:'#9F8AB9',fontSize:10,marginTop:4}}>{item.note}</Text>}
                         <Text style={{color:'#8C789F',fontSize:10,marginTop:5}}>{new Date(item.created_at).toLocaleString()} · Balance {Number(item.balance_after||0).toLocaleString()}</Text>
                       </View>;
