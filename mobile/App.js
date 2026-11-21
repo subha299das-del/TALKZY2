@@ -1013,6 +1013,7 @@ const [showYoutubePanel, setShowYoutubePanel] = useState(false);
 const [showMusicPanel, setShowMusicPanel] = useState(false);
  const [musicMinimized, setMusicMinimized] = useState(false);
 const [youtubeUrlInput, setYoutubeUrlInput] = useState('');
+const [youtubeSearchQuery, setYoutubeSearchQuery] = useState('');
 const [youtubeState, setYoutubeState] = useState({ video_id: null, queue: [], is_playing: false, current_time_seconds: 0, updated_at: null });
 const [youtubeLoading, setYoutubeLoading] = useState(false);
 const [youtubeSaving, setYoutubeSaving] = useState(false);
@@ -3088,6 +3089,38 @@ function renderRoomInterior() {
           )}
           {(selectedRoom?.owner_id === session?.user?.id || roomPresence.find(person => person.user_id === session?.user?.id)?.presence_role === 'admin') && (
             <>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 9 }}>
+                <TextInput
+                  value={youtubeSearchQuery}
+                  onChangeText={setYoutubeSearchQuery}
+                  placeholder="Search YouTube videos or music"
+                  placeholderTextColor={C.muted}
+                  returnKeyType="search"
+                  onSubmitEditing={async () => {
+                    const query = youtubeSearchQuery.trim();
+                    if (!query) return;
+                    try {
+                      await WebBrowser.openBrowserAsync('https://www.youtube.com/results?search_query=' + encodeURIComponent(query));
+                    } catch (error) {
+                      Alert.alert('YouTube Search', error.message || 'Could not open YouTube search.');
+                    }
+                  }}
+                  style={{ flex: 1, color: C.text, backgroundColor: C.bg, borderRadius: 9, borderWidth: 1, borderColor: C.line, paddingHorizontal: 10, paddingVertical: 9, fontSize: 12 }}
+                />
+                <TouchableOpacity
+                  onPress={async () => {
+                    const query = youtubeSearchQuery.trim();
+                    if (!query) return Alert.alert('Search YouTube', 'Enter a song, artist or video name first.');
+                    try {
+                      await WebBrowser.openBrowserAsync('https://www.youtube.com/results?search_query=' + encodeURIComponent(query));
+                    } catch (error) {
+                      Alert.alert('YouTube Search', error.message || 'Could not open YouTube search.');
+                    }
+                  }}
+                  style={{ marginLeft: 7, backgroundColor: C.panel2, borderRadius: 9, paddingHorizontal: 12, paddingVertical: 11, borderWidth: 1, borderColor: C.line }}
+                ><Text style={{ color: C.teal, fontWeight: '900', fontSize: 12 }}>Search</Text></TouchableOpacity>
+              </View>
+              <Text style={{ color: C.muted, fontSize: 9, marginTop: 4 }}>Search opens YouTube. Copy a result link and paste it below to add it to the room playlist.</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 9 }}>
                 <TextInput value={youtubeUrlInput} onChangeText={setYoutubeUrlInput} placeholder="Paste YouTube link or video ID" placeholderTextColor={C.muted} autoCapitalize="none" style={{ flex: 1, color: C.text, backgroundColor: C.bg, borderRadius: 9, borderWidth: 1, borderColor: C.line, paddingHorizontal: 10, paddingVertical: 9, fontSize: 12 }} />
                 <TouchableOpacity onPress={addYoutubeVideo} disabled={youtubeSaving} style={{ marginLeft: 7, backgroundColor: C.accent, borderRadius: 9, paddingHorizontal: 13, paddingVertical: 11 }}>
