@@ -2155,10 +2155,13 @@ async function toggleFollowRoom(room) {
   async function loadRoomMessages(roomId) {
     if (!roomId) return;
     try {
-      // Wait for this device's leave cutoff to be recorded before loading history.
+      // Do not race an exit marker write against a room re-entry/history fetch.
       const pendingLeave = roomLeaveCleanupRef.current[roomId];
       if (pendingLeave) await pendingLeave;
-      const localCutoff = roomChatLocalCutoffRef.current[roomId] || 0;
+      const cutoffKey = `talkzy-room-chat-cutoff:${session?.user?.id || 'unknown'}:${roomId}`;
+      const savedCutoff = Number(await AsyncStorage.getItem(cutoffKey)) || 0;
+      const localCutoff = Math.max(roomChatLocalCutoffRef.current[roomId] || 0, savedCutoff);
+      roomChatLocalCutoffRef.current[roomId] = localCutoff;
       const result = await api(`/api/rooms/${roomId}/messages`);
       setRoomChatMessages((result.messages || []).filter(item => !localCutoff || new Date(item.created_at).getTime() > localCutoff).map(item => ({
         id: item.id,
@@ -2531,10 +2534,11 @@ setIsOnMic(false);
 setMyMicSeat(null);
 setIsMicMuted(false);
 
+// Reset the chat UI before fetching; never clear a completed fetch afterward.
+setRoomChatMessages([]);
 // Load this room's microphone data and room chat
 loadRoomMicSeats(room.id);
 loadRoomMessages(room.id);
-setRoomChatMessages([]);
 
 setScreen('roomInterior');
   }}
@@ -10573,11 +10577,25 @@ if (screen === 'profile' || profileIncomplete) {
     ++micSeatLoadVersionRef.current;
     setScreen('main');
 
-    // Record a personal cutoff locally too, so history stays hidden if cleanup fails.
+    // Save the personal chat cutoff to durable storage immediately, then update
+    // the server marker. This survives app restarts and failed backend requests.
     if (roomId) {
-      roomChatLocalCutoffRef.current[roomId] = Date.now();
-      const cleanup = api(`/api/rooms/${roomId}/presence/leave`, { method: 'POST' })
-        .catch(error => console.log('Room exit cleanup error:', error.message));
+      const cutoff = Date.now();
+      roomChatLocalCutoffRef.current[roomId] = cutoff;
+      const cutoffKey = `talkzy-room-chat-cutoff:${session?.user?.id || 'unknown'}:${roomId}`;
+      const cleanup = AsyncStorage.setItem(cutoffKey, String(cutoff))
+        .then(async () => {
+          try {
+            const response = await api(`/api/rooms/${roomId}/presence/leave`, { method: 'POST' });
+            const serverCutoff = response?.clearedAt ? new Date(response.clearedAt).getTime() : 0;
+            const finalCutoff = Math.max(cutoff, serverCutoff || 0);
+            roomChatLocalCutoffRef.current[roomId] = finalCutoff;
+            await AsyncStorage.setItem(cutoffKey, String(finalCutoff));
+          } catch (error) {
+            console.log('Room exit cleanup error:', error.message);
+          }
+        })
+        .catch(error => console.log('Room chat cutoff storage error:', error.message));
       roomLeaveCleanupRef.current[roomId] = cleanup;
       cleanup.finally(() => {
         if (roomLeaveCleanupRef.current[roomId] === cleanup) {
