@@ -2030,6 +2030,9 @@ app.post('/api/rooms/:roomId/mic-seats/:seatNumber', userAuth, async (req, res) 
     }
 
     const seatNumber = Number(req.params.seatNumber);
+    if (!Number.isInteger(seatNumber) || seatNumber < 1 || seatNumber > 17) {
+      return res.status(400).json({ error: 'Invalid microphone seat.' });
+    }
 
     const { data: roomSettings, error: settingsError } = await supabase
   .from('talkzy_rooms')
@@ -2075,6 +2078,19 @@ if (
       }
 
       throw error;
+    }
+
+    const { data: currentControl } = await supabase
+      .from('talkzy_room_mic_controls')
+      .select('mic_closed')
+      .eq('room_id', room.id)
+      .eq('seat_number', seatNumber)
+      .maybeSingle();
+    if (currentControl?.mic_closed) {
+      await supabase.from('talkzy_room_mic_seats')
+        .update({ is_muted: true, updated_at: new Date().toISOString() })
+        .eq('room_id', room.id)
+        .eq('seat_number', seatNumber);
     }
 
     res.set('Cache-Control', 'no-store').json({
