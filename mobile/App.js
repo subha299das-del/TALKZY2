@@ -3092,8 +3092,7 @@ function renderRoomInterior() {
             </View>
 
       {/* SHARED YOUTUBE SCREEN — reserved above microphone seats when YouTube is opened */}
-      {(showYoutubePanel || youtubeState.video_id) && (
-        <View style={{ marginHorizontal: 10, marginTop: 5, marginBottom: 5, height: 170, backgroundColor: '#050914', borderRadius: 13, borderWidth: 1, borderColor: '#6B54C7', overflow: 'hidden' }}>
+      <View style={{ marginHorizontal: 10, marginTop: 5, marginBottom: 5, height: 170, backgroundColor: '#050914', borderRadius: 13, borderWidth: 1, borderColor: '#6B54C7', overflow: 'hidden' }}>
           {youtubeState.video_id ? (
             <WebView key={youtubeState.video_id} ref={youtubeWebViewRef} source={{ html: YOUTUBE_PLAYER_HTML }} originWhitelist={['*']} javaScriptEnabled domStorageEnabled allowsInlineMediaPlayback mediaPlaybackRequiresUserAction={false}
               onMessage={(event) => {
@@ -3126,7 +3125,6 @@ function renderRoomInterior() {
             </View>
           )}
         </View>
-      )}
       {/* Shared playlist is viewable by everyone; playlist management remains in the controller panel */}
       {youtubeState.queue?.length > 0 && (
         <View style={{ marginHorizontal: 10, marginBottom: 5, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: '#10172A', borderRadius: 12, borderWidth: 1, borderColor: '#354466' }}>
@@ -3162,7 +3160,7 @@ function renderRoomInterior() {
             </View>
             <View style={{ flex: 1, marginHorizontal: 9, marginBottom: 8, borderRadius: 9, overflow: 'hidden', backgroundColor: '#FFFFFF' }}>
               <WebView ref={youtubeBrowseWebViewRef} source={{ uri: youtubeBrowseUrl || ('https://www.youtube.com/results?search_query=' + encodeURIComponent(youtubeBrowseTab === 'Music' ? 'music' : 'video')) }} javaScriptEnabled domStorageEnabled allowsInlineMediaPlayback
-                injectedJavaScriptBeforeContentLoaded={`(function(){function pick(e){var a=e.target&&e.target.closest?e.target.closest('a[href]'):null;if(!a)return;var h=a.href||'';var m=h.match(/[?&]v=([A-Za-z0-9_-]{11})/)||h.match(/youtu\\.be\\/([A-Za-z0-9_-]{11})/)||h.match(/\\/shorts\\/([A-Za-z0-9_-]{11})/);if(m){e.preventDefault();e.stopPropagation();if(window.ReactNativeWebView){window.ReactNativeWebView.postMessage('talkzy-select:'+m[1]);}}}document.addEventListener('click',pick,true);})();true;`}
+                injectedJavaScriptBeforeContentLoaded={`(function(){if(window.__talkzyPickerInstalled)return;window.__talkzyPickerInstalled=true;function pick(e){var n=e.target;var a=n&&n.closest?n.closest('a[href]'):null;var h=(a&&a.href)||'';var id=(n&&n.closest&&n.closest('[data-video-id]')&&n.closest('[data-video-id]').getAttribute('data-video-id'))||'';var m=h.match(/[?&]v=([A-Za-z0-9_-]{11})/)||h.match(/youtu\\.be\\/([A-Za-z0-9_-]{11})/)||h.match(/\\/shorts\\/([A-Za-z0-9_-]{11})/)||h.match(/\\/embed\\/([A-Za-z0-9_-]{11})/);id=(m&&m[1])||id;if(id&&/^[A-Za-z0-9_-]{11}$/.test(id)){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();if(window.ReactNativeWebView)window.ReactNativeWebView.postMessage('talkzy-select:'+id);}}document.addEventListener('click',pick,true);})();true;`}
                 onMessage={(event) => {
                   const message = String(event.nativeEvent.data || '');
                   if (message.startsWith('talkzy-select:')) {
@@ -3185,14 +3183,14 @@ function renderRoomInterior() {
                 }}
                 style={{ flex: 1 }} />
             </View>
-            {youtubePickedItem && (
-              <View style={{ paddingHorizontal: 12, paddingBottom: 12, paddingTop: 4, backgroundColor: '#17213A' }}>
-                <Text numberOfLines={2} style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 12, marginBottom: 8 }}>Selected: {youtubePickedItem.title || 'YouTube item'}</Text>
-                <TouchableOpacity disabled={youtubeSaving} onPress={() => addYoutubeItem(youtubePickedItem)} style={{ backgroundColor: '#6B54C7', borderColor: '#B9A8FF', borderWidth: 1, borderRadius: 12, paddingVertical: 12, alignItems: 'center', opacity: youtubeSaving ? 0.6 : 1 }}>
-                  <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '900' }}>＋ ADD {youtubeBrowseTab === 'Music' ? 'SONG' : 'VIDEO'}</Text>
-                </TouchableOpacity>
-              </View>
-            )}
+            <View style={{ paddingHorizontal: 12, paddingBottom: 14, paddingTop: 8, backgroundColor: '#17213A', borderTopWidth: 1, borderTopColor: '#354466' }}>
+              <Text numberOfLines={1} style={{ color: youtubePickedItem ? '#FFFFFF' : '#AAB7D4', fontWeight: '800', fontSize: 11, marginBottom: 7 }}>
+                {youtubePickedItem ? 'SELECTED: ' + (youtubePickedItem.title || 'YouTube video') : 'Select a video above to add it to the room'}
+              </Text>
+              <TouchableOpacity disabled={!youtubePickedItem || youtubeSaving} onPress={() => youtubePickedItem && addYoutubeItem(youtubePickedItem)} style={{ backgroundColor: youtubePickedItem ? '#6B54C7' : '#303A52', borderColor: youtubePickedItem ? '#B9A8FF' : '#46516A', borderWidth: 1, borderRadius: 12, paddingVertical: 13, alignItems: 'center', opacity: youtubePickedItem && !youtubeSaving ? 1 : 0.65 }}>
+                <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '900' }}>{youtubeSaving ? 'ADDING…' : '＋ ADD ' + (youtubeBrowseTab === 'Music' ? 'SONG' : 'VIDEO')}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
