@@ -2566,7 +2566,7 @@ function renderRoomInterior() {
       marginTop: 3
     }}
   >
-    Owner ID: {selectedRoom.id}
+    Room ID: {selectedRoom.id}
   </Text>
 
   <Text
