@@ -9677,19 +9677,21 @@ if (screen === 'profile' || profileIncomplete) {
       <View style={{ flex: 1, backgroundColor: screen === 'roomInterior' ? 'transparent' : C.bg }}>
         {/* Main app header hidden: branding is reserved for the login screen. */}
 
-        <ScrollView
-          style={{ flex: 1, backgroundColor: screen === 'roomInterior' ? 'transparent' : C.bg }}
-          scrollEnabled={!(screen === 'roomInterior' && (showRoomTools || showRoomGiftPanel || showMusicPanel || showRoomThemeMenu))}
-          contentContainerStyle={{
-            paddingHorizontal: screen === 'roomInterior' ? 0 : 15,
-            paddingBottom: screen === 'roomInterior' ? 0 : 25,
-            flexGrow: 1
-          }}
-          keyboardShouldPersistTaps="handled"
-          nestedScrollEnabled
-        >
-          {renderMainContent()}
-        </ScrollView>
+        {screen === 'roomInterior' ? (
+          // Room interior stays fixed: only designated inner panels may scroll.
+          <View style={{ flex: 1, minHeight: 0, backgroundColor: 'transparent' }}>
+            {renderMainContent()}
+          </View>
+        ) : (
+          <ScrollView
+            style={{ flex: 1, backgroundColor: C.bg }}
+            contentContainerStyle={{ paddingHorizontal: 15, paddingBottom: 25, flexGrow: 1 }}
+            keyboardShouldPersistTaps="handled"
+            nestedScrollEnabled
+          >
+            {renderMainContent()}
+          </ScrollView>
+        )}
       </View>
 
                  {/* FLOATING MINI ROOM */}
