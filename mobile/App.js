@@ -1248,34 +1248,42 @@ async function loadUserProfile(currentSession) {
         .maybeSingle();
 
       if (error) throw error;
+      const { data: privateProfile, error: privateProfileError } = await supabase
+        .from('talkzy_profile_private')
+        .select('date_of_birth')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (privateProfileError) throw privateProfileError;
+      const profileData = { ...(data || {}), date_of_birth: privateProfile?.date_of_birth || null };
+
       if (profileLoadRef.current?.promise !== loadPromise) {
-  return;
+        return;
       }
 
       // Check whether the profile is incomplete
       if (
         !data ||
-        !data.display_name ||
-        !data.gender ||
-        !data.date_of_birth ||
-        !data.country ||
-        !data.language ||
-        !data.bio
+        !profileData.display_name ||
+        !profileData.gender ||
+        !profileData.date_of_birth ||
+        !profileData.country ||
+        !profileData.language ||
+        !profileData.bio
       ) {
-        setProfile(data || null);
+        setProfile(data ? profileData : null);
         setScreen('profile');
         return;
       }
 
       // Load completed profile
-      setProfile(data);
-      setDisplayName(data.display_name || '');
-      setGender(data.gender || 'Male');
-      setDateOfBirth(data.date_of_birth || '');
-      setCountry(data.country || 'India');
-      setLanguage(data.language || 'English');
-      setBio(data.bio || '');
-      setAvatarUri(data.avatar_url || null);
+      setProfile(profileData);
+      setDisplayName(profileData.display_name || '');
+      setGender(profileData.gender || 'Male');
+      setDateOfBirth(profileData.date_of_birth || '');
+      setCountry(profileData.country || 'India');
+      setLanguage(profileData.language || 'English');
+      setBio(profileData.bio || '');
+      setAvatarUri(profileData.avatar_url || null);
 
       setScreen('main');
 
@@ -1697,29 +1705,33 @@ if (!gender || !country.trim() || !language.trim() || !bio.trim()) {
 
       const uploadedAvatar = await uploadAvatar(userId);
 
-      const profileData = {
+      const publicProfileData = {
   display_name: displayName.trim(),
   gender,
-  date_of_birth: dateOfBirth,
   country: country.trim(),
   language: language.trim(),
   bio: bio.trim()
 };
 
       if (uploadedAvatar) {
-        profileData.avatar_url = uploadedAvatar;
+        publicProfileData.avatar_url = uploadedAvatar;
       }
 
       const { data, error } = await supabase
   .from('talkzy_profiles')
-  .update(profileData)
+  .update(publicProfileData)
   .eq('id', userId)
   .select('*')
   .single();
 
       if (error) throw error;
+      const { error: privateProfileError } = await supabase
+        .from('talkzy_profile_private')
+        .upsert({ user_id: userId, date_of_birth: dateOfBirth }, { onConflict: 'user_id' });
+      if (privateProfileError) throw privateProfileError;
 
-      setProfile(data);
+      const completedProfile = { ...data, date_of_birth: dateOfBirth };
+      setProfile(completedProfile);
 setAvatarUri(data.avatar_url || null);
 
 setScreen('main');
