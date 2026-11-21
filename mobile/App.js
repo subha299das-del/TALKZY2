@@ -2774,9 +2774,16 @@ async function addYoutubeItem(item) {
   const count = (youtubeState.queue || []).length + (youtubeState.video_id ? 1 : 0);
   if (count >= 20) return Alert.alert('Playlist full', 'The room playlist is limited to 20 videos.');
   const meta = item?.title ? item : await getYoutubeMetadata(videoId);
-  const next = youtubeState.video_id
-    ? { ...youtubeState, queue: [...(youtubeState.queue || []), { video_id: videoId, title: String(meta.title || 'YouTube video').slice(0, 120), added_by: profile?.display_name || session?.user?.email?.split('@')[0] || 'Member' }] }
-    : { ...youtubeState, video_id: videoId, is_playing: true, current_time_seconds: 0, queue: youtubeState.queue || [] };
+  const selectedEntry = { video_id: videoId, title: String(meta.title || 'YouTube video').slice(0, 120), added_by: profile?.display_name || session?.user?.email?.split('@')[0] || 'Member' };
+  const next = {
+    ...youtubeState,
+    video_id: videoId,
+    is_playing: true,
+    current_time_seconds: 0,
+    queue: youtubeState.video_id
+      ? [ { video_id: youtubeState.video_id, title: youtubeState.current_title || 'Previously playing video', added_by: 'Room playlist' }, ...(youtubeState.queue || []) ].slice(0, 19)
+      : (youtubeState.queue || [])
+  };
   await saveYoutubeState(next);
   setYoutubeSelectedVideo(null);
   setYoutubePickedItem(null);
@@ -3649,12 +3656,15 @@ onContentSizeChange={() =>
                         setActivityEndTime('');
                         setShowCreateRoomActivity(true);
                       } else if (tool.title === 'YouTube') {
+                        const canBrowseYoutube = selectedRoom?.owner_id === session?.user?.id || roomPresence.some(person => person.user_id === session?.user?.id && person.presence_role === 'admin');
                         youtubePanelDismissedRef.current = false;
                         setShowYoutubePanel(true);
-                        setYoutubeBrowseTab('Music');
-                        setYoutubeBrowseUrl('https://www.youtube.com/results?search_query=music');
-                        setYoutubePickedItem(null);
-                        setShowYoutubePicker(true);
+                        if (canBrowseYoutube) {
+                          setYoutubeBrowseTab('Music');
+                          setYoutubeBrowseUrl('https://www.youtube.com/results?search_query=music');
+                          setYoutubePickedItem(null);
+                          setShowYoutubePicker(true);
+                        }
                         loadYoutubeState(true);
                       } else if (tool.title === 'Music') {
                         setShowMusicPanel(true);
