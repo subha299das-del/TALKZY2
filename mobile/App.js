@@ -3223,7 +3223,7 @@ function renderRoomInterior() {
                   <Text style={{ color: C.muted, fontSize: 9, marginTop: 3 }}>Added by {item.added_by || 'Member'}</Text>
                 </View>
                 {(selectedRoom?.owner_id === session?.user?.id || roomPresence.find(person => person.user_id === session?.user?.id)?.presence_role === 'admin') && (
-                  <TouchableOpacity onPress={() => saveYoutubeState({ ...youtubeState, queue: youtubeState.queue.filter((_, i) => i !== index })} style={{ padding: 5 }}><Text style={{ color: C.danger, fontSize: 11, fontWeight: '900' }}>✕</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={() => saveYoutubeState({ ...youtubeState, queue: youtubeState.queue.filter((_, i) => i !== index) })} style={{ padding: 5 }}><Text style={{ color: C.danger, fontSize: 11, fontWeight: '900' }}>✕</Text></TouchableOpacity>
                 )}
               </View>
             ))}
