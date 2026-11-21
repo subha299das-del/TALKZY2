@@ -10,7 +10,7 @@
     "icon": "./assets/talkzy-icon.png",
     "android": {
       "package": "com.talkzy.app",
-      "versionCode": 7,
+      "versionCode": 8,
       "adaptiveIcon": {
         "foregroundImage": "./assets/talkzy-icon.png",
         "backgroundColor": "#080B18"
