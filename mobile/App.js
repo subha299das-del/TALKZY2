@@ -2831,7 +2831,8 @@ function renderRoomInterior() {
         }}
         style={{
           opacity: isRoomTourist && !touristsOnMic ? 0.4 : 1,
-          width: rowSeats.length >= 5 ? '20%' : '25%',
+          width: `${100 / rowSeats.length}%`,
+          height: 86,
           alignItems: 'center',
           marginBottom: showYoutubePanel ? 8 : 24,
           paddingHorizontal: 1
@@ -2839,9 +2840,9 @@ function renderRoomInterior() {
       >
         <View
           style={{
-            width: 58,
-            height: 58,
-            borderRadius: 29,
+            width: micCount >= 17 ? 50 : micCount >= 14 ? 54 : 58,
+            height: micCount >= 17 ? 50 : micCount >= 14 ? 54 : 58,
+            borderRadius: micCount >= 17 ? 25 : micCount >= 14 ? 27 : 29,
             borderWidth: 1.5,
             borderColor: isMySeat
               ? '#FF5B5B'
@@ -2865,9 +2866,9 @@ function renderRoomInterior() {
                     : MIC_ON_ICON
                 }
                 style={{
-                  width: 55,
-                  height: 55,
-                  borderRadius: 28,
+                  width: micCount >= 17 ? 47 : micCount >= 14 ? 51 : 55,
+                  height: micCount >= 17 ? 47 : micCount >= 14 ? 51 : 55,
+                  borderRadius: micCount >= 17 ? 24 : micCount >= 14 ? 26 : 28,
                   resizeMode: 'cover'
                 }}
               />
@@ -2916,8 +2917,7 @@ function renderRoomInterior() {
         >
           {seat}
         </Text>
-        {isOccupied && (
-          <Text
+        <Text
             numberOfLines={1}
             style={{
               color: isMySeat ? C.accent : C.muted,
