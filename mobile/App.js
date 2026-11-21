@@ -719,6 +719,7 @@ const [showRoomTools, setShowRoomTools] = useState(false);
 const [showRoomThemeMenu, setShowRoomThemeMenu] = useState(false);
 const [showYoutubePanel, setShowYoutubePanel] = useState(false);
 const [showMusicPanel, setShowMusicPanel] = useState(false);
+ const [musicMinimized, setMusicMinimized] = useState(false);
 const [youtubeUrlInput, setYoutubeUrlInput] = useState('');
 const [youtubeState, setYoutubeState] = useState({ video_id: null, queue: [], is_playing: false, current_time_seconds: 0, updated_at: null });
 const [youtubeLoading, setYoutubeLoading] = useState(false);
@@ -3226,7 +3227,34 @@ onContentSizeChange={() =>
         </View>
       )}
 
-      <RoomMusicPanel visible={showMusicPanel} roomId={selectedRoom?.id} userId={session?.user?.id} api={api} supabase={supabase} colors={C} onClose={() => setShowMusicPanel(false)} />
+      <RoomMusicPanel visible={showMusicPanel} roomId={selectedRoom?.id} userId={session?.user?.id} api={api} supabase={supabase} colors={C} onClose={() => { setShowMusicPanel(false); setMusicMinimized(false); }} onMinimize={() => { setShowMusicPanel(false); setMusicMinimized(true); }} />
+      {musicMinimized && screen === 'roomInterior' && selectedRoom && !showRoomTools && !showRoomGiftPanel && !showRoomThemeMenu && !showYoutubePanel && (
+        <TouchableOpacity
+          onPress={() => { setMusicMinimized(false); setShowMusicPanel(true); }}
+          style={{
+            position: 'absolute',
+            right: 12,
+            bottom: Platform.OS === 'android' ? 94 : 70,
+            width: 54,
+            height: 54,
+            borderRadius: 27,
+            backgroundColor: C.accent,
+            borderWidth: 2,
+            borderColor: '#B9A5FF',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 38,
+            elevation: 22,
+            shadowColor: '#000',
+            shadowOpacity: 0.3,
+            shadowRadius: 7,
+            shadowOffset: { width: 0, height: 3 }
+          }}
+        >
+          <Text style={{ color: '#FFFFFF', fontSize: 24, fontWeight: '900', lineHeight: 27 }}>♫</Text>
+          <Text style={{ color: '#FFFFFF', fontSize: 7, fontWeight: '900', letterSpacing: 0.7 }}>MUSIC</Text>
+        </TouchableOpacity>
+      )}
 
      {/* ROOM BOTTOM CONTROLS */}
 <View
