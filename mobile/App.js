@@ -5687,29 +5687,80 @@ function renderEvents() {
   function renderRoom() {
     return (
       <>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 5, paddingRight: 6 }}>
-          {['Mine', 'Popular', 'Discover', 'Events'].map(item => (
-            <Chip
-              key={item}
-              title={item}
-              active={roomTab === item}
-              onPress={() => {
-  setRoomTab(item);
+        {/* ROOM SECTION NAVIGATION */}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: '#0E1529',
+            borderWidth: 1,
+            borderColor: '#273452',
+            borderRadius: 18,
+            padding: 5,
+            marginBottom: 16,
+            minHeight: 54
+          }}
+        >
+          {['Mine', 'Popular', 'Discover', 'Events'].map(item => {
+            const active = roomTab === item;
+            return (
+              <TouchableOpacity
+                key={item}
+                activeOpacity={0.82}
+                onPress={() => {
+                  setRoomTab(item);
 
-  if (item === 'Popular' || item === 'Mine') {
-    loadPublicRooms();
-    loadMyRooms();
-    if (item === 'Mine') loadFollowedRooms();
-  }
+                  if (item === 'Popular' || item === 'Mine') {
+                    loadPublicRooms();
+                    loadMyRooms();
+                    if (item === 'Mine') loadFollowedRooms();
+                  }
 
-  if (item === 'Events') {
-    loadOfficialEvents();
-  }
-}}
-            />
-          ))}
-        </ScrollView>
+                  if (item === 'Events') {
+                    loadOfficialEvents();
+                  }
+                }}
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  minHeight: 42,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingHorizontal: 2,
+                  paddingVertical: 9,
+                  borderRadius: 13,
+                  backgroundColor: active ? 'rgba(147,102,255,0.22)' : 'transparent',
+                  borderWidth: 1,
+                  borderColor: active ? 'rgba(160,126,255,0.48)' : 'transparent'
+                }}
+              >
+                <Text
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  style={{
+                    color: active ? '#F2ECFF' : '#9CA9C9',
+                    fontSize: 11,
+                    fontWeight: active ? '900' : '700',
+                    letterSpacing: 0.1
+                  }}
+                >
+                  {item}
+                </Text>
+                {active && (
+                  <View
+                    style={{
+                      width: 16,
+                      height: 3,
+                      borderRadius: 3,
+                      backgroundColor: '#43DCC5',
+                      marginTop: 5
+                    }}
+                  />
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
         {roomTab === 'Mine' && renderMine()}
         {roomTab === 'Popular' && renderPopular()}
