@@ -1020,6 +1020,10 @@ const [showMusicPanel, setShowMusicPanel] = useState(false);
  const [musicMinimized, setMusicMinimized] = useState(false);
 const [youtubeUrlInput, setYoutubeUrlInput] = useState('');
 const [youtubeSearchQuery, setYoutubeSearchQuery] = useState('');
+const [youtubeBrowseTab, setYoutubeBrowseTab] = useState('All');
+const [youtubeBrowseUrl, setYoutubeBrowseUrl] = useState('https://www.youtube.com/results?search_query=');
+const [youtubeSelectedVideo, setYoutubeSelectedVideo] = useState(null);
+const youtubeBrowseWebViewRef = useRef(null);
 const [youtubeState, setYoutubeState] = useState({ video_id: null, queue: [], is_playing: false, current_time_seconds: 0, updated_at: null });
 const [youtubeLoading, setYoutubeLoading] = useState(false);
 const [youtubeSaving, setYoutubeSaving] = useState(false);
@@ -2744,17 +2748,37 @@ async function saveYoutubeState(nextState) {
   }
 }
 
+async function getYoutubeMetadata(videoId) {
+  try {
+    const response = await fetch('https://www.youtube.com/oembed?url=' + encodeURIComponent('https://www.youtube.com/watch?v=' + videoId) + '&format=json');
+    if (!response.ok) throw new Error('Metadata unavailable');
+    const info = await response.json();
+    return { video_id: videoId, title: String(info.title || 'YouTube video').slice(0, 120), author_name: info.author_name || '', thumbnail_url: info.thumbnail_url || ('https://img.youtube.com/vi/' + videoId + '/hqdefault.jpg') };
+  } catch {
+    return { video_id: videoId, title: 'YouTube video', author_name: '', thumbnail_url: 'https://img.youtube.com/vi/' + videoId + '/hqdefault.jpg' };
+  }
+}
+
+async function addYoutubeItem(item) {
+  const videoId = extractYouTubeVideoId(item?.video_id || item?.url);
+  if (!videoId) return Alert.alert('Invalid YouTube link', 'Choose a valid YouTube video.');
+  const count = (youtubeState.queue || []).length + (youtubeState.video_id ? 1 : 0);
+  if (count >= 20) return Alert.alert('Playlist full', 'The room playlist is limited to 20 videos.');
+  const meta = item?.title ? item : await getYoutubeMetadata(videoId);
+  const next = youtubeState.video_id
+    ? { ...youtubeState, queue: [...(youtubeState.queue || []), { video_id: videoId, title: String(meta.title || 'YouTube video').slice(0, 120) }] }
+    : { ...youtubeState, video_id: videoId, is_playing: true, current_time_seconds: 0, queue: youtubeState.queue || [] };
+  await saveYoutubeState(next);
+  setYoutubeSelectedVideo(null);
+  setYoutubeUrlInput('');
+  Alert.alert('Added to playlist', meta.title || 'Video added');
+}
+
 async function addYoutubeVideo() {
   const videoId = extractYouTubeVideoId(youtubeUrlInput);
   if (!videoId) return Alert.alert('Invalid YouTube link', 'Paste a valid YouTube video URL or 11-character video ID.');
-  if ((youtubeState.queue || []).length + (youtubeState.video_id ? 1 : 0) >= 20) {
-    return Alert.alert('Queue full', 'The room playlist can contain up to 20 videos.');
-  }
-  const next = youtubeState.video_id
-    ? { ...youtubeState, queue: [...(youtubeState.queue || []), { video_id: videoId, title: 'YouTube video' }] }
-    : { ...youtubeState, video_id: videoId, is_playing: true, current_time_seconds: 0 };
-  setYoutubeUrlInput('');
-  await saveYoutubeState(next);
+  const meta = await getYoutubeMetadata(videoId);
+  await addYoutubeItem(meta);
 }
 
 async function advanceYoutubeQueue() {
@@ -3049,16 +3073,23 @@ function renderRoomInterior() {
             </View>
 
       {showYoutubePanel && (
-        <View style={{ marginHorizontal: 12, marginTop: 10, padding: 10, borderRadius: 14, backgroundColor: C.card, borderWidth: 1, borderColor: C.line }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-            <Text style={{ color: C.text, fontWeight: '900', fontSize: 13, flex: 1 }}>▶ YouTube Room Player</Text>
+        <View style={{ marginHorizontal: 10, marginTop: 10, padding: 11, borderRadius: 18, backgroundColor: '#101729', borderWidth: 1, borderColor: '#33415F' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+            <View style={{ width: 34, height: 34, borderRadius: 11, backgroundColor: '#FF2638', alignItems: 'center', justifyContent: 'center', marginRight: 9 }}>
+              <Text style={{ color: 'white', fontSize: 15, fontWeight: '900' }}>▶</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: C.text, fontSize: 15, fontWeight: '900' }}>YouTube Room</Text>
+              <Text style={{ color: C.muted, fontSize: 10, marginTop: 2 }}>Watch together · synced playback</Text>
+            </View>
             {youtubeLoading && <ActivityIndicator color={C.accent} size="small" />}
-            <TouchableOpacity onPress={() => { youtubePanelDismissedRef.current = true; setShowYoutubePanel(false); }} style={{ paddingHorizontal: 8, paddingVertical: 3 }}>
-              <Text style={{ color: C.muted, fontSize: 18 }}>⌄</Text>
+            <TouchableOpacity onPress={() => { youtubePanelDismissedRef.current = true; setShowYoutubePanel(false); }} style={{ paddingHorizontal: 9, paddingVertical: 6 }}>
+              <Text style={{ color: C.muted, fontSize: 18, fontWeight: '900' }}>⌄</Text>
             </TouchableOpacity>
           </View>
+
           {youtubeState.video_id ? (
-            <View style={{ height: 176, backgroundColor: '#000', borderRadius: 10, overflow: 'hidden' }}>
+            <View style={{ height: 190, backgroundColor: '#000', borderRadius: 12, overflow: 'hidden' }}>
               <WebView
                 ref={youtubeWebViewRef}
                 source={{ html: YOUTUBE_PLAYER_HTML }}
@@ -3075,19 +3106,15 @@ function renderRoomInterior() {
                       `window.talkzyLoad && window.talkzyLoad('${youtubeState.video_id}', ${Number(youtubeState.current_time_seconds || 0)}, ${youtubeState.is_playing ? 'true' : 'false'});window.talkzySetVolume && window.talkzySetVolume(${youtubeVolume});` + 'true;'
                     );
                   } else if (message.startsWith('time:')) {
-                    const isController = selectedRoom?.owner_id === session?.user?.id ||
-                      roomPresence.find(person => person.user_id === session?.user?.id)?.presence_role === 'admin';
+                    const isController = selectedRoom?.owner_id === session?.user?.id || roomPresence.find(person => person.user_id === session?.user?.id)?.presence_role === 'admin';
                     const now = Date.now();
                     if (isController && now - youtubeLastPositionWriteRef.current > 9000) {
                       youtubeLastPositionWriteRef.current = now;
                       const seconds = Number(message.slice(5));
-                      if (Number.isFinite(seconds)) {
-                        saveYoutubeState({ ...youtubeState, current_time_seconds: seconds });
-                      }
+                      if (Number.isFinite(seconds)) saveYoutubeState({ ...youtubeState, current_time_seconds: seconds });
                     }
                   } else if (message === 'ended') {
-                    const isController = selectedRoom?.owner_id === session?.user?.id ||
-                      roomPresence.find(person => person.user_id === session?.user?.id)?.presence_role === 'admin';
+                    const isController = selectedRoom?.owner_id === session?.user?.id || roomPresence.find(person => person.user_id === session?.user?.id)?.presence_role === 'admin';
                     if (isController) advanceYoutubeQueue();
                   }
                 }}
@@ -3095,94 +3122,114 @@ function renderRoomInterior() {
               />
             </View>
           ) : (
-            <View style={{ height: 88, borderRadius: 10, backgroundColor: '#05070C', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: C.muted, fontSize: 12 }}>No video is playing. Owner or admin can add one.</Text>
+            <View style={{ minHeight: 112, borderRadius: 12, backgroundColor: '#080D18', alignItems: 'center', justifyContent: 'center', padding: 15, borderWidth: 1, borderColor: '#25314B' }}>
+              <Text style={{ color: '#E5EAF7', fontSize: 13, fontWeight: '800' }}>Nothing playing yet</Text>
+              <Text style={{ color: C.muted, fontSize: 11, textAlign: 'center', marginTop: 4 }}>The owner or room admin can choose a video or song.</Text>
             </View>
           )}
-          {(selectedRoom?.owner_id === session?.user?.id || roomPresence.find(person => person.user_id === session?.user?.id)?.presence_role === 'admin') && (
-            <>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 9 }}>
-                <TextInput
-                  value={youtubeSearchQuery}
-                  onChangeText={setYoutubeSearchQuery}
-                  placeholder="Search YouTube videos or music"
-                  placeholderTextColor={C.muted}
-                  returnKeyType="search"
-                  onSubmitEditing={async () => {
-                    const query = youtubeSearchQuery.trim();
-                    if (!query) return;
-                    try {
-                      await WebBrowser.openBrowserAsync('https://www.youtube.com/results?search_query=' + encodeURIComponent(query));
-                    } catch (error) {
-                      Alert.alert('YouTube Search', error.message || 'Could not open YouTube search.');
-                    }
-                  }}
-                  style={{ flex: 1, color: C.text, backgroundColor: C.bg, borderRadius: 9, borderWidth: 1, borderColor: C.line, paddingHorizontal: 10, paddingVertical: 9, fontSize: 12 }}
-                />
-                <TouchableOpacity
-                  onPress={async () => {
-                    const query = youtubeSearchQuery.trim();
-                    if (!query) return Alert.alert('Search YouTube', 'Enter a song, artist or video name first.');
-                    try {
-                      await WebBrowser.openBrowserAsync('https://www.youtube.com/results?search_query=' + encodeURIComponent(query));
-                    } catch (error) {
-                      Alert.alert('YouTube Search', error.message || 'Could not open YouTube search.');
-                    }
-                  }}
-                  style={{ marginLeft: 7, backgroundColor: C.panel2, borderRadius: 9, paddingHorizontal: 12, paddingVertical: 11, borderWidth: 1, borderColor: C.line }}
-                ><Text style={{ color: C.teal, fontWeight: '900', fontSize: 12 }}>Search</Text></TouchableOpacity>
-              </View>
-              <Text style={{ color: C.muted, fontSize: 9, marginTop: 4 }}>Search opens YouTube. Copy a result link and paste it below to add it to the room playlist.</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 9 }}>
-                <TextInput value={youtubeUrlInput} onChangeText={setYoutubeUrlInput} placeholder="Paste YouTube link or video ID" placeholderTextColor={C.muted} autoCapitalize="none" style={{ flex: 1, color: C.text, backgroundColor: C.bg, borderRadius: 9, borderWidth: 1, borderColor: C.line, paddingHorizontal: 10, paddingVertical: 9, fontSize: 12 }} />
-                <TouchableOpacity onPress={addYoutubeVideo} disabled={youtubeSaving} style={{ marginLeft: 7, backgroundColor: C.accent, borderRadius: 9, paddingHorizontal: 13, paddingVertical: 11 }}>
-                  <Text style={{ color: '#FFF', fontWeight: '900', fontSize: 12 }}>Add</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', marginTop: 9 }}>
-                <TouchableOpacity onPress={() => saveYoutubeState({ ...youtubeState, is_playing: !youtubeState.is_playing })}><Text style={{ color: C.text, fontWeight: '900' }}>{youtubeState.is_playing ? 'Ⅱ Pause' : '▶ Play'}</Text></TouchableOpacity>
-                <TouchableOpacity onPress={advanceYoutubeQueue}><Text style={{ color: C.text, fontWeight: '900' }}>Next ⏭</Text></TouchableOpacity>
-                <TouchableOpacity onPress={() => saveYoutubeState({ ...youtubeState, video_id: null, is_playing: false, current_time_seconds: 0 })}><Text style={{ color: C.danger, fontWeight: '900' }}>Stop</Text></TouchableOpacity>
-              </View>
-              <Text style={{ color: C.muted, fontSize: 10, marginTop: 7 }}>Playlist: {(youtubeState.queue?.length || 0) + (youtubeState.video_id ? 1 : 0)}/20 videos</Text>
-              {(youtubeState.queue || []).map((item, index) => (
-                <View key={item.video_id + index} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 5 }}>
-                  <Text style={{ color: C.muted, fontSize: 11, flex: 1 }}>{index + 1}. {item.title || 'YouTube video'}</Text>
-                  <TouchableOpacity onPress={() => saveYoutubeState({ ...youtubeState, queue: youtubeState.queue.filter((_, i) => i !== index) })}><Text style={{ color: C.danger, fontSize: 11 }}>Remove</Text></TouchableOpacity>
-                </View>
-              ))}
-            </>
-          )}
-          {/* Personal volume: local to this device; never saved to shared room state. */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.line }}>
-            <Text style={{ color: C.muted, fontSize: 11, fontWeight: '800', marginRight: 10 }}>MY VOLUME</Text>
-            <TouchableOpacity
-              onPress={() => {
-                const next = Math.max(0, youtubeVolume - 10);
-                setYoutubeVolume(next);
-                youtubeWebViewRef.current?.injectJavaScript(`window.talkzySetVolume && window.talkzySetVolume(${next});true;`);
-              }}
-              style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: 9, backgroundColor: C.panel2 }}
-            ><Text style={{ color: C.text, fontSize: 17, fontWeight: '900' }}>－</Text></TouchableOpacity>
-            <Text style={{ color: C.teal, width: 48, textAlign: 'center', fontSize: 12, fontWeight: '900' }}>{youtubeVolume}%</Text>
-            <TouchableOpacity
-              onPress={() => {
-                const next = Math.min(100, youtubeVolume + 10);
-                setYoutubeVolume(next);
-                youtubeWebViewRef.current?.injectJavaScript(`window.talkzySetVolume && window.talkzySetVolume(${next});true;`);
-              }}
-              style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: 9, backgroundColor: C.panel2 }}
-            ><Text style={{ color: C.text, fontSize: 17, fontWeight: '900' }}>＋</Text></TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => {
-                const next = youtubeVolume === 0 ? 70 : 0;
-                setYoutubeVolume(next);
-                youtubeWebViewRef.current?.injectJavaScript(`window.talkzySetVolume && window.talkzySetVolume(${next});true;`);
-              }}
-              style={{ marginLeft: 8, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 9, backgroundColor: C.panel2 }}
-            ><Text style={{ color: C.text, fontSize: 11, fontWeight: '900' }}>{youtubeVolume === 0 ? 'UNMUTE' : 'MUTE'}</Text></TouchableOpacity>
+
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 9, backgroundColor: '#080D18', borderRadius: 11, padding: 8, borderWidth: 1, borderColor: '#26324B' }}>
+            <Text style={{ color: C.muted, fontSize: 10, fontWeight: '900', marginRight: 8 }}>MY VOLUME</Text>
+            <TouchableOpacity onPress={() => { const n = Math.max(0, youtubeVolume - 10); setYoutubeVolume(n); youtubeWebViewRef.current?.injectJavaScript(`window.talkzySetVolume && window.talkzySetVolume(${n});true;`); }} style={{ paddingHorizontal: 11, paddingVertical: 4, borderRadius: 8, backgroundColor: C.panel2 }}><Text style={{ color: C.text, fontWeight: '900' }}>－</Text></TouchableOpacity>
+            <Text style={{ color: C.teal, flex: 1, textAlign: 'center', fontWeight: '900', fontSize: 12 }}>{youtubeVolume}%</Text>
+            <TouchableOpacity onPress={() => { const n = Math.min(100, youtubeVolume + 10); setYoutubeVolume(n); youtubeWebViewRef.current?.injectJavaScript(`window.talkzySetVolume && window.talkzySetVolume(${n});true;`); }} style={{ paddingHorizontal: 11, paddingVertical: 4, borderRadius: 8, backgroundColor: C.panel2 }}><Text style={{ color: C.text, fontWeight: '900' }}>＋</Text></TouchableOpacity>
+            <TouchableOpacity onPress={() => { const n = youtubeVolume === 0 ? 70 : 0; setYoutubeVolume(n); youtubeWebViewRef.current?.injectJavaScript(`window.talkzySetVolume && window.talkzySetVolume(${n});true;`); }} style={{ marginLeft: 7, paddingHorizontal: 9, paddingVertical: 6, borderRadius: 8, backgroundColor: C.panel2 }}><Text style={{ color: C.text, fontSize: 10, fontWeight: '900' }}>{youtubeVolume === 0 ? 'UNMUTE' : 'MUTE'}</Text></TouchableOpacity>
           </View>
-          <Text style={{ color: C.muted, fontSize: 9, textAlign: 'center', marginTop: 5 }}>Only changes what you hear on this device.</Text>
+
+          {(selectedRoom?.owner_id === session?.user?.id || roomPresence.find(person => person.user_id === session?.user?.id)?.presence_role === 'admin') && (
+            <View style={{ marginTop: 11 }}>
+              <View style={{ flexDirection: 'row', backgroundColor: '#080D18', borderRadius: 11, padding: 4, borderWidth: 1, borderColor: '#293650' }}>
+                {['All', 'Music', 'Trending'].map(tab => (
+                  <TouchableOpacity key={tab} onPress={() => {
+                    setYoutubeBrowseTab(tab);
+                    const query = youtubeSearchQuery.trim();
+                    const url = tab === 'Trending'
+                      ? 'https://www.youtube.com/feed/trending'
+                      : 'https://www.youtube.com/results?search_query=' + encodeURIComponent(query) + (tab === 'Music' ? '&sp=EgIQAQ%3D%3D' : '');
+                    setYoutubeBrowseUrl(url);
+                  }} style={{ flex: 1, paddingVertical: 9, borderRadius: 8, backgroundColor: youtubeBrowseTab === tab ? '#39275C' : 'transparent', alignItems: 'center' }}>
+                    <Text style={{ color: youtubeBrowseTab === tab ? '#DCCAFF' : C.muted, fontSize: 11, fontWeight: '900' }}>{tab === 'Trending' ? '🔥 ' : ''}{tab}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <View style={{ flexDirection: 'row', marginTop: 8 }}>
+                <TextInput value={youtubeSearchQuery} onChangeText={setYoutubeSearchQuery} placeholder="Search songs, artists or videos" placeholderTextColor={C.muted} returnKeyType="search" autoCapitalize="none" onSubmitEditing={() => { setYoutubeBrowseTab('All'); setYoutubeBrowseUrl('https://www.youtube.com/results?search_query=' + encodeURIComponent(youtubeSearchQuery.trim())); }} style={{ flex: 1, color: C.text, backgroundColor: '#080D18', borderRadius: 10, borderWidth: 1, borderColor: '#293650', paddingHorizontal: 11, paddingVertical: 10, fontSize: 12 }} />
+                <TouchableOpacity onPress={() => { setYoutubeBrowseTab('All'); setYoutubeBrowseUrl('https://www.youtube.com/results?search_query=' + encodeURIComponent(youtubeSearchQuery.trim())); }} style={{ marginLeft: 7, backgroundColor: C.accent, borderRadius: 10, paddingHorizontal: 14, justifyContent: 'center' }}><Text style={{ color: '#FFF', fontWeight: '900' }}>Search</Text></TouchableOpacity>
+              </View>
+              <Text style={{ color: C.muted, fontSize: 9, marginTop: 5 }}>Tap a video result to preview it, then add it to the shared playlist.</Text>
+              <View style={{ height: 250, marginTop: 7, borderRadius: 11, overflow: 'hidden', backgroundColor: '#080D18', borderWidth: 1, borderColor: '#26324B' }}>
+                <WebView
+                  ref={youtubeBrowseWebViewRef}
+                  source={{ uri: youtubeBrowseUrl }}
+                  javaScriptEnabled
+                  domStorageEnabled
+                  allowsInlineMediaPlayback
+                  onShouldStartLoadWithRequest={(request) => {
+                    const url = String(request.url || '');
+                    const id = extractYouTubeVideoId(url);
+                    if (id && (/youtube\.com\/watch|youtu\.be\//i.test(url) || /youtube\.com\/shorts\//i.test(url))) {
+                      getYoutubeMetadata(id).then(meta => setYoutubeSelectedVideo(meta));
+                      return false;
+                    }
+                    return true;
+                  }}
+                />
+              </View>
+              {youtubeSelectedVideo && (
+                <View style={{ flexDirection: 'row', marginTop: 9, padding: 9, backgroundColor: '#171F32', borderRadius: 11, borderWidth: 1, borderColor: '#4A3A70' }}>
+                  <Image source={{ uri: youtubeSelectedVideo.thumbnail_url || ('https://img.youtube.com/vi/' + youtubeSelectedVideo.video_id + '/hqdefault.jpg') }} style={{ width: 96, height: 62, borderRadius: 7, backgroundColor: '#000' }} />
+                  <View style={{ flex: 1, marginLeft: 9, justifyContent: 'center' }}>
+                    <Text numberOfLines={2} style={{ color: C.text, fontSize: 11, fontWeight: '800' }}>{youtubeSelectedVideo.title}</Text>
+                    <Text numberOfLines={1} style={{ color: C.muted, fontSize: 9, marginTop: 3 }}>{youtubeSelectedVideo.author_name || 'YouTube creator'}</Text>
+                    <TouchableOpacity disabled={youtubeSaving} onPress={() => addYoutubeItem(youtubeSelectedVideo)} style={{ alignSelf: 'flex-start', marginTop: 6, backgroundColor: C.accent, borderRadius: 7, paddingHorizontal: 10, paddingVertical: 5 }}><Text style={{ color: '#FFF', fontSize: 9, fontWeight: '900' }}>＋ ADD TO PLAYLIST</Text></TouchableOpacity>
+                  </View>
+                </View>
+              )}
+              <View style={{ flexDirection: 'row', marginTop: 9 }}>
+                <TextInput value={youtubeUrlInput} onChangeText={setYoutubeUrlInput} placeholder="Paste YouTube video link" placeholderTextColor={C.muted} autoCapitalize="none" style={{ flex: 1, color: C.text, backgroundColor: '#080D18', borderRadius: 9, borderWidth: 1, borderColor: '#293650', paddingHorizontal: 10, paddingVertical: 9, fontSize: 11 }} />
+                <TouchableOpacity onPress={addYoutubeVideo} disabled={youtubeSaving} style={{ marginLeft: 7, backgroundColor: C.panel2, borderRadius: 9, paddingHorizontal: 12, justifyContent: 'center', borderWidth: 1, borderColor: C.line }}><Text style={{ color: C.teal, fontWeight: '900', fontSize: 11 }}>ADD</Text></TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          <View style={{ marginTop: 11, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.line }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
+              <Text style={{ color: C.text, fontWeight: '900', fontSize: 12 }}>SHARED PLAYLIST</Text>
+              <Text style={{ color: C.teal, fontWeight: '900', fontSize: 11 }}>{(youtubeState.queue?.length || 0) + (youtubeState.video_id ? 1 : 0)}/20</Text>
+            </View>
+            {youtubeState.video_id && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', padding: 8, backgroundColor: '#172137', borderRadius: 10, marginBottom: 7 }}>
+                <Image source={{ uri: 'https://img.youtube.com/vi/' + youtubeState.video_id + '/hqdefault.jpg' }} style={{ width: 86, height: 56, borderRadius: 7, backgroundColor: '#000' }} />
+                <View style={{ flex: 1, marginLeft: 8 }}>
+                  <Text style={{ color: C.teal, fontSize: 9, fontWeight: '900' }}>NOW PLAYING</Text>
+                  <Text numberOfLines={2} style={{ color: C.text, fontSize: 10, fontWeight: '800', marginTop: 3 }}>Video · {youtubeState.video_id}</Text>
+                </View>
+                {(selectedRoom?.owner_id === session?.user?.id || roomPresence.find(person => person.user_id === session?.user?.id)?.presence_role === 'admin') && (
+                  <TouchableOpacity onPress={() => saveYoutubeState({ ...youtubeState, video_id: null, is_playing: false, current_time_seconds: 0 })} style={{ padding: 5 }}><Text style={{ color: C.danger, fontWeight: '900' }}>✕</Text></TouchableOpacity>
+                )}
+              </View>
+            )}
+            {(youtubeState.queue || []).map((item, index) => (
+              <View key={item.video_id + index} style={{ flexDirection: 'row', alignItems: 'center', padding: 8, backgroundColor: '#111A2B', borderRadius: 10, marginBottom: 6 }}>
+                <Image source={{ uri: 'https://img.youtube.com/vi/' + item.video_id + '/hqdefault.jpg' }} style={{ width: 86, height: 56, borderRadius: 7, backgroundColor: '#000' }} />
+                <View style={{ flex: 1, marginLeft: 8 }}>
+                  <Text numberOfLines={2} style={{ color: C.text, fontSize: 10, fontWeight: '800' }}>{item.title || 'YouTube video'}</Text>
+                  <Text style={{ color: C.muted, fontSize: 9, marginTop: 3 }}>Added to queue · {index + 1}</Text>
+                </View>
+                {(selectedRoom?.owner_id === session?.user?.id || roomPresence.find(person => person.user_id === session?.user?.id)?.presence_role === 'admin') && (
+                  <TouchableOpacity onPress={() => saveYoutubeState({ ...youtubeState, queue: youtubeState.queue.filter((_, i) => i !== index })} style={{ padding: 5 }}><Text style={{ color: C.danger, fontSize: 11, fontWeight: '900' }}>✕</Text></TouchableOpacity>
+                )}
+              </View>
+            ))}
+            {!youtubeState.video_id && !(youtubeState.queue || []).length && <Text style={{ color: C.muted, fontSize: 11, textAlign: 'center', paddingVertical: 13 }}>Playlist is empty.</Text>}
+            {(selectedRoom?.owner_id === session?.user?.id || roomPresence.find(person => person.user_id === session?.user?.id)?.presence_role === 'admin') && (
+              <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 9, borderTopWidth: 1, borderTopColor: C.line, marginTop: 3 }}>
+                <TouchableOpacity onPress={() => saveYoutubeState({ ...youtubeState, is_playing: !youtubeState.is_playing })}><Text style={{ color: C.text, fontWeight: '900' }}>{youtubeState.is_playing ? 'Ⅱ PAUSE' : '▶ PLAY'}</Text></TouchableOpacity>
+                <TouchableOpacity onPress={advanceYoutubeQueue}><Text style={{ color: C.text, fontWeight: '900' }}>NEXT ⏭</Text></TouchableOpacity>
+                <TouchableOpacity onPress={() => saveYoutubeState({ ...youtubeState, video_id: null, is_playing: false, current_time_seconds: 0 })}><Text style={{ color: C.danger, fontWeight: '900' }}>STOP</Text></TouchableOpacity>
+              </View>
+            )}
+          </View>
         </View>
       )}
 
