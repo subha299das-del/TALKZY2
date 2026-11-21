@@ -501,6 +501,7 @@ const [roomDpUploading, setRoomDpUploading] = useState(false);
  const [isOnMic, setIsOnMic] = useState(false);
  const [myMicSeat, setMyMicSeat] = useState(null);
  const [isMicMuted, setIsMicMuted] = useState(false);
+ const [micGame, setMicGame] = useState(null);
  const [micCount, setMicCount] = useState(8);
 const [micSeats, setMicSeats] = useState([]);
 const [roomPresence, setRoomPresence] = useState([]);
@@ -2439,6 +2440,59 @@ async function advanceYoutubeQueue() {
   });
 }
 
+useEffect(() => {
+  if (!micGame || micGame.phase !== 'spinning') return;
+  const roomId = micGame.roomId;
+  const gameKind = micGame.kind;
+  const spinInterval = setInterval(() => {
+    setMicGame(current => {
+      if (!current || current.phase !== 'spinning' || current.roomId !== roomId) return current;
+      return {
+        ...current,
+        value: gameKind === 'Lucky Number'
+          ? String(Math.floor(Math.random() * 1000)).padStart(3, '0')
+          : String(1 + Math.floor(Math.random() * 6))
+      };
+    });
+  }, 85);
+
+  const finishTimer = setTimeout(() => {
+    clearInterval(spinInterval);
+    const finalValue = gameKind === 'Lucky Number'
+      ? String(Math.floor(Math.random() * 1000)).padStart(3, '0')
+      : String(1 + Math.floor(Math.random() * 6));
+    setMicGame(current => current && current.roomId === roomId
+      ? { ...current, phase: 'result', value: finalValue }
+      : current);
+
+    (async () => {
+      try {
+        const chatText = gameKind === 'Lucky Number'
+          ? `🍀 Lucky Number: ${finalValue}`
+          : `🎲 Dice: ${finalValue}`;
+        await api(`/api/rooms/${roomId}/messages`, {
+          method: 'POST',
+          body: JSON.stringify({ type: 'text', text: chatText })
+        });
+        await loadRoomMessages(roomId);
+      } catch (error) {
+        Alert.alert('Game result', 'The result appeared on your mic, but could not be posted in chat.');
+      }
+    })();
+  }, 2300);
+
+  return () => {
+    clearInterval(spinInterval);
+    clearTimeout(finishTimer);
+  };
+}, [micGame?.roomId, micGame?.kind, micGame?.phase]);
+
+useEffect(() => {
+  if (!micGame || micGame.phase !== 'result') return;
+  const clearTimer = setTimeout(() => setMicGame(null), 4500);
+  return () => clearTimeout(clearTimer);
+}, [micGame?.phase, micGame?.roomId]);
+
 async function sendRoomChatMessage() {
   const message = roomChatText.trim();
   if (!message || !selectedRoom?.id) return;
@@ -2867,6 +2921,27 @@ function renderRoomInterior() {
                 }}
               />
 
+              {micGame?.roomId === selectedRoom?.id && micGame?.seat === seat && (
+                <View style={{
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  bottom: 0,
+                  backgroundColor: 'rgba(10,12,20,0.88)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: micCount >= 17 ? 25 : micCount >= 14 ? 27 : 29
+                }}>
+                  <Text style={{ color: '#FFFFFF', fontSize: micGame.kind === 'Lucky Number' ? 15 : 22, fontWeight: '900' }}>
+                    {micGame.value}
+                  </Text>
+                  <Text style={{ color: '#FFD66B', fontSize: 7, fontWeight: '900', marginTop: 1 }}>
+                    {micGame.phase === 'spinning' ? 'SPINNING' : micGame.kind === 'Lucky Number' ? 'LUCKY' : 'DICE'}
+                  </Text>
+                </View>
+              )}
+
               {occupiedSeat.is_muted && (
                 <View
                   style={{
@@ -3092,6 +3167,20 @@ onContentSizeChange={() =>
                         setShowMusicPanel(true);
                       } else if (tool.title === 'Theme') {
                         setShowRoomThemeMenu(true);
+                      } else if (tool.title === 'Lucky Number' || tool.title === 'Dice') {
+                        if (!isOnMic || myMicSeat == null) {
+                          Alert.alert('Sit on a mic first!', 'Please sit on a microphone before playing.');
+                        } else if (isRoomTourist && !touristsSendText) {
+                          Alert.alert('Game unavailable', 'The room owner does not allow tourists to send text messages.');
+                        } else {
+                          setMicGame({
+                            roomId: selectedRoom.id,
+                            seat: myMicSeat,
+                            kind: tool.title,
+                            phase: 'spinning',
+                            value: tool.title === 'Lucky Number' ? '000' : '1'
+                          });
+                        }
                       } else {
                         Alert.alert(tool.title, `${tool.title} will be available here soon.`);
                       }
