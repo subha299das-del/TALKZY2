@@ -6791,64 +6791,31 @@ function renderEvents() {
         style={{
           flexDirection: 'row',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-end',
           paddingVertical: 10,
           marginBottom: 12
         }}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Image
-            source={require('./assets/talkzy-icon.png')}
-            style={{
-              width: 38,
-              height: 38,
-              resizeMode: 'contain'
-            }}
-          />
-
-          <View style={{ marginLeft: 9, justifyContent: 'center' }}>
-            <Text style={{
-              color: C.text, fontSize: 21, fontWeight: '900',
-              letterSpacing: 3
-            }}>TALKZY</Text>
-            <Text style={{
-              color: C.teal, fontSize: 8, fontWeight: '900',
-              letterSpacing: 1.55, marginTop: 1
-            }}>VOICE • ROOMS • COMMUNITY</Text>
-          </View>
-        </View>
-
         <TouchableOpacity
           onPress={() => setActiveTab('Me')}
           style={{
-            flexDirection: 'row',
             alignItems: 'center',
-            backgroundColor: '#151D35', padding: 7, borderRadius: 25,
-          borderWidth: 1, borderColor: '#303D60'
+            justifyContent: 'center',
+            backgroundColor: '#151D35',
+            padding: 7,
+            borderRadius: 25,
+            borderWidth: 1,
+            borderColor: '#303D60'
           }}
         >
           {profile?.avatar_url ? (
             <Image
               source={{ uri: profile.avatar_url }}
-              style={{
-                width: 30,
-                height: 30,
-                borderRadius: 15
-              }}
+              style={{ width: 30, height: 30, borderRadius: 15 }}
             />
           ) : (
             <Text style={{ fontSize: 23 }}>👤</Text>
           )}
-
-          <Text
-            style={{
-              color: C.text,
-              fontWeight: '800',
-              marginHorizontal: 8
-            }}
-          >
-            {profile?.display_name || 'My Account'}
-          </Text>
         </TouchableOpacity>
       </View>
     );
