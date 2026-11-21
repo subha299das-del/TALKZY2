@@ -117,7 +117,13 @@ async function api(path, options = {}) {
 
 
 
-function seatShortName(value) {\n  const name = String(value || 'User').trim();\n  if (!name || name.toLowerCase() === 'you') return 'YO...';\n  return name.slice(0, 2).toUpperCase() + '...';\n}\n\nfunction WorldLuckyBagTicker({ notification, onPress }) {
+function seatShortName(value) {
+  const name = String(value || 'User').trim();
+  if (!name || name.toLowerCase() === 'you') return 'YO...';
+  return name.slice(0, 2).toUpperCase() + '...';
+}
+
+function WorldLuckyBagTicker({ notification, onPress }) {
   const translateX = useRef(new Animated.Value(Dimensions.get('window').width)).current;
 
   useEffect(() => {
