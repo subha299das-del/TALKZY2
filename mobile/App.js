@@ -3218,7 +3218,7 @@ function renderRoomInterior() {
                 onShouldStartLoadWithRequest={(request) => {
                   const url = String(request?.url || '');
                   const id = extractYouTubeVideoId(url);
-                  if (id && /(?:watch|youtu\\.be|shorts|\\/embed\\/)/i.test(url)) {
+                  if (id && /(?:watch|youtu\.be|shorts|\/embed\/)/i.test(url)) {
                     setYoutubePickedItem({ video_id: id, title: 'Loading selected video…' });
                     getYoutubeMetadata(id).then(meta => setYoutubePickedItem(meta));
                     return false;
