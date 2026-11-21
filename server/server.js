@@ -1984,8 +1984,7 @@ app.patch('/api/rooms/:roomId/mic-count', userAuth, async (req, res) => {
     const micLayout = req.body?.micLayout;
     const layouts = {
       seven: 7, eight: 8, ten_couple: 10, ten_standard: 10,
-      eleven: 11, twelve: 12, fourteen: 14, fifteen: 15,
-      sixteen: 16, seventeen: 17
+      eleven: 11, twelve: 12, fourteen: 14, seventeen: 17
     };
     if (!Object.prototype.hasOwnProperty.call(layouts, micLayout) || layouts[micLayout] !== micCount) {
       return res.status(400).json({ error: 'Choose a valid microphone layout and matching seat count.' });
