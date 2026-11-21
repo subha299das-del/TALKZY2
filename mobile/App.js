@@ -2793,6 +2793,29 @@ async function addYoutubeItem(item) {
   Alert.alert('Added to playlist', meta.title || 'Video added');
 }
 
+async function closeYoutubeScreen() {
+  const canClose = selectedRoom?.owner_id === session?.user?.id || roomPresence.some(person => person.user_id === session?.user?.id && person.presence_role === 'admin');
+  if (!canClose) {
+    Alert.alert('Not allowed', 'Only the Room Owner or an authorized Admin can close the shared YouTube screen.');
+    return;
+  }
+  if (youtubeState.video_id) {
+    const preservedQueue = [
+      { video_id: youtubeState.video_id, title: youtubeState.current_title || 'Previously playing video', added_by: 'Room playlist' },
+      ...(youtubeState.queue || [])
+    ].slice(0, 20);
+    await saveYoutubeState({
+      ...youtubeState,
+      video_id: null,
+      queue: preservedQueue,
+      is_playing: false,
+      current_time_seconds: 0
+    });
+  }
+  setShowYoutubePanel(false);
+  youtubePanelDismissedRef.current = true;
+}
+
 async function addYoutubeVideo() {
   const videoId = extractYouTubeVideoId(youtubeUrlInput);
   if (!videoId) return Alert.alert('Invalid YouTube link', 'Paste a valid YouTube video URL or 11-character video ID.');
@@ -3091,8 +3114,14 @@ function renderRoomInterior() {
 
             </View>
 
-      {/* SHARED YOUTUBE SCREEN — reserved above microphone seats when YouTube is opened */}
+      {/* SHARED YOUTUBE SCREEN — visible to the room while active, or locally when opened by a controller */}
+      {(youtubeState.video_id || showYoutubePanel) && (
       <View style={{ marginHorizontal: 10, marginTop: 5, marginBottom: 5, height: 170, backgroundColor: '#050914', borderRadius: 13, borderWidth: 1, borderColor: '#6B54C7', overflow: 'hidden' }}>
+          {(selectedRoom?.owner_id === session?.user?.id || roomPresence.some(person => person.user_id === session?.user?.id && person.presence_role === 'admin')) && (
+            <TouchableOpacity onPress={closeYoutubeScreen} style={{ position: 'absolute', zIndex: 5, top: 7, right: 7, width: 27, height: 27, borderRadius: 14, backgroundColor: 'rgba(9,12,25,0.88)', borderWidth: 1, borderColor: '#B9A8FF', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: '#FFFFFF', fontSize: 17, lineHeight: 20, fontWeight: '900' }}>✕</Text>
+            </TouchableOpacity>
+          )}
           {youtubeState.video_id ? (
             <WebView key={youtubeState.video_id} ref={youtubeWebViewRef} source={{ html: YOUTUBE_PLAYER_HTML }} originWhitelist={['*']} javaScriptEnabled domStorageEnabled allowsInlineMediaPlayback mediaPlaybackRequiresUserAction={false}
               onMessage={(event) => {
@@ -3125,6 +3154,7 @@ function renderRoomInterior() {
             </View>
           )}
         </View>
+      )}
       {/* Shared playlist is viewable by everyone; playlist management remains in the controller panel */}
       {youtubeState.queue?.length > 0 && (
         <View style={{ marginHorizontal: 10, marginBottom: 5, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: '#10172A', borderRadius: 12, borderWidth: 1, borderColor: '#354466' }}>
@@ -3678,7 +3708,7 @@ onContentSizeChange={() =>
                       } else if (tool.title === 'YouTube') {
                         const canBrowseYoutube = selectedRoom?.owner_id === session?.user?.id || roomPresence.some(person => person.user_id === session?.user?.id && person.presence_role === 'admin');
                         youtubePanelDismissedRef.current = false;
-                        setShowYoutubePanel(true);
+                        setShowYoutubePanel(canBrowseYoutube || Boolean(youtubeState.video_id));
                         if (canBrowseYoutube) {
                           setYoutubeBrowseTab('Music');
                           setYoutubeBrowseUrl('https://www.youtube.com/results?search_query=music');
