@@ -91,3 +91,8 @@ do $$ begin
  if not exists(select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='talkzy_lucky_bags') then alter publication supabase_realtime add table public.talkzy_lucky_bags; end if;
  if not exists(select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='talkzy_wallets') then alter publication supabase_realtime add table public.talkzy_wallets; end if;
 end $$;
+
+-- Query indexes for expiry worker, active room bag cards, and wallet history.
+create index if not exists talkzy_lucky_bags_active_expiry_idx on public.talkzy_lucky_bags(status,expires_at);
+create index if not exists talkzy_lucky_bags_room_status_expiry_idx on public.talkzy_lucky_bags(room_id,status,expires_at);
+create index if not exists talkzy_coin_ledger_user_created_idx on public.talkzy_coin_ledger(user_id,created_at desc);
