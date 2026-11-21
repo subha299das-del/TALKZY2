@@ -825,6 +825,8 @@ const [luckyBagCoins, setLuckyBagCoins] = useState(500);
 const [luckyBagQuantity, setLuckyBagQuantity] = useState(1);
 const [luckyBagCustomCoins, setLuckyBagCustomCoins] = useState('500');
 const [luckyBagHistoryView, setLuckyBagHistoryView] = useState(false);
+const luckyBagPulse = useRef(new Animated.Value(1)).current;
+useEffect(() => { const pulse = Animated.loop(Animated.sequence([Animated.timing(luckyBagPulse, { toValue: 1.06, duration: 850, useNativeDriver: true }), Animated.timing(luckyBagPulse, { toValue: 1, duration: 850, useNativeDriver: true })])); pulse.start(); return () => pulse.stop(); }, [luckyBagPulse]);
 const [showRoomThemeMenu, setShowRoomThemeMenu] = useState(false);
 const [showYoutubePanel, setShowYoutubePanel] = useState(false);
 const [showMusicPanel, setShowMusicPanel] = useState(false);
@@ -3383,9 +3385,11 @@ onContentSizeChange={() =>
                   <Text style={{ color: '#E9D8FF', fontSize: 17, fontWeight: '800' }}>×</Text>
                 </TouchableOpacity>
                 <View style={{ alignItems: 'center' }}>
-                  <View style={{ width: 84, height: 84, borderRadius: 25, backgroundColor: '#4B267B', borderWidth: 1, borderColor: '#C69BFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#B56BFF', shadowOpacity: 0.45, shadowRadius: 15, elevation: 8 }}>
-                    <Text style={{ fontSize: 48 }}>🎁</Text>
-                  </View>
+                  <Animated.View style={{ width: 88, height: 88, borderRadius: 27, backgroundColor: '#4B267B', borderWidth: 1.5, borderColor: '#E5C16B', alignItems: 'center', justifyContent: 'center', shadowColor: '#B56BFF', shadowOpacity: 0.55, shadowRadius: 18, elevation: 9, transform: [{ scale: luckyBagPulse }] }}>
+                    <View style={{ position: 'absolute', width: 70, height: 70, borderRadius: 22, borderWidth: 1, borderColor: 'rgba(226,190,255,0.35)' }} />
+                    <Text style={{ fontSize: 50 }}>🧧</Text>
+                    <Text style={{ position: 'absolute', bottom: -7, right: -7, fontSize: 24 }}>✨</Text>
+                  </Animated.View>
                   <Text style={{ color: '#FFE7A8', fontSize: 22, fontWeight: '900', marginTop: 11, letterSpacing: 0.4 }}>LUCKY BAG</Text>
                   <Text style={{ color: '#CBB6F4', fontSize: 12, marginTop: 4 }}>Spread luck. Share the sparkle.</Text>
                 </View>
@@ -3442,6 +3446,21 @@ onContentSizeChange={() =>
                       <TouchableOpacity onPress={() => setLuckyBagQuantity(q => Math.min(99, q + 1))} style={{ width: 42, height: 42, borderRadius: 13, backgroundColor: '#613B8D', borderWidth: 1, borderColor: '#C9A1FF', alignItems: 'center', justifyContent: 'center' }}>
                         <Text style={{ color: '#FFFFFF', fontSize: 25, fontWeight: '900' }}>+</Text>
                       </TouchableOpacity>
+                    </View>
+
+                    <View style={{ marginTop: 14, padding: 13, borderRadius: 17, borderWidth: 1, borderColor: '#7C5BA5', backgroundColor: '#24143B', flexDirection: 'row', alignItems: 'center' }}>
+                      <View style={{ width: 58, height: 58, borderRadius: 17, backgroundColor: '#4A2775', borderWidth: 1, borderColor: '#D7B66A', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                        <Text style={{ fontSize: 32 }}>🧧</Text>
+                        <Text style={{ position: 'absolute', bottom: -5, right: -5, fontSize: 17 }}>✨</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: '#CDB8EE', fontSize: 10, fontWeight: '900', letterSpacing: 1 }}>BAG PREVIEW</Text>
+                        <Text style={{ color: '#FFE39A', fontSize: 17, fontWeight: '900', marginTop: 3 }}>{luckyBagCoins.toLocaleString()} COINS</Text>
+                        <Text style={{ color: '#BBA9D4', fontSize: 11, marginTop: 3 }}>{luckyBagQuantity} bag{luckyBagQuantity === 1 ? '' : 's'} · {luckyBagTab} delivery</Text>
+                      </View>
+                      <View style={{ backgroundColor: '#34204D', paddingHorizontal: 9, paddingVertical: 7, borderRadius: 10, borderWidth: 1, borderColor: '#8E6DB4' }}>
+                        <Text style={{ color: '#F0D9FF', fontSize: 10, fontWeight: '900' }}>READY</Text>
+                      </View>
                     </View>
 
                     <View style={{ marginTop: 15, padding: 13, borderRadius: 16, borderWidth: 1, borderColor: '#66502D', backgroundColor: '#30251A', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
