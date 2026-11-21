@@ -192,7 +192,7 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
         const safeName = String(name).replace(/[^A-Za-z0-9._-]/g, '_').slice(-90); const path = userId + '/' + roomId + '/' + Date.now() + '-' + i + '-' + safeName;
         let result; let lastUploadError;
         for (let attempt = 0; attempt < 3; attempt += 1) {
-          result = await supabase.storage.from('talkzy-room-music').upload(path, bytes, { contentType: asset.mimeType || 'audio/mpeg', upsert: false });
+          result = await supabase.storage.from('talkzy-room-music').upload(path, bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), { contentType: asset.mimeType || 'audio/mpeg', upsert: true });
           if (!result.error) break;
           lastUploadError = result.error;
           if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 900 * (attempt + 1)));
@@ -201,7 +201,17 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
         additions.push({ object_path: path, title: String(name).replace(/\.[^.]+$/, '').slice(0, 120) });
       }
       const nextQueue = [...existing, ...additions]; const first = existing.length === 0;
-      const state = await saveState({ queue: nextQueue, current_index: first ? 0 : indexRef.current, is_playing: first ? true : playingRef.current, current_time_seconds: first ? 0 : currentTime });
+      let state; let lastSaveError;
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          state = await saveState({ queue: nextQueue, current_index: first ? 0 : indexRef.current, is_playing: first ? true : playingRef.current, current_time_seconds: first ? 0 : currentTime });
+          break;
+        } catch (saveError) {
+          lastSaveError = saveError;
+          if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 1200 * (attempt + 1)));
+        }
+      }
+      if (!state) throw new Error('Songs uploaded, but TALKZY could not sync your playlist: ' + (lastSaveError?.message || 'Network error. Please retry when connection is stable.'));
       if (first && state?.queue?.[0]?.url) { queueRef.current = state.queue; await playAt(0, true); }
       setSelectedLocalIds([]); setMusicPage('library'); setMinimized(false);
     } catch (error) {
