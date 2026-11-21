@@ -13,7 +13,7 @@
       "versionCode": 6,
       "adaptiveIcon": {
         "foregroundImage": "./assets/talkzy-icon.png",
-        "backgroundColor": "#101020"
+        "backgroundColor": "#080B18"
       }
     },
     "plugins": [
