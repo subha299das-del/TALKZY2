@@ -585,6 +585,8 @@ const [roomPresence, setRoomPresence] = useState([]);
 const [roomPresenceLoading, setRoomPresenceLoading] = useState(false);
 const [showRoomUsers, setShowRoomUsers] = useState(false);
 const micSeatLoadVersionRef = useRef(0);
+const roomLeaveCleanupRef = useRef({});
+const roomChatLocalCutoffRef = useRef({});
  const [showMicCountPicker, setShowMicCountPicker] = useState(false);
  const [micLayout, setMicLayout] = useState('eight');
  const MIC_LAYOUTS = {
@@ -2153,8 +2155,12 @@ async function toggleFollowRoom(room) {
   async function loadRoomMessages(roomId) {
     if (!roomId) return;
     try {
+      // Wait for this device's leave cutoff to be recorded before loading history.
+      const pendingLeave = roomLeaveCleanupRef.current[roomId];
+      if (pendingLeave) await pendingLeave;
+      const localCutoff = roomChatLocalCutoffRef.current[roomId] || 0;
       const result = await api(`/api/rooms/${roomId}/messages`);
-      setRoomChatMessages((result.messages || []).map(item => ({
+      setRoomChatMessages((result.messages || []).filter(item => !localCutoff || new Date(item.created_at).getTime() > localCutoff).map(item => ({
         id: item.id,
         text: item.message_type === 'image' ? '📷 Photo' : item.message_text,
         sender: item.sender?.display_name || 'TALKZY User',
@@ -10600,10 +10606,17 @@ if (screen === 'profile' || profileIncomplete) {
     ++micSeatLoadVersionRef.current;
     setScreen('main');
 
-    // Perform server cleanup in the background after the UI has exited.
+    // Record a personal cutoff locally too, so history stays hidden if cleanup fails.
     if (roomId) {
-      api(`/api/rooms/${roomId}/presence/leave`, { method: 'POST' })
+      roomChatLocalCutoffRef.current[roomId] = Date.now();
+      const cleanup = api(`/api/rooms/${roomId}/presence/leave`, { method: 'POST' })
         .catch(error => console.log('Room exit cleanup error:', error.message));
+      roomLeaveCleanupRef.current[roomId] = cleanup;
+      cleanup.finally(() => {
+        if (roomLeaveCleanupRef.current[roomId] === cleanup) {
+          delete roomLeaveCleanupRef.current[roomId];
+        }
+      });
     }
   }
 
