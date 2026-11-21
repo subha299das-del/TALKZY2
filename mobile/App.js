@@ -9934,6 +9934,21 @@ if (screen === 'profile' || profileIncomplete) {
 
 
   // =========================================
+  // DEDICATED ROOM SETTINGS SCREEN
+  // =========================================
+
+  // Render settings outside the main page ScrollView/header so the settings
+  // screen is not nested in the room list and taps/navigation work reliably.
+  if (screen === 'roomSettings') {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: C.bg, paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0 }}>
+        <StatusBar barStyle="light-content" />
+        {renderRoomSettings()}
+      </SafeAreaView>
+    );
+  }
+
+  // =========================================
   // FINAL MAIN APP
   // =========================================
 
