@@ -1029,6 +1029,7 @@ const [youtubeSearchQuery, setYoutubeSearchQuery] = useState('');
 const [youtubeBrowseTab, setYoutubeBrowseTab] = useState('All');
 const [youtubeBrowseUrl, setYoutubeBrowseUrl] = useState('https://www.youtube.com/results?search_query=');
 const [youtubeSelectedVideo, setYoutubeSelectedVideo] = useState(null);
+const [youtubePreviewVideoId, setYoutubePreviewVideoId] = useState(null);
 const youtubeBrowseWebViewRef = useRef(null);
 const [youtubeState, setYoutubeState] = useState({ video_id: null, queue: [], is_playing: false, current_time_seconds: 0, updated_at: null });
 const [youtubeLoading, setYoutubeLoading] = useState(false);
@@ -3078,39 +3079,95 @@ function renderRoomInterior() {
 
             </View>
 
-      {/* YOUTUBE VIDEO SCREEN ONLY — sits directly above microphone seats */}
-      {!!youtubeState.video_id && (
-        <View style={{ marginHorizontal: 10, marginTop: 5, marginBottom: 5, height: 150, backgroundColor: '#000', borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: '#26324B' }}>
-          <WebView
-            ref={youtubeWebViewRef}
-            source={{ html: YOUTUBE_PLAYER_HTML }}
-            originWhitelist={['*']}
-            javaScriptEnabled
-            domStorageEnabled
-            allowsInlineMediaPlayback
-            mediaPlaybackRequiresUserAction={false}
-            onMessage={(event) => {
-              const message = String(event.nativeEvent.data || '');
-              if (message === 'ready' && youtubeState.video_id) {
-                youtubeLoadedVideoRef.current = youtubeState.video_id;
-                youtubeWebViewRef.current?.injectJavaScript(
-                  `window.talkzyLoad && window.talkzyLoad('${youtubeState.video_id}', ${Number(youtubeState.current_time_seconds || 0)}, ${youtubeState.is_playing ? 'true' : 'false'});window.talkzySetVolume && window.talkzySetVolume(${youtubeVolume});` + 'true;'
-                );
-              } else if (message.startsWith('time:')) {
-                const isController = selectedRoom?.owner_id === session?.user?.id || roomPresence.find(person => person.user_id === session?.user?.id)?.presence_role === 'admin';
-                const now = Date.now();
-                if (isController && now - youtubeLastPositionWriteRef.current > 9000) {
-                  youtubeLastPositionWriteRef.current = now;
-                  const seconds = Number(message.slice(5));
-                  if (Number.isFinite(seconds)) saveYoutubeState({ ...youtubeState, current_time_seconds: seconds });
+      {/* YOUTUBE SCREEN — shared video, or controller-only local preview until added */}
+      {(() => {
+        const isYoutubeController = selectedRoom?.owner_id === session?.user?.id || roomPresence.some(person => person.user_id === session?.user?.id && person.presence_role === 'admin');
+        const screenVideoId = youtubeState.video_id || (isYoutubeController ? youtubePreviewVideoId : null);
+        const isLocalPreview = !!youtubePreviewVideoId && !youtubeState.video_id && isYoutubeController;
+        return !!screenVideoId && (
+          <View style={{ marginHorizontal: 10, marginTop: 5, marginBottom: 5, height: 150, backgroundColor: '#000', borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: '#26324B' }}>
+            <WebView
+              ref={youtubeWebViewRef}
+              source={{ html: YOUTUBE_PLAYER_HTML }}
+              originWhitelist={['*']}
+              javaScriptEnabled
+              domStorageEnabled
+              allowsInlineMediaPlayback
+              mediaPlaybackRequiresUserAction={false}
+              onMessage={(event) => {
+                const message = String(event.nativeEvent.data || '');
+                if (message === 'ready' && screenVideoId) {
+                  youtubeLoadedVideoRef.current = screenVideoId;
+                  youtubeWebViewRef.current?.injectJavaScript(
+                    `window.talkzyLoad && window.talkzyLoad('${screenVideoId}', ${Number(isLocalPreview ? 0 : youtubeState.current_time_seconds || 0)}, ${isLocalPreview ? 'true' : youtubeState.is_playing ? 'true' : 'false'});window.talkzySetVolume && window.talkzySetVolume(${youtubeVolume});` + 'true;'
+                  );
+                } else if (message.startsWith('time:')) {
+                  const isController = selectedRoom?.owner_id === session?.user?.id || roomPresence.find(person => person.user_id === session?.user?.id)?.presence_role === 'admin';
+                  const now = Date.now();
+                  if (!isLocalPreview && isController && now - youtubeLastPositionWriteRef.current > 9000) {
+                    youtubeLastPositionWriteRef.current = now;
+                    const seconds = Number(message.slice(5));
+                    if (Number.isFinite(seconds)) saveYoutubeState({ ...youtubeState, current_time_seconds: seconds });
+                  } else if (isLocalPreview) {
+                    // Preview playback is local-only until the controller adds it to the room screen.
+                  }
+                } else if (message === 'ended') {
+                  const isController = selectedRoom?.owner_id === session?.user?.id || roomPresence.find(person => person.user_id === session?.user?.id)?.presence_role === 'admin';
+                  if (!isLocalPreview && isController) advanceYoutubeQueue();
                 }
-              } else if (message === 'ended') {
-                const isController = selectedRoom?.owner_id === session?.user?.id || roomPresence.find(person => person.user_id === session?.user?.id)?.presence_role === 'admin';
-                if (isController) advanceYoutubeQueue();
+              }}
+              style={{ flex: 1, backgroundColor: '#000' }}
+            />
+            {isLocalPreview && (
+              <View style={{ position: 'absolute', left: 8, right: 8, bottom: 8, backgroundColor: 'rgba(8,11,24,0.88)', borderRadius: 12, padding: 8 }}>
+                <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '800', textAlign: 'center', marginBottom: 6 }}>Preview only — not visible to the room</Text>
+                <TouchableOpacity
+                  onPress={async () => {
+                    const meta = await getYoutubeMetadata(youtubePreviewVideoId);
+                    await saveYoutubeState({ ...youtubeState, video_id: youtubePreviewVideoId, is_playing: true, current_time_seconds: 0, queue: youtubeState.queue || [] });
+                    setYoutubePreviewVideoId(null);
+                    setYoutubeUrlInput('');
+                    Alert.alert('Added to screen', meta.title || 'Video is now visible in the room.');
+                  }}
+                  style={{ backgroundColor: '#F5C451', borderRadius: 9, paddingVertical: 9, alignItems: 'center' }}
+                >
+                  <Text style={{ color: '#17121A', fontSize: 12, fontWeight: '900' }}>＋ Add to Screen</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => { setYoutubePreviewVideoId(null); setYoutubeUrlInput(''); youtubeLoadedVideoRef.current = null; }} style={{ paddingTop: 5, alignItems: 'center' }}>
+                  <Text style={{ color: '#D4C6E7', fontSize: 10, fontWeight: '700' }}>Cancel preview</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        );
+      })()}
+      {/* Controller-only video picker/preview entry. Members never see the draft link or preview. */}
+      {(selectedRoom?.owner_id === session?.user?.id || roomPresence.some(person => person.user_id === session?.user?.id && person.presence_role === 'admin')) && (
+        <View style={{ marginHorizontal: 10, marginBottom: 6, padding: 8, borderRadius: 10, backgroundColor: '#10172A', borderWidth: 1, borderColor: '#283957' }}>
+          <Text style={{ color: '#C6D3F4', fontSize: 10, fontWeight: '800', marginBottom: 5 }}>{youtubeState.video_id ? 'ADD ANOTHER VIDEO TO PLAYLIST' : 'PREVIEW VIDEO BEFORE SHARING'}</Text>
+          <TextInput
+            value={youtubeUrlInput}
+            onChangeText={value => { setYoutubeUrlInput(value); setYoutubePreviewVideoId(null); }}
+            placeholder="Paste YouTube video link"
+            placeholderTextColor="#7785A6"
+            autoCapitalize="none"
+            style={{ color: '#FFFFFF', fontSize: 12, paddingVertical: 7, paddingHorizontal: 9, backgroundColor: '#080B18', borderRadius: 8, borderWidth: 1, borderColor: '#26324B', marginBottom: 6 }}
+          />
+          <TouchableOpacity
+            onPress={async () => {
+              const id = extractYouTubeVideoId(youtubeUrlInput);
+              if (!id) { Alert.alert('Invalid YouTube link', 'Paste a valid YouTube URL or video ID first.'); return; }
+              if (youtubeState.video_id) {
+                await addYoutubeItem({ video_id: id });
+              } else {
+                setYoutubePreviewVideoId(id);
+                youtubeLoadedVideoRef.current = null;
               }
             }}
-            style={{ flex: 1, backgroundColor: '#000' }}
-          />
+            style={{ backgroundColor: '#D8B45D', borderRadius: 8, paddingVertical: 9, alignItems: 'center' }}
+          >
+            <Text style={{ color: '#211A12', fontSize: 12, fontWeight: '900' }}>{youtubeState.video_id ? '＋ Add to Playlist' : '▶ Preview Video'}</Text>
+          </TouchableOpacity>
         </View>
       )}
 
