@@ -6051,7 +6051,7 @@ function renderDiscover() {
   fontWeight: '900',
   marginBottom: 12
 }}>
-  🏆 History Big Win
+  🏆 Big Win
 </Text>
 
 <ScrollView
