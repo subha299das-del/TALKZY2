@@ -1289,37 +1289,45 @@ app.delete('/api/rooms/:roomId/members/:userId', userAuth, async (req, res) => {
     if (!room) return;
     if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
 
-    if (!await canManageRoom(room, req.talkzyUser.id)) {
-      return res.status(403).json({ error: 'Only the owner or a room admin can remove members.' });
+    const targetUserId = String(req.params.userId || '').trim();
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(targetUserId)) {
+      return res.status(400).json({ error: 'A valid member user ID is required.' });
     }
 
-    if (req.params.userId === room.owner_id) {
-      return res.status(400).json({ error: 'The room owner cannot be removed.' });
+    // Membership, admin, mic, visitor, presence, chat-cutoff and music-state
+    // changes happen in one database transaction. The RPC rechecks permissions
+    // while holding the room lock to avoid role-change races.
+    const { data: removal, error: removalError } = await supabase.rpc('talkzy_remove_room_member_atomic', {
+      p_room_id: room.id,
+      p_actor_id: req.talkzyUser.id,
+      p_target_id: targetUserId
+    });
+    if (removalError) {
+      if (removalError.code === '42501') {
+        return res.status(403).json({ error: removalError.message });
+      }
+      if (removalError.code === '55000') {
+        return res.status(409).json({ error: 'This room is closed.' });
+      }
+      if (removalError.code === 'P0002') {
+        return res.status(404).json({ error: 'Room not found.' });
+      }
+      if (removalError.code === '22023' && targetUserId === room.owner_id) {
+        return res.status(400).json({ error: 'The room owner cannot be removed.' });
+      }
+      throw removalError;
     }
 
-    const targetIsAdmin = await isRoomAdmin(room.id, req.params.userId);
-    if (targetIsAdmin && room.owner_id !== req.talkzyUser.id) {
-      return res.status(403).json({ error: 'Only the room owner can remove another room administrator.' });
+    const musicPaths = Array.isArray(removal?.music_paths)
+      ? removal.music_paths.filter(path =>
+          typeof path === 'string' &&
+          path.startsWith(`${targetUserId}/${room.id}/`) &&
+          !path.includes('..'))
+      : [];
+    if (musicPaths.length) {
+      const { error: storageError } = await supabase.storage.from('talkzy-room-music').remove(musicPaths);
+      if (storageError) console.error('Member removed but their music files need cleanup:', storageError.message);
     }
-
-    const { error } = await supabase.from('talkzy_room_members')
-      .delete().eq('room_id', room.id).eq('user_id', req.params.userId);
-    if (error) throw error;
-
-    const { error: adminError } = await supabase.from('talkzy_room_admins')
-      .delete().eq('room_id', room.id).eq('user_id', req.params.userId);
-    if (adminError) throw adminError;
-    await clearUserRoomChat(room.id, req.params.userId);
-    const { error: seatError } = await supabase.from('talkzy_room_mic_seats')
-      .delete().eq('room_id', room.id).eq('user_id', req.params.userId);
-    if (seatError) throw seatError;
-    const { error: visitorError } = await supabase.from('talkzy_room_visitors')
-      .delete().eq('room_id', room.id).eq('user_id', req.params.userId);
-    if (visitorError) throw visitorError;
-    const { error: presenceError } = await supabase.from('talkzy_room_presence')
-      .delete().eq('room_id', room.id).eq('user_id', req.params.userId);
-    if (presenceError) throw presenceError;
-    await removeUserRoomMusic(room.id, req.params.userId);
     res.json({ removed: true });
   } catch (error) {
     console.error('Could not remove room member:', error.message);
