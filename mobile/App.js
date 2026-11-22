@@ -1271,6 +1271,7 @@ async function sendLuckyBag() {
 
 const [showRoomThemeMenu, setShowRoomThemeMenu] = useState(false);
 const [roomThemeTab, setRoomThemeTab] = useState('Theme');
+const [roomThemePage, setRoomThemePage] = useState('catalog');
 const [roomThemeDraftUri, setRoomThemeDraftUri] = useState(null);
 const [roomThemeDuration, setRoomThemeDuration] = useState(7);
 const [roomThemePreviewUri, setRoomThemePreviewUri] = useState(null);
@@ -4229,141 +4230,164 @@ function renderRoomInterior() {
         visible={showRoomThemeMenu && selectedRoom?.owner_id === session?.user?.id}
         animationType="slide"
         presentationStyle="fullScreen"
-        onRequestClose={() => setShowRoomThemeMenu(false)}
+        onRequestClose={() => {
+          if (roomThemePage === 'review') setRoomThemePage('custom');
+          else if (roomThemePage === 'custom') setRoomThemePage('catalog');
+          else setShowRoomThemeMenu(false);
+        }}
       >
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#090F1D' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 17, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#26334D' }}>
-            <TouchableOpacity onPress={() => setShowRoomThemeMenu(false)} style={{ width: 38, height: 38, borderRadius: 13, backgroundColor: '#17233A', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: '#F4F6FF', fontSize: 23 }}>‹</Text>
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#080D19' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 17, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#27334A' }}>
+            <TouchableOpacity onPress={() => {
+              if (roomThemePage === 'review') setRoomThemePage('custom');
+              else if (roomThemePage === 'custom') setRoomThemePage('catalog');
+              else setShowRoomThemeMenu(false);
+            }} style={{ width: 40, height: 40, borderRadius: 13, backgroundColor: '#172238', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: '#F7F4EA', fontSize: 24 }}>‹</Text>
             </TouchableOpacity>
-            <Text style={{ color: '#F4F6FF', fontSize: 18, fontWeight: '900' }}>Room Themes</Text>
-            <TouchableOpacity onPress={async () => {
-              try {
-                const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-                if (!permission.granted) {
-                  Alert.alert('Photo permission required', 'Allow gallery access to choose your room theme.');
-                  return;
-                }
-                const picked = await ImagePicker.launchImageLibraryAsync({
-                  mediaTypes: ['images'],
-                  allowsEditing: true,
-                  aspect: [9, 16],
-                  quality: 0.9
-                });
-                if (!picked.canceled && picked.assets?.[0]?.uri) {
-                  setRoomThemeDraftUri(picked.assets[0].uri);
-                  setRoomThemeTab('Custom');
-                }
-              } catch (error) {
-                Alert.alert('Theme image error', error?.message || 'Could not open your gallery.');
-              }
-            }} style={{ width: 38, height: 38, borderRadius: 13, backgroundColor: '#5B45A8', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: '#FFFFFF', fontSize: 25, fontWeight: '500', lineHeight: 29 }}>＋</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={{ flexDirection: 'row', paddingHorizontal: 14, paddingTop: 15, gap: 8 }}>
-            {['Theme', 'Premium', 'Own'].map(tab => (
-              <TouchableOpacity key={tab} onPress={() => setRoomThemeTab(tab)} style={{ flex: 1, paddingVertical: 11, borderRadius: 12, backgroundColor: roomThemeTab === tab ? '#6048B6' : '#17233A', borderWidth: 1, borderColor: roomThemeTab === tab ? '#A995FF' : '#2A3855', alignItems: 'center' }}>
-                <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 12 }}>{tab}</Text>
+            <Text style={{ color: '#F7F4EA', fontSize: 17, fontWeight: '900', letterSpacing: 0.3 }}>
+              {roomThemePage === 'catalog' ? 'Room Themes' : roomThemePage === 'custom' ? 'Custom Room Theme' : 'Review Image'}
+            </Text>
+            {roomThemePage === 'catalog' ? (
+              <TouchableOpacity onPress={() => { setRoomThemeDraftUri(null); setRoomThemeDuration(7); setRoomThemePage('custom'); }} style={{ width: 40, height: 40, borderRadius: 13, backgroundColor: '#6A50B8', borderWidth: 1, borderColor: '#BDA8FF', alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: '#FFFFFF', fontSize: 26, fontWeight: '500', lineHeight: 29 }}>＋</Text>
               </TouchableOpacity>
-            ))}
+            ) : <View style={{ width: 40 }} />}
           </View>
 
-          <ScrollView contentContainerStyle={{ padding: 15, paddingBottom: 30 }}>
-            {roomThemeTab === 'Theme' && (
-              <View>
-                <Text style={{ color: '#AAB7D0', fontSize: 12, marginBottom: 13 }}>Choose a room look or add your own vertical background.</Text>
-                <TouchableOpacity onPress={async () => {
-                  try {
-                    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-                    if (!permission.granted) { Alert.alert('Photo permission required', 'Allow gallery access to choose your room theme.'); return; }
-                    const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [9, 16], quality: 0.9 });
-                    if (!picked.canceled && picked.assets?.[0]?.uri) { setRoomThemeDraftUri(picked.assets[0].uri); setRoomThemeTab('Custom'); }
-                  } catch (error) { Alert.alert('Theme image error', error?.message || 'Could not open your gallery.'); }
-                }} style={{ borderRadius: 18, borderWidth: 1, borderColor: '#7561C7', backgroundColor: '#191C39', padding: 18, alignItems: 'center', marginBottom: 14 }}>
-                  <Text style={{ fontSize: 30 }}>＋</Text>
-                  <Text style={{ color: '#FFFFFF', fontWeight: '900', marginTop: 5 }}>Create Custom Theme</Text>
-                  <Text style={{ color: '#B9B5D8', fontSize: 11, marginTop: 4 }}>Choose an image · Crop to 9:16</Text>
-                </TouchableOpacity>
-                <View style={{ borderRadius: 16, borderWidth: 1, borderColor: '#2A3855', backgroundColor: '#111B30', padding: 15 }}>
-                  <Text style={{ color: '#F4F6FF', fontWeight: '900' }}>Room background themes</Text>
-                  <Text style={{ color: '#AAB7D0', fontSize: 11, lineHeight: 17, marginTop: 6 }}>Your room's own background can be added here. Premium theme packs will appear in the Premium tab when they are configured.</Text>
-                </View>
-              </View>
-            )}
-
-            {roomThemeTab === 'Premium' && (
-              <View style={{ borderRadius: 18, borderWidth: 1, borderColor: '#725B9F', backgroundColor: '#201832', padding: 18 }}>
-                <Text style={{ color: '#F4E8FF', fontSize: 16, fontWeight: '900' }}>✦ Premium Themes</Text>
-                <Text style={{ color: '#C8B8E0', fontSize: 12, lineHeight: 19, marginTop: 8 }}>Premium themes are designed for 30-day access. Theme packs and coin prices have not been configured yet, so no coins will be charged from this screen.</Text>
-              </View>
-            )}
-
-            {roomThemeTab === 'Own' && (
-              <View>
-                {roomThemeOwnItems.length === 0 ? (
-                  <View style={{ alignItems: 'center', paddingVertical: 42, borderRadius: 18, backgroundColor: '#111B30', borderWidth: 1, borderColor: '#2A3855' }}>
-                    <Text style={{ fontSize: 35 }}>🖼️</Text>
-                    <Text style={{ color: '#F4F6FF', fontWeight: '900', marginTop: 10 }}>No themes yet</Text>
-                    <Text style={{ color: '#AAB7D0', fontSize: 11, marginTop: 5 }}>Themes you create or purchase will appear here.</Text>
-                  </View>
-                ) : roomThemeOwnItems.map((item, index) => (
-                  <TouchableOpacity key={item.id || index} onPress={() => { setRoomThemeDraftUri(item.uri); setRoomThemeDuration(item.days || 7); setRoomThemeTab('Custom'); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 14, backgroundColor: '#111B30', marginBottom: 9 }}>
-                    <Image source={{ uri: item.uri }} style={{ width: 54, height: 78, borderRadius: 9 }} />
-                    <View style={{ flex: 1, marginLeft: 12 }}>
-                      <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>{item.name || 'My Theme'}</Text>
-                      <Text style={{ color: '#AAB7D0', fontSize: 11, marginTop: 4 }}>{Math.max(0, Math.ceil(((item.expiresAt || (item.createdAt || Date.now()) + (item.days || 7) * 86400000) - Date.now()) / 86400000))} days remaining · Created on this device</Text>
-                    </View>
+          {roomThemePage === 'catalog' && (
+            <>
+              <View style={{ flexDirection: 'row', paddingHorizontal: 14, paddingTop: 14, gap: 8 }}>
+                {['Theme', 'Premium', 'Own'].map(tab => (
+                  <TouchableOpacity key={tab} onPress={() => setRoomThemeTab(tab)} style={{ flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: roomThemeTab === tab ? '#6249B4' : '#141F33', borderWidth: 1, borderColor: roomThemeTab === tab ? '#B7A2FF' : '#2A3850', alignItems: 'center' }}>
+                    <Text style={{ color: roomThemeTab === tab ? '#FFFFFF' : '#AEBBD2', fontWeight: '900', fontSize: 12 }}>{tab}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
-            )}
-
-            {roomThemeTab === 'Custom' && (
-              <View>
-                <Text style={{ color: '#F4F6FF', fontSize: 16, fontWeight: '900', marginBottom: 5 }}>Custom Theme</Text>
-                <Text style={{ color: '#AAB7D0', fontSize: 11, marginBottom: 14 }}>Your image is cropped vertically to 9:16.</Text>
-                {roomThemeDraftUri ? (
-                  <Image source={{ uri: roomThemeDraftUri }} style={{ width: 180, height: 320, alignSelf: 'center', borderRadius: 16, backgroundColor: '#17233A' }} resizeMode="cover" />
-                ) : (
-                  <TouchableOpacity onPress={() => setRoomThemeTab('Theme')} style={{ height: 180, borderRadius: 16, borderWidth: 1, borderColor: '#52638A', alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ color: '#FFFFFF', fontWeight: '800' }}>Choose an image from gallery</Text>
-                  </TouchableOpacity>
+              <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
+                {roomThemeTab === 'Theme' && (
+                  <View>
+                    <Text style={{ color: '#EDEAFF', fontSize: 15, fontWeight: '900', marginBottom: 5 }}>Free Company Themes</Text>
+                    <Text style={{ color: '#9EABC3', fontSize: 11, lineHeight: 17, marginBottom: 15 }}>Room themes provided by TALKZY. Select a theme to use it for free.</Text>
+                    <View style={{ minHeight: 210, borderRadius: 19, borderWidth: 1, borderColor: '#2C3B56', backgroundColor: '#111B2D', alignItems: 'center', justifyContent: 'center', padding: 22 }}>
+                      <Text style={{ fontSize: 38 }}>✦</Text>
+                      <Text style={{ color: '#F4F1FF', fontWeight: '900', marginTop: 12 }}>Company themes will appear here</Text>
+                      <Text style={{ color: '#9EABC3', fontSize: 11, textAlign: 'center', lineHeight: 17, marginTop: 6 }}>Free backgrounds curated and provided by TALKZY.</Text>
+                    </View>
+                  </View>
                 )}
-                <Text style={{ color: '#DDE4F5', fontSize: 12, fontWeight: '900', marginTop: 18, marginBottom: 9 }}>Theme duration</Text>
-                <View style={{ flexDirection: 'row', gap: 8 }}>
-                  {[7, 15, 30].map(days => (
-                    <TouchableOpacity key={days} onPress={() => setRoomThemeDuration(days)} style={{ flex: 1, paddingVertical: 12, borderRadius: 11, alignItems: 'center', backgroundColor: roomThemeDuration === days ? '#6048B6' : '#17233A', borderWidth: 1, borderColor: roomThemeDuration === days ? '#B7A5FF' : '#2A3855' }}>
-                      <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>{days} Days</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-                <TouchableOpacity disabled={!roomThemeDraftUri} onPress={() => {
-                  if (!roomThemeDraftUri) return;
-                  setRoomThemePreviewUri(roomThemeDraftUri);
-                  setShowRoomThemeMenu(false);
-                }} style={{ marginTop: 17, paddingVertical: 14, borderRadius: 13, alignItems: 'center', backgroundColor: roomThemeDraftUri ? '#6048B6' : '#33394A', opacity: roomThemeDraftUri ? 1 : 0.5 }}>
-                  <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>Preview in Room</Text>
-                </TouchableOpacity>
-                <TouchableOpacity disabled={!roomThemeDraftUri} onPress={() => {
-                  if (!roomThemeDraftUri) return;
-                  const createdAt = Date.now();
-                  const item = { id: String(createdAt), uri: roomThemeDraftUri, days: roomThemeDuration, createdAt, expiresAt: createdAt + roomThemeDuration * 86400000, name: 'Custom Room Theme' };
-                  setRoomThemeOwnItems(current => {
-                    const updated = [...current.filter(theme => theme.uri !== item.uri), item];
-                    AsyncStorage.setItem(`talkzy-room-themes:${selectedRoom.id}`, JSON.stringify(updated)).catch(error => console.log('Local theme save error:', error?.message || error));
-                    return updated;
-                  });
-                  setRoomThemeTab('Own');
-                  Alert.alert('Theme saved on this device', 'This theme is saved locally for now. Cloud sync, room-wide application and coin purchases will be connected after the theme storage and pricing setup.');
-                }} style={{ marginTop: 9, paddingVertical: 13, borderRadius: 13, alignItems: 'center', backgroundColor: '#17233A', borderWidth: 1, borderColor: '#52638A', opacity: roomThemeDraftUri ? 1 : 0.5 }}>
-                  <Text style={{ color: '#E8EDFF', fontWeight: '900' }}>Save to Own</Text>
-                </TouchableOpacity>
-                <Text style={{ color: '#8998B4', fontSize: 10, textAlign: 'center', marginTop: 9, lineHeight: 15 }}>Preview is private to you. It does not change the room for other members or charge coins.</Text>
+                {roomThemeTab === 'Premium' && (
+                  <View>
+                    <Text style={{ color: '#F4E9FF', fontSize: 15, fontWeight: '900', marginBottom: 5 }}>Premium Themes</Text>
+                    <Text style={{ color: '#C1B1D9', fontSize: 11, lineHeight: 17, marginBottom: 15 }}>Exclusive company themes available to purchase with coins.</Text>
+                    <View style={{ minHeight: 210, borderRadius: 19, borderWidth: 1, borderColor: '#70569D', backgroundColor: '#211832', alignItems: 'center', justifyContent: 'center', padding: 22 }}>
+                      <Text style={{ fontSize: 38 }}>♛</Text>
+                      <Text style={{ color: '#FFF0D1', fontWeight: '900', marginTop: 12 }}>Premium collection</Text>
+                      <Text style={{ color: '#C1B1D9', fontSize: 11, textAlign: 'center', lineHeight: 17, marginTop: 6 }}>Paid themes provided by TALKZY will appear here with their coin prices.</Text>
+                    </View>
+                  </View>
+                )}
+                {roomThemeTab === 'Own' && (
+                  <View>
+                    {roomThemeOwnItems.length === 0 ? (
+                      <View style={{ alignItems: 'center', paddingVertical: 46, paddingHorizontal: 22, borderRadius: 19, backgroundColor: '#111B2D', borderWidth: 1, borderColor: '#2A3850' }}>
+                        <Text style={{ fontSize: 38 }}>▧</Text>
+                        <Text style={{ color: '#F4F1FF', fontWeight: '900', marginTop: 12 }}>Your themes will appear here</Text>
+                        <Text style={{ color: '#9EABC3', fontSize: 11, textAlign: 'center', lineHeight: 17, marginTop: 6 }}>Only themes you have purchased or custom themes approved by TALKZY administration will be shown here.</Text>
+                      </View>
+                    ) : roomThemeOwnItems.map((item, index) => (
+                      <View key={item.id || index} style={{ flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 14, backgroundColor: '#111B2D', marginBottom: 9 }}>
+                        <Image source={{ uri: item.uri }} style={{ width: 58, height: 82, borderRadius: 9 }} />
+                        <View style={{ flex: 1, marginLeft: 12 }}>
+                          <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>{item.name || 'Owned Theme'}</Text>
+                          <Text style={{ color: '#AAB7D0', fontSize: 11, marginTop: 4 }}>Owned theme</Text>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </ScrollView>
+            </>
+          )}
+
+          {roomThemePage === 'custom' && (
+            <ScrollView contentContainerStyle={{ padding: 17, paddingBottom: 34 }}>
+              <Text style={{ color: '#F4F1FF', fontSize: 15, fontWeight: '900' }}>Create your room background</Text>
+              <Text style={{ color: '#9EABC3', fontSize: 11, lineHeight: 17, marginTop: 5, marginBottom: 17 }}>Choose a vertical image, review it, then confirm to continue.</Text>
+              <TouchableOpacity onPress={async () => {
+                try {
+                  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                  if (!permission.granted) { Alert.alert('Photo permission required', 'Allow gallery access to choose your room theme.'); return; }
+                  const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [9, 16], quality: 0.9 });
+                  if (!picked.canceled && picked.assets?.[0]?.uri) {
+                    setRoomThemeDraftUri(picked.assets[0].uri);
+                    setRoomThemePage('review');
+                  }
+                } catch (error) { Alert.alert('Theme image error', error?.message || 'Could not open your gallery.'); }
+              }} style={{ minHeight: 245, borderRadius: 20, borderWidth: 1.5, borderStyle: 'dashed', borderColor: '#8E78D3', backgroundColor: '#131D32', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                {roomThemeDraftUri ? (
+                  <Image source={{ uri: roomThemeDraftUri }} style={{ width: '100%', height: 245 }} resizeMode="cover" />
+                ) : (
+                  <>
+                    <View style={{ width: 66, height: 66, borderRadius: 22, backgroundColor: '#282047', borderWidth: 1, borderColor: '#9276D8', alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ color: '#E7DFFF', fontSize: 31 }}>＋</Text>
+                    </View>
+                    <Text style={{ color: '#F4F1FF', fontWeight: '900', marginTop: 15 }}>Select Part</Text>
+                    <Text style={{ color: '#9EABC3', fontSize: 11, marginTop: 5 }}>Tap here to open your phone gallery</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+              <Text style={{ color: '#DCE4F5', fontSize: 12, fontWeight: '900', marginTop: 22, marginBottom: 10 }}>Select Duration</Text>
+              <View style={{ flexDirection: 'row', gap: 9 }}>
+                {[7, 15, 30].map(days => (
+                  <TouchableOpacity key={days} onPress={() => setRoomThemeDuration(days)} style={{ flex: 1, paddingVertical: 14, borderRadius: 13, alignItems: 'center', backgroundColor: roomThemeDuration === days ? '#6249B4' : '#152137', borderWidth: 1, borderColor: roomThemeDuration === days ? '#BDA8FF' : '#2B3A54' }}>
+                    <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 15 }}>{days}</Text>
+                    <Text style={{ color: '#D2C8F4', fontSize: 10, fontWeight: '800', marginTop: 2 }}>DAYS</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
-            )}
-          </ScrollView>
+              <Text style={{ color: '#DCE4F5', fontSize: 12, fontWeight: '900', marginTop: 21, marginBottom: 9 }}>Coins</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 15, borderRadius: 14, borderWidth: 1, borderColor: '#6E5A32', backgroundColor: '#211D18' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 23, marginRight: 10 }}>🪙</Text>
+                  <View>
+                    <Text style={{ color: '#FFE4A6', fontWeight: '900', fontSize: 13 }}>Custom theme price</Text>
+                    <Text style={{ color: '#B9A98B', fontSize: 10, marginTop: 3 }}>Price configured by TALKZY</Text>
+                  </View>
+                </View>
+                <Text style={{ color: '#FFE4A6', fontWeight: '900', fontSize: 15 }}>—</Text>
+              </View>
+              <TouchableOpacity disabled={!roomThemeDraftUri} onPress={() => Alert.alert('Purchase not connected yet', 'This is the layout preview. Coin pricing, payment and administration approval will be connected in the next implementation stage.')} style={{ marginTop: 20, paddingVertical: 15, borderRadius: 14, alignItems: 'center', backgroundColor: roomThemeDraftUri ? '#6A50B8' : '#30394A', borderWidth: 1, borderColor: roomThemeDraftUri ? '#BDA8FF' : '#46516A', opacity: roomThemeDraftUri ? 1 : 0.55 }}>
+                <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 14 }}>BUY WITH COINS</Text>
+              </TouchableOpacity>
+              <Text style={{ color: '#8492AB', fontSize: 10, textAlign: 'center', marginTop: 10, lineHeight: 15 }}>Your custom theme will be added to Own only after administration approval.</Text>
+            </ScrollView>
+          )}
+
+          {roomThemePage === 'review' && (
+            <View style={{ flex: 1, padding: 17, justifyContent: 'space-between' }}>
+              <View>
+                <Text style={{ color: '#F4F1FF', fontSize: 15, fontWeight: '900' }}>Review your selected image</Text>
+                <Text style={{ color: '#9EABC3', fontSize: 11, lineHeight: 17, marginTop: 5, marginBottom: 17 }}>Check the crop before confirming your custom room theme.</Text>
+                {roomThemeDraftUri ? <Image source={{ uri: roomThemeDraftUri }} style={{ width: '100%', height: undefined, aspectRatio: 9 / 13, borderRadius: 19, backgroundColor: '#141F33' }} resizeMode="cover" /> : null}
+              </View>
+              <View style={{ flexDirection: 'row', gap: 10, paddingBottom: 12 }}>
+                <TouchableOpacity onPress={async () => {
+                  try {
+                    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                    if (!permission.granted) { Alert.alert('Photo permission required', 'Allow gallery access to choose another image.'); return; }
+                    const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [9, 16], quality: 0.9 });
+                    if (!picked.canceled && picked.assets?.[0]?.uri) setRoomThemeDraftUri(picked.assets[0].uri);
+                  } catch (error) { Alert.alert('Theme image error', error?.message || 'Could not reopen your gallery.'); }
+                }} style={{ flex: 1, paddingVertical: 15, borderRadius: 13, alignItems: 'center', backgroundColor: '#172238', borderWidth: 1, borderColor: '#566581' }}>
+                  <Text style={{ color: '#E7EAF4', fontWeight: '900' }}>RESELECT</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setRoomThemePage('custom')} style={{ flex: 1, paddingVertical: 15, borderRadius: 13, alignItems: 'center', backgroundColor: '#6A50B8', borderWidth: 1, borderColor: '#BDA8FF' }}>
+                  <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>CONFIRM</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
         </SafeAreaView>
       </Modal>
 
