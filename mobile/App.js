@@ -2225,13 +2225,15 @@ async function loadMyRooms(currentSession = session) {
     return;
   }
 
-  const cacheKey = `talkzy_my_rooms_${currentSession.user.id}`;
+  const requestedUserId = currentSession.user.id;
+  const cacheKey = `talkzy_my_rooms_${requestedUserId}`;
 
   // Render cached room details immediately while the server request runs.
   // This prevents the user's room name/card from waiting for a cold backend.
   let hasCachedData = false;
   try {
     const cachedRaw = await AsyncStorage.getItem(cacheKey);
+    if (activeAuthUserIdRef.current !== requestedUserId) return;
     if (cachedRaw) {
       const cached = JSON.parse(cachedRaw);
       if (Array.isArray(cached.rooms)) {
@@ -2254,6 +2256,7 @@ async function loadMyRooms(currentSession = session) {
         Authorization: `Bearer ${currentSession.access_token}`
       }
     });
+    if (activeAuthUserIdRef.current !== requestedUserId) return;
 
     const allRooms = Array.isArray(result.rooms) ? result.rooms : [];
     const eligibility = result.hasEverCreatedRoom === true;
@@ -2281,13 +2284,15 @@ async function loadMyRooms(currentSession = session) {
 
 async function loadJoinedRooms(currentSession = session) {
   try {
-    if (!currentSession?.access_token) return;
+    if (!currentSession?.access_token || !currentSession?.user?.id) return;
+    const requestedUserId = currentSession.user.id;
 
     const result = await api('/api/rooms/joined', {
       headers: {
         Authorization: `Bearer ${currentSession.access_token}`
       }
     });
+    if (activeAuthUserIdRef.current !== requestedUserId) return;
 
     const allRooms = Array.isArray(result.rooms)
       ? result.rooms
@@ -2302,13 +2307,15 @@ async function loadJoinedRooms(currentSession = session) {
   
 async function loadFollowedRooms(currentSession = session) {
   try {
-    if (!currentSession?.access_token) return;
+    if (!currentSession?.access_token || !currentSession?.user?.id) return;
+    const requestedUserId = currentSession.user.id;
 
     const result = await api('/api/rooms/followed', {
       headers: {
         Authorization: `Bearer ${currentSession.access_token}`
       }
     });
+    if (activeAuthUserIdRef.current !== requestedUserId) return;
 
     const allRooms = Array.isArray(result.rooms)
       ? result.rooms
