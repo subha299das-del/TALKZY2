@@ -8010,6 +8010,14 @@ function renderCreateRoomActivity() {
     minHeight: 100
   }}
 />
+
+<TouchableOpacity
+  onPress={publishRoomToolActivity}
+  disabled={roomActivitySaving}
+  style={{ marginTop: 18, marginBottom: 16, backgroundColor: C.accent, borderRadius: 13, paddingVertical: 14, alignItems: 'center', opacity: roomActivitySaving ? 0.65 : 1 }}
+>
+  <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>{roomActivitySaving ? 'Publishing...' : 'Publish Room Activity'}</Text>
+</TouchableOpacity>
  
 </ScrollView>
 
@@ -11428,6 +11436,66 @@ if (screen === 'profile' || profileIncomplete) {
     if (!permission.granted) return Alert.alert('Permission required', 'Allow photo access to choose an activity poster.');
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [16, 9], quality: 0.85 });
     if (!result.canceled && result.assets?.[0]?.uri) setRoomActivityPoster(result.assets[0].uri);
+  }
+
+  async function publishRoomToolActivity() {
+    if (!selectedRoom?.id || selectedRoom.owner_id !== session?.user?.id) {
+      return Alert.alert('Room Activity', 'Only the original creator can publish activities for this room.');
+    }
+    const title = activityTitle.trim();
+    if (!title) return Alert.alert('Title required', 'Enter an activity title.');
+    if (title.length > 100) return Alert.alert('Title too long', 'Activity title must be 100 characters or fewer.');
+    if (activityDescription.length > 2000) return Alert.alert('Description too long', 'Activity description must be 2,000 characters or fewer.');
+
+    let uploadedPosterPath = null;
+    let createdActivityId = null;
+    try {
+      setRoomActivitySaving(true);
+      let posterUrl = activityPoster || activityPosterTemplate?.image_url || null;
+      if (posterUrl && !posterUrl.startsWith('http')) {
+        const response = await fetch(posterUrl);
+        if (!response.ok) throw new Error('Could not read the selected activity poster.');
+        const bytes = await response.arrayBuffer();
+        uploadedPosterPath = `${session.user.id}/rooms/${selectedRoom.id}/activities/${Date.now()}.jpg`;
+        const { error } = await supabase.storage.from(BUCKET).upload(uploadedPosterPath, bytes, { contentType: 'image/jpeg', upsert: true });
+        if (error) throw error;
+        posterUrl = supabase.storage.from(BUCKET).getPublicUrl(uploadedPosterPath).data.publicUrl;
+      }
+
+      const created = await api(`/api/rooms/${selectedRoom.id}/activities`, {
+        method: 'POST',
+        body: JSON.stringify({ title, description: activityDescription.trim(), posterUrl })
+      });
+      createdActivityId = created.activity?.id;
+      if (!createdActivityId) throw new Error('The activity was created but no activity ID was returned.');
+
+      try {
+        await api(`/api/rooms/${selectedRoom.id}/activities/${createdActivityId}/publish`, { method: 'POST' });
+      } catch (publishError) {
+        try {
+          await api(`/api/rooms/${selectedRoom.id}/activities/${createdActivityId}`, { method: 'DELETE' });
+        } catch (cleanupError) {
+          console.log('Could not remove unpublished room activity draft:', cleanupError?.message || cleanupError);
+        }
+        throw publishError;
+      }
+
+      setShowCreateRoomActivity(false);
+      setActivityTitle('');
+      setActivityDescription('');
+      setActivityPoster(null);
+      setActivityPosterTemplate(null);
+      await loadRoomActivities(selectedRoom.id);
+      Alert.alert('Published', 'Your room activity is now visible to room members.');
+    } catch (e) {
+      if (uploadedPosterPath) {
+        try { await supabase.storage.from(BUCKET).remove([uploadedPosterPath]); }
+        catch (cleanupError) { console.log('Could not clean up activity poster:', cleanupError?.message || cleanupError); }
+      }
+      Alert.alert('Activity error', e.message || 'Could not publish this room activity.');
+    } finally {
+      setRoomActivitySaving(false);
+    }
   }
 
   async function createAndPublishRoomActivity() {
