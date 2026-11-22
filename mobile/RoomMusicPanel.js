@@ -357,7 +357,9 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
       active = false;
       clearInterval(poll);
       clearInterval(progress);
-      api(`/api/rooms/${roomId}/music/me`, { method: 'DELETE' }).catch(() => {});
+      // Room exit already clears this stream atomically through the
+      // presence/leave endpoint. Do not send a delayed duplicate delete here:
+      // it could erase a newly-created stream after a quick room re-entry.
       playerRef.current?.pause();
       playerRef.current?.remove();
       playerRef.current = null;
