@@ -603,6 +603,7 @@ const [roomDetails, setRoomDetails] = useState(null);
 const [memberSearch, setMemberSearch] = useState('');
  const [roomDetailMembers, setRoomDetailMembers] = useState([]);
  const [loadingRoomDetailMembers, setLoadingRoomDetailMembers] = useState(false);
+ const roomDetailRequestVersionRef = useRef(0);
   const [joinedRooms, setJoinedRooms] = useState([]);
   const [followedRooms, setFollowedRooms] = useState([]);
   const [myRooms, setMyRooms] = useState([]);
@@ -2040,23 +2041,38 @@ loadFollowedRooms(session);
 // =========================================
 
 async function openRoomDetails(room) {
+  const requestVersion = ++roomDetailRequestVersionRef.current;
   setRoomDetails(room);
   setRoomDetailsTab('Information');
   setMemberSearch('');
   setRoomDetailMembers([]);
   setRoomDetailsVisible(true);
-  if (isRoomTourist || !session?.access_token || !room?.id) return;
+  if (isRoomTourist || !session?.access_token || !room?.id) {
+    setLoadingRoomDetailMembers(false);
+    return;
+  }
   setLoadingRoomDetailMembers(true);
   try {
     const result = await api(`/api/rooms/${room.id}/members`, {
       headers: { Authorization: `Bearer ${session.access_token}` }
     });
+    if (requestVersion !== roomDetailRequestVersionRef.current) return;
     setRoomDetailMembers(Array.isArray(result.members) ? result.members : []);
   } catch (error) {
-    Alert.alert('Room Members', error.message || 'Could not load room members.');
+    if (requestVersion === roomDetailRequestVersionRef.current) {
+      Alert.alert('Room Members', error.message || 'Could not load room members.');
+    }
   } finally {
-    setLoadingRoomDetailMembers(false);
+    if (requestVersion === roomDetailRequestVersionRef.current) {
+      setLoadingRoomDetailMembers(false);
+    }
   }
+}
+
+function closeRoomDetails() {
+  ++roomDetailRequestVersionRef.current;
+  setRoomDetailsVisible(false);
+  setLoadingRoomDetailMembers(false);
 }
  
 // =========================================
@@ -10703,7 +10719,7 @@ if (screen === 'profile' || profileIncomplete) {
   visible={roomDetailsVisible}
   transparent
   animationType="fade"
-  onRequestClose={() => setRoomDetailsVisible(false)}
+  onRequestClose={closeRoomDetails}
 >
   <View
     style={{
@@ -10748,7 +10764,7 @@ if (screen === 'profile' || profileIncomplete) {
         </Text>
 
         <TouchableOpacity
-          onPress={() => setRoomDetailsVisible(false)}
+          onPress={closeRoomDetails}
           style={{ padding: 5 }}
         >
           <Text style={{ color: C.muted, fontSize: 23 }}>
@@ -10985,7 +11001,7 @@ if (screen === 'profile' || profileIncomplete) {
                   <TouchableOpacity
                     onPress={(event) => {
                       event.stopPropagation?.();
-                      setRoomDetailsVisible(false);
+                      closeRoomDetails();
                       openRoomSettings(roomDetails);
                     }}
                     activeOpacity={0.85}
@@ -11225,7 +11241,7 @@ if (screen === 'profile' || profileIncomplete) {
     setShowRoomUsers(false);
     setShowRoomMessageMenu(false);
     setShowRoomInfo(false);
-    setRoomDetailsVisible(false);
+    closeRoomDetails();
     setRoomDetails(null);
     setShowMicControlPopup(false);
     setMicControlSeat(null);
