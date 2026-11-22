@@ -51,7 +51,7 @@ begin
 
   select coalesce(array_agg(item->>'object_path'), array[]::text[])
   into v_paths
-  from jsonb_array_elements(v_queue) item
+  from jsonb_array_elements(v_queue) as elements(item)
   where jsonb_typeof(item) = 'object'
     and jsonb_typeof(item->'object_path') = 'string'
     and (item->>'object_path') like (p_target_id::text || '/' || p_room_id::text || '/%')
