@@ -652,6 +652,7 @@ const micSeatLoadVersionRef = useRef(0);
 const roomLeaveCleanupRef = useRef({});
 const roomExitInProgressRef = useRef({});
 const roomChatLocalCutoffRef = useRef({});
+const roomMessagesLoadVersionRef = useRef(0);
 const worldLuckyBagSeenRef = useRef(new Set());
  const [showMicCountPicker, setShowMicCountPicker] = useState(false);
  const [micLayout, setMicLayout] = useState('eight');
@@ -2456,15 +2457,19 @@ async function toggleFollowRoom(room) {
 
   async function loadRoomMessages(roomId) {
     if (!roomId) return;
+    const requestVersion = ++roomMessagesLoadVersionRef.current;
     try {
       // Do not race an exit marker write against a room re-entry/history fetch.
       const pendingLeave = roomLeaveCleanupRef.current[roomId];
       if (pendingLeave) await pendingLeave;
+      if (requestVersion !== roomMessagesLoadVersionRef.current) return;
       const cutoffKey = `talkzy-room-chat-cutoff:${session?.user?.id || 'unknown'}:${roomId}`;
       const savedCutoff = Number(await AsyncStorage.getItem(cutoffKey)) || 0;
+      if (requestVersion !== roomMessagesLoadVersionRef.current) return;
       const localCutoff = Math.max(roomChatLocalCutoffRef.current[roomId] || 0, savedCutoff);
       roomChatLocalCutoffRef.current[roomId] = localCutoff;
       const result = await api(`/api/rooms/${roomId}/messages`);
+      if (requestVersion !== roomMessagesLoadVersionRef.current) return;
       setRoomChatMessages(prev => [...prev.filter(item => item.system), ...(result.messages || []).filter(item => !localCutoff || new Date(item.created_at).getTime() > localCutoff).map(item => ({
         id: item.id,
         text: item.message_type === 'image' ? '📷 Photo' : item.message_text,
@@ -2475,7 +2480,11 @@ async function toggleFollowRoom(room) {
         message_type: item.message_type,
         image_url: item.image_url
       }))]);
-    } catch (error) { console.log('Room chat loading error:', error.message); }
+    } catch (error) {
+      if (requestVersion === roomMessagesLoadVersionRef.current) {
+        console.log('Room chat loading error:', error.message);
+      }
+    }
   }
 
   async function enterOwnRoomAndLaunchGame(room, game) {
@@ -11304,6 +11313,7 @@ if (screen === 'profile' || profileIncomplete) {
     setRoomPresence([]);
     setRoomChatMessages([]);
     setRoomEntrySystemMessages([]);
+    ++roomMessagesLoadVersionRef.current;
     roomArrivalPendingRef.current = null;
     setSelectedRoom(null);
     ++micSeatLoadVersionRef.current;
