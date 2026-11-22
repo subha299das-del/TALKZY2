@@ -506,6 +506,7 @@ const [roomSettingMembers, setRoomSettingMembers] = useState([]);
 const roomSettingsListRequestVersionRef = useRef(0);
 const [roomActivities, setRoomActivities] = useState([]);
 const [loadingRoomActivities, setLoadingRoomActivities] = useState(false);
+const roomActivitiesRequestVersionRef = useRef(0);
 const [showRoomActivityComposer, setShowRoomActivityComposer] = useState(false);
 const [roomActivityTitle, setRoomActivityTitle] = useState('');
 const [roomActivityDescription, setRoomActivityDescription] = useState('');
@@ -11572,10 +11573,27 @@ if (screen === 'profile' || profileIncomplete) {
   }
 
   async function loadRoomActivities(roomId) {
-    if (!roomId) return;
+    const requestVersion = ++roomActivitiesRequestVersionRef.current;
+    if (!roomId) {
+      setRoomActivities([]);
+      setLoadingRoomActivities(false);
+      return;
+    }
     setLoadingRoomActivities(true);
-    try { const result = await api(`/api/rooms/${roomId}/activities`); setRoomActivities(result.activities || []); }
-    catch (e) { setRoomActivities([]); console.log('Room activities:', e.message); }
-    finally { setLoadingRoomActivities(false); }
+    setRoomActivities([]);
+    try {
+      const result = await api(`/api/rooms/${roomId}/activities`);
+      if (requestVersion !== roomActivitiesRequestVersionRef.current) return;
+      setRoomActivities(result.activities || []);
+    } catch (e) {
+      if (requestVersion === roomActivitiesRequestVersionRef.current) {
+        setRoomActivities([]);
+        console.log('Room activities:', e.message);
+      }
+    } finally {
+      if (requestVersion === roomActivitiesRequestVersionRef.current) {
+        setLoadingRoomActivities(false);
+      }
+    }
   }
 }
