@@ -3777,7 +3777,20 @@ function renderRoomInterior() {
                   ? item.progress.interpolate({ inputRange: [0, 1], outputRange: [-24, 24] })
                   : item.progress.interpolate({ inputRange: [0, 1], outputRange: [0, 0] }) }]
             }}>
-              <Text style={{ fontSize: 22, transform: item.direction === 'left' ? [{ scaleX: -1 }] : [] }}>{item.emoji}</Text>
+              <Animated.Text
+                style={{
+                  fontSize: 30,
+                  fontWeight: '900',
+                  textShadowColor: '#FFD66B',
+                  textShadowOffset: { width: 0, height: 0 },
+                  textShadowRadius: 12,
+                  transform: [
+                    { scale: item.progress.interpolate({ inputRange: [0, 0.12, 0.24, 0.38, 0.55, 0.78, 1], outputRange: [0.25, 1.35, 0.88, 1.18, 1, 1.08, 0.72] }) },
+                    { rotate: item.progress.interpolate({ inputRange: [0, 0.2, 0.42, 0.68, 1], outputRange: ['-18deg', '14deg', '-9deg', '5deg', '0deg'] }) },
+                    ...(item.direction === 'left' ? [{ scaleX: -1 }] : [])
+                  ]
+                }}
+              >{item.emoji}</Animated.Text>
             </Animated.View>
           ))}
 
