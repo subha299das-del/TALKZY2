@@ -3009,6 +3009,7 @@ async function sendRoomChatMessage() {
       senderId: session?.user?.id, time: new Date(item.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }]);
     setRoomChatText('');
+    setShowRoomChatComposer(false);
   } catch (error) {
     Alert.alert('Message not sent', error.message || 'Could not send your message.');
   }
@@ -4204,6 +4205,9 @@ onContentSizeChange={() =>
           <Text style={{ color: '#FFFFFF', fontSize: 24, fontWeight: '900', lineHeight: 27 }}>♫</Text>
           <Text style={{ color: '#FFFFFF', fontSize: 7, fontWeight: '900', letterSpacing: 0.7 }}>MUSIC</Text>
         </TouchableOpacity>
+
+      )}
+
       <Modal visible={showRoomChatComposer} transparent animationType="slide" onRequestClose={() => setShowRoomChatComposer(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.28)' }}>
           <Pressable style={{ flex: 1 }} onPress={() => setShowRoomChatComposer(false)} />
@@ -4227,7 +4231,6 @@ onContentSizeChange={() =>
         </View>
       </Modal>
 
-      )}
 
      {/* ROOM BOTTOM CONTROLS */}
 <View
@@ -10822,6 +10825,8 @@ if (screen === 'profile' || profileIncomplete) {
     setShowMicCountPicker(false);
     setShowJoinPassword(false);
     setRoomChatText('');
+    setShowRoomChatComposer(false);
+    setRoomChatImagePreview(null);
     setMicGame(null);
     setRoomSettingsSubpage(null);
     setIsOnMic(false);
