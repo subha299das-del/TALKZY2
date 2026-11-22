@@ -75,12 +75,21 @@ const YOUTUBE_PLAYER_HTML = `<!DOCTYPE html><html><head><meta name="viewport" co
 
 
 const C = {
-  // TALKZY signature palette: Midnight Aurora
+  // Global TALKZY palette for screens outside the room interior.
   bg: '#080B18', panel: '#11172B', panel2: '#1A2340',
   text: '#F5F6FF', muted: '#9CA9C9',
   accent: '#9366FF', primary: '#9366FF', card: '#11172B',
   line: '#293453', danger: '#FF6685', gold: '#FFD27A',
   teal: '#43DCC5', pink: '#F27BC2', glow: 'rgba(147,102,255,0.22)'
+};
+
+// Room-only Black Marble Luxury palette. The main app theme remains unchanged.
+const ROOM_C = {
+  bg: '#080706', panel: '#14110D', panel2: '#201A12',
+  text: '#F7F0E2', muted: '#B7A98F',
+  accent: '#C6A15B', primary: '#C6A15B', card: '#100E0B',
+  line: '#5A4528', danger: '#B85B52', gold: '#E8C982',
+  teal: '#D9B66B', pink: '#C99A68', glow: 'rgba(215,181,109,0.18)'
 };
 
 
@@ -3172,6 +3181,8 @@ async function sendRoomChatMessage() {
 }
 
 function renderRoomInterior() {
+  // Shadow the global palette only inside this room renderer.
+  const C = ROOM_C;
   if (!selectedRoom) {
     return (
       <Card>
@@ -3187,7 +3198,18 @@ function renderRoomInterior() {
   const roomIsLocked = selectedRoom.room_type === 'locked';
 
   return (
-    <View style={{ flex: 1, backgroundColor: 'transparent', minHeight: 0 }}>
+    <View style={{ flex: 1, backgroundColor: C.bg, minHeight: 0 }}>
+      {!roomThemePreviewUri && (
+        <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#080706', overflow: 'hidden' }}>
+          <View style={{ position: 'absolute', width: '145%', height: 1, top: '13%', left: '-18%', backgroundColor: 'rgba(218,181,105,0.20)', transform: [{ rotate: '-17deg' }] }} />
+          <View style={{ position: 'absolute', width: '118%', height: 1, top: '31%', left: '-8%', backgroundColor: 'rgba(218,181,105,0.12)', transform: [{ rotate: '11deg' }] }} />
+          <View style={{ position: 'absolute', width: '132%', height: 1, top: '57%', left: '-15%', backgroundColor: 'rgba(218,181,105,0.16)', transform: [{ rotate: '-9deg' }] }} />
+          <View style={{ position: 'absolute', width: '110%', height: 1, top: '78%', left: '-4%', backgroundColor: 'rgba(218,181,105,0.11)', transform: [{ rotate: '14deg' }] }} />
+          <View style={{ position: 'absolute', width: 1, height: '68%', top: '8%', left: '23%', backgroundColor: 'rgba(218,181,105,0.08)', transform: [{ rotate: '24deg' }] }} />
+          <View style={{ position: 'absolute', width: 1, height: '74%', top: '22%', right: '19%', backgroundColor: 'rgba(218,181,105,0.10)', transform: [{ rotate: '-21deg' }] }} />
+          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.28)' }} />
+        </View>
+      )}
       {roomThemePreviewUri && (
         <>
           <Image source={{ uri: roomThemePreviewUri }} resizeMode="cover" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', opacity: 0.72 }} />
@@ -3231,32 +3253,16 @@ function renderRoomInterior() {
         }}
       >
 
-        {/* ROOM DP */}
-        {selectedRoom.room_dp_url ? (
-          <Image
-            source={{ uri: selectedRoom.room_dp_url }}
-            style={{
-              width: 58,
-              height: 58,
-              borderRadius: 12,
-              marginRight: 10
-            }}
-          />
-        ) : (
-          <View
-            style={{
-              width: 58,
-              height: 58,
-              borderRadius: 12,
-              backgroundColor: C.line,
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginRight: 10
-            }}
-          >
-            <Text style={{ fontSize: 27 }}>🎙️</Text>
-          </View>
-        )}
+        {/* ROOM DP — black-marble identity with a champagne-gold frame */}
+        <View style={{ width: 64, height: 64, borderRadius: 32, marginRight: 11, padding: 3, borderWidth: 1.5, borderColor: C.gold, backgroundColor: '#17120A', alignItems: 'center', justifyContent: 'center', shadowColor: C.gold, shadowOpacity: 0.24, shadowRadius: 8, elevation: 4 }}>
+          {selectedRoom.room_dp_url ? (
+            <Image source={{ uri: selectedRoom.room_dp_url }} style={{ width: 54, height: 54, borderRadius: 27, borderWidth: 1, borderColor: '#8F713D' }} />
+          ) : (
+            <View style={{ width: 54, height: 54, borderRadius: 27, backgroundColor: '#211A10', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 25, color: C.gold }}>♬</Text>
+            </View>
+          )}
+        </View>
 
         {/* ROOM DETAILS */}
 <View style={{ flex: 1, minWidth: 0, justifyContent: 'center' }}>
@@ -3266,9 +3272,10 @@ function renderRoomInterior() {
   >
     <Text
       style={{
-        color: C.text,
+        color: C.gold,
         fontSize: 16,
-        fontWeight: 'bold',
+        fontWeight: '900',
+        letterSpacing: 0.25,
         flexShrink: 1
       }}
       numberOfLines={2}
@@ -3296,7 +3303,7 @@ function renderRoomInterior() {
   )}
   <Text
     style={{
-      color: C.muted,
+      color: '#C4B89F',
       fontSize: 11,
       marginTop: 3
     }}
@@ -3382,25 +3389,25 @@ function renderRoomInterior() {
       {/* YOUTUBE QUICK CONTROLS — shown only while the shared screen is open */}
       {youtubeScreenVisible && (
         <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginHorizontal: 12, marginTop: 4, marginBottom: 1, gap: 5 }}>
-          <TouchableOpacity onPress={() => loadYoutubeState(true)} style={{ width: 20, height: 20, borderRadius: 6, backgroundColor: '#202B45', borderWidth: 1, borderColor: '#53658C', alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: '#E8E9FF', fontSize: 11, lineHeight: 13 }}>↻</Text>
+          <TouchableOpacity onPress={() => loadYoutubeState(true)} style={{ width: 20, height: 20, borderRadius: 6, backgroundColor: '#211A10', borderWidth: 1, borderColor: '#53658C', alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: '#F7F0E2', fontSize: 11, lineHeight: 13 }}>↻</Text>
           </TouchableOpacity>
           {(selectedRoom?.owner_id === session?.user?.id || roomPresence.some(person => person.user_id === session?.user?.id && person.presence_role === 'admin')) && (
-            <TouchableOpacity onPress={() => setShowYoutubeQueuePopup(true)} style={{ width: 20, height: 20, borderRadius: 6, backgroundColor: '#202B45', borderWidth: 1, borderColor: '#53658C', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: '#E8E9FF', fontSize: 10, lineHeight: 12 }}>☷</Text>
+            <TouchableOpacity onPress={() => setShowYoutubeQueuePopup(true)} style={{ width: 20, height: 20, borderRadius: 6, backgroundColor: '#211A10', borderWidth: 1, borderColor: '#53658C', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: '#F7F0E2', fontSize: 10, lineHeight: 12 }}>☷</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity onPress={() => setShowYoutubeVolumePopup(true)} style={{ width: 20, height: 20, borderRadius: 6, backgroundColor: '#202B45', borderWidth: 1, borderColor: '#53658C', alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: '#E8E9FF', fontSize: 10, lineHeight: 12 }}>◖))</Text>
+          <TouchableOpacity onPress={() => setShowYoutubeVolumePopup(true)} style={{ width: 20, height: 20, borderRadius: 6, backgroundColor: '#211A10', borderWidth: 1, borderColor: '#53658C', alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: '#F7F0E2', fontSize: 10, lineHeight: 12 }}>◖))</Text>
           </TouchableOpacity>
         </View>
       )}
 
       {/* SHARED YOUTUBE SCREEN — visible to the room while active, or locally when opened by a controller */}
       {youtubeScreenVisible && (
-      <View style={{ marginHorizontal: 10, marginTop: 5, marginBottom: 5, height: 170, backgroundColor: '#050914', borderRadius: 13, borderWidth: 1, borderColor: '#6B54C7', overflow: 'hidden' }}>
+      <View style={{ marginHorizontal: 10, marginTop: 5, marginBottom: 5, height: 170, backgroundColor: '#050914', borderRadius: 13, borderWidth: 1, borderColor: '#8F713D', overflow: 'hidden' }}>
           {(selectedRoom?.owner_id === session?.user?.id || roomPresence.some(person => person.user_id === session?.user?.id && person.presence_role === 'admin')) && (
-            <TouchableOpacity onPress={closeYoutubeScreen} style={{ position: 'absolute', zIndex: 5, top: 7, right: 7, width: 27, height: 27, borderRadius: 14, backgroundColor: 'rgba(9,12,25,0.88)', borderWidth: 1, borderColor: '#B9A8FF', alignItems: 'center', justifyContent: 'center' }}>
+            <TouchableOpacity onPress={closeYoutubeScreen} style={{ position: 'absolute', zIndex: 5, top: 7, right: 7, width: 27, height: 27, borderRadius: 14, backgroundColor: 'rgba(9,12,25,0.88)', borderWidth: 1, borderColor: '#E8C982', alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{ color: '#FFFFFF', fontSize: 17, lineHeight: 20, fontWeight: '900' }}>✕</Text>
             </TouchableOpacity>
           )}
@@ -3427,8 +3434,8 @@ function renderRoomInterior() {
               style={{ flex: 1, backgroundColor: '#000' }} />
           ) : (
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18 }}>
-              <Text style={{ color: '#D9D2FF', fontSize: 13, fontWeight: '900', marginBottom: 6 }}>TALKZY · SHARED YOUTUBE</Text>
-              <Text style={{ color: '#AAB7D4', fontSize: 11, textAlign: 'center' }}>
+              <Text style={{ color: '#E8D7B1', fontSize: 13, fontWeight: '900', marginBottom: 6 }}>TALKZY · SHARED YOUTUBE</Text>
+              <Text style={{ color: '#B7A98F', fontSize: 11, textAlign: 'center' }}>
                 {selectedRoom?.owner_id === session?.user?.id || roomPresence.some(person => person.user_id === session?.user?.id && person.presence_role === 'admin')
                   ? 'Choose Music or Video, select a result, then press ADD to start playback here.'
                   : 'Waiting for the Room Owner or an authorized Admin to add music or video.'}
@@ -3442,20 +3449,20 @@ function renderRoomInterior() {
       {/* OWNER / ADMIN QUEUE POPUP */}
       <Modal visible={showYoutubeQueuePopup} transparent animationType="fade" onRequestClose={() => setShowYoutubeQueuePopup(false)}>
         <View style={{ flex: 1, backgroundColor: 'rgba(2,4,12,0.82)', justifyContent: 'center', padding: 20 }}>
-          <View style={{ maxHeight: '70%', backgroundColor: '#10172A', borderRadius: 18, borderWidth: 1, borderColor: '#6B54C7', padding: 14 }}>
+          <View style={{ maxHeight: '70%', backgroundColor: '#14110D', borderRadius: 18, borderWidth: 1, borderColor: '#8F713D', padding: 14 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <Text style={{ color: '#F5F6FF', fontSize: 14, fontWeight: '900' }}>YOUTUBE QUEUE · {youtubeState.queue?.length || 0}</Text>
-              <TouchableOpacity onPress={() => setShowYoutubeQueuePopup(false)}><Text style={{ color: '#C5CFEA', fontSize: 20 }}>✕</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowYoutubeQueuePopup(false)}><Text style={{ color: '#C4B89F', fontSize: 20 }}>✕</Text></TouchableOpacity>
             </View>
             <ScrollView>
               {(youtubeState.queue || []).length === 0 ? (
-                <Text style={{ color: '#AAB7D4', fontSize: 12, textAlign: 'center', paddingVertical: 22 }}>No videos waiting in the queue.</Text>
+                <Text style={{ color: '#B7A98F', fontSize: 12, textAlign: 'center', paddingVertical: 22 }}>No videos waiting in the queue.</Text>
               ) : (youtubeState.queue || []).map((item, index) => (
-                <View key={`${item.video_id || 'video'}-${index}`} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderTopWidth: index ? 1 : 0, borderTopColor: '#27334D' }}>
-                  <Text numberOfLines={2} style={{ color: '#E8E9FF', fontSize: 11, flex: 1, paddingRight: 8 }}>{index + 1}. {item.title || 'YouTube video'}</Text>
+                <View key={`${item.video_id || 'video'}-${index}`} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderTopWidth: index ? 1 : 0, borderTopColor: '#5A4528' }}>
+                  <Text numberOfLines={2} style={{ color: '#F7F0E2', fontSize: 11, flex: 1, paddingRight: 8 }}>{index + 1}. {item.title || 'YouTube video'}</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <TouchableOpacity disabled={index === 0 || youtubeSaving} onPress={() => moveYoutubeQueueItem(index, -1)} style={{ paddingHorizontal: 7, paddingVertical: 5, borderRadius: 6, backgroundColor: '#263653', opacity: index === 0 ? 0.35 : 1 }}><Text style={{ color: '#E3E8FF', fontSize: 11, fontWeight: '900' }}>↑</Text></TouchableOpacity>
-                    <TouchableOpacity disabled={index === youtubeState.queue.length - 1 || youtubeSaving} onPress={() => moveYoutubeQueueItem(index, 1)} style={{ paddingHorizontal: 7, paddingVertical: 5, borderRadius: 6, backgroundColor: '#263653', opacity: index === youtubeState.queue.length - 1 ? 0.35 : 1 }}><Text style={{ color: '#E3E8FF', fontSize: 11, fontWeight: '900' }}>↓</Text></TouchableOpacity>
+                    <TouchableOpacity disabled={index === 0 || youtubeSaving} onPress={() => moveYoutubeQueueItem(index, -1)} style={{ paddingHorizontal: 7, paddingVertical: 5, borderRadius: 6, backgroundColor: '#302719', opacity: index === 0 ? 0.35 : 1 }}><Text style={{ color: '#E3E8FF', fontSize: 11, fontWeight: '900' }}>↑</Text></TouchableOpacity>
+                    <TouchableOpacity disabled={index === youtubeState.queue.length - 1 || youtubeSaving} onPress={() => moveYoutubeQueueItem(index, 1)} style={{ paddingHorizontal: 7, paddingVertical: 5, borderRadius: 6, backgroundColor: '#302719', opacity: index === youtubeState.queue.length - 1 ? 0.35 : 1 }}><Text style={{ color: '#E3E8FF', fontSize: 11, fontWeight: '900' }}>↓</Text></TouchableOpacity>
                     <TouchableOpacity disabled={youtubeSaving} onPress={() => removeYoutubeQueueItem(index)} style={{ paddingHorizontal: 7, paddingVertical: 5, borderRadius: 6, backgroundColor: '#48263A' }}><Text style={{ color: '#FFB5C5', fontSize: 10, fontWeight: '900' }}>✕</Text></TouchableOpacity>
                   </View>
                 </View>
@@ -3468,18 +3475,18 @@ function renderRoomInterior() {
       {/* PERSONAL VOLUME POPUP — affects only this participant's local player */}
       <Modal visible={showYoutubeVolumePopup} transparent animationType="fade" onRequestClose={() => setShowYoutubeVolumePopup(false)}>
         <View style={{ flex: 1, backgroundColor: 'rgba(2,4,12,0.82)', justifyContent: 'center', padding: 28 }}>
-          <View style={{ backgroundColor: '#10172A', borderRadius: 18, borderWidth: 1, borderColor: '#6B54C7', padding: 18 }}>
+          <View style={{ backgroundColor: '#14110D', borderRadius: 18, borderWidth: 1, borderColor: '#8F713D', padding: 18 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <Text style={{ color: '#F5F6FF', fontSize: 14, fontWeight: '900' }}>MY YOUTUBE VOLUME</Text>
-              <TouchableOpacity onPress={() => setShowYoutubeVolumePopup(false)}><Text style={{ color: '#C5CFEA', fontSize: 20 }}>✕</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowYoutubeVolumePopup(false)}><Text style={{ color: '#C4B89F', fontSize: 20 }}>✕</Text></TouchableOpacity>
             </View>
-            <Text style={{ color: '#D9D2FF', fontSize: 13, textAlign: 'center', marginBottom: 14 }}>{youtubeVolume}%</Text>
+            <Text style={{ color: '#E8D7B1', fontSize: 13, textAlign: 'center', marginBottom: 14 }}>{youtubeVolume}%</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <TouchableOpacity onPress={() => { const v = Math.max(0, youtubeVolume - 10); setYoutubeVolume(v); youtubeWebViewRef.current?.injectJavaScript(`window.talkzySetVolume && window.talkzySetVolume(${v});true;`); }} style={{ width: 42, height: 38, borderRadius: 10, backgroundColor: '#263653', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: '#FFFFFF', fontSize: 20 }}>−</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => { const v = Math.max(0, youtubeVolume - 10); setYoutubeVolume(v); youtubeWebViewRef.current?.injectJavaScript(`window.talkzySetVolume && window.talkzySetVolume(${v});true;`); }} style={{ width: 42, height: 38, borderRadius: 10, backgroundColor: '#302719', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: '#FFFFFF', fontSize: 20 }}>−</Text></TouchableOpacity>
               <View style={{ flex: 1, marginHorizontal: 12, flexDirection: 'row', justifyContent: 'space-between' }}>
-                {[0,20,40,60,80,100].map(v => <TouchableOpacity key={v} onPress={() => { setYoutubeVolume(v); youtubeWebViewRef.current?.injectJavaScript(`window.talkzySetVolume && window.talkzySetVolume(${v});true;`); }} style={{ width: 8, height: 22, borderRadius: 4, backgroundColor: youtubeVolume >= v ? '#9C8AFF' : '#354466' }} />)}
+                {[0,20,40,60,80,100].map(v => <TouchableOpacity key={v} onPress={() => { setYoutubeVolume(v); youtubeWebViewRef.current?.injectJavaScript(`window.talkzySetVolume && window.talkzySetVolume(${v});true;`); }} style={{ width: 8, height: 22, borderRadius: 4, backgroundColor: youtubeVolume >= v ? '#D8B66D' : '#5A4528' }} />)}
               </View>
-              <TouchableOpacity onPress={() => { const v = Math.min(100, youtubeVolume + 10); setYoutubeVolume(v); youtubeWebViewRef.current?.injectJavaScript(`window.talkzySetVolume && window.talkzySetVolume(${v});true;`); }} style={{ width: 42, height: 38, borderRadius: 10, backgroundColor: '#263653', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: '#FFFFFF', fontSize: 20 }}>＋</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => { const v = Math.min(100, youtubeVolume + 10); setYoutubeVolume(v); youtubeWebViewRef.current?.injectJavaScript(`window.talkzySetVolume && window.talkzySetVolume(${v});true;`); }} style={{ width: 42, height: 38, borderRadius: 10, backgroundColor: '#302719', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: '#FFFFFF', fontSize: 20 }}>＋</Text></TouchableOpacity>
             </View>
           </View>
         </View>
@@ -3488,15 +3495,15 @@ function renderRoomInterior() {
       {/* YOUTUBE SEARCH PICKER — separate popup for controllers */}
       <Modal visible={showYoutubePicker} transparent animationType="slide" onRequestClose={() => { setShowYoutubePicker(false); setYoutubePickedItem(null); }}>
         <View style={{ flex: 1, backgroundColor: 'rgba(2,4,12,0.88)', justifyContent: 'flex-end' }}>
-          <View style={{ height: '88%', backgroundColor: '#10172A', borderTopLeftRadius: 22, borderTopRightRadius: 22, borderWidth: 1, borderColor: '#6B54C7', overflow: 'hidden' }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 13, backgroundColor: '#17213A' }}>
-              <Text style={{ color: '#E8E9FF', fontSize: 15, fontWeight: '900' }}>Choose YouTube content</Text>
-              <TouchableOpacity onPress={() => { setShowYoutubePicker(false); setYoutubePickedItem(null); }}><Text style={{ color: '#C5CFEA', fontSize: 22 }}>✕</Text></TouchableOpacity>
+          <View style={{ height: '88%', backgroundColor: '#14110D', borderTopLeftRadius: 22, borderTopRightRadius: 22, borderWidth: 1, borderColor: '#8F713D', overflow: 'hidden' }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 13, backgroundColor: '#201A12' }}>
+              <Text style={{ color: '#F7F0E2', fontSize: 15, fontWeight: '900' }}>Choose YouTube content</Text>
+              <TouchableOpacity onPress={() => { setShowYoutubePicker(false); setYoutubePickedItem(null); }}><Text style={{ color: '#C4B89F', fontSize: 22 }}>✕</Text></TouchableOpacity>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', padding: 8, gap: 6 }}>
               {['Music', 'Video'].map(tab => (
                 <TouchableOpacity key={tab} onPress={() => { setYoutubeBrowseTab(tab); setYoutubeSearchQuery(''); setYoutubePickedItem(null); setYoutubeBrowseUrl('https://www.youtube.com/results?search_query=' + encodeURIComponent(tab === 'Music' ? 'music' : 'video')); }}
-                  style={{ flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center', backgroundColor: youtubeBrowseTab === tab ? '#6B54C7' : '#202B45', borderWidth: 1, borderColor: youtubeBrowseTab === tab ? '#9C8AFF' : '#354466' }}>
+                  style={{ flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center', backgroundColor: youtubeBrowseTab === tab ? '#8F713D' : '#211A10', borderWidth: 1, borderColor: youtubeBrowseTab === tab ? '#D8B66D' : '#5A4528' }}>
                   <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '900' }}>{tab === 'Music' ? '♫ MUSIC' : '▶ VIDEO'}</Text>
                 </TouchableOpacity>
               ))}
@@ -3504,7 +3511,7 @@ function renderRoomInterior() {
             <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 9, marginBottom: 8, gap: 6 }}>
               <TextInput value={youtubeSearchQuery} onChangeText={setYoutubeSearchQuery} placeholder={youtubeBrowseTab === 'Music' ? 'Search music…' : 'Search videos…'} placeholderTextColor="#8290AE" autoCapitalize="none" returnKeyType="search"
                 onSubmitEditing={() => { const q = youtubeSearchQuery.trim() || (youtubeBrowseTab === 'Music' ? 'music' : 'video'); setYoutubePickedItem(null); setYoutubeBrowseUrl('https://www.youtube.com/results?search_query=' + encodeURIComponent(q)); }}
-                style={{ flex: 1, color: '#FFFFFF', fontSize: 12, paddingVertical: 10, paddingHorizontal: 10, backgroundColor: '#080B18', borderRadius: 8, borderWidth: 1, borderColor: '#354466' }} />
+                style={{ flex: 1, color: '#FFFFFF', fontSize: 12, paddingVertical: 10, paddingHorizontal: 10, backgroundColor: '#080706', borderRadius: 8, borderWidth: 1, borderColor: '#5A4528' }} />
               <TouchableOpacity onPress={() => { const q = youtubeSearchQuery.trim() || (youtubeBrowseTab === 'Music' ? 'music' : 'video'); setYoutubePickedItem(null); setYoutubeBrowseUrl('https://www.youtube.com/results?search_query=' + encodeURIComponent(q)); }}
                 style={{ paddingHorizontal: 12, paddingVertical: 10, borderRadius: 8, backgroundColor: '#D8B45D' }}>
                 <Text style={{ color: '#211A12', fontSize: 11, fontWeight: '900' }}>SEARCH</Text>
@@ -3535,11 +3542,11 @@ function renderRoomInterior() {
                 }}
                 style={{ flex: 1 }} />
             </View>
-            <View style={{ paddingHorizontal: 12, paddingBottom: 14, paddingTop: 8, backgroundColor: '#17213A', borderTopWidth: 1, borderTopColor: '#354466' }}>
-              <Text numberOfLines={1} style={{ color: youtubePickedItem ? '#FFFFFF' : '#AAB7D4', fontWeight: '800', fontSize: 11, marginBottom: 7 }}>
+            <View style={{ paddingHorizontal: 12, paddingBottom: 14, paddingTop: 8, backgroundColor: '#201A12', borderTopWidth: 1, borderTopColor: '#5A4528' }}>
+              <Text numberOfLines={1} style={{ color: youtubePickedItem ? '#FFFFFF' : '#B7A98F', fontWeight: '800', fontSize: 11, marginBottom: 7 }}>
                 {youtubePickedItem ? 'SELECTED: ' + (youtubePickedItem.title || 'YouTube video') : 'Select a video above to add it to the room'}
               </Text>
-              <TouchableOpacity disabled={!youtubePickedItem || youtubeSaving} onPress={() => youtubePickedItem && addYoutubeItem(youtubePickedItem)} style={{ backgroundColor: youtubePickedItem ? '#6B54C7' : '#303A52', borderColor: youtubePickedItem ? '#B9A8FF' : '#46516A', borderWidth: 1, borderRadius: 12, paddingVertical: 13, alignItems: 'center', opacity: youtubePickedItem && !youtubeSaving ? 1 : 0.65 }}>
+              <TouchableOpacity disabled={!youtubePickedItem || youtubeSaving} onPress={() => youtubePickedItem && addYoutubeItem(youtubePickedItem)} style={{ backgroundColor: youtubePickedItem ? '#8F713D' : '#302719', borderColor: youtubePickedItem ? '#E8C982' : '#5A4528', borderWidth: 1, borderRadius: 12, paddingVertical: 13, alignItems: 'center', opacity: youtubePickedItem && !youtubeSaving ? 1 : 0.65 }}>
                 <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '900' }}>{youtubeSaving ? 'ADDING…' : '＋ ADD ' + (youtubeBrowseTab === 'Music' ? 'SONG' : 'VIDEO')}</Text>
               </TouchableOpacity>
             </View>
@@ -3698,9 +3705,9 @@ function renderRoomInterior() {
             height: youtubeScreenVisible ? 22 : (micCount >= 17 ? 42 : micCount >= 14 ? 46 : 50),
             borderRadius: youtubeScreenVisible ? 11 : (micCount >= 17 ? 21 : micCount >= 14 ? 23 : 25),
             borderWidth: 2,
-            borderColor: isMySeat ? '#F6D37B' : isOccupied ? '#D5A64E' : '#9A613E',
-            backgroundColor: '#320C13',
-            shadowColor: '#D5A64E',
+            borderColor: isMySeat ? '#F4D99A' : isOccupied ? '#D8B66D' : '#80643A',
+            backgroundColor: '#17120B',
+            shadowColor: '#D8B66D',
             shadowOpacity: 0.18,
             shadowRadius: 4,
             elevation: 2,
@@ -3780,14 +3787,14 @@ function renderRoomInterior() {
           )}
           {seatIsClosed && (
             <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(15,8,27,0.78)', alignItems: 'center', justifyContent: 'center', borderRadius: 30 }}>
-              <View style={{ width: 26, height: 20, borderWidth: 2, borderColor: '#C28BFF', borderRadius: 4, transform: [{ rotate: '-8deg' }] }}>
+              <View style={{ width: 26, height: 20, borderWidth: 2, borderColor: '#D8B66D', borderRadius: 4, transform: [{ rotate: '-8deg' }] }}>
                 <View style={{ position: 'absolute', width: 33, height: 3, backgroundColor: '#FF6685', top: 8, left: -4, transform: [{ rotate: '42deg' }] }} />
               </View>
             </View>
           )}
           {seatMicIsClosed && !seatIsClosed && (
-            <View style={{ position: 'absolute', bottom: 2, right: 2, width: 20, height: 20, borderRadius: 10, backgroundColor: '#142B3B', borderWidth: 1, borderColor: '#43DCC5', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: '#43DCC5', fontSize: 11, fontWeight: '900' }}>×</Text>
+            <View style={{ position: 'absolute', bottom: 2, right: 2, width: 20, height: 20, borderRadius: 10, backgroundColor: '#211A10', borderWidth: 1, borderColor: '#D8B66D', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: '#E8C982', fontSize: 11, fontWeight: '900' }}>×</Text>
             </View>
           )}
         </View>
@@ -3852,7 +3859,7 @@ function renderRoomInterior() {
 
 <Modal visible={showMicControlPopup} transparent animationType="fade" onRequestClose={() => setShowMicControlPopup(false)}>
   <View style={{ flex: 1, backgroundColor: 'rgba(3,5,14,0.78)', justifyContent: 'center', padding: 22 }}>
-    <View style={{ backgroundColor: '#11172B', borderRadius: 24, borderWidth: 1, borderColor: '#60439A', padding: 18, shadowColor: '#9366FF', shadowOpacity: 0.4, shadowRadius: 18, elevation: 14 }}>
+    <View style={{ backgroundColor: '#14110D', borderRadius: 24, borderWidth: 1, borderColor: '#A9874A', padding: 18, shadowColor: '#D8B66D', shadowOpacity: 0.4, shadowRadius: 18, elevation: 14 }}>
       <View style={{ alignItems: 'center', marginBottom: 14 }}>
         <Text style={{ color: '#F5F6FF', fontSize: 18, fontWeight: '900' }}>MIC CONTROL · {micControlSeat}</Text>
         <Text style={{ color: '#9CA9C9', fontSize: 11, marginTop: 4 }}>Room owner / admin controls</Text>
@@ -3867,19 +3874,19 @@ function renderRoomInterior() {
           else await api(`/api/rooms/${selectedRoom.id}/mic-seats/${micControlSeat}`, { method: 'POST' });
           await loadRoomMicSeats(selectedRoom.id);
         } catch (e) { Alert.alert('Mic error', e.message); } })();
-      }} style={{ flexDirection: 'row', alignItems: 'center', padding: 13, borderRadius: 15, backgroundColor: '#241B43', borderWidth: 1, borderColor: '#9366FF', marginBottom: 9 }}>
-        <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: '#382564', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}><Text style={{ fontSize: 23, color: '#C6A6FF' }}>♬</Text></View>
-        <View style={{ flex: 1 }}><Text style={{ color: '#F5F6FF', fontWeight: '900', fontSize: 14 }}>Take the mic</Text><Text style={{ color: '#B9A6F5', fontSize: 11, marginTop: 2 }}>Join this seat or leave it if it's yours</Text></View>
+      }} style={{ flexDirection: 'row', alignItems: 'center', padding: 13, borderRadius: 15, backgroundColor: '#211A10', borderWidth: 1, borderColor: '#B99755', marginBottom: 9 }}>
+        <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: '#342818', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}><Text style={{ fontSize: 23, color: '#E8C982' }}>♬</Text></View>
+        <View style={{ flex: 1 }}><Text style={{ color: '#F5F6FF', fontWeight: '900', fontSize: 14 }}>Take the mic</Text><Text style={{ color: '#D9C18F', fontSize: 11, marginTop: 2 }}>Join this seat or leave it if it's yours</Text></View>
       </TouchableOpacity>
       <TouchableOpacity onPress={async () => {
         const closed = !!micControls.find(x => x.seat_number === micControlSeat)?.seat_closed; const action = closed ? 'open_seat' : 'close_seat';
         try { await api(`/api/rooms/${selectedRoom.id}/mic-seats/${micControlSeat}/control`, { method: 'PATCH', body: JSON.stringify({ action }) }); await loadRoomMicSeats(selectedRoom.id); setShowMicControlPopup(false); } catch (e) { Alert.alert('Control failed', e.message); }
-      }} style={{ flexDirection: 'row', alignItems: 'center', padding: 13, borderRadius: 15, backgroundColor: '#28172F', borderWidth: 1, borderColor: '#B56BFF', marginBottom: 9 }}>
-        <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: '#46204D', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-          <View style={{ width: 24, height: 18, borderWidth: 2, borderColor: '#D5A3FF', borderRadius: 4 }}><View style={{ position: 'absolute', width: 30, height: 3, backgroundColor: '#FF6685', top: 7, left: -4, transform: [{ rotate: '42deg' }] }} /></View>
+      }} style={{ flexDirection: 'row', alignItems: 'center', padding: 13, borderRadius: 15, backgroundColor: '#211A10', borderWidth: 1, borderColor: '#A9874A', marginBottom: 9 }}>
+        <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: '#342818', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+          <View style={{ width: 24, height: 18, borderWidth: 2, borderColor: '#E8C982', borderRadius: 4 }}><View style={{ position: 'absolute', width: 30, height: 3, backgroundColor: '#B85B52', top: 7, left: -4, transform: [{ rotate: '42deg' }] }} /></View>
         </View>
         <View style={{ flex: 1 }}><Text style={{ color: '#F5F6FF', fontWeight: '900', fontSize: 14 }}>{micControls.find(x => x.seat_number === micControlSeat)?.seat_closed ? 'Open seat' : 'Close seat'}</Text><Text style={{ color: '#D3A5FF', fontSize: 11, marginTop: 2 }}>{micControls.find(x => x.seat_number === micControlSeat)?.seat_closed ? 'Allow anyone to sit again' : 'Block everyone, including owner/admin'}</Text></View>
-        <Text style={{ color: '#D5A3FF', fontSize: 18 }}>{micControls.find(x => x.seat_number === micControlSeat)?.seat_closed ? '↗' : '⛔'}</Text>
+        <Text style={{ color: '#E8C982', fontSize: 18 }}>{micControls.find(x => x.seat_number === micControlSeat)?.seat_closed ? '↗' : '⛔'}</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={async () => {
         const closed = !!micControls.find(x => x.seat_number === micControlSeat)?.mic_closed; const action = closed ? 'open_mic' : 'close_mic';
@@ -4370,7 +4377,7 @@ function renderRoomInterior() {
                   <Text style={{ color: '#E9D8FF', fontSize: 17, fontWeight: '800' }}>×</Text>
                 </TouchableOpacity>
                 <View style={{ alignItems: 'center' }}>
-                  <Animated.View style={{ width: 88, height: 88, borderRadius: 27, backgroundColor: '#4B267B', borderWidth: 1.5, borderColor: '#E5C16B', alignItems: 'center', justifyContent: 'center', shadowColor: '#B56BFF', shadowOpacity: 0.55, shadowRadius: 18, elevation: 9, transform: [{ scale: luckyBagPulse }] }}>
+                  <Animated.View style={{ width: 88, height: 88, borderRadius: 27, backgroundColor: '#4B267B', borderWidth: 1.5, borderColor: '#E5C16B', alignItems: 'center', justifyContent: 'center', shadowColor: '#A9874A', shadowOpacity: 0.55, shadowRadius: 18, elevation: 9, transform: [{ scale: luckyBagPulse }] }}>
                     <View style={{ position: 'absolute', width: 70, height: 70, borderRadius: 22, borderWidth: 1, borderColor: 'rgba(226,190,255,0.35)' }} />
                     <Text style={{ fontSize: 50 }}>🧧</Text>
                     <Text style={{ position: 'absolute', bottom: -7, right: -7, fontSize: 24 }}>✨</Text>
