@@ -2437,19 +2437,21 @@ app.patch('/api/rooms/:roomId/mic-seats/mute', userAuth, async (req, res) => {
       return res.status(400).json({ error: 'Mute status must be true or false.' });
     }
 
-    const { data: occupiedSeat } = await supabase
+    const { data: occupiedSeat, error: occupiedSeatError } = await supabase
       .from('talkzy_room_mic_seats')
       .select('seat_number')
       .eq('room_id', room.id)
       .eq('user_id', userId)
       .maybeSingle();
+    if (occupiedSeatError) throw occupiedSeatError;
     if (!occupiedSeat) return res.status(404).json({ error: 'You are not occupying a microphone seat.' });
-    const { data: micControl } = await supabase
+    const { data: micControl, error: micControlError } = await supabase
       .from('talkzy_room_mic_controls')
       .select('mic_closed')
       .eq('room_id', room.id)
       .eq('seat_number', occupiedSeat.seat_number)
       .maybeSingle();
+    if (micControlError) throw micControlError;
     if (micControl?.mic_closed && !isMuted) {
       return res.status(403).json({ error: 'This microphone is closed by the room owner or admin.' });
     }
