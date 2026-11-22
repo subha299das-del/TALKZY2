@@ -677,7 +677,7 @@ app.get('/api/rooms/:roomId/messages', userAuth, async (req, res) => {
       if (m.message_type === 'image' && imageUrl && !/^https?:\/\//i.test(imageUrl)) {
         try {
           const { data: signed, error: signError } = await supabase.storage
-            .from('talkzy-room-chat').createSignedUrl(imageUrl, 86400);
+            .from('talkzy-room-chat').createSignedUrl(imageUrl, 3600);
           if (signError) throw signError;
           imageUrl = signed?.signedUrl || null;
         } catch (signError) {
@@ -762,7 +762,7 @@ app.post('/api/rooms/:roomId/messages', userAuth, roomMessageLimiter, async (req
     let signedImageUrl = null;
     if (type === 'image') {
       const { data: signed, error: signError } = await supabase.storage
-        .from('talkzy-room-chat').createSignedUrl(imagePath, 86400);
+        .from('talkzy-room-chat').createSignedUrl(imagePath, 3600);
       if (signError) throw signError;
       signedImageUrl = signed?.signedUrl || null;
       if (!signedImageUrl) throw new Error('Could not create a secure room image link.');
