@@ -1673,7 +1673,8 @@ app.get('/api/rooms/:roomId/members', userAuth, async (req, res) => {
 
     if (error) throw error;
 
-    const userIds = (data || []).map(member => member.user_id);
+    const memberIds = (data || []).map(member => member.user_id);
+    const userIds = [...new Set([...memberIds, room.owner_id])];
     const { data: profiles, error: profileError } = userIds.length
       ? await supabase.from('talkzy_profiles')
           .select('id, talkzy_id, display_name, avatar_url, country')
@@ -1695,6 +1696,22 @@ app.get('/api/rooms/:roomId/members', userAuth, async (req, res) => {
         is_admin: adminIds.has(member.user_id)
       };
     });
+    // Room creators are not necessarily rows in talkzy_room_members. Include
+    // the creator explicitly so the Members tab can always display the OWNER badge.
+    if (room.owner_id && !memberIds.includes(room.owner_id)) {
+      const ownerProfile = (profiles || []).find(item => item.id === room.owner_id);
+      membersWithProfiles.unshift({
+        user_id: room.owner_id,
+        role: 'owner',
+        joined_at: null,
+        talkzy_id: ownerProfile?.talkzy_id || null,
+        display_name: ownerProfile?.display_name || 'TALKZY User',
+        avatar_url: ownerProfile?.avatar_url || null,
+        country: ownerProfile?.country || null,
+        is_admin: false,
+        is_owner: true
+      });
+    }
     res.set('Cache-Control', 'no-store').json({ members: membersWithProfiles });
   } catch (error) {
     console.error('Could not load room members:', error.message);
