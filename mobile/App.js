@@ -586,6 +586,10 @@ const [worldLuckyBagQueue, setWorldLuckyBagQueue] = useState([]);
  const [isOnMic, setIsOnMic] = useState(false);
  const [myMicSeat, setMyMicSeat] = useState(null);
  const [isMicMuted, setIsMicMuted] = useState(false);
+ const [showMicEmojiPicker, setShowMicEmojiPicker] = useState(false);
+ const [showMicChatPopup, setShowMicChatPopup] = useState(false);
+ const [roomReactions, setRoomReactions] = useState([]);
+ const roomReactionChannelRef = useRef(null);
  const [micGame, setMicGame] = useState(null);
  const [micCount, setMicCount] = useState(8);
 const [micSeats, setMicSeats] = useState([]);
@@ -794,6 +798,65 @@ useEffect(() => {
     .subscribe();
   return () => { active = false; supabase.removeChannel(channel); };
 }, [selectedRoom?.id]);
+
+// ROOM-WIDE MIC REACTIONS: ephemeral broadcast, visible to everyone in this room.
+function displayRoomReaction(payload) {
+  if (!payload?.userId || !payload?.emoji) return;
+  const reaction = {
+    ...payload,
+    id: payload.reactionId || `${payload.userId}-${Date.now()}`,
+    progress: new Animated.Value(0)
+  };
+  setRoomReactions(current => [...current.filter(item => item.userId !== reaction.userId), reaction]);
+  Animated.timing(reaction.progress, { toValue: 1, duration: 3000, useNativeDriver: true }).start();
+  setTimeout(() => setRoomReactions(current => current.filter(item => item.id !== reaction.id)), 3000);
+}
+
+useEffect(() => {
+  if (!selectedRoom?.id) {
+    roomReactionChannelRef.current = null;
+    setRoomReactions([]);
+    return;
+  }
+  const channel = supabase.channel(`room-mic-reactions-${selectedRoom.id}`);
+  roomReactionChannelRef.current = channel;
+  channel.on('broadcast', { event: 'mic_reaction' }, ({ payload }) => {
+    if (payload?.roomId === selectedRoom.id) displayRoomReaction(payload);
+  }).subscribe();
+  return () => {
+    roomReactionChannelRef.current = null;
+    setRoomReactions([]);
+    supabase.removeChannel(channel);
+  };
+}, [selectedRoom?.id]);
+
+useEffect(() => {
+  if (!isOnMic) {
+    setShowMicEmojiPicker(false);
+    setShowMicChatPopup(false);
+  }
+}, [isOnMic]);
+
+async function sendRoomReaction(reaction) {
+  if (!isOnMic || !selectedRoom?.id || !session?.user?.id) return;
+  const payload = {
+    roomId: selectedRoom.id,
+    reactionId: `${session.user.id}-${Date.now()}`,
+    userId: session.user.id,
+    displayName: profile?.display_name || displayName || 'TALKZY User',
+    avatarUrl: profile?.avatar_url || avatarUri || null,
+    emoji: reaction.emoji,
+    direction: reaction.direction || null
+  };
+  displayRoomReaction(payload);
+  try {
+    const channel = roomReactionChannelRef.current;
+    if (channel) await channel.send({ type: 'broadcast', event: 'mic_reaction', payload });
+  } catch (error) {
+    console.log('Mic reaction broadcast error:', error?.message || error);
+  }
+  setShowMicEmojiPicker(false);
+}
 
 // ROOM CHAT REALTIME UPDATES
 useEffect(() => {
@@ -3543,6 +3606,21 @@ function renderRoomInterior() {
               }}
             />
           )}
+          {isOccupied && roomReactions.filter(item => item.userId === occupiedSeat.user_id).slice(-1).map(item => (
+            <Animated.View key={item.id} pointerEvents="none" style={{
+              position: 'absolute', top: -30, alignSelf: 'center', zIndex: 30, elevation: 12,
+              backgroundColor: 'rgba(25,18,38,0.96)', borderWidth: 1, borderColor: '#E7C16D',
+              borderRadius: 18, paddingHorizontal: 9, paddingVertical: 3,
+              opacity: item.progress.interpolate({ inputRange: [0, 0.12, 0.82, 1], outputRange: [0, 1, 1, 0] }),
+              transform: [{ translateX: item.direction === 'left'
+                ? item.progress.interpolate({ inputRange: [0, 1], outputRange: [24, -24] })
+                : item.direction === 'right'
+                  ? item.progress.interpolate({ inputRange: [0, 1], outputRange: [-24, 24] })
+                  : item.progress.interpolate({ inputRange: [0, 1], outputRange: [0, 0] }) }]
+            }}>
+              <Text style={{ fontSize: 22 }}>{item.emoji}</Text>
+            </Animated.View>
+          ))}
           {seatIsClosed && (
             <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(15,8,27,0.78)', alignItems: 'center', justifyContent: 'center', borderRadius: 30 }}>
               <View style={{ width: 26, height: 20, borderWidth: 2, borderColor: '#C28BFF', borderRadius: 4, transform: [{ rotate: '-8deg' }] }}>
@@ -4276,6 +4354,42 @@ onContentSizeChange={() =>
         </View>
       </Modal>
 
+     {/* MIC EMOJI PICKER */}
+<Modal visible={showMicEmojiPicker && isOnMic} transparent animationType="fade" onRequestClose={() => setShowMicEmojiPicker(false)}>
+  <Pressable onPress={() => setShowMicEmojiPicker(false)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end', padding: 14 }}>
+    <Pressable onPress={() => {}} style={{ backgroundColor: C.panel, borderColor: C.line, borderWidth: 1, borderRadius: 20, padding: 14, marginBottom: Platform.OS === 'android' ? 24 : 8 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <Text style={{ color: C.text, fontSize: 15, fontWeight: '900' }}>Mic Reactions</Text>
+        <TouchableOpacity onPress={() => setShowMicEmojiPicker(false)}><Text style={{ color: C.muted, fontSize: 20 }}>×</Text></TouchableOpacity>
+      </View>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+        {[["Welcome","👋"],["Happy","😊"],["Thanks","🙏"],["Gosh","😲"],["Wronged","😞"],["Nausea","🤢"],["Left kiss","😘","left"],["Right kiss","😘","right"],["Money face","🤑"],["Party","🥳"],["Fear","😨"],["Silence","🤫"],["Like","👍"],["Cry","😭"],["Naughty","😜"],["Sweat","😓"],["LOL","😂"],["Cool","😎"],["Angry","😡"]].map(([label, emoji, direction]) => (
+          <TouchableOpacity key={label} onPress={() => sendRoomReaction({ label, emoji, direction })} style={{ width: '19%', minHeight: 62, alignItems: 'center', justifyContent: 'center', marginBottom: 7, backgroundColor: C.card, borderRadius: 12, borderWidth: 1, borderColor: C.line }}>
+            <Text style={{ fontSize: 25 }}>{emoji}</Text>
+            <Text numberOfLines={1} style={{ color: C.muted, fontSize: 8, marginTop: 3 }}>{label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </Pressable>
+  </Pressable>
+</Modal>
+
+{/* ON-MIC CHAT COMPOSER */}
+<Modal visible={showMicChatPopup && isOnMic} transparent animationType="fade" onRequestClose={() => setShowMicChatPopup(false)}>
+  <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end', padding: 14 }}>
+    <View style={{ backgroundColor: C.panel, borderColor: C.line, borderWidth: 1, borderRadius: 18, padding: 14, marginBottom: Platform.OS === 'android' ? 24 : 8 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <Text style={{ color: C.text, fontWeight: '900', fontSize: 14 }}>Room Chat</Text>
+        <TouchableOpacity onPress={() => setShowMicChatPopup(false)}><Text style={{ color: C.muted, fontSize: 20 }}>×</Text></TouchableOpacity>
+      </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: 20, paddingLeft: 12, paddingRight: 5 }}>
+        <TextInput value={roomChatText} onChangeText={setRoomChatText} placeholder={isRoomTourist && !touristsSendText ? 'Tourist chat disabled' : 'Message...'} placeholderTextColor={C.muted} onSubmitEditing={() => { sendRoomChatMessage(); setShowMicChatPopup(false); }} editable={!(isRoomTourist && !touristsSendText)} returnKeyType="send" style={{ color: C.text, fontSize: 13, padding: 0, flex: 1, height: 42 }} />
+        <TouchableOpacity onPress={() => { sendRoomChatMessage(); setShowMicChatPopup(false); }} disabled={isRoomTourist && !touristsSendText} style={{ paddingHorizontal: 12, paddingVertical: 8 }}><Text style={{ color: C.accent, fontSize: 18 }}>➤</Text></TouchableOpacity>
+      </View>
+    </View>
+  </View>
+</Modal>
+
      {/* ROOM BOTTOM CONTROLS */}
 <View
   style={{
@@ -4289,60 +4403,24 @@ borderTopWidth: 1,
     borderTopColor: C.line
   }}
 >
-  {/* CHAT BAR / CHAT ICON */}
-<View
-  style={{
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    maxWidth: 190,
-    marginRight: 4
-  }}
->
-  <View
-    style={{
-      flex: 1,
-      height: 38,
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: C.card,
-      borderRadius: 20,
-      paddingLeft: 10,
-      paddingRight: 5
-    }}
-  >
-    <TextInput
-      value={roomChatText}
-      onChangeText={setRoomChatText}
-      placeholder={isRoomTourist && !touristsSendText ? 'Tourist chat disabled' : 'Message...'}
-      placeholderTextColor={C.muted}
-      onSubmitEditing={sendRoomChatMessage}
-      editable={!(isRoomTourist && !touristsSendText)}
-      returnKeyType="send"
-      style={{ color: C.text, fontSize: 12, padding: 0, flex: 1 }}
-    />
-    <TouchableOpacity
-      onPress={sendRoomImage}
-      disabled={isRoomTourist && !touristsSendPic}
-      style={{ width: 30, height: 32, alignItems: 'center', justifyContent: 'center', opacity: isRoomTourist && !touristsSendPic ? 0.35 : 1 }}
-    >
-      <Text style={{ fontSize: 17 }}>▣</Text>
+  {/* ON MIC: compact chat icon. OFF MIC: normal chat composer. */}
+{isOnMic ? (
+  <TouchableOpacity onPress={() => setShowMicChatPopup(true)} style={{ width: 34, height: 38, alignItems: 'center', justifyContent: 'center', marginRight: 5 }}>
+    <Text style={{ fontSize: 21 }}>💬</Text>
+  </TouchableOpacity>
+) : (
+  <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, maxWidth: 190, marginRight: 4 }}>
+    <View style={{ flex: 1, height: 38, flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: 20, paddingLeft: 10, paddingRight: 5 }}>
+      <TextInput value={roomChatText} onChangeText={setRoomChatText} placeholder={isRoomTourist && !touristsSendText ? 'Tourist chat disabled' : 'Message...'} placeholderTextColor={C.muted} onSubmitEditing={sendRoomChatMessage} editable={!(isRoomTourist && !touristsSendText)} returnKeyType="send" style={{ color: C.text, fontSize: 12, padding: 0, flex: 1 }} />
+      <TouchableOpacity onPress={sendRoomImage} disabled={isRoomTourist && !touristsSendPic} style={{ width: 30, height: 32, alignItems: 'center', justifyContent: 'center', opacity: isRoomTourist && !touristsSendPic ? 0.35 : 1 }}>
+        <Text style={{ fontSize: 17 }}>▣</Text>
+      </TouchableOpacity>
+    </View>
+    <TouchableOpacity onPress={sendRoomChatMessage} disabled={isRoomTourist && !touristsSendText} style={{ opacity: isRoomTourist && !touristsSendText ? 0.4 : 1, width: 34, height: 38, alignItems: 'center', justifyContent: 'center' }}>
+      <Text style={{ fontSize: 19 }}>➤</Text>
     </TouchableOpacity>
   </View>
-
-  <TouchableOpacity
-    onPress={sendRoomChatMessage}
-    disabled={isRoomTourist && !touristsSendText}
-    style={{ opacity: isRoomTourist && !touristsSendText ? 0.4 : 1,
-      width: 34,
-      height: 38,
-      alignItems: 'center',
-      justifyContent: 'center'
-    }}
-  >
-    <Text style={{ fontSize: 19 }}>➤</Text>
-  </TouchableOpacity>
-</View>
+)}
 
   {/* MIC - MUTE / UNMUTE WHILE REMAINING ON SEAT */}
 {isOnMic && (
@@ -4410,6 +4488,13 @@ borderTopWidth: 1,
     resizeMode: 'contain'
   }}
 />
+  </TouchableOpacity>
+)}
+
+  {/* MIC EMOJI REACTIONS — visible only while seated on mic */}
+{isOnMic && (
+  <TouchableOpacity onPress={() => setShowMicEmojiPicker(true)} style={{ width: 38, height: 38, borderRadius: 20, backgroundColor: showMicEmojiPicker ? C.primary : C.card, alignItems: 'center', justifyContent: 'center', marginRight: 3 }}>
+    <Text style={{ fontSize: 21 }}>😊</Text>
   </TouchableOpacity>
 )}
 
