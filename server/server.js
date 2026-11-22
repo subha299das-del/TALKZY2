@@ -1075,54 +1075,46 @@ app.patch('/api/rooms/:roomId/type', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
-
     if (room.owner_id !== req.talkzyUser.id) {
       return res.status(403).json({ error: 'Only the room owner can change room privacy.' });
     }
-
     if (room.status !== 'active') {
       return res.status(409).json({ error: 'This room is closed.' });
     }
 
     const roomType = String(req.body?.roomType || '');
     const password = String(req.body?.password || '');
-
     if (!['public', 'locked'].includes(roomType)) {
       return res.status(400).json({ error: 'Room type must be public or locked.' });
     }
-
-    if (roomType === 'locked' &&
-    (password.trim().length < 4 || password.length > 64)) {
-      return res.status(400).json({
-        error: 'A new locked-room password must be 4 to 64 characters.'
-      });
+    if (roomType === 'locked' && (password.trim().length < 4 || password.length > 64)) {
+      return res.status(400).json({ error: 'A new locked-room password must be 4 to 64 characters.' });
     }
 
     const passwordHash = roomType === 'locked' ? await makePasswordHash(password) : null;
-    if (roomType === 'locked') {
-      const { error: passwordError } = await supabase.from('talkzy_room_passwords')
-        .upsert({ room_id: room.id, password_hash: passwordHash }, { onConflict: 'room_id' });
-      if (passwordError) throw passwordError;
+    const { data, error } = await supabase.rpc('talkzy_update_room_settings_atomic', {
+      p_room_id: room.id,
+      p_user_id: req.talkzyUser.id,
+      p_room_patch: { room_type: roomType },
+      p_approval: {},
+      p_write_password: roomType === 'locked',
+      p_password_hash: passwordHash,
+      p_delete_password: roomType === 'public'
+    });
+    if (error) {
+      if (error.code === '42501') return res.status(403).json({ error: 'Only the room owner can change room privacy.' });
+      if (error.code === '55000') return res.status(409).json({ error: 'This room is closed.' });
+      if (error.code === 'P0002') return res.status(404).json({ error: 'Room not found.' });
+      if (error.code === '22023') return res.status(400).json({ error: 'Invalid room privacy settings.' });
+      throw error;
     }
-
-    const { data, error } = await supabase.from('talkzy_rooms')
-      .update({ room_type: roomType })
-      .eq('id', room.id)
-      .select('id, room_name, description, room_type, status')
-      .single();
-    if (error) throw error;
-
-    if (roomType === 'public') {
-      const { error: deletePasswordError } = await supabase.from('talkzy_room_passwords')
-        .delete().eq('room_id', room.id);
-      if (deletePasswordError) throw deletePasswordError;
-    }
-    res.json({ room: data });
+    res.json({ room: data?.room || null });
   } catch (error) {
     console.error('Could not change room privacy:', error.message);
     res.status(500).json({ error: 'Could not change room privacy.' });
   }
 });
+
 
 // Add a room admin. The target user must already be a room member.
 app.post('/api/rooms/:roomId/admins', userAuth, async (req, res) => {
