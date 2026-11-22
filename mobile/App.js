@@ -4179,6 +4179,43 @@ onContentSizeChange={() =>
         </TouchableOpacity>
       )}
 
+     {/* HOT EVENTS MINI BANNER */}
+<TouchableOpacity
+  onPress={() => {
+    setShowGreedyPanel(false);
+    setShowRoomGamePanel(false);
+    setShowRocketPanel(false);
+    setShowRoomTools(false);
+    setShowRoomGiftPanel(false);
+    setActiveTab('Room');
+    setRoomTab('Popular');
+  }}
+  activeOpacity={0.86}
+  style={{
+    position: 'absolute',
+    right: 10,
+    bottom: Platform.OS === 'android' ? 150 : 118,
+    width: 76,
+    height: 38,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: '#7C3AED',
+    borderWidth: 1,
+    borderColor: '#C4A5FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 39,
+    elevation: 20
+  }}
+>
+  <Text style={{ color: '#FFFFFF', fontSize: 9, fontWeight: '900', letterSpacing: 0.6 }}>
+    🔥 HOT EVENTS
+  </Text>
+  <Text style={{ color: '#F4EFFF', fontSize: 7, fontWeight: '700', marginTop: 1 }}>
+    TAP TO EXPLORE
+  </Text>
+</TouchableOpacity>
+
      {/* ROOM BOTTOM CONTROLS */}
 <View
   style={{
