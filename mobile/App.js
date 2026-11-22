@@ -4490,43 +4490,14 @@ function renderRoomInterior() {
         </TouchableOpacity>
       )}
 
-     {/* HOT EVENTS MINI BANNER */}
-<TouchableOpacity
-  onPress={() => {
-    setShowGreedyPanel(false);
-    setShowRoomGamePanel(false);
-    setShowRocketPanel(false);
-    setShowRoomTools(false);
-    setShowRoomGiftPanel(false);
-    setActiveTab('Room');
-    setShowHotEventsPopup(true);
-    if (!loadingOfficialEvents) loadOfficialEvents();
-  }}
-  activeOpacity={0.86}
-  style={{
-    position: 'absolute',
-    right: 10,
-    bottom: Platform.OS === 'android' ? 150 : 118,
-    width: 76,
-    height: 38,
-    borderRadius: 8,
-    overflow: 'hidden',
-    backgroundColor: '#7C3AED',
-    borderWidth: 1,
-    borderColor: '#C4A5FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 39,
-    elevation: 20
-  }}
->
-  <Text style={{ color: '#FFFFFF', fontSize: 9, fontWeight: '900', letterSpacing: 0.6 }}>
-    🔥 HOT EVENTS
-  </Text>
-  <Text style={{ color: '#F4EFFF', fontSize: 7, fontWeight: '700', marginTop: 1 }}>
-    TAP TO EXPLORE
-  </Text>
-</TouchableOpacity>
+{/* RIGHT-SIDE ROOM SHORTCUTS: Game, Greedy, Rocket, Hot Event, Gift */}
+<View style={{ position: 'absolute', right: 10, bottom: Platform.OS === 'android' ? 92 : 70, zIndex: 55, elevation: 28, alignItems: 'center', gap: 9 }}>
+  <TouchableOpacity onPress={() => { setShowRoomGamePanel(value => !value); setShowGreedyPanel(false); setShowRocketPanel(false); setShowRoomTools(false); setShowRoomGiftPanel(false); }} style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: showRoomGamePanel ? C.primary : C.card, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 20 }}>🎮</Text></TouchableOpacity>
+  <TouchableOpacity onPress={() => { setShowGreedyPanel(value => !value); setShowRoomGamePanel(false); setShowRocketPanel(false); setShowRoomTools(false); setShowRoomGiftPanel(false); }} style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: showGreedyPanel ? C.primary : C.card, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 20 }}>🎲</Text></TouchableOpacity>
+  <TouchableOpacity onPress={() => { setShowRocketPanel(value => !value); setShowGreedyPanel(false); setShowRoomGamePanel(false); setShowRoomTools(false); setShowRoomGiftPanel(false); }} style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: showRocketPanel ? C.primary : C.card, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 20 }}>🚀</Text></TouchableOpacity>
+  <TouchableOpacity onPress={() => { setShowGreedyPanel(false); setShowRoomGamePanel(false); setShowRocketPanel(false); setShowRoomTools(false); setShowRoomGiftPanel(false); setActiveTab('Room'); setShowHotEventsPopup(true); if (!loadingOfficialEvents) loadOfficialEvents(); }} style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: '#7C3AED', borderWidth: 1, borderColor: '#C4A5FF', alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 20 }}>🔥</Text></TouchableOpacity>
+  <TouchableOpacity onPress={() => { setShowRoomGiftPanel(value => !value); setShowRoomTools(false); setShowGreedyPanel(false); setShowRoomGamePanel(false); setShowRocketPanel(false); }} style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: C.card, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 20 }}>🎁</Text></TouchableOpacity>
+</View>
 
       <Modal
         visible={showHotEventsPopup}
@@ -4792,85 +4763,6 @@ function renderRoomInterior() {
     <Text style={{ fontSize: 19 }}>⊞</Text>
   </TouchableOpacity>
 
-  {/* ROCKET */}
-  <TouchableOpacity
-    onPress={() => {
-      setShowRocketPanel(value => !value);
-      setShowGreedyPanel(false);
-      setShowRoomGamePanel(false);
-      setShowRoomTools(false);
-      setShowRoomGiftPanel(false);
-    }}
-    style={{
-      width: 38,
-      height: 38,
-      borderRadius: 20,
-      backgroundColor: showRocketPanel ? C.primary : C.card,
-      alignItems: 'center',
-      justifyContent: 'center'
-    }}
-  >
-    <Text style={{ fontSize: 19 }}>🚀</Text>
-  </TouchableOpacity>
-
-  {/* GREEDY */}
-  <TouchableOpacity
-    onPress={() => {
-      setShowGreedyPanel(value => !value);
-      setShowRoomGamePanel(false);
-      setShowRoomTools(false);
-      setShowRoomGiftPanel(false);
-    }}
-    style={{
-      width: 38,
-      height: 38,
-      borderRadius: 20,
-      backgroundColor: showGreedyPanel ? C.primary : C.card,
-      alignItems: 'center',
-      justifyContent: 'center'
-    }}
-  >
-    <Text style={{ fontSize: 19 }}>🎲</Text>
-  </TouchableOpacity>
-
-  {/* GAME */}
-  <TouchableOpacity
-    onPress={() => {
-      setShowRoomGamePanel(value => !value);
-      setShowGreedyPanel(false);
-      setShowRoomTools(false);
-      setShowRoomGiftPanel(false);
-    }}
-    style={{
-      width: 38,
-      height: 38,
-      borderRadius: 20,
-      backgroundColor: showRoomGamePanel ? C.primary : C.card,
-      alignItems: 'center',
-      justifyContent: 'center'
-    }}
-  >
-    <Text style={{ fontSize: 19 }}>🎮</Text>
-  </TouchableOpacity>
-
-  {/* GIFT */}
-  <TouchableOpacity
-    onPress={() => {
-      setShowRoomGiftPanel(!showRoomGiftPanel);
-      setShowRoomTools(false);
-      setShowGreedyPanel(false);
-    }}
-    style={{
-      width: 38,
-      height: 38,
-      borderRadius: 20,
-      backgroundColor: C.card,
-      alignItems: 'center',
-      justifyContent: 'center'
-    }}
-  >
-    <Text style={{ fontSize: 19 }}>🎁</Text>
-  </TouchableOpacity>
 </ScrollView>
         
             
