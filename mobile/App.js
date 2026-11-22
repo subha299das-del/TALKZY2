@@ -1985,22 +1985,16 @@ loadFollowedRooms(session);
       );
     
 } catch (error) {
-  const errorDetails = {
+  console.log('Profile save error:', {
     message: error.message,
     code: error.code,
     details: error.details,
-    hint: error.hint,
-    sessionUserId: session?.user?.id,
-  };
-
-  console.log(
-    'PROFILE SAVE ERROR:',
-    JSON.stringify(errorDetails, null, 2)
-  );
+    hint: error.hint
+  });
 
   Alert.alert(
-    'Profile save diagnostic',
-    JSON.stringify(errorDetails, null, 2)
+    'Profile save failed',
+    'We could not save your profile. Please check your connection and try again.'
   );
 } finally {
   setSaving(false);
