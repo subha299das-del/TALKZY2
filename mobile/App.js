@@ -3697,7 +3697,7 @@ function renderRoomInterior() {
               </View>
             </Animated.View>
           );
-        })()}}
+        })()}
 
         <Text
           style={{
