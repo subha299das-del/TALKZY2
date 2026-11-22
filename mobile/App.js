@@ -1126,10 +1126,27 @@ const youtubeLastPositionWriteRef = useRef(0);
 const [showRoomGiftPanel, setShowRoomGiftPanel] = useState(false);
 const [roomChatText, setRoomChatText] = useState('');
 const [showRoomChatComposer, setShowRoomChatComposer] = useState(false);
+const [roomKeyboardLift, setRoomKeyboardLift] = useState(0);
 const [roomChatImagePreview, setRoomChatImagePreview] = useState(null);
 const [roomChatImageSending, setRoomChatImageSending] = useState(false);
  const [roomChatMessages, setRoomChatMessages] = useState([]);
  const roomChatScrollRef = useRef(null);
+
+// Lift the room slightly while the keyboard is visible; the avoiding view
+// separately resizes the available room area so the composer stays accessible.
+useEffect(() => {
+  const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+  const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+  const showSubscription = Keyboard.addListener(showEvent, event => {
+    const keyboardHeight = event?.endCoordinates?.height || 0;
+    setRoomKeyboardLift(Math.min(48, Math.round(keyboardHeight * 0.12)));
+  });
+  const hideSubscription = Keyboard.addListener(hideEvent, () => setRoomKeyboardLift(0));
+  return () => {
+    showSubscription.remove();
+    hideSubscription.remove();
+  };
+}, []);
   const [showJoinPassword, setShowJoinPassword] = useState(false);
 const [joinPassword, setJoinPassword] = useState('');
 const [joiningRoom, setJoiningRoom] = useState(false);
@@ -3032,7 +3049,12 @@ function renderRoomInterior() {
   const roomIsLocked = selectedRoom.room_type === 'locked';
 
   return (
-    <View style={{ flex: 1, backgroundColor: 'transparent', minHeight: 0 }}>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={0}
+    >
+    <Animated.View style={{ flex: 1, backgroundColor: 'transparent', minHeight: 0, transform: [{ translateY: -roomKeyboardLift }] }}>
 
       {worldLuckyBagNotification && (
         <WorldLuckyBagTicker
@@ -3792,6 +3814,7 @@ function renderRoomInterior() {
   <View style={{ marginTop: 6, marginBottom: 5 }}>
   <ScrollView
  ref={roomChatScrollRef}
+ keyboardShouldPersistTaps="handled"
 onContentSizeChange={() =>
   roomChatScrollRef.current?.scrollToEnd({ animated: true })
  }
@@ -4629,7 +4652,8 @@ borderTopWidth: 1,
         </View>
       </Modal>
 
-    </View>
+    </Animated.View>
+    </KeyboardAvoidingView>
   );
                  }
 
