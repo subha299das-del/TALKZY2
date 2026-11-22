@@ -2385,7 +2385,7 @@ async function toggleFollowRoom(room) {
       const localCutoff = Math.max(roomChatLocalCutoffRef.current[roomId] || 0, savedCutoff);
       roomChatLocalCutoffRef.current[roomId] = localCutoff;
       const result = await api(`/api/rooms/${roomId}/messages`);
-      setRoomChatMessages((result.messages || []).filter(item => !localCutoff || new Date(item.created_at).getTime() > localCutoff).map(item => ({
+      setRoomChatMessages(prev => [...prev.filter(item => item.system), ...(result.messages || []).filter(item => !localCutoff || new Date(item.created_at).getTime() > localCutoff).map(item => ({
         id: item.id,
         text: item.message_type === 'image' ? '📷 Photo' : item.message_text,
         sender: item.sender?.display_name || 'TALKZY User',
@@ -2394,7 +2394,7 @@ async function toggleFollowRoom(room) {
         time: item.created_at ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
         message_type: item.message_type,
         image_url: item.image_url
-      })));
+      }))]);
     } catch (error) { console.log('Room chat loading error:', error.message); }
   }
 
