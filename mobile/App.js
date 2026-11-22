@@ -3787,23 +3787,23 @@ function renderRoomInterior() {
 </Modal>
 
                     
-            {/* ROOM CHAT MESSAGES */}
-{roomChatMessages.length > 0 && (
+            {/* ROOM CHAT SECTION: inline composer never overlays or replaces the mic-seat layout */}
+{(roomChatMessages.length > 0 || showRoomChatComposer) && (
+  <View style={{ marginTop: 6, marginBottom: 5 }}>
   <ScrollView
  ref={roomChatScrollRef}
 onContentSizeChange={() =>
   roomChatScrollRef.current?.scrollToEnd({ animated: true })
  }
     style={{
-      maxHeight: micCount >= 16 ? 95 : 160,
-      marginTop: 6,
-      marginBottom: 5
+      maxHeight: showRoomChatComposer ? (micCount >= 16 ? 92 : 112) : (micCount >= 16 ? 95 : 160),
+      marginBottom: showRoomChatComposer ? 8 : 0
     }}
     contentContainerStyle={{
       paddingHorizontal: 12
     }}
   >
-    {roomChatMessages.map((message) => (
+    {(showRoomChatComposer ? roomChatMessages.slice(-3) : roomChatMessages).map((message) => (
       <View
         key={message.id}
         style={{
@@ -3846,6 +3846,28 @@ onContentSizeChange={() =>
       </View>
     ))}
   </ScrollView>
+  {showRoomChatComposer && (
+    <View style={{ backgroundColor: '#0B1020', borderWidth: 1, borderColor: '#34415F', borderRadius: 20, paddingHorizontal: 9, paddingVertical: 7, marginHorizontal: 10 }}>
+      <View style={{ minHeight: 48, maxHeight: 120, flexDirection: 'row', alignItems: 'flex-end', backgroundColor: '#182139', borderRadius: 16, borderWidth: 1, borderColor: '#3A496C', paddingHorizontal: 7, paddingVertical: 5 }}>
+        <TouchableOpacity onPress={sendRoomImage} disabled={isRoomTourist && !touristsSendPic} style={{ width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: '#263451', marginRight: 7, opacity: isRoomTourist && !touristsSendPic ? 0.4 : 1 }}>
+          <Text style={{ color: '#FFFFFF', fontSize: 25 }}>＋</Text>
+        </TouchableOpacity>
+        <TextInput
+          value={roomChatText}
+          onChangeText={setRoomChatText}
+          placeholder={isRoomTourist && !touristsSendText ? 'Tourist chat disabled' : 'Message the room...'}
+          placeholderTextColor={C.muted}
+          returnKeyType="send"
+          blurOnSubmit
+          onSubmitEditing={sendRoomChatMessage}
+          autoFocus
+          editable={!(isRoomTourist && !touristsSendText)}
+          style={{ color: C.text, fontSize: 15, paddingTop: 9, paddingBottom: 8, flex: 1 }}
+        />
+      </View>
+    </View>
+  )}
+  </View>
 )}
 
 {/* EMPTY ROOM SPACE */}
@@ -4209,17 +4231,6 @@ onContentSizeChange={() =>
 
       )}
 
-      <Modal visible={showRoomChatComposer} transparent animationType="slide" onRequestClose={() => { Keyboard.dismiss(); setShowRoomChatComposer(false); }}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.28)' }}>
-          <Pressable style={{ flex: 1 }} onPress={() => { Keyboard.dismiss(); setShowRoomChatComposer(false); }} />
-          <View style={{ backgroundColor: '#0B1020', borderTopWidth: 1, borderTopColor: '#34415F', paddingHorizontal: 12, paddingTop: 12, paddingBottom: Platform.OS === 'android' ? 14 : 22 }}>
-            <View style={{ minHeight: 52, maxHeight: 140, flexDirection: 'row', alignItems: 'flex-end', backgroundColor: '#182139', borderRadius: 25, borderWidth: 1, borderColor: '#3A496C', paddingHorizontal: 8, paddingVertical: 7 }}>
-              <TouchableOpacity onPress={sendRoomImage} disabled={isRoomTourist && !touristsSendPic} style={{ width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: '#263451', marginRight: 7, opacity: isRoomTourist && !touristsSendPic ? 0.4 : 1 }}><Text style={{ color: '#FFFFFF', fontSize: 25 }}>＋</Text></TouchableOpacity>
-              <TextInput value={roomChatText} onChangeText={setRoomChatText} placeholder={isRoomTourist && !touristsSendText ? 'Tourist chat disabled' : 'Message the room...'} placeholderTextColor={C.muted} returnKeyType="send" blurOnSubmit onSubmitEditing={sendRoomChatMessage} autoFocus editable={!(isRoomTourist && !touristsSendText)} style={{ color: C.text, fontSize: 15, paddingTop: 9, paddingBottom: 8, flex: 1 }} />
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
       <Modal visible={!!roomChatImagePreview} animationType="slide" onRequestClose={() => setRoomChatImagePreview(null)}>
         <View style={{ flex: 1, backgroundColor: '#050711' }}>
           <View style={{ height: Platform.OS === 'android' ? 58 : 82, paddingTop: Platform.OS === 'android' ? 5 : 30, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: '#26314B' }}>
