@@ -1073,6 +1073,8 @@ async function sendLuckyBag() {
 const [showRoomThemeMenu, setShowRoomThemeMenu] = useState(false);
 const [showYoutubePanel, setShowYoutubePanel] = useState(false);
 const [showYoutubePicker, setShowYoutubePicker] = useState(false);
+const [showYoutubeQueuePopup, setShowYoutubeQueuePopup] = useState(false);
+const [showYoutubeVolumePopup, setShowYoutubeVolumePopup] = useState(false);
 const [youtubePickedItem, setYoutubePickedItem] = useState(null);
 const [showMusicPanel, setShowMusicPanel] = useState(false);
  const [musicMinimized, setMusicMinimized] = useState(false);
@@ -3132,6 +3134,23 @@ function renderRoomInterior() {
 
             </View>
 
+      {/* YOUTUBE QUICK CONTROLS — shown only while the shared screen is open */}
+      {youtubeScreenVisible && (
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginHorizontal: 12, marginTop: 4, marginBottom: 1, gap: 5 }}>
+          <TouchableOpacity onPress={() => loadYoutubeState(true)} style={{ width: 20, height: 20, borderRadius: 6, backgroundColor: '#202B45', borderWidth: 1, borderColor: '#53658C', alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: '#E8E9FF', fontSize: 11, lineHeight: 13 }}>↻</Text>
+          </TouchableOpacity>
+          {(selectedRoom?.owner_id === session?.user?.id || roomPresence.some(person => person.user_id === session?.user?.id && person.presence_role === 'admin')) && (
+            <TouchableOpacity onPress={() => setShowYoutubeQueuePopup(true)} style={{ width: 20, height: 20, borderRadius: 6, backgroundColor: '#202B45', borderWidth: 1, borderColor: '#53658C', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: '#E8E9FF', fontSize: 10, lineHeight: 12 }}>☷</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity onPress={() => setShowYoutubeVolumePopup(true)} style={{ width: 20, height: 20, borderRadius: 6, backgroundColor: '#202B45', borderWidth: 1, borderColor: '#53658C', alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: '#E8E9FF', fontSize: 10, lineHeight: 12 }}>◖))</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* SHARED YOUTUBE SCREEN — visible to the room while active, or locally when opened by a controller */}
       {youtubeScreenVisible && (
       <View style={{ marginHorizontal: 10, marginTop: 5, marginBottom: 5, height: 170, backgroundColor: '#050914', borderRadius: 13, borderWidth: 1, borderColor: '#6B54C7', overflow: 'hidden' }}>
@@ -3173,24 +3192,53 @@ function renderRoomInterior() {
           )}
         </View>
       )}
-      {/* Everyone can view the shared playlist; only this room's creator/admins can manage it. */}
-      {youtubeState.queue?.length > 0 && (
-        <View style={{ marginHorizontal: 10, marginBottom: 5, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: '#10172A', borderRadius: 12, borderWidth: 1, borderColor: '#354466' }}>
-          <Text style={{ color: '#C5CFEA', fontSize: 10, fontWeight: '900', marginBottom: 5 }}>SAVED PLAYLIST · {youtubeState.queue.length}</Text>
-          {youtubeState.queue.map((item, index) => (
-            <View key={`${item.video_id || 'video'}-${index}`} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 4, borderTopWidth: index ? 1 : 0, borderTopColor: '#27334D' }}>
-              <Text numberOfLines={1} style={{ color: '#AAB7D4', fontSize: 10, flex: 1, paddingRight: 6 }}>{index + 1}. {item.title || 'YouTube video'}</Text>
-              {(selectedRoom?.owner_id === session?.user?.id || roomPresence.some(person => person.user_id === session?.user?.id && person.presence_role === 'admin')) && (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                  <TouchableOpacity disabled={index === 0 || youtubeSaving} onPress={() => moveYoutubeQueueItem(index, -1)} style={{ paddingHorizontal: 7, paddingVertical: 4, borderRadius: 6, backgroundColor: '#263653', opacity: index === 0 ? 0.35 : 1 }}><Text style={{ color: '#E3E8FF', fontSize: 11, fontWeight: '900' }}>↑</Text></TouchableOpacity>
-                  <TouchableOpacity disabled={index === youtubeState.queue.length - 1 || youtubeSaving} onPress={() => moveYoutubeQueueItem(index, 1)} style={{ paddingHorizontal: 7, paddingVertical: 4, borderRadius: 6, backgroundColor: '#263653', opacity: index === youtubeState.queue.length - 1 ? 0.35 : 1 }}><Text style={{ color: '#E3E8FF', fontSize: 11, fontWeight: '900' }}>↓</Text></TouchableOpacity>
-                  <TouchableOpacity disabled={youtubeSaving} onPress={() => removeYoutubeQueueItem(index)} style={{ paddingHorizontal: 7, paddingVertical: 4, borderRadius: 6, backgroundColor: '#48263A' }}><Text style={{ color: '#FFB5C5', fontSize: 10, fontWeight: '900' }}>✕</Text></TouchableOpacity>
-                </View>
-              )}
+      {/* The waiting queue is intentionally available only from the owner/admin queue icon. */}
+
+      {/* OWNER / ADMIN QUEUE POPUP */}
+      <Modal visible={showYoutubeQueuePopup} transparent animationType="fade" onRequestClose={() => setShowYoutubeQueuePopup(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(2,4,12,0.82)', justifyContent: 'center', padding: 20 }}>
+          <View style={{ maxHeight: '70%', backgroundColor: '#10172A', borderRadius: 18, borderWidth: 1, borderColor: '#6B54C7', padding: 14 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <Text style={{ color: '#F5F6FF', fontSize: 14, fontWeight: '900' }}>YOUTUBE QUEUE · {youtubeState.queue?.length || 0}</Text>
+              <TouchableOpacity onPress={() => setShowYoutubeQueuePopup(false)}><Text style={{ color: '#C5CFEA', fontSize: 20 }}>✕</Text></TouchableOpacity>
             </View>
-          ))}
+            <ScrollView>
+              {(youtubeState.queue || []).length === 0 ? (
+                <Text style={{ color: '#AAB7D4', fontSize: 12, textAlign: 'center', paddingVertical: 22 }}>No videos waiting in the queue.</Text>
+              ) : (youtubeState.queue || []).map((item, index) => (
+                <View key={`${item.video_id || 'video'}-${index}`} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderTopWidth: index ? 1 : 0, borderTopColor: '#27334D' }}>
+                  <Text numberOfLines={2} style={{ color: '#E8E9FF', fontSize: 11, flex: 1, paddingRight: 8 }}>{index + 1}. {item.title || 'YouTube video'}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <TouchableOpacity disabled={index === 0 || youtubeSaving} onPress={() => moveYoutubeQueueItem(index, -1)} style={{ paddingHorizontal: 7, paddingVertical: 5, borderRadius: 6, backgroundColor: '#263653', opacity: index === 0 ? 0.35 : 1 }}><Text style={{ color: '#E3E8FF', fontSize: 11, fontWeight: '900' }}>↑</Text></TouchableOpacity>
+                    <TouchableOpacity disabled={index === youtubeState.queue.length - 1 || youtubeSaving} onPress={() => moveYoutubeQueueItem(index, 1)} style={{ paddingHorizontal: 7, paddingVertical: 5, borderRadius: 6, backgroundColor: '#263653', opacity: index === youtubeState.queue.length - 1 ? 0.35 : 1 }}><Text style={{ color: '#E3E8FF', fontSize: 11, fontWeight: '900' }}>↓</Text></TouchableOpacity>
+                    <TouchableOpacity disabled={youtubeSaving} onPress={() => removeYoutubeQueueItem(index)} style={{ paddingHorizontal: 7, paddingVertical: 5, borderRadius: 6, backgroundColor: '#48263A' }}><Text style={{ color: '#FFB5C5', fontSize: 10, fontWeight: '900' }}>✕</Text></TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
         </View>
-      )}
+      </Modal>
+
+      {/* PERSONAL VOLUME POPUP — affects only this participant's local player */}
+      <Modal visible={showYoutubeVolumePopup} transparent animationType="fade" onRequestClose={() => setShowYoutubeVolumePopup(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(2,4,12,0.82)', justifyContent: 'center', padding: 28 }}>
+          <View style={{ backgroundColor: '#10172A', borderRadius: 18, borderWidth: 1, borderColor: '#6B54C7', padding: 18 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <Text style={{ color: '#F5F6FF', fontSize: 14, fontWeight: '900' }}>MY YOUTUBE VOLUME</Text>
+              <TouchableOpacity onPress={() => setShowYoutubeVolumePopup(false)}><Text style={{ color: '#C5CFEA', fontSize: 20 }}>✕</Text></TouchableOpacity>
+            </View>
+            <Text style={{ color: '#D9D2FF', fontSize: 13, textAlign: 'center', marginBottom: 14 }}>{youtubeVolume}%</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <TouchableOpacity onPress={() => { const v = Math.max(0, youtubeVolume - 10); setYoutubeVolume(v); youtubeWebViewRef.current?.injectJavaScript(`window.talkzySetVolume && window.talkzySetVolume(${v});true;`); }} style={{ width: 42, height: 38, borderRadius: 10, backgroundColor: '#263653', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: '#FFFFFF', fontSize: 20 }}>−</Text></TouchableOpacity>
+              <View style={{ flex: 1, marginHorizontal: 12, flexDirection: 'row', justifyContent: 'space-between' }}>
+                {[0,20,40,60,80,100].map(v => <TouchableOpacity key={v} onPress={() => { setYoutubeVolume(v); youtubeWebViewRef.current?.injectJavaScript(`window.talkzySetVolume && window.talkzySetVolume(${v});true;`); }} style={{ width: 8, height: 22, borderRadius: 4, backgroundColor: youtubeVolume >= v ? '#9C8AFF' : '#354466' }} />)}
+              </View>
+              <TouchableOpacity onPress={() => { const v = Math.min(100, youtubeVolume + 10); setYoutubeVolume(v); youtubeWebViewRef.current?.injectJavaScript(`window.talkzySetVolume && window.talkzySetVolume(${v});true;`); }} style={{ width: 42, height: 38, borderRadius: 10, backgroundColor: '#263653', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: '#FFFFFF', fontSize: 20 }}>＋</Text></TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* YOUTUBE SEARCH PICKER — separate popup for controllers */}
       <Modal visible={showYoutubePicker} transparent animationType="slide" onRequestClose={() => { setShowYoutubePicker(false); setYoutubePickedItem(null); }}>
