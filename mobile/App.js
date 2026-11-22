@@ -18,7 +18,8 @@ Modal,
 Platform,
 Animated,
 Dimensions,
-  BackHandler
+  BackHandler,
+  Keyboard
 
 } from 'react-native';
 
@@ -782,10 +783,6 @@ useEffect(() => {
       setShowRoomChatComposer(false);
       return true;
     }
-    if (showRoomChatActionMenu) {
-      setShowRoomChatActionMenu(false);
-      return true;
-    }
     if (showRoomShortcutsPage) { setShowRoomShortcutsPage(false); return true; }
     // Close any active room-level panel before opening the room action menu.
     if (showMicEmojiPicker) { setShowMicEmojiPicker(false); return true; }
@@ -852,7 +849,7 @@ useEffect(() => {
   });
   return () => subscription.remove();
 }, [
-  selectedRoom?.id, screen, showRoomChatComposer, showRoomChatActionMenu,
+  selectedRoom?.id, screen, showRoomChatComposer,
   showYoutubePanel, eventFrontReturnScreen, roomSettingsReturnScreen, activeTab,
   showRoomShortcutsPage,
   showMicEmojiPicker, showMicControlPopup, showRoomUsers, showMicCountPicker,
@@ -3892,29 +3889,7 @@ function renderRoomInterior() {
 </Modal>
 
                     
-            {/* ROOM CHAT MESSAGES — keep the room/microphone layout stable */}
-{roomChatMessages.length > 0 && (
-  <ScrollView
-    ref={roomChatScrollRef}
-    showsVerticalScrollIndicator={false}
-    onContentSizeChange={() => roomChatScrollRef.current?.scrollToEnd({ animated: true })}
-    style={{ maxHeight: 108, marginTop: 6, marginBottom: 5, flexGrow: 0 }}
-    contentContainerStyle={{ paddingHorizontal: 12 }}
-  >
-    {roomChatMessages.slice(-3).map(message => (
-      <View key={message.id} style={{ backgroundColor: C.card, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, marginBottom: 5, alignSelf: 'flex-start', maxWidth: '88%' }}>
-        <Text style={{ color: '#8E9AFF', fontSize: 10, fontWeight: 'bold', marginBottom: 2 }}>{message.sender?.display_name || message.sender || 'TALKZY User'}</Text>
-        {message.image_url ? (
-          <Image source={{ uri: message.image_url }} style={{ width: 150, height: 100, borderRadius: 8, marginTop: 2 }} resizeMode="cover" />
-        ) : (
-          <Text style={{ color: C.text, fontSize: 13 }}>{message.text || message.message_text}</Text>
-        )}
-        <Text style={{ color: C.muted, fontSize: 9, textAlign: 'right', marginTop: 3 }}>{message.time}</Text>
-      </View>
-    ))}
-  </ScrollView>
-)}
-
+            {/* Room messages are shown in the keyboard chat space. */}
 {/* EMPTY ROOM SPACE */}
 <View style={{ flexGrow: 1, minHeight: 12 }} />
 
@@ -4796,46 +4771,63 @@ function renderRoomInterior() {
   </Pressable>
 </Modal>
 
-{/* ROOM CHAT COMPOSER — Android Back closes this panel */}
+{/* ROOM CHAT SPACE — appears with the Android keyboard; no title or overflow menu */}
 <Modal
   visible={showRoomChatComposer}
   transparent
   animationType="fade"
+  statusBarTranslucent
   onRequestClose={() => {
-    setShowRoomChatActionMenu(false);
+    Keyboard.dismiss();
     setShowRoomChatComposer(false);
+    setShowRoomChatActionMenu(false);
   }}
 >
-  <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.28)', padding: 14 }}>
-    <View style={{ backgroundColor: C.panel, borderColor: C.line, borderWidth: 1, borderRadius: 18, padding: 14, marginBottom: Platform.OS === 'android' ? 12 : 8 }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <Text style={{ color: C.text, fontWeight: '900', fontSize: 14 }}>Room Chat</Text>
-        <TouchableOpacity onPress={() => setShowRoomChatActionMenu(true)} accessibilityRole="button" accessibilityLabel="Chat options" style={{ width: 34, height: 30, alignItems: 'center', justifyContent: 'center', borderRadius: 9, backgroundColor: C.card }}>
-          <Text style={{ color: C.text, fontSize: 21, fontWeight: '900', lineHeight: 23 }}>⋮</Text>
-        </TouchableOpacity>
-      </View>
+  <KeyboardAvoidingView
+    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.16)' }}
+  >
+    <View style={{ backgroundColor: C.panel, borderTopLeftRadius: 20, borderTopRightRadius: 20, borderColor: C.line, borderWidth: 1, paddingHorizontal: 12, paddingTop: 10, paddingBottom: Platform.OS === 'android' ? 8 : 12, maxHeight: '58%' }}>
+      {roomChatMessages.length > 0 && (
+        <ScrollView
+          ref={roomChatScrollRef}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          onContentSizeChange={() => roomChatScrollRef.current?.scrollToEnd({ animated: true })}
+          style={{ maxHeight: 230, marginBottom: 9 }}
+          contentContainerStyle={{ paddingHorizontal: 2 }}
+        >
+          {roomChatMessages.slice(-30).map(message => (
+            <View key={message.id} style={{ backgroundColor: C.card, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 7, marginBottom: 6, alignSelf: 'flex-start', maxWidth: '94%' }}>
+              <Text style={{ color: '#8E9AFF', fontSize: 10, fontWeight: 'bold', marginBottom: 2 }}>{message.sender?.display_name || message.sender || 'TALKZY User'}</Text>
+              {message.image_url ? (
+                <Image source={{ uri: message.image_url }} style={{ width: 150, height: 100, borderRadius: 8, marginTop: 2 }} resizeMode="cover" />
+              ) : (
+                <Text style={{ color: C.text, fontSize: 13 }}>{message.text || message.message_text}</Text>
+              )}
+              <Text style={{ color: C.muted, fontSize: 9, textAlign: 'right', marginTop: 3 }}>{message.time}</Text>
+            </View>
+          ))}
+        </ScrollView>
+      )}
       <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: 22, paddingLeft: 12, paddingRight: 5 }}>
-        <TextInput value={roomChatText} onChangeText={setRoomChatText} placeholder={isRoomTourist && !touristsSendText ? 'Tourist chat disabled' : 'Write a message...'} placeholderTextColor={C.muted} onSubmitEditing={sendRoomChatMessage} editable={!(isRoomTourist && !touristsSendText)} returnKeyType="send" blurOnSubmit={false} style={{ color: C.text, fontSize: 13, padding: 0, flex: 1, height: 44 }} />
+        <TextInput
+          autoFocus
+          value={roomChatText}
+          onChangeText={setRoomChatText}
+          placeholder={isRoomTourist && !touristsSendText ? 'Tourist chat disabled' : 'Write a message...'}
+          placeholderTextColor={C.muted}
+          onSubmitEditing={sendRoomChatMessage}
+          editable={!(isRoomTourist && !touristsSendText)}
+          returnKeyType="send"
+          blurOnSubmit={false}
+          style={{ color: C.text, fontSize: 13, padding: 0, flex: 1, height: 44 }}
+        />
         <TouchableOpacity onPress={sendRoomImage} disabled={isRoomTourist && !touristsSendPic} style={{ width: 34, height: 38, alignItems: 'center', justifyContent: 'center', opacity: isRoomTourist && !touristsSendPic ? 0.35 : 1 }}><Text style={{ fontSize: 18 }}>▣</Text></TouchableOpacity>
         <TouchableOpacity onPress={sendRoomChatMessage} disabled={isRoomTourist && !touristsSendText} style={{ paddingHorizontal: 11, paddingVertical: 9, opacity: isRoomTourist && !touristsSendText ? 0.4 : 1 }}><Text style={{ color: C.accent, fontSize: 18, fontWeight: '900' }}>➤</Text></TouchableOpacity>
       </View>
     </View>
   </KeyboardAvoidingView>
-</Modal>
-
-{/* ROOM CHAT ACTION MENU — used by top-right icon or Android Back while chat is closed */}
-<Modal visible={showRoomChatActionMenu} transparent animationType="fade" onRequestClose={() => setShowRoomChatActionMenu(false)}>
-  <Pressable onPress={() => setShowRoomChatActionMenu(false)} style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.20)', padding: 20 }}>
-    <Pressable onPress={() => {}} style={{ width: '78%', maxWidth: 300, backgroundColor: C.panel, borderColor: C.line, borderWidth: 1, borderRadius: 18, padding: 16, elevation: 14 }}>
-      <Text style={{ color: C.text, fontSize: 15, fontWeight: '900', textAlign: 'center', marginBottom: 14 }}>Room options</Text>
-      <TouchableOpacity onPress={() => { setShowRoomChatActionMenu(false); setShowRoomChatComposer(false); setIsRoomChatMinimized(true); }} style={{ backgroundColor: C.card, borderRadius: 12, paddingVertical: 13, alignItems: 'center', marginBottom: 9 }}>
-        <Text style={{ color: C.text, fontWeight: '800', fontSize: 14 }}>Minimise</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => { setShowRoomChatActionMenu(false); setShowRoomChatComposer(false); setIsRoomChatMinimized(false); setRoomChatText(''); }} style={{ backgroundColor: 'rgba(220,70,80,0.14)', borderRadius: 12, paddingVertical: 13, alignItems: 'center' }}>
-        <Text style={{ color: '#F07880', fontWeight: '800', fontSize: 14 }}>Exit</Text>
-      </TouchableOpacity>
-    </Pressable>
-  </Pressable>
 </Modal>
 
 {isRoomChatMinimized && !showRoomChatComposer && (
