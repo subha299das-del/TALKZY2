@@ -740,6 +740,7 @@ app.delete('/api/rooms/:roomId/messages', userAuth, async (req, res) => {
 });
 
 app.post('/api/rooms/:roomId/messages', userAuth, roomMessageLimiter, async (req, res) => {
+  let pendingImagePath = null;
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
@@ -759,6 +760,7 @@ app.post('/api/rooms/:roomId/messages', userAuth, roomMessageLimiter, async (req
     if (type === 'image' && (!imagePath || !imagePath.startsWith(expectedImagePrefix) || imagePath.length > 500 || imagePath.includes('..') || !/\.(jpg|jpeg|png|webp|heic)$/i.test(imagePath))) {
       return res.status(400).json({ error: 'A valid private room image upload is required.' });
     }
+    if (type === 'image') pendingImagePath = imagePath;
     let signedImageUrl = null;
     if (type === 'image') {
       const { data: signed, error: signError } = await supabase.storage
@@ -771,8 +773,13 @@ app.post('/api/rooms/:roomId/messages', userAuth, roomMessageLimiter, async (req
       room_id: room.id, sender_id: userId, message_type: type, message_text: messageText, image_url: imagePath
     }).select('id, sender_id, message_type, message_text, image_url, created_at').single();
     if (error) throw error;
+    pendingImagePath = null;
     res.status(201).json({ message: { ...data, image_url: signedImageUrl } });
   } catch (error) {
+    if (pendingImagePath && pendingImagePath.startsWith(req.talkzyUser.id + '/rooms/' + req.params.roomId + '/messages/') && !pendingImagePath.includes('..')) {
+      const { error: cleanupError } = await supabase.storage.from('talkzy-room-chat').remove([pendingImagePath]);
+      if (cleanupError) console.error('Could not clean up an unsent room image:', cleanupError.message);
+    }
     console.error('Could not send room message:', error.message);
     res.status(500).json({ error: 'Could not send room message.' });
   }
