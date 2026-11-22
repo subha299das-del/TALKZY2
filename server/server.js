@@ -1004,56 +1004,32 @@ app.post('/api/rooms/:roomId/leave', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
-
-    if (room.status !== 'active') {
-      return res.status(409).json({
-        error: 'This room is closed.'
-      });
-    }
-
     const userId = req.talkzyUser.id;
-
-    if (room.owner_id === userId) {
-      return res.status(403).json({
-        error: 'Room owners cannot leave their own room.'
-      });
+    const { data, error } = await supabase.rpc('talkzy_room_exit_atomic', {
+      p_room_id: room.id,
+      p_user_id: userId,
+      p_remove_membership: true
+    });
+    if (error) {
+      if (error.code === '22023') return res.status(403).json({ error: 'Room owners cannot leave their own room.' });
+      if (error.code === '55000') return res.status(409).json({ error: 'This room is closed.' });
+      if (error.code === 'P0002') return res.status(404).json({ error: 'Room not found.' });
+      throw error;
     }
 
-    // Remove admin privileges first.
-    const { error: adminError } = await supabase
-      .from('talkzy_room_admins')
-      .delete()
-      .eq('room_id', room.id)
-      .eq('user_id', userId);
-
-    if (adminError) throw adminError;
-
-    // Clear this user's chat history cutoff and all room-bound live state.
-    await clearUserRoomChat(room.id, userId);
-    const { error: memberError } = await supabase.from('talkzy_room_members')
-      .delete().eq('room_id', room.id).eq('user_id', userId);
-    if (memberError) throw memberError;
-    const { error: seatError } = await supabase.from('talkzy_room_mic_seats')
-      .delete().eq('room_id', room.id).eq('user_id', userId);
-    if (seatError) throw seatError;
-    const { error: visitorError } = await supabase.from('talkzy_room_visitors')
-      .delete().eq('room_id', room.id).eq('user_id', userId);
-    if (visitorError) throw visitorError;
-    const { error: presenceError } = await supabase.from('talkzy_room_presence')
-      .delete().eq('room_id', room.id).eq('user_id', userId);
-    if (presenceError) throw presenceError;
-    await removeUserRoomMusic(room.id, userId);
+    const musicPaths = (Array.isArray(data?.music_paths) ? data.music_paths : [])
+      .filter(path => typeof path === 'string' && path.startsWith(`${userId}/${room.id}/`) && !path.includes('..'));
+    if (musicPaths.length) {
+      const { error: storageError } = await supabase.storage.from('talkzy-room-music').remove(musicPaths);
+      if (storageError) console.error('Room leave music cleanup failed:', storageError.message);
+    }
 
     return res.json({ left: true, roomId: room.id });
-
   } catch (error) {
     console.error('Could not leave room:', error.message);
-    return res.status(500).json({
-      error: 'Could not leave this room.'
-    });
+    res.status(500).json({ error: 'Could not leave this room.' });
   }
 });
-
 
 // =========================================
 // CLOSE ROOM — MAIN OWNER ONLY
@@ -1637,34 +1613,25 @@ app.post('/api/rooms/:roomId/presence/leave', userAuth, async (req, res) => {
     const room = await requireRoom(req, res);
     if (!room) return;
     const userId = req.talkzyUser.id;
+    const { data, error } = await supabase.rpc('talkzy_room_exit_atomic', {
+      p_room_id: room.id,
+      p_user_id: userId,
+      p_remove_membership: false
+    });
+    if (error) throw error;
 
-    // Write the personal chat cutoff FIRST. Even if presence/mic cleanup fails,
-    // this user's old messages stay hidden. Shared messages are never deleted.
-    const { data: clearMarker, error: clearMarkerError } = await supabase.from('talkzy_room_chat_clears')
-      .upsert({ room_id: room.id, user_id: userId, cleared_at: new Date().toISOString() },
-        { onConflict: 'room_id,user_id' })
-      .select('cleared_at').single();
-    if (clearMarkerError) throw clearMarkerError;
+    const musicPaths = (Array.isArray(data?.music_paths) ? data.music_paths : [])
+      .filter(path => typeof path === 'string' && path.startsWith(`${userId}/${room.id}/`) && !path.includes('..'));
+    if (musicPaths.length) {
+      const { error: storageError } = await supabase.storage.from('talkzy-room-music').remove(musicPaths);
+      if (storageError) console.error('Room exit music cleanup failed:', storageError.message);
+    }
 
-    // One exit endpoint cleans up both member and tourist room state.
-    // Membership itself is intentionally preserved for ordinary members.
-    const { error: seatError } = await supabase.from('talkzy_room_mic_seats')
-      .delete().eq('room_id', room.id).eq('user_id', userId);
-    if (seatError) throw seatError;
-
-    const { error: visitorError } = await supabase.from('talkzy_room_visitors')
-      .delete().eq('room_id', room.id).eq('user_id', userId);
-    if (visitorError) throw visitorError;
-
-    const { error: presenceError } = await supabase.from('talkzy_room_presence')
-      .delete().eq('room_id', room.id).eq('user_id', userId);
-    if (presenceError) throw presenceError;
-    await removeUserRoomMusic(room.id, userId);
-
-    res.set('Cache-Control', 'no-store').json({ left: true, clearedAt: clearMarker.cleared_at });
+    res.set('Cache-Control', 'no-store').json({ left: true, clearedAt: data.cleared_at });
   } catch (error) {
     console.error('Could not complete room exit cleanup:', error.message);
-    res.status(500).json({ error: 'Could not complete room exit cleanup.' });
+    const status = error.code === '55000' ? 409 : error.code === 'P0002' ? 404 : 500;
+    res.status(status).json({ error: 'Could not complete room exit cleanup.' });
   }
 });
 
