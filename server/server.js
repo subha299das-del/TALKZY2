@@ -589,24 +589,46 @@ app.post('/api/rooms/:roomId/visit', userAuth, roomEntryLimiter, async (req, res
     if (!room) return;
     if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
     const userId = req.talkzyUser.id;
-    const { data: kicked, error: kickError } = await supabase.from('talkzy_room_kicklist')
-      .select('user_id').eq('room_id', room.id).eq('user_id', userId).maybeSingle();
-    if (kickError) throw kickError;
-    if (kicked) return res.status(403).json({ error: 'You are on this room’s Kick List.' });
-    if (room.owner_id === userId || await isRoomAdmin(room.id, userId) || await isRoomMember(room.id, userId)) {
-      return res.status(200).json({ visited: true, mode: 'member', roomId: room.id });
-    }
-    if (room.room_type === 'locked') {
+    const alreadyMember = room.owner_id === userId ||
+      await isRoomAdmin(room.id, userId) ||
+      await isRoomMember(room.id, userId);
+    let verifiedPasswordHash = null;
+
+    if (!alreadyMember && room.room_type === 'locked') {
       const password = String(req.body?.password || '');
-      const { data, error } = await supabase.from('talkzy_room_passwords').select('password_hash').eq('room_id', room.id).maybeSingle();
+      const { data, error } = await supabase.from('talkzy_room_passwords')
+        .select('password_hash').eq('room_id', room.id).maybeSingle();
       if (error) throw error;
-      if (!data || !await checkPassword(password, data.password_hash)) return res.status(403).json({ error: 'Incorrect room password.' });
+      if (!data || !await checkPassword(password, data.password_hash)) {
+        return res.status(403).json({ error: 'Incorrect room password.' });
+      }
+      // The atomic RPC compares this exact verified hash against the current
+      // room password after locking the room, preventing password-change races.
+      verifiedPasswordHash = data.password_hash;
     }
-    const { error } = await supabase.from('talkzy_room_visitors').upsert({
-      room_id: room.id, user_id: userId, visited_at: new Date().toISOString(), last_seen_at: new Date().toISOString()
-    }, { onConflict: 'room_id,user_id' });
-    if (error) throw error;
-    res.json({ visited: true, mode: 'tourist', roomId: room.id });
+
+    const { data, error } = await supabase.rpc('talkzy_visit_room_atomic', {
+      p_room_id: room.id,
+      p_user_id: userId,
+      p_verified_password_hash: verifiedPasswordHash
+    });
+    if (error) {
+      if (error.code === '42501' && /user_kicked/.test(error.message || '')) {
+        return res.status(403).json({ error: 'You are on this room’s Kick List.' });
+      }
+      if (error.code === '42501') {
+        return res.status(403).json({ error: 'The room password changed. Enter the current password and try again.' });
+      }
+      if (error.code === '55000') return res.status(409).json({ error: 'This room is closed.' });
+      if (error.code === 'P0002') return res.status(404).json({ error: 'Room not found.' });
+      if (error.code === '22023') return res.status(400).json({ error: 'Invalid room visit.' });
+      throw error;
+    }
+    res.set('Cache-Control', 'no-store').json({
+      visited: true,
+      mode: data?.mode || 'tourist',
+      roomId: room.id
+    });
   } catch (error) {
     console.error('Could not enter room as tourist:', error.message);
     res.status(500).json({ error: 'Could not enter this room as a tourist.' });
