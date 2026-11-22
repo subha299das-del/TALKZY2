@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   backend-audit:
@@ -25,18 +25,7 @@ jobs:
           node-version: 22
       - name: Install backend dependencies
         working-directory: server
-        run: npm install --no-fund
-      - name: Commit backend lockfile if missing
-        run: |
-          if [ -f server/package-lock.json ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add server/package-lock.json
-            if ! git diff --cached --quiet; then
-              git commit -m "Add backend npm lockfile"
-              git push
-            fi
-          fi
+        run: npm ci --no-fund
       - name: Syntax check
         working-directory: server
         run: node --check server.js
