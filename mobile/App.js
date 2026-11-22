@@ -1514,6 +1514,10 @@ async function loadUserProfile(currentSession) {
       loadFollowedRooms(currentSession);
 
     } catch (error) {
+      if (profileLoadRef.current?.promise !== loadPromise) {
+        return;
+      }
+
       console.log('Profile loading error:', error.message);
 
       Alert.alert(
