@@ -5116,10 +5116,10 @@ borderTopWidth: 1,
               <Text style={{ color: C.text, fontSize: 20, fontWeight: '900', textAlign: 'center', marginBottom: 16 }}>Set Password</Text>
               <TextInput value={roomSettingsPassword} onChangeText={setRoomSettingsPassword} secureTextEntry placeholder="Enter password (4–64 characters)" placeholderTextColor={C.muted} autoCapitalize="none" style={{ color: C.text, backgroundColor: C.bg, borderWidth: 1, borderColor: C.line, borderRadius: 12, padding: 14, marginBottom: 16 }} />
               <View style={{ flexDirection: 'row', gap: 10 }}>
-                <TouchableOpacity onPress={applyRoomPrivacy('public')} disabled={roomSettingSaving} style={{ flex: 1, paddingVertical: 13, borderRadius: 12, alignItems: 'center', backgroundColor: '#26364B' }}>
+                <TouchableOpacity onPress={() => applyRoomPrivacy('public')} disabled={roomSettingSaving} style={{ flex: 1, paddingVertical: 13, borderRadius: 12, alignItems: 'center', backgroundColor: '#26364B' }}>
                   <Text style={{ color: C.text, fontWeight: '900' }}>UNLOCK</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={applyRoomPrivacy('locked')} disabled={roomSettingSaving} style={{ flex: 1, paddingVertical: 13, borderRadius: 12, alignItems: 'center', backgroundColor: C.accent }}>
+                <TouchableOpacity onPress={() => applyRoomPrivacy('locked')} disabled={roomSettingSaving} style={{ flex: 1, paddingVertical: 13, borderRadius: 12, alignItems: 'center', backgroundColor: C.accent }}>
                   <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>{roomSettingSaving ? 'SAVING…' : 'LOCK'}</Text>
                 </TouchableOpacity>
               </View>
