@@ -17,7 +17,8 @@ import {
 Modal,
 Platform,
 Animated,
-Dimensions
+Dimensions,
+  BackHandler
 
 } from 'react-native';
 
@@ -735,6 +736,16 @@ useEffect(() => {
   }, 12000);
   return () => clearTimeout(timer);
 }, [worldLuckyBagNotification?.id]);
+
+// ROOM CHAT: Android Back opens the action menu only when chat itself is closed.
+useEffect(() => {
+  if (!selectedRoom?.id || showRoomChatComposer || showRoomChatActionMenu) return;
+  const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+    setShowRoomChatActionMenu(true);
+    return true;
+  });
+  return () => subscription.remove();
+}, [selectedRoom?.id, showRoomChatComposer, showRoomChatActionMenu]);
 
 // REALTIME MICROPHONE SEAT SYNC
 useEffect(() => {
@@ -4505,14 +4516,14 @@ function renderRoomInterior() {
   </Pressable>
 </Modal>
 
-{/* ROOM CHAT COMPOSER — action menu is shared by the top-right icon and Android Back */}
+{/* ROOM CHAT COMPOSER — Android Back closes this panel */}
 <Modal
   visible={showRoomChatComposer}
   transparent
   animationType="fade"
   onRequestClose={() => {
-    if (showRoomChatActionMenu) setShowRoomChatActionMenu(false);
-    else setShowRoomChatActionMenu(true);
+    setShowRoomChatActionMenu(false);
+    setShowRoomChatComposer(false);
   }}
 >
   <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.28)', padding: 14 }}>
@@ -4529,20 +4540,22 @@ function renderRoomInterior() {
         <TouchableOpacity onPress={sendRoomChatMessage} disabled={isRoomTourist && !touristsSendText} style={{ paddingHorizontal: 11, paddingVertical: 9, opacity: isRoomTourist && !touristsSendText ? 0.4 : 1 }}><Text style={{ color: C.accent, fontSize: 18, fontWeight: '900' }}>➤</Text></TouchableOpacity>
       </View>
     </View>
-    {showRoomChatActionMenu && (
-      <Pressable onPress={() => setShowRoomChatActionMenu(false)} style={{ position: 'absolute', left: -14, right: -14, top: -1000, bottom: -1000, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.18)' }}>
-        <Pressable onPress={() => {}} style={{ width: '78%', maxWidth: 300, backgroundColor: C.panel, borderColor: C.line, borderWidth: 1, borderRadius: 18, padding: 16, elevation: 14 }}>
-          <Text style={{ color: C.text, fontSize: 15, fontWeight: '900', textAlign: 'center', marginBottom: 14 }}>Room Chat</Text>
-          <TouchableOpacity onPress={() => { setShowRoomChatActionMenu(false); setShowRoomChatComposer(false); setIsRoomChatMinimized(true); }} style={{ backgroundColor: C.card, borderRadius: 12, paddingVertical: 13, alignItems: 'center', marginBottom: 9 }}>
-            <Text style={{ color: C.text, fontWeight: '800', fontSize: 14 }}>Minimise</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => { setShowRoomChatActionMenu(false); setShowRoomChatComposer(false); setIsRoomChatMinimized(false); setRoomChatText(''); }} style={{ backgroundColor: 'rgba(220,70,80,0.14)', borderRadius: 12, paddingVertical: 13, alignItems: 'center' }}>
-            <Text style={{ color: '#F07880', fontWeight: '800', fontSize: 14 }}>Exit</Text>
-          </TouchableOpacity>
-        </Pressable>
-      </Pressable>
-    )}
   </KeyboardAvoidingView>
+</Modal>
+
+{/* ROOM CHAT ACTION MENU — used by top-right icon or Android Back while chat is closed */}
+<Modal visible={showRoomChatActionMenu} transparent animationType="fade" onRequestClose={() => setShowRoomChatActionMenu(false)}>
+  <Pressable onPress={() => setShowRoomChatActionMenu(false)} style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.20)', padding: 20 }}>
+    <Pressable onPress={() => {}} style={{ width: '78%', maxWidth: 300, backgroundColor: C.panel, borderColor: C.line, borderWidth: 1, borderRadius: 18, padding: 16, elevation: 14 }}>
+      <Text style={{ color: C.text, fontSize: 15, fontWeight: '900', textAlign: 'center', marginBottom: 14 }}>Room options</Text>
+      <TouchableOpacity onPress={() => { setShowRoomChatActionMenu(false); setShowRoomChatComposer(false); setIsRoomChatMinimized(true); }} style={{ backgroundColor: C.card, borderRadius: 12, paddingVertical: 13, alignItems: 'center', marginBottom: 9 }}>
+        <Text style={{ color: C.text, fontWeight: '800', fontSize: 14 }}>Minimise</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => { setShowRoomChatActionMenu(false); setShowRoomChatComposer(false); setIsRoomChatMinimized(false); setRoomChatText(''); }} style={{ backgroundColor: 'rgba(220,70,80,0.14)', borderRadius: 12, paddingVertical: 13, alignItems: 'center' }}>
+        <Text style={{ color: '#F07880', fontWeight: '800', fontSize: 14 }}>Exit</Text>
+      </TouchableOpacity>
+    </Pressable>
+  </Pressable>
 </Modal>
 
 {isRoomChatMinimized && !showRoomChatComposer && (
