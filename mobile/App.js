@@ -3553,8 +3553,11 @@ function renderRoomInterior() {
   {(youtubeScreenVisible
     ? Array.from({ length: Math.ceil((MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().length / 8) }, (_, index) => (MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().slice(index * 8, (index + 1) * 8))
     : (MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows
-  ).filter(rowSeats => rowSeats.length > 0).map((rowSeats, rowIndex) => (
-    <View key={rowIndex} style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'stretch', backgroundColor: youtubeScreenVisible ? '#360D14' : 'transparent', borderWidth: youtubeScreenVisible ? 1.5 : 0, borderColor: '#B88743', borderRadius: youtubeScreenVisible ? 10 : 0, paddingHorizontal: youtubeScreenVisible ? 2 : 0, paddingTop: youtubeScreenVisible ? 2 : 0, paddingBottom: youtubeScreenVisible ? 2 : 0, marginBottom: youtubeScreenVisible ? 3 : 7, shadowColor: youtubeScreenVisible ? '#D5A64E' : 'transparent', shadowOpacity: youtubeScreenVisible ? 0.22 : 0, shadowRadius: youtubeScreenVisible ? 7 : 0, elevation: youtubeScreenVisible ? 4 : 0 }}>
+  ).filter(rowSeats => rowSeats.length > 0).map((rowSeats, rowIndex) => {
+    const isTopCoupleRow = !youtubeScreenVisible && rowIndex === 0 && rowSeats.length === 2;
+    const couplePairWidth = micCount >= 17 ? 88 : micCount >= 14 ? 96 : 104;
+    return (
+    <View key={rowIndex} style={{ width: isTopCoupleRow ? couplePairWidth : '100%', alignSelf: 'center', flexDirection: 'row', justifyContent: 'center', alignItems: 'stretch', backgroundColor: isTopCoupleRow ? 'rgba(213,166,78,0.10)' : youtubeScreenVisible ? '#360D14' : 'transparent', borderWidth: isTopCoupleRow ? 1 : youtubeScreenVisible ? 1.5 : 0, borderColor: '#B88743', borderRadius: isTopCoupleRow ? 28 : youtubeScreenVisible ? 10 : 0, paddingHorizontal: youtubeScreenVisible ? 2 : 0, paddingTop: isTopCoupleRow ? 1 : youtubeScreenVisible ? 2 : 0, paddingBottom: isTopCoupleRow ? 1 : youtubeScreenVisible ? 2 : 0, marginBottom: youtubeScreenVisible ? 3 : 7, shadowColor: youtubeScreenVisible || isTopCoupleRow ? '#D5A64E' : 'transparent', shadowOpacity: isTopCoupleRow ? 0.14 : youtubeScreenVisible ? 0.22 : 0, shadowRadius: isTopCoupleRow ? 3 : youtubeScreenVisible ? 7 : 0, elevation: isTopCoupleRow ? 2 : youtubeScreenVisible ? 4 : 0 }}>
       {rowSeats.map((seat) => {
 
     const occupiedSeat = micSeats.find(
@@ -3646,7 +3649,7 @@ function renderRoomInterior() {
         }}
         style={{
           opacity: (isRoomTourist && !touristsOnMic) || (seatIsClosed && !canControlMics) ? 0.4 : 1,
-          width: `${100 / Math.max(...(MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.map(row => row.length))}%`,
+          width: isTopCoupleRow ? '50%' : `${100 / Math.max(...(MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.map(row => row.length))}%`,
           height: youtubeScreenVisible ? 38 : 88,
           alignItems: 'center',
           justifyContent: 'flex-start',
@@ -3806,7 +3809,8 @@ function renderRoomInterior() {
     );
       })}
     </View>
-  ))}
+    );
+  })}
 </ScrollView>
 
 <Modal visible={showMicControlPopup} transparent animationType="fade" onRequestClose={() => setShowMicControlPopup(false)}>
@@ -4970,9 +4974,12 @@ borderTopWidth: 1,
                       <Text style={{ color:C.text, fontSize:13, fontWeight:'bold' }}>{layout.label}</Text>
                       <Text style={{ color:selected ? C.accent : C.muted, fontSize:11, fontWeight:'bold' }}>{selected ? '✓ Selected' : (canChange ? 'Select' : '')}</Text>
                     </View>
-                    {layout.rows.map((previewRow,rowIndex) => <View key={rowIndex} style={{ flexDirection:'row', justifyContent:'center', marginBottom:4 }}>
-                      {previewRow.map(seat => <View key={seat} style={{ width:19, height:19, borderRadius:10, borderWidth:1, borderColor:selected ? C.accent : C.muted, backgroundColor:selected ? C.accent : C.panel2, alignItems:'center', justifyContent:'center', marginHorizontal:3 }}><Text style={{ color:'#FFFFFF', fontSize:8 }}>{seat}</Text></View>)}
-                    </View>)}
+                    {layout.rows.map((previewRow,rowIndex) => {
+                      const previewCoupleRow = rowIndex === 0 && previewRow.length === 2;
+                      return <View key={rowIndex} style={{ flexDirection:'row', justifyContent:'center', alignSelf:'center', width:previewCoupleRow ? 44 : '100%', marginBottom:4 }}>
+                        {previewRow.map(seat => <View key={seat} style={{ width:19, height:19, borderRadius:10, borderWidth:1, borderColor:selected ? C.accent : C.muted, backgroundColor:selected ? C.accent : C.panel2, alignItems:'center', justifyContent:'center', marginHorizontal:previewCoupleRow ? 1 : 3 }}><Text style={{ color:'#FFFFFF', fontSize:8 }}>{seat}</Text></View>)}
+                      </View>;
+                    })}
                   </TouchableOpacity>
                 );
               })}
