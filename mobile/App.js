@@ -1378,6 +1378,13 @@ const [isRoomTourist, setIsRoomTourist] = useState(false);
     function resetAccountScopedState() {
   profileLoadRef.current = null;
   setProfile(null);
+  setDisplayName('');
+  setGender('Male');
+  setDateOfBirth('');
+  setCountry('India');
+  setLanguage('English');
+  setBio('');
+  setAvatarUri(null);
   setMyRooms([]);
   setJoinedRooms([]);
   setFollowedRooms([]);
