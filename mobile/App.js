@@ -2810,7 +2810,6 @@ async function addYoutubeItem(item) {
   setYoutubeUrlInput('');
   setShowYoutubePicker(false);
   setShowYoutubePanel(true);
-  Alert.alert(alreadyPlaying ? 'Added to waiting queue' : 'Now playing', alreadyPlaying ? `${meta.title || 'Video'} will play after the current video.` : (meta.title || 'Video added'));
 }
 
 async function closeYoutubeScreen() {
