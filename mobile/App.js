@@ -2254,6 +2254,7 @@ async function loadMyRooms(currentSession = session) {
     console.log('My room cache read:', cacheError.message);
   }
 
+  if (activeAuthUserIdRef.current !== requestedUserId) return;
   if (!hasCachedData) setRoomCreationEligibilityLoaded(false);
 
   // Refresh in the background and update the cache for the next launch.
@@ -2282,6 +2283,7 @@ async function loadMyRooms(currentSession = session) {
       console.log('My room cache write:', cacheError.message);
     }
   } catch (error) {
+    if (activeAuthUserIdRef.current !== requestedUserId) return;
     // Cached room cards remain visible if the backend is asleep/offline.
     if (!hasCachedData) setRoomCreationEligibilityLoaded(false);
     console.log('My rooms:', error.message);
