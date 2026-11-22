@@ -941,6 +941,7 @@ async function sendRoomReaction(reaction) {
     displayName: profile?.display_name || displayName || 'TALKZY User',
     avatarUrl: profile?.avatar_url || avatarUri || null,
     emoji: reaction.emoji,
+    label: reaction.label || null,
     direction: reaction.direction || null
   };
   displayRoomReaction(payload);
@@ -3777,20 +3778,45 @@ function renderRoomInterior() {
                   ? item.progress.interpolate({ inputRange: [0, 1], outputRange: [-24, 24] })
                   : item.progress.interpolate({ inputRange: [0, 1], outputRange: [0, 0] }) }]
             }}>
-              <Animated.Text
-                style={{
-                  fontSize: 30,
-                  fontWeight: '900',
-                  textShadowColor: '#FFD66B',
-                  textShadowOffset: { width: 0, height: 0 },
-                  textShadowRadius: 12,
-                  transform: [
-                    { scale: item.progress.interpolate({ inputRange: [0, 0.12, 0.24, 0.38, 0.55, 0.78, 1], outputRange: [0.25, 1.35, 0.88, 1.18, 1, 1.08, 0.72] }) },
-                    { rotate: item.progress.interpolate({ inputRange: [0, 0.2, 0.42, 0.68, 1], outputRange: ['-18deg', '14deg', '-9deg', '5deg', '0deg'] }) },
-                    ...(item.direction === 'left' ? [{ scaleX: -1 }] : [])
-                  ]
-                }}
-              >{item.emoji}</Animated.Text>
+              {['Happy','LOL','Left kiss','Right kiss','Gosh','Cry','Angry','Naughty'].includes(item.label) ? (() => {
+                const happy = item.label === 'Happy';
+                const laugh = item.label === 'LOL';
+                const kiss = item.label === 'Left kiss' || item.label === 'Right kiss';
+                const shocked = item.label === 'Gosh';
+                const crying = item.label === 'Cry';
+                const angry = item.label === 'Angry';
+                const naughty = item.label === 'Naughty';
+                const blink = item.progress.interpolate({ inputRange: [0,0.22,0.29,0.36,0.66,0.73,0.8,1], outputRange: [1,1,0.12,1,1,0.12,1,1] });
+                const mouthOpen = item.progress.interpolate({ inputRange: [0,0.18,0.34,0.52,0.7,1], outputRange: shocked ? [0.65,1.25,0.7,1.2,0.8,0.65] : laugh ? [0.55,1.3,0.7,1.35,0.75,0.55] : crying ? [0.8,1.15,0.8,1.1,0.9,0.8] : [1,1,1,1,1,1] });
+                const faceMotion = item.progress.interpolate({ inputRange: [0,0.18,0.38,0.58,0.78,1], outputRange: ['0deg','-7deg','7deg','-5deg','3deg','0deg'] });
+                return (
+                  <Animated.View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFD84D', borderWidth: 2, borderColor: '#FFF0A6', alignItems: 'center', justifyContent: 'center', shadowColor: '#FFC83D', shadowOpacity: 0.9, shadowRadius: 10, elevation: 8, transform: [{ rotate: faceMotion }, { scale: item.progress.interpolate({ inputRange: [0,0.12,0.24,0.42,0.72,1], outputRange: [0.35,1.28,0.92,1.1,1,0.75] }] }}>
+                    <View style={{ position: 'absolute', top: 14, left: 11, width: 5, height: 7, borderRadius: 4, backgroundColor: '#342018', transform: [{ scaleY: naughty ? 0.18 : blink }] }} />
+                    <View style={{ position: 'absolute', top: angry ? 13 : 14, right: 11, width: 5, height: 7, borderRadius: 4, backgroundColor: '#342018', transform: [{ scaleY: naughty ? blink : blink }, { rotate: angry ? '-22deg' : '0deg' }] }} />
+                    {angry && <>
+                      <View style={{ position: 'absolute', top: 10, left: 8, width: 12, height: 3, borderRadius: 2, backgroundColor: '#342018', transform: [{ rotate: '18deg' }] }} />
+                      <View style={{ position: 'absolute', top: 10, right: 8, width: 12, height: 3, borderRadius: 2, backgroundColor: '#342018', transform: [{ rotate: '-18deg' }] }} />
+                    </>}
+                    {kiss ? (
+                      <Animated.View style={{ position: 'absolute', bottom: 8, width: 10, height: 9, borderRadius: 8, backgroundColor: '#B92F4D', transform: [{ scale: mouthOpen }] }} />
+                    ) : shocked || laugh || crying ? (
+                      <Animated.View style={{ position: 'absolute', bottom: shocked ? 7 : 6, width: shocked ? 10 : 17, height: shocked ? 13 : 12, borderRadius: 9, backgroundColor: '#4B1720', transform: [{ scaleY: mouthOpen }] }}>
+                        {(laugh || crying) && <View style={{ position: 'absolute', bottom: 1, alignSelf: 'center', width: 9, height: 4, borderRadius: 5, backgroundColor: '#F26A75' }} />}
+                      </Animated.View>
+                    ) : (
+                      <Animated.View style={{ position: 'absolute', bottom: 9, width: 19, height: 9, borderBottomWidth: 3, borderColor: angry ? '#6B2020' : '#71321E', borderRadius: 12, transform: [{ scaleY: angry ? -0.7 : naughty ? 0.7 : 1 }] }} />
+                    )}
+                    {crying && <>
+                      <Animated.View style={{ position: 'absolute', top: 22, left: 7, width: 5, height: 10, borderRadius: 5, backgroundColor: '#55BDF4', opacity: item.progress.interpolate({ inputRange: [0,0.18,0.4,0.7,1], outputRange: [0,1,0.4,1,0] }), transform: [{ translateY: item.progress.interpolate({ inputRange: [0,0.3,0.7,1], outputRange: [-3,5,10,15] }) }] }} />
+                      <Animated.View style={{ position: 'absolute', top: 22, right: 7, width: 5, height: 10, borderRadius: 5, backgroundColor: '#55BDF4', opacity: item.progress.interpolate({ inputRange: [0,0.18,0.4,0.7,1], outputRange: [0,0.8,0.2,1,0] }), transform: [{ translateY: item.progress.interpolate({ inputRange: [0,0.3,0.7,1], outputRange: [-3,5,10,15] }) }] }} />
+                    </>}
+                    {kiss && <Text style={{ position: 'absolute', top: -10, right: -10, fontSize: 17 }}>💗</Text>}
+                    {naughty && <View style={{ position: 'absolute', bottom: 3, right: 10, width: 8, height: 7, borderRadius: 5, backgroundColor: '#F06B83' }} />}
+                  </Animated.View>
+                );
+              })() : (
+                <Animated.Text style={{ fontSize: 30, transform: [{ scale: item.progress.interpolate({ inputRange: [0,0.12,0.24,0.38,0.55,0.78,1], outputRange: [0.25,1.35,0.88,1.18,1,1.08,0.72] }) }, { rotate: item.progress.interpolate({ inputRange: [0,0.2,0.42,0.68,1], outputRange: ['-18deg','14deg','-9deg','5deg','0deg'] }) }, ...(item.direction === 'left' ? [{ scaleX: -1 }] : [])] }}>{item.emoji}</Animated.Text>
+              )}
             </Animated.View>
           ))}
 
