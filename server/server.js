@@ -1038,48 +1038,26 @@ app.post('/api/rooms/:roomId/leave', userAuth, async (req, res) => {
 app.post('/api/rooms/:roomId/close', ownerAuth, async (req, res) => {
   const roomId = req.params.roomId;
   try {
-    const { data: room, error: roomError } = await supabase
-      .from('talkzy_rooms')
-      .select('id, status')
-      .eq('id', roomId)
-      .maybeSingle();
-    if (roomError) throw roomError;
-    if (!room) return res.status(404).json({ error: 'Room not found.' });
-    if (room.status === 'closed') {
-      return res.json({ closed: true, roomId, alreadyClosed: true });
+    const { data, error } = await supabase.rpc('talkzy_close_room_atomic', {
+      p_room_id: roomId
+    });
+    if (error) {
+      if (error.code === 'P0002') return res.status(404).json({ error: 'Room not found.' });
+      throw error;
     }
 
-    const { error: closeError } = await supabase
-      .from('talkzy_rooms')
-      .update({ status: 'closed', closed_at: new Date().toISOString() })
-      .eq('id', roomId)
-      .eq('status', 'active');
-    if (closeError) throw closeError;
-
-    // Remove live presence and mic occupancy so the closed room is not
-    // represented as active anywhere in the app.
-    const { data: musicRows, error: musicReadError } = await supabase.from('talkzy_room_music_state')
-      .select('queue').eq('room_id', roomId);
-    if (musicReadError) console.error('Room closed but music read cleanup failed:', musicReadError.message);
-    const musicPaths = (musicRows || []).flatMap(row => Array.isArray(row.queue) ? row.queue.map(item => item?.object_path) : [])
-      .filter(path => typeof path === 'string' && !path.includes('..'));
-    const musicCleanup = await supabase.from('talkzy_room_music_state').delete().eq('room_id', roomId);
-    if (musicCleanup.error) console.error('Room closed but music state cleanup failed:', musicCleanup.error.message);
+    const musicPaths = (Array.isArray(data?.music_paths) ? data.music_paths : [])
+      .filter(path => typeof path === 'string' && path.includes('/') && !path.includes('..'));
     if (musicPaths.length) {
-      const { error: musicStorageError } = await supabase.storage.from('talkzy-room-music').remove(musicPaths);
-      if (musicStorageError) console.error('Room closed but music files cleanup failed:', musicStorageError.message);
+      const { error: storageError } = await supabase.storage.from('talkzy-room-music').remove(musicPaths);
+      if (storageError) console.error('Room closed but music files cleanup failed:', storageError.message);
     }
-    await supabase.from('talkzy_room_youtube_state').delete().eq('room_id', roomId);
 
-    const cleanupResults = await Promise.all([
-      supabase.from('talkzy_room_mic_seats').delete().eq('room_id', roomId),
-      supabase.from('talkzy_room_presence').delete().eq('room_id', roomId),
-      supabase.from('talkzy_room_visitors').delete().eq('room_id', roomId)
-    ]);
-    const cleanupError = cleanupResults.find(result => result.error)?.error;
-    if (cleanupError) console.error('Room closed but presence cleanup incomplete:', cleanupError.message);
-
-    return res.json({ closed: true, roomId });
+    return res.json({
+      closed: true,
+      roomId,
+      alreadyClosed: Boolean(data?.already_closed)
+    });
   } catch (error) {
     console.error('Could not close room:', error.message);
     return res.status(500).json({ error: 'Could not close room.' });
