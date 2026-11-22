@@ -5163,8 +5163,8 @@ borderTopWidth: 1,
                     {roomSettingsSubpage === 'admins' && <TouchableOpacity onPress={() => removeRoomAdmin(item.user_id)}><Text style={{ color: C.danger, fontWeight: '800' }}>Remove</Text></TouchableOpacity>}
                     {roomSettingsSubpage === 'kicklist' && <TouchableOpacity onPress={() => unkickRoomMember(item.user_id)}><Text style={{ color: '#65D6A5', fontWeight: '800' }}>Unblock</Text></TouchableOpacity>}
                     {roomSettingsSubpage === 'members' && <View style={{ alignItems: 'flex-end' }}>
-                      {!item.is_admin && <TouchableOpacity onPress={() => addRoomAdmin(item.user_id)}><Text style={{ color: '#65D6A5', fontWeight: '800', marginBottom: 8 }}>Make Admin</Text></TouchableOpacity>}
-                      <TouchableOpacity onPress={() => kickRoomMember(item.user_id)}><Text style={{ color: C.danger, fontWeight: '800' }}>Kick</Text></TouchableOpacity>
+                      {item.user_id !== selectedRoom?.owner_id && !item.is_admin && <TouchableOpacity onPress={() => addRoomAdmin(item.user_id)}><Text style={{ color: '#65D6A5', fontWeight: '800', marginBottom: 8 }}>Make Admin</Text></TouchableOpacity>}
+                      {item.user_id !== selectedRoom?.owner_id && <TouchableOpacity onPress={() => kickRoomMember(item.user_id)}><Text style={{ color: C.danger, fontWeight: '800' }}>Kick</Text></TouchableOpacity>}
                     </View>}
                   </View>
                 ))}
