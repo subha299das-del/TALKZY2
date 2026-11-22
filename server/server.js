@@ -1216,15 +1216,25 @@ app.delete('/api/rooms/:roomId/admins/:userId', userAuth, async (req, res) => {
       return res.status(403).json({ error: 'Only the room owner can remove admins.' });
     }
 
-    const { error } = await supabase
-      .from('talkzy_room_admins')
-      .delete()
-      .eq('room_id', room.id)
-      .eq('user_id', req.params.userId);
+    const targetUserId = String(req.params.userId || '').trim();
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(targetUserId)) {
+      return res.status(400).json({ error: 'A valid admin user ID is required.' });
+    }
 
-    if (error) throw error;
+    const { data, error } = await supabase.rpc('talkzy_remove_room_admin_atomic', {
+      p_room_id: room.id,
+      p_actor_id: req.talkzyUser.id,
+      p_target_id: targetUserId
+    });
+    if (error) {
+      if (error.code === '42501') return res.status(403).json({ error: 'Only the room creator can remove administrators.' });
+      if (error.code === '55000') return res.status(409).json({ error: 'Cannot manage admins in a closed room.' });
+      if (error.code === 'P0002') return res.status(404).json({ error: 'Room not found.' });
+      if (error.code === '22023') return res.status(400).json({ error: 'Invalid administrator.' });
+      throw error;
+    }
 
-    res.json({ adminRemoved: true });
+    res.json({ adminRemoved: Boolean(data?.admin_removed) });
   } catch (error) {
     console.error('Could not remove room admin:', error.message);
     res.status(500).json({ error: 'Could not remove this room admin.' });
