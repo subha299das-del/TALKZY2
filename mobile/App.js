@@ -10984,12 +10984,26 @@ if (screen === 'profile' || profileIncomplete) {
                   .filter(member => `${member.display_name || ''} ${member.talkzy_id || ''} ${member.user_id || ''}`.toLowerCase().includes(memberSearch.toLowerCase()))
                   .map(member => (
                     <View key={member.user_id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
-                      {member.avatar_url ? <Image source={{ uri: member.avatar_url }} style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10 }} /> : <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: C.panel2, marginRight: 10, alignItems: 'center', justifyContent: 'center' }}><Text>👤</Text></View>}
+                      {member.avatar_url ? <Image source={{ uri: member.avatar_url }} style={{ width: 40, height: 40, borderRadius: 20, marginRight: 8 }} /> : <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: C.panel2, marginRight: 8, alignItems: 'center', justifyContent: 'center' }}><Text>👤</Text></View>}
+                      <View style={{ minWidth: 58, alignItems: 'flex-start', marginRight: 9 }}>
+                        {member.user_id === roomDetails?.owner_id ? (
+                          <View style={{ backgroundColor: 'rgba(255,210,122,0.16)', borderColor: C.gold, borderWidth: 1, borderRadius: 7, paddingHorizontal: 7, paddingVertical: 4 }}>
+                            <Text style={{ color: C.gold, fontSize: 9, fontWeight: '900', letterSpacing: 0.35 }}>OWNER</Text>
+                          </View>
+                        ) : member.is_admin || String(member.role || '').toLowerCase() === 'admin' ? (
+                          <View style={{ backgroundColor: 'rgba(147,102,255,0.18)', borderColor: C.accent, borderWidth: 1, borderRadius: 7, paddingHorizontal: 7, paddingVertical: 4 }}>
+                            <Text style={{ color: '#CDBBFF', fontSize: 9, fontWeight: '900', letterSpacing: 0.35 }}>ADMIN</Text>
+                          </View>
+                        ) : (
+                          <View style={{ backgroundColor: 'rgba(67,220,197,0.12)', borderColor: C.teal, borderWidth: 1, borderRadius: 7, paddingHorizontal: 7, paddingVertical: 4 }}>
+                            <Text style={{ color: C.teal, fontSize: 9, fontWeight: '900', letterSpacing: 0.35 }}>MEMBER</Text>
+                          </View>
+                        )}
+                      </View>
                       <View style={{ flex: 1 }}>
                         <Text style={{ color: C.text, fontSize: 13, fontWeight: '800' }}>{member.display_name || 'TALKZY User'}</Text>
                         <Text style={{ color: C.muted, fontSize: 10, marginTop: 2 }}>TALKZY ID: {member.talkzy_id || '—'}</Text>
                       </View>
-                      <Text style={{ color: C.gold, fontSize: 11, fontWeight: '800' }}>{member.is_admin ? 'ADMIN' : (member.role || 'Member')}</Text>
                     </View>
                   ))}
               </View>
@@ -10998,11 +11012,6 @@ if (screen === 'profile' || profileIncomplete) {
             {/* ACTIVITY TAB */}
             {roomDetailsTab === 'Activity' && (
               <View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <Text style={{ color: C.text, fontWeight: '900', fontSize: 16 }}>Room Activities</Text>
-                  {roomDetails?.owner_id === session?.user?.id && <TouchableOpacity onPress={() => setShowRoomActivityComposer(true)}><Text style={{ color: C.accent, fontWeight: '900' }}>＋ Create</Text></TouchableOpacity>}
-                  <TouchableOpacity onPress={() => loadRoomActivities(roomDetails?.id)}><Text style={{ color: C.accent, fontWeight: '800' }}>Refresh</Text></TouchableOpacity>
-                </View>
                 {loadingRoomActivities ? <ActivityIndicator color={C.accent} /> :
                   roomActivities.length === 0 ? <Text style={{ color: C.muted, marginTop: 8 }}>No published room activities yet.</Text> :
                   roomActivities.map(activity => (
