@@ -2226,7 +2226,7 @@ async function toggleFollowRoom(room) {
     if (!userId || !emoji) return;
     const animation = new Animated.Value(0);
     const reactionId = String(payload.reactionId || Date.now());
-    setActiveMicReactions(current => ({ ...current, [userId]: { emoji, direction: payload.direction || 'center', animation, reactionId } }));
+    setActiveMicReactions(current => ({ ...current, [userId]: { emoji, type: payload.type || 'default', direction: payload.direction || 'center', animation, reactionId } }));
     Animated.sequence([
       Animated.timing(animation, { toValue: 0.18, duration: 180, useNativeDriver: true }),
       Animated.timing(animation, { toValue: 1, duration: 2820, useNativeDriver: true })
@@ -2242,6 +2242,7 @@ async function toggleFollowRoom(room) {
     const payload = {
       userId: session.user.id,
       emoji: reaction.emoji,
+      type: reaction.type || reaction.label.toLowerCase().replace(/\s+/g, '_'),
       direction: reaction.direction || 'center',
       reactionId: String(Date.now())
     };
@@ -3625,22 +3626,42 @@ function renderRoomInterior() {
           )}
         </View>
 
-        {activeMicReactions[occupiedSeat?.user_id] && (
-          <Animated.View pointerEvents="none" style={{
-            position: 'absolute', top: youtubeScreenVisible ? -22 : -42, left: 0, right: 0,
-            zIndex: 50, elevation: 12, alignItems: 'center',
-            opacity: activeMicReactions[occupiedSeat.user_id].animation.interpolate({ inputRange: [0, 0.18, 1], outputRange: [0, 1, 0] }),
-            transform: [
-              { translateY: activeMicReactions[occupiedSeat.user_id].animation.interpolate({ inputRange: [0, 1], outputRange: [8, -22] }) },
-              { translateX: activeMicReactions[occupiedSeat.user_id].direction === 'left' ? -10 : activeMicReactions[occupiedSeat.user_id].direction === 'right' ? 10 : 0 },
-              { scale: activeMicReactions[occupiedSeat.user_id].animation.interpolate({ inputRange: [0, 0.18, 1], outputRange: [0.55, 1.18, 0.85] }) }
-            ]
-          }}>
-            <View style={{ minWidth: 42, height: 42, paddingHorizontal: 7, borderRadius: 22, backgroundColor: 'rgba(28,8,55,0.96)', borderWidth: 1.5, borderColor: '#B65CFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#B65CFF', shadowOpacity: 0.9, shadowRadius: 10, elevation: 8 }}>
-              <Text style={{ fontSize: 25 }}>{activeMicReactions[occupiedSeat.user_id].emoji}</Text>
-            </View>
-          </Animated.View>
-        )}
+        {activeMicReactions[occupiedSeat?.user_id] && (() => {
+          const reaction = activeMicReactions[occupiedSeat.user_id];
+          const progress = reaction.animation;
+          const isClap = reaction.type === 'clap';
+          const isAngry = reaction.type === 'angry';
+          const isLeftKiss = reaction.type === 'left_kiss';
+          const isRightKiss = reaction.type === 'right_kiss';
+          const clapScale = progress.interpolate({ inputRange: [0, 0.12, 0.24, 0.36, 0.48, 0.60, 0.72, 0.84, 1], outputRange: [0.75, 1.22, 0.82, 1.22, 0.82, 1.22, 0.82, 1.12, 0.8] });
+          const angryShake = progress.interpolate({ inputRange: [0, 0.12, 0.22, 0.32, 0.42, 0.52, 0.62, 1], outputRange: [0, -5, 5, -5, 5, -3, 3, 0] });
+          const kissTravel = progress.interpolate({ inputRange: [0, 1], outputRange: [isLeftKiss ? 18 : isRightKiss ? -18 : 0, isLeftKiss ? -42 : isRightKiss ? 42 : 0] });
+          return (
+            <Animated.View pointerEvents="none" style={{
+              position: 'absolute', top: youtubeScreenVisible ? -22 : -46, left: 0, right: 0,
+              zIndex: 50, elevation: 12, alignItems: 'center',
+              opacity: progress.interpolate({ inputRange: [0, 0.12, 0.82, 1], outputRange: [0, 1, 1, 0] }),
+              transform: [
+                { translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [8, -18] }) },
+                { translateX: isClap || isAngry ? angryShake : isLeftKiss || isRightKiss ? kissTravel : 0 },
+                { scale: isClap ? clapScale : progress.interpolate({ inputRange: [0, 0.16, 1], outputRange: [0.6, 1.12, 0.9] }) }
+              ]
+            }}>
+              <View style={{
+                minWidth: isClap ? 52 : 46, height: isClap ? 48 : 46, paddingHorizontal: 8, borderRadius: 24,
+                backgroundColor: isAngry ? 'rgba(112,12,24,0.98)' : isClap ? 'rgba(74,35,112,0.98)' : 'rgba(28,8,55,0.97)',
+                borderWidth: 2, borderColor: isAngry ? '#FF303D' : isClap ? '#FFD36A' : '#B65CFF',
+                alignItems: 'center', justifyContent: 'center',
+                shadowColor: isAngry ? '#FF172B' : isClap ? '#FFD36A' : '#B65CFF',
+                shadowOpacity: 0.95, shadowRadius: isAngry ? 14 : 10, elevation: 9
+              }}>
+                <Text style={{ fontSize: isClap ? 29 : 27, color: isAngry ? '#FF3A45' : '#FFFFFF' }}>{reaction.emoji}</Text>
+                {isClap && <Text style={{ position: 'absolute', bottom: -7, color: '#FFE6A3', fontSize: 9, fontWeight: '900' }}>CLAP!</Text>}
+                {isAngry && <View style={{ position: 'absolute', top: -4, right: -2, width: 10, height: 10, borderRadius: 5, backgroundColor: '#FF2638' }} />}
+              </View>
+            </Animated.View>
+          );
+        })()}
 
         <Text
           style={{
@@ -4363,7 +4384,7 @@ borderTopWidth: 1,
             <Text style={{ color: '#D6B8FF', fontSize: 14, fontWeight: '800', textAlign: 'center', marginBottom: 14 }}>MIC REACTIONS · TAP TO SEND</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' }}>
               {[
-                { label: 'Welcome', emoji: '👋' }, { label: 'Happy', emoji: '😄' }, { label: 'Thanks', emoji: '🙏' }, { label: 'Gosh', emoji: '😮' },
+                { label: 'Welcome', emoji: '👋' }, { label: 'Clap', emoji: '👏', type: 'clap' }, { label: 'Happy', emoji: '😄' }, { label: 'Thanks', emoji: '🙏' }, { label: 'Gosh', emoji: '😮' },
                 { label: 'Wronged', emoji: '🥺' }, { label: 'Nausea', emoji: '🤮' }, { label: 'Left Kiss', emoji: '💋', direction: 'left' }, { label: 'Right Kiss', emoji: '💋', direction: 'right' },
                 { label: 'Money Face', emoji: '🤑' }, { label: 'Party', emoji: '🥳' }, { label: 'Fear', emoji: '😱' }, { label: 'Silence', emoji: '🤫' },
                 { label: 'Like', emoji: '👍' }, { label: 'Cry', emoji: '😭' }, { label: 'Naughty', emoji: '😈' }, { label: 'Sweat', emoji: '😅' },
