@@ -3606,6 +3606,20 @@ function renderRoomInterior() {
               }}
             />
           )}
+          {seatIsClosed && (
+            <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(15,8,27,0.78)', alignItems: 'center', justifyContent: 'center', borderRadius: 30 }}>
+              <View style={{ width: 26, height: 20, borderWidth: 2, borderColor: '#C28BFF', borderRadius: 4, transform: [{ rotate: '-8deg' }] }}>
+                <View style={{ position: 'absolute', width: 33, height: 3, backgroundColor: '#FF6685', top: 8, left: -4, transform: [{ rotate: '42deg' }] }} />
+              </View>
+            </View>
+          )}
+          {seatMicIsClosed && !seatIsClosed && (
+            <View style={{ position: 'absolute', bottom: 2, right: 2, width: 20, height: 20, borderRadius: 10, backgroundColor: '#142B3B', borderWidth: 1, borderColor: '#43DCC5', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: '#43DCC5', fontSize: 11, fontWeight: '900' }}>×</Text>
+            </View>
+          )}
+        </View>
+
           {isOccupied && roomReactions.filter(item => item.userId === occupiedSeat.user_id).slice(-1).map(item => (
             <Animated.View key={item.id} pointerEvents="none" style={{
               position: 'absolute', top: -30, alignSelf: 'center', zIndex: 30, elevation: 12,
@@ -3621,19 +3635,6 @@ function renderRoomInterior() {
               <Text style={{ fontSize: 22 }}>{item.emoji}</Text>
             </Animated.View>
           ))}
-          {seatIsClosed && (
-            <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(15,8,27,0.78)', alignItems: 'center', justifyContent: 'center', borderRadius: 30 }}>
-              <View style={{ width: 26, height: 20, borderWidth: 2, borderColor: '#C28BFF', borderRadius: 4, transform: [{ rotate: '-8deg' }] }}>
-                <View style={{ position: 'absolute', width: 33, height: 3, backgroundColor: '#FF6685', top: 8, left: -4, transform: [{ rotate: '42deg' }] }} />
-              </View>
-            </View>
-          )}
-          {seatMicIsClosed && !seatIsClosed && (
-            <View style={{ position: 'absolute', bottom: 2, right: 2, width: 20, height: 20, borderRadius: 10, backgroundColor: '#142B3B', borderWidth: 1, borderColor: '#43DCC5', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: '#43DCC5', fontSize: 11, fontWeight: '900' }}>×</Text>
-            </View>
-          )}
-        </View>
 
         <Text
           style={{
