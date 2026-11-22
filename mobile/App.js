@@ -624,6 +624,8 @@ const [memberSearch, setMemberSearch] = useState('');
 const [roomDpUploading, setRoomDpUploading] = useState(false);
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
+const selectedRoomIdRef = useRef(null);
+selectedRoomIdRef.current = selectedRoom?.id || null;
   const [worldLuckyBagNotification, setWorldLuckyBagNotification] = useState(null);
 const [worldLuckyBagQueue, setWorldLuckyBagQueue] = useState([]);
  const [isRoomMinimized, setIsRoomMinimized] = useState(false);
@@ -3099,10 +3101,12 @@ function extractYouTubeVideoId(value) {
 }
 
 async function loadYoutubeState(showErrors = false) {
-  if (!selectedRoom?.id) return;
+  const roomId = selectedRoom?.id;
+  if (!roomId) return;
   try {
     setYoutubeLoading(true);
-    const result = await api(`/api/rooms/${selectedRoom.id}/youtube`);
+    const result = await api(`/api/rooms/${roomId}/youtube`);
+    if (selectedRoomIdRef.current !== roomId) return;
     const state = result.state || { video_id: null, queue: [], is_playing: false, current_time_seconds: 0 };
     setYoutubeState(state);
     if (state.video_id) setShowYoutubePanel(true);
@@ -3114,17 +3118,18 @@ async function loadYoutubeState(showErrors = false) {
       if (command) youtubeWebViewRef.current?.injectJavaScript(command + 'true;');
     }
   } catch (error) {
-    if (showErrors) Alert.alert('YouTube', error.message || 'Could not open YouTube for this room.');
+    if (showErrors && selectedRoomIdRef.current === roomId) Alert.alert('YouTube', error.message || 'Could not open YouTube for this room.');
   } finally {
-    setYoutubeLoading(false);
+    if (selectedRoomIdRef.current === roomId) setYoutubeLoading(false);
   }
 }
 
 async function saveYoutubeState(nextState) {
-  if (!selectedRoom?.id || youtubeSaving) return false;
+  const roomId = selectedRoom?.id;
+  if (!roomId || youtubeSaving) return false;
   try {
     setYoutubeSaving(true);
-    const result = await api(`/api/rooms/${selectedRoom.id}/youtube`, {
+    const result = await api(`/api/rooms/${roomId}/youtube`, {
       method: 'PUT',
       body: JSON.stringify({
         video_id: nextState.video_id || null,
@@ -3133,6 +3138,7 @@ async function saveYoutubeState(nextState) {
         current_time_seconds: Math.max(0, Number(nextState.current_time_seconds || 0))
       })
     });
+    if (selectedRoomIdRef.current !== roomId) return true;
     setYoutubeState(result.state);
     youtubeLastUpdateRef.current = result.state.updated_at;
     if (result.state.video_id) {
@@ -3149,10 +3155,10 @@ async function saveYoutubeState(nextState) {
     }
     return true;
   } catch (error) {
-    Alert.alert('YouTube control', error.message || 'Could not update YouTube.');
+    if (selectedRoomIdRef.current === roomId) Alert.alert('YouTube control', error.message || 'Could not update YouTube.');
     return false;
   } finally {
-    setYoutubeSaving(false);
+    if (selectedRoomIdRef.current === roomId) setYoutubeSaving(false);
   }
 }
 
