@@ -4645,17 +4645,20 @@ function renderRoomInterior() {
   </TouchableOpacity>
 )}
 
-{/* ROOM BOTTOM CONTROLS */}
-<View
-  style={{
+{/* ROOM BOTTOM CONTROLS — horizontally scrollable so every feature stays reachable on narrow phones */}
+<ScrollView
+  horizontal
+  showsHorizontalScrollIndicator={false}
+  keyboardShouldPersistTaps="handled"
+  style={{ flexGrow: 0, borderTopWidth: 1, borderTopColor: C.line }}
+  contentContainerStyle={{
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
-    paddingHorizontal: 6,
-paddingTop: 12,
-paddingBottom: Platform.OS === 'android' ? 40 : 12,
-borderTopWidth: 1,
-    borderTopColor: C.line
+    minWidth: '100%',
+    paddingHorizontal: 10,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'android' ? 40 : 12,
+    columnGap: 8
   }}
 >
   {/* CHAT — composer stays hidden until this control is tapped */}
@@ -4868,7 +4871,7 @@ borderTopWidth: 1,
   >
     <Text style={{ fontSize: 19 }}>🎁</Text>
   </TouchableOpacity>
-</View>
+</ScrollView>
         
             
   
