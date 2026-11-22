@@ -6060,12 +6060,17 @@ function renderDiscover() {
   style={{ marginBottom: 18 }}
 >
   {[1, 2, 3, 4, 5].map((item) => (
-    <Card
+    <TouchableOpacity
       key={item}
+      activeOpacity={0.86}
+      onPress={() => handleGameSelection({ name: 'Big Win', emoji: '🏆', historyItem: item })}
+      style={{ marginRight: 10 }}
+    >
+    <Card
       style={{
         width: 145,
         padding: 12,
-        marginRight: 10,
+        marginRight: 0,
         alignItems: 'center'
       }}
     >
@@ -6096,6 +6101,7 @@ function renderDiscover() {
         Win history
       </Text>
     </Card>
+    </TouchableOpacity>
   ))}
 </ScrollView>
 
