@@ -807,38 +807,33 @@ app.post('/api/rooms/:roomId/join', userAuth, roomEntryLimiter, async (req, res)
     }
 
     const userId = req.talkzyUser.id;
-    const { data: kicked, error: kickCheckError } = await supabase
-      .from('talkzy_room_kicklist')
-      .select('user_id')
-      .eq('room_id', room.id)
-      .eq('user_id', userId)
-      .maybeSingle();
-    if (kickCheckError) throw kickCheckError;
-    if (kicked) return res.status(403).json({ error: 'You are on this room’s kick list and cannot rejoin.' });
     const manager = await canManageRoom(room, userId);
     const alreadyMember = await isRoomMember(room.id, userId);
+    let passwordVerified = manager || alreadyMember;
 
-    if (room.room_type === 'locked' && !manager && !alreadyMember) {
+    if (room.room_type === 'locked' && !passwordVerified) {
       const password = String(req.body?.password || '');
       const { data, error } = await supabase.from('talkzy_room_passwords')
         .select('password_hash').eq('room_id', room.id).maybeSingle();
       if (error) throw error;
 
-      const valid = Boolean(data) && await checkPassword(password, data.password_hash);
-      if (!valid) {
+      passwordVerified = Boolean(data) && await checkPassword(password, data.password_hash);
+      if (!passwordVerified) {
         return res.status(403).json({ error: 'Incorrect room password.' });
       }
     }
 
-    const { error } = await supabase
-      .from('talkzy_room_members')
-      .upsert(
-        { room_id: room.id, user_id: userId, role: 'listener' },
-        { onConflict: 'room_id,user_id', ignoreDuplicates: true }
-      );
-
-    if (error) throw error;
-    await supabase.from('talkzy_room_visitors').delete().eq('room_id', room.id).eq('user_id', userId);
+    const { error } = await supabase.rpc('talkzy_join_room_atomic', {
+      p_room_id: room.id,
+      p_user_id: userId,
+      p_password_verified: passwordVerified
+    });
+    if (error) {
+      if (error.code === '42501') return res.status(403).json({ error: 'You are not allowed to join this room.' });
+      if (error.code === '55000') return res.status(409).json({ error: 'This room is closed.' });
+      if (error.code === 'P0002') return res.status(404).json({ error: 'Room not found.' });
+      throw error;
+    }
 
     return res.status(200).json({ joined: true, roomId: room.id, mode: 'member' });
   } catch (error) {
