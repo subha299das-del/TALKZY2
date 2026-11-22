@@ -4845,27 +4845,6 @@ function renderRoomInterior() {
             </Text>
           </TouchableOpacity>
 
-          {/* FOLLOW / UNFOLLOW ROOM - HIDE FOR ROOM OWNER */}
-          {selectedRoom?.owner_id !== session?.user?.id && (
-            <TouchableOpacity
-              style={{
-                padding: 14,
-                borderBottomWidth: 1,
-                borderBottomColor: C.line
-              }}
-              onPress={() => {
-                setShowRoomMenu(false);
-                toggleFollowRoom(selectedRoom);
-              }}
-            >
-              <Text style={{ color: C.text, fontSize: 15 }}>
-                {followedRooms.some(item => item.id === selectedRoom?.id)
-                  ? 'Unfollow Room'
-                  : 'Follow Room'}
-              </Text>
-            </TouchableOpacity>
-          )}
-
           {/* EXIT */}
           <TouchableOpacity
             activeOpacity={0.65}
