@@ -2220,6 +2220,45 @@ async function toggleFollowRoom(room) {
     }
   }
 
+  function displayMicReaction(payload) {
+    const userId = payload?.userId;
+    const emoji = payload?.emoji;
+    if (!userId || !emoji) return;
+    const animation = new Animated.Value(0);
+    const reactionId = String(payload.reactionId || Date.now());
+    setActiveMicReactions(current => ({ ...current, [userId]: { emoji, direction: payload.direction || 'center', animation, reactionId } }));
+    Animated.sequence([
+      Animated.timing(animation, { toValue: 0.18, duration: 180, useNativeDriver: true }),
+      Animated.timing(animation, { toValue: 1, duration: 2820, useNativeDriver: true })
+    ]).start(() => {
+      setActiveMicReactions(current => current[userId]?.reactionId === reactionId
+        ? Object.fromEntries(Object.entries(current).filter(([key]) => key !== userId))
+        : current);
+    });
+  }
+
+  async function sendMicReaction(reaction) {
+    if (!isOnMic || !selectedRoom?.id || !session?.user?.id) return;
+    const payload = {
+      userId: session.user.id,
+      emoji: reaction.emoji,
+      direction: reaction.direction || 'center',
+      reactionId: String(Date.now())
+    };
+    displayMicReaction(payload);
+    try {
+      await micReactionChannelRef.current?.send({ type: 'broadcast', event: 'mic_reaction', payload });
+    } catch (error) {
+      console.log('Mic reaction broadcast:', error.message);
+    }
+    setShowMicReactionPicker(false);
+  }
+
+  {isOnMic && (
+    <TouchableOpacity onPress={() => setShowMicReactionPicker(true)} style={{ width: 38, height: 38, borderRadius: 20, backgroundColor: '#281044', borderWidth: 1, borderColor: '#A64DFF', alignItems: 'center', justifyContent: 'center', marginRight: 5 }}>
+      <Text style={{ fontSize: 21 }}>✨</Text>
+    </TouchableOpacity>
+  )}
   async function sendRoomImage() {
     if (!selectedRoom?.id) return;
     if (isRoomTourist && !touristsSendPic) {
@@ -4113,45 +4152,6 @@ borderTopWidth: 1,
     borderTopColor: C.line
   }}
 >
-  function displayMicReaction(payload) {
-    const userId = payload?.userId;
-    const emoji = payload?.emoji;
-    if (!userId || !emoji) return;
-    const animation = new Animated.Value(0);
-    const reactionId = String(payload.reactionId || Date.now());
-    setActiveMicReactions(current => ({ ...current, [userId]: { emoji, direction: payload.direction || 'center', animation, reactionId } }));
-    Animated.sequence([
-      Animated.timing(animation, { toValue: 0.18, duration: 180, useNativeDriver: true }),
-      Animated.timing(animation, { toValue: 1, duration: 2820, useNativeDriver: true })
-    ]).start(() => {
-      setActiveMicReactions(current => current[userId]?.reactionId === reactionId
-        ? Object.fromEntries(Object.entries(current).filter(([key]) => key !== userId))
-        : current);
-    });
-  }
-
-  async function sendMicReaction(reaction) {
-    if (!isOnMic || !selectedRoom?.id || !session?.user?.id) return;
-    const payload = {
-      userId: session.user.id,
-      emoji: reaction.emoji,
-      direction: reaction.direction || 'center',
-      reactionId: String(Date.now())
-    };
-    displayMicReaction(payload);
-    try {
-      await micReactionChannelRef.current?.send({ type: 'broadcast', event: 'mic_reaction', payload });
-    } catch (error) {
-      console.log('Mic reaction broadcast:', error.message);
-    }
-    setShowMicReactionPicker(false);
-  }
-
-  {isOnMic && (
-    <TouchableOpacity onPress={() => setShowMicReactionPicker(true)} style={{ width: 38, height: 38, borderRadius: 20, backgroundColor: '#281044', borderWidth: 1, borderColor: '#A64DFF', alignItems: 'center', justifyContent: 'center', marginRight: 5 }}>
-      <Text style={{ fontSize: 21 }}>✨</Text>
-    </TouchableOpacity>
-  )}
   {/* CHAT BAR / CHAT ICON */}
 <View
   style={{
