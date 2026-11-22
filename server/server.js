@@ -1512,23 +1512,24 @@ app.delete('/api/rooms/:roomId/music/me', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
-    // A user may leave the room before the component cleanup request arrives.
-    // Deleting is scoped to the authenticated user's own stream below, so it is
-    // safe to allow cleanup after membership/visitor status has already ended.
-    const { data: previous, error: readError } = await supabase.from('talkzy_room_music_state')
-      .select('queue').eq('room_id', room.id).eq('user_id', req.talkzyUser.id).maybeSingle();
-    if (readError) throw readError;
-    const paths = (Array.isArray(previous?.queue) ? previous.queue : [])
-      .map(item => item?.object_path)
-      .filter(path => typeof path === 'string' && path.startsWith(`${req.talkzyUser.id}/${room.id}/`) && !path.includes('..'));
-    const { error } = await supabase.from('talkzy_room_music_state')
-      .delete().eq('room_id', room.id).eq('user_id', req.talkzyUser.id);
-    if (error) throw error;
+    // Delete only this user's personal stream, under the same room lock used
+    // by music updates, kick and room-exit transactions.
+    const { data, error } = await supabase.rpc('talkzy_delete_room_music_atomic', {
+      p_room_id: room.id,
+      p_user_id: req.talkzyUser.id
+    });
+    if (error) {
+      if (error.code === 'P0002') return res.status(404).json({ error: 'Room not found.' });
+      throw error;
+    }
+    const paths = Array.isArray(data?.music_paths)
+      ? data.music_paths.filter(path => typeof path === 'string' && path.startsWith(`${req.talkzyUser.id}/${room.id}/`) && !path.includes('..'))
+      : [];
     if (paths.length) {
       const { error: storageError } = await supabase.storage.from('talkzy-room-music').remove(paths);
       if (storageError) console.error('Could not remove stopped room music files:', storageError.message);
     }
-    res.json({ stopped: true });
+    res.set('Cache-Control', 'no-store').json({ stopped: true });
   } catch (error) {
     console.error('Could not stop personal room music:', error.message);
     res.status(500).json({ error: 'Could not stop your room music.' });
