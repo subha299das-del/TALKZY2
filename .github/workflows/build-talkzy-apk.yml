@@ -55,10 +55,6 @@ jobs:
 
       - name: Install JavaScript dependencies
         working-directory: mobile
-        run: npm ci --no-fund
-
-      - name: Reconcile lockfile with package overrides
-        working-directory: mobile
         run: npm install --no-fund
 
       - name: Commit lockfile updates
