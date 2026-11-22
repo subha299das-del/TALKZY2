@@ -1124,6 +1124,9 @@ const youtubeLastPositionWriteRef = useRef(0);
  const [showRoomInfo, setShowRoomInfo] = useState(false);
 const [showRoomGiftPanel, setShowRoomGiftPanel] = useState(false);
 const [roomChatText, setRoomChatText] = useState('');
+const [showRoomChatComposer, setShowRoomChatComposer] = useState(false);
+const [roomChatImagePreview, setRoomChatImagePreview] = useState(null);
+const [roomChatImageSending, setRoomChatImageSending] = useState(false);
  const [roomChatMessages, setRoomChatMessages] = useState([]);
  const roomChatScrollRef = useRef(null);
   const [showJoinPassword, setShowJoinPassword] = useState(false);
@@ -2262,35 +2265,34 @@ async function toggleFollowRoom(room) {
   )}
   async function sendRoomImage() {
     if (!selectedRoom?.id) return;
-    if (isRoomTourist && !touristsSendPic) {
-      return Alert.alert('Picture sharing disabled', 'The room owner does not allow tourists to send pictures.');
-    }
+    if (isRoomTourist && !touristsSendPic) return Alert.alert('Picture sharing disabled', 'The room owner does not allow tourists to send pictures.');
     try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) return Alert.alert('Permission required', 'Allow photo access to share a picture.');
-      const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, quality: 0.82 });
-      if (picked.canceled || !picked.assets?.[0]?.uri) return;
-      const uri = picked.assets[0].uri;
-      const response = await fetch(uri);
+      const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, quality: 0.9 });
+      if (!picked.canceled && picked.assets?.[0]?.uri) setRoomChatImagePreview(picked.assets[0]);
+    } catch (error) { Alert.alert('Gallery error', error.message || 'Could not open your gallery.'); }
+  }
+
+  async function confirmSendRoomImage() {
+    if (!roomChatImagePreview?.uri || !selectedRoom?.id || roomChatImageSending) return;
+    if (isRoomTourist && !touristsSendPic) return Alert.alert('Picture sharing disabled', 'The room owner does not allow tourists to send pictures.');
+    try {
+      setRoomChatImageSending(true);
+      const response = await fetch(roomChatImagePreview.uri);
       const bytes = await response.blob();
+      const contentType = roomChatImagePreview.mimeType || 'image/jpeg';
       const path = `${session.user.id}/rooms/${selectedRoom.id}/messages/${Date.now()}.jpg`;
-      const { error: uploadError } = await supabase.storage.from('talkzy-rooms').upload(path, bytes, {
-        contentType: 'image/jpeg', upsert: false
-      });
+      const { error: uploadError } = await supabase.storage.from('talkzy-rooms').upload(path, bytes, { contentType, upsert: false });
       if (uploadError) throw uploadError;
       const imageUrl = supabase.storage.from('talkzy-rooms').getPublicUrl(path).data.publicUrl;
-      const result = await api(`/api/rooms/${selectedRoom.id}/messages`, {
-        method: 'POST', body: JSON.stringify({ type: 'image', imageUrl })
-      });
+      const result = await api(`/api/rooms/${selectedRoom.id}/messages`, { method: 'POST', body: JSON.stringify({ type: 'image', imageUrl }) });
       const item = result.message;
-      setRoomChatMessages(prev => [...prev, {
-        id: item.id, text: '📷 Photo', sender: profile?.display_name || displayName || 'You',
-        senderId: session?.user?.id, image_url: imageUrl,
-        time: new Date(item.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }]);
-    } catch (error) {
-      Alert.alert('Picture not sent', error.message || 'Could not share this picture.');
-    }
+      setRoomChatMessages(prev => [...prev, { id: item.id, text: '📷 Photo', sender: profile?.display_name || displayName || 'You', senderId: session?.user?.id, image_url: imageUrl, message_type: 'image', time: new Date(item.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
+      setRoomChatImagePreview(null);
+      setShowRoomChatComposer(false);
+    } catch (error) { Alert.alert('Picture not sent', error.message || 'Could not share this picture.'); }
+    finally { setRoomChatImageSending(false); }
   }
 
   async function loadRoomMessages(roomId) {
@@ -4202,6 +4204,29 @@ onContentSizeChange={() =>
           <Text style={{ color: '#FFFFFF', fontSize: 24, fontWeight: '900', lineHeight: 27 }}>♫</Text>
           <Text style={{ color: '#FFFFFF', fontSize: 7, fontWeight: '900', letterSpacing: 0.7 }}>MUSIC</Text>
         </TouchableOpacity>
+      <Modal visible={showRoomChatComposer} transparent animationType="slide" onRequestClose={() => setShowRoomChatComposer(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.28)' }}>
+          <Pressable style={{ flex: 1 }} onPress={() => setShowRoomChatComposer(false)} />
+          <View style={{ backgroundColor: '#0B1020', borderTopWidth: 1, borderTopColor: '#34415F', paddingHorizontal: 12, paddingTop: 12, paddingBottom: Platform.OS === 'android' ? 14 : 22 }}>
+            <View style={{ minHeight: 52, maxHeight: 140, flexDirection: 'row', alignItems: 'flex-end', backgroundColor: '#182139', borderRadius: 25, borderWidth: 1, borderColor: '#3A496C', paddingHorizontal: 8, paddingVertical: 7 }}>
+              <TouchableOpacity onPress={sendRoomImage} disabled={isRoomTourist && !touristsSendPic} style={{ width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: '#263451', marginRight: 7, opacity: isRoomTourist && !touristsSendPic ? 0.4 : 1 }}><Text style={{ color: '#FFFFFF', fontSize: 25 }}>＋</Text></TouchableOpacity>
+              <TextInput value={roomChatText} onChangeText={setRoomChatText} placeholder={isRoomTourist && !touristsSendText ? 'Tourist chat disabled' : 'Message the room...'} placeholderTextColor={C.muted} multiline autoFocus editable={!(isRoomTourist && !touristsSendText)} style={{ color: C.text, fontSize: 15, paddingTop: 9, paddingBottom: 8, flex: 1, maxHeight: 116 }} />
+              <TouchableOpacity onPress={roomChatText.trim() ? sendRoomChatMessage : () => Alert.alert('Voice messages', 'Voice messaging will be added as a separate TALKZY feature.')} disabled={roomChatText.trim() ? (isRoomTourist && !touristsSendText) : false} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: roomChatText.trim() ? C.accent : '#263451', alignItems: 'center', justifyContent: 'center', marginLeft: 6 }}><Text style={{ color: '#FFFFFF', fontSize: 19, fontWeight: '900' }}>{roomChatText.trim() ? '➤' : '🎙'}</Text></TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+      <Modal visible={!!roomChatImagePreview} animationType="slide" onRequestClose={() => setRoomChatImagePreview(null)}>
+        <View style={{ flex: 1, backgroundColor: '#050711' }}>
+          <View style={{ height: Platform.OS === 'android' ? 58 : 82, paddingTop: Platform.OS === 'android' ? 5 : 30, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: '#26314B' }}>
+            <TouchableOpacity onPress={() => setRoomChatImagePreview(null)} style={{ padding: 8 }}><Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>Cancel</Text></TouchableOpacity>
+            <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '800' }}>Photo preview</Text>
+            <TouchableOpacity onPress={confirmSendRoomImage} disabled={roomChatImageSending} style={{ paddingHorizontal: 15, paddingVertical: 9, borderRadius: 18, backgroundColor: C.accent, opacity: roomChatImageSending ? 0.55 : 1 }}><Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '900' }}>{roomChatImageSending ? 'Sending…' : 'Send'}</Text></TouchableOpacity>
+          </View>
+          {roomChatImagePreview?.uri ? <Image source={{ uri: roomChatImagePreview.uri }} resizeMode="contain" style={{ flex: 1, width: '100%' }} /> : null}
+        </View>
+      </Modal>
+
       )}
 
      {/* ROOM BOTTOM CONTROLS */}
@@ -4217,60 +4242,12 @@ borderTopWidth: 1,
     borderTopColor: C.line
   }}
 >
-  {/* CHAT BAR / CHAT ICON */}
-<View
-  style={{
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    maxWidth: 190,
-    marginRight: 4
-  }}
->
-  <View
-    style={{
-      flex: 1,
-      height: 38,
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: C.card,
-      borderRadius: 20,
-      paddingLeft: 10,
-      paddingRight: 5
-    }}
-  >
-    <TextInput
-      value={roomChatText}
-      onChangeText={setRoomChatText}
-      placeholder={isRoomTourist && !touristsSendText ? 'Tourist chat disabled' : 'Message...'}
-      placeholderTextColor={C.muted}
-      onSubmitEditing={sendRoomChatMessage}
-      editable={!(isRoomTourist && !touristsSendText)}
-      returnKeyType="send"
-      style={{ color: C.text, fontSize: 12, padding: 0, flex: 1 }}
-    />
-    <TouchableOpacity
-      onPress={sendRoomImage}
-      disabled={isRoomTourist && !touristsSendPic}
-      style={{ width: 30, height: 32, alignItems: 'center', justifyContent: 'center', opacity: isRoomTourist && !touristsSendPic ? 0.35 : 1 }}
-    >
-      <Text style={{ fontSize: 17 }}>▣</Text>
-    </TouchableOpacity>
-  </View>
-
-  <TouchableOpacity
-    onPress={sendRoomChatMessage}
-    disabled={isRoomTourist && !touristsSendText}
-    style={{ opacity: isRoomTourist && !touristsSendText ? 0.4 : 1,
-      width: 34,
-      height: 38,
-      alignItems: 'center',
-      justifyContent: 'center'
-    }}
-  >
-    <Text style={{ fontSize: 19 }}>➤</Text>
-  </TouchableOpacity>
-</View>
+  {/* CHAT BAR / OPEN EXPANDED COMPOSER */}
+ <TouchableOpacity onPress={() => setShowRoomChatComposer(true)} activeOpacity={0.85}
+   style={{ flexDirection: 'row', alignItems: 'center', flex: 1, maxWidth: 190, height: 38, marginRight: 4, backgroundColor: C.card, borderRadius: 20, paddingHorizontal: 12, borderWidth: 1, borderColor: C.line }}>
+   <Text style={{ color: C.muted, fontSize: 12, flex: 1 }}>Message...</Text>
+   <Text style={{ color: '#AFA0D8', fontSize: 17 }}>✎</Text>
+ </TouchableOpacity>
 
   {/* MIC - MUTE / UNMUTE WHILE REMAINING ON SEAT */}
 {isOnMic && (
