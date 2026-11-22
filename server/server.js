@@ -1276,6 +1276,7 @@ app.delete('/api/rooms/:roomId/members/:userId', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
+    if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
 
     if (!await canManageRoom(room, req.talkzyUser.id)) {
       return res.status(403).json({ error: 'Only the owner or a room admin can remove members.' });
@@ -1283,6 +1284,11 @@ app.delete('/api/rooms/:roomId/members/:userId', userAuth, async (req, res) => {
 
     if (req.params.userId === room.owner_id) {
       return res.status(400).json({ error: 'The room owner cannot be removed.' });
+    }
+
+    const targetIsAdmin = await isRoomAdmin(room.id, req.params.userId);
+    if (targetIsAdmin && room.owner_id !== req.talkzyUser.id) {
+      return res.status(403).json({ error: 'Only the room owner can remove another room administrator.' });
     }
 
     const { error } = await supabase.from('talkzy_room_members')
