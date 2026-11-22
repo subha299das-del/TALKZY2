@@ -3752,7 +3752,9 @@ function renderRoomInterior() {
           const previousSeats = micSeats;
 
           // Invalidate any in-flight seat fetch before applying this tap.
-          ++micSeatLoadVersionRef.current;
+          // Keep this action's generation so a late failure cannot restore seats
+          // into a different room or overwrite a newer seat state.
+          const seatActionVersion = ++micSeatLoadVersionRef.current;
 
           try {
             // Optimistic UI: update the seat immediately.
@@ -3795,6 +3797,13 @@ function renderRoomInterior() {
             );
             // Realtime sync updates other participants. Avoid an extra GET here.
           } catch (error) {
+            // Ignore failures that arrive after leaving this room or after a
+            // newer seat load/action has already become authoritative.
+            if (
+              selectedRoom?.id !== roomId ||
+              seatActionVersion !== micSeatLoadVersionRef.current
+            ) return;
+
             // Restore authoritative server state if the action fails.
             setMicSeats(previousSeats);
             await loadRoomMicSeats(roomId);
