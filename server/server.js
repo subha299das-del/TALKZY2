@@ -633,17 +633,22 @@ app.post('/api/rooms/:roomId/leave-visit', userAuth, async (req, res) => {
     const room = await requireRoom(req, res);
     if (!room) return;
     const userId = req.talkzyUser.id;
-    await clearUserRoomChat(room.id, userId);
-    const { error: seatError } = await supabase.from('talkzy_room_mic_seats')
-      .delete().eq('room_id', room.id).eq('user_id', userId);
-    if (seatError) throw seatError;
-    const { error } = await supabase.from('talkzy_room_visitors').delete()
-      .eq('room_id', room.id).eq('user_id', userId);
-    if (error) throw error;
-    const { error: presenceError } = await supabase.from('talkzy_room_presence').delete()
-      .eq('room_id', room.id).eq('user_id', userId);
-    if (presenceError) throw presenceError;
-    await removeUserRoomMusic(room.id, userId);
+    const { data, error } = await supabase.rpc('talkzy_room_exit_atomic', {
+      p_room_id: room.id,
+      p_user_id: userId,
+      p_remove_membership: false
+    });
+    if (error) {
+      if (error.code === '55000') return res.status(409).json({ error: 'This room is closed.' });
+      if (error.code === 'P0002') return res.status(404).json({ error: 'Room not found.' });
+      throw error;
+    }
+    const musicPaths = (Array.isArray(data?.music_paths) ? data.music_paths : [])
+      .filter(path => typeof path === 'string' && path.startsWith(`${userId}/${room.id}/`) && !path.includes('..'));
+    if (musicPaths.length) {
+      const { error: storageError } = await supabase.storage.from('talkzy-room-music').remove(musicPaths);
+      if (storageError) console.error('Tourist leave music cleanup failed:', storageError.message);
+    }
     res.json({ left: true });
   } catch (error) {
     console.error('Could not leave tourist visit:', error.message);
@@ -1853,27 +1858,26 @@ app.post('/api/rooms/:roomId/members/:userId/kick', userAuth, async (req, res) =
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
-    if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
-    if (room.owner_id !== req.talkzyUser.id) return res.status(403).json({ error: 'Only the room creator can kick members.' });
-    if (req.params.userId === room.owner_id) return res.status(400).json({ error: 'The room creator cannot be kicked.' });
-    const reason = String(req.body?.reason || '').trim().slice(0, 200);
-    const { error: insertError } = await supabase.from('talkzy_room_kicklist')
-      .upsert({ room_id: room.id, user_id: req.params.userId, kicked_by: req.talkzyUser.id, reason },
-        { onConflict: 'room_id,user_id' });
-    if (insertError) throw insertError;
-    await clearUserRoomChat(room.id, req.params.userId);
-    const { error: memberError } = await supabase.from('talkzy_room_members').delete()
-      .eq('room_id', room.id).eq('user_id', req.params.userId);
-    if (memberError) throw memberError;
-    const { error: adminDeleteError } = await supabase.from('talkzy_room_admins').delete().eq('room_id', room.id).eq('user_id', req.params.userId);
-    if (adminDeleteError) throw adminDeleteError;
-    const { error: visitorDeleteError } = await supabase.from('talkzy_room_visitors').delete().eq('room_id', room.id).eq('user_id', req.params.userId);
-    if (visitorDeleteError) throw visitorDeleteError;
-    const { error: seatDeleteError } = await supabase.from('talkzy_room_mic_seats').delete().eq('room_id', room.id).eq('user_id', req.params.userId);
-    if (seatDeleteError) throw seatDeleteError;
-    const { error: presenceDeleteError } = await supabase.from('talkzy_room_presence').delete().eq('room_id', room.id).eq('user_id', req.params.userId);
-    if (presenceDeleteError) throw presenceDeleteError;
-    await removeUserRoomMusic(room.id, req.params.userId);
+    const targetId = req.params.userId;
+    const { data, error } = await supabase.rpc('talkzy_kick_room_member_atomic', {
+      p_room_id: room.id,
+      p_actor_id: req.talkzyUser.id,
+      p_target_id: targetId,
+      p_reason: String(req.body?.reason || '').trim().slice(0, 200)
+    });
+    if (error) {
+      if (error.code === '42501') return res.status(403).json({ error: 'Only the room creator can kick members.' });
+      if (error.code === '22023') return res.status(400).json({ error: 'The room creator cannot be kicked.' });
+      if (error.code === '55000') return res.status(409).json({ error: 'This room is closed.' });
+      if (error.code === 'P0002') return res.status(404).json({ error: 'Room not found.' });
+      throw error;
+    }
+    const musicPaths = (Array.isArray(data?.music_paths) ? data.music_paths : [])
+      .filter(path => typeof path === 'string' && path.startsWith(`${targetId}/${room.id}/`) && !path.includes('..'));
+    if (musicPaths.length) {
+      const { error: storageError } = await supabase.storage.from('talkzy-room-music').remove(musicPaths);
+      if (storageError) console.error('Kicked member music cleanup failed:', storageError.message);
+    }
     res.json({ kicked: true });
   } catch (error) {
     console.error('Could not kick room member:', error.message);
