@@ -2263,15 +2263,28 @@ app.delete('/api/rooms/:roomId/mic-seats', userAuth, async (req, res) => {
     const room = await requireRoom(req, res);
     if (!room) return;
 
-    const { error } = await supabase
-      .from('talkzy_room_mic_seats')
-      .delete()
-      .eq('room_id', room.id)
-      .eq('user_id', req.talkzyUser.id);
+    const expectedSeatNumber = req.body?.expectedSeatNumber;
+    if (expectedSeatNumber !== undefined &&
+      (!Number.isInteger(expectedSeatNumber) || expectedSeatNumber < 1 || expectedSeatNumber > 17)) {
+      return res.status(400).json({ error: 'Invalid microphone seat.' });
+    }
 
-    if (error) throw error;
+    // Serialize releases with seat takes, mute changes, seat controls and layout changes.
+    // An expected seat prevents a delayed leave request from deleting a newer seat.
+    const { data, error } = await supabase.rpc('talkzy_leave_mic_seat_atomic', {
+      p_room_id: room.id,
+      p_user_id: req.talkzyUser.id,
+      p_expected_seat_number: expectedSeatNumber ?? null
+    });
 
-    res.json({ success: true });
+    if (error) {
+      if (error.message.includes('ROOM_CLOSED')) return res.status(409).json({ error: 'This room is closed.' });
+      if (error.message.includes('ROOM_NOT_FOUND')) return res.status(404).json({ error: 'Room not found.' });
+      if (error.message.includes('INVALID_SEAT')) return res.status(400).json({ error: 'Invalid microphone seat.' });
+      throw error;
+    }
+
+    res.set('Cache-Control', 'no-store').json({ success: true, ...data });
   } catch (error) {
     console.error('Could not leave microphone seat:', error.message);
     res.status(500).json({ error: 'Could not leave microphone seat.' });
