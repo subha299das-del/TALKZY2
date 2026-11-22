@@ -11123,7 +11123,7 @@ if (screen === 'profile' || profileIncomplete) {
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.78)', justifyContent: 'center', padding: 22 }}>
           <View style={{ backgroundColor: '#151C32', borderRadius: 22, borderWidth: 1, borderColor: '#8B70D0', padding: 22 }}>
             <Text style={{ color: '#FFFFFF', fontSize: 19, fontWeight: '900', textAlign: 'center' }}>Create Your Room</Text>
-            <Text style={{ color: C.muted, fontSize: 13, lineHeight: 20, textAlign: 'center', marginTop: 9 }}>You need your own room to play {pendingGameLaunch?.name || 'this game'}. Create your room and TALKZY will open the game there.</Text>
+            <Text style={{ color: C.muted, fontSize: 13, lineHeight: 20, textAlign: 'center', marginTop: 9 }}>You need your own room to open {pendingGameLaunch?.name || 'this game'}. Create your room and TALKZY will open it there.</Text>
             <TouchableOpacity onPress={() => { setShowGameCreateRoomPrompt(false); setScreen('createRoom'); }} style={{ backgroundColor: C.accent, borderRadius: 13, paddingVertical: 14, alignItems: 'center', marginTop: 18 }}><Text style={{ color: '#FFFFFF', fontWeight: '900' }}>Create Room</Text></TouchableOpacity>
             <TouchableOpacity onPress={() => { setShowGameCreateRoomPrompt(false); setPendingGameLaunch(null); }} style={{ paddingVertical: 12, alignItems: 'center', marginTop: 4 }}><Text style={{ color: C.muted, fontWeight: '800' }}>Cancel</Text></TouchableOpacity>
           </View>
@@ -11134,14 +11134,18 @@ if (screen === 'profile' || profileIncomplete) {
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.82)', justifyContent: 'center', padding: 16 }}>
           <View style={{ backgroundColor: '#10172C', borderRadius: 22, borderWidth: 1, borderColor: '#9A7AE8', padding: 20, minHeight: 260, justifyContent: 'space-between' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}><Text style={{ fontSize: 30, marginRight: 10 }}>{roomGamePanel?.emoji}</Text><View><Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '900' }}>{roomGamePanel?.name}</Text><Text style={{ color: C.teal, fontSize: 10, fontWeight: '900', marginTop: 3 }}>ROOM GAME PANEL</Text></View></View>
-              <TouchableOpacity onPress={() => setRoomGamePanel(null)}><Text style={{ color: C.muted, fontSize: 25 }}>×</Text></TouchableOpacity>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}><Text style={{ fontSize: 30, marginRight: 10 }}>{roomGamePanel?.emoji}</Text><View><Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '900' }}>{roomGamePanel?.name}</Text><Text style={{ color: C.teal, fontSize: 10, fontWeight: '900', marginTop: 3 }}>{roomGamePanel?.name === 'Big Win' ? 'BIG WIN PANEL' : 'ROOM GAME PANEL'}</Text></View></View>
+              <TouchableOpacity onPress={() => setRoomGamePanel(null)} accessibilityRole="button" accessibilityLabel="Close game panel"><Text style={{ color: C.muted, fontSize: 25 }}>×</Text></TouchableOpacity>
             </View>
             <View style={{ backgroundColor: '#1B2540', borderRadius: 16, padding: 20, alignItems: 'center', marginVertical: 20 }}>
               <Text style={{ fontSize: 42 }}>{roomGamePanel?.emoji}</Text><Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '900', marginTop: 10 }}>{roomGamePanel?.name}</Text>
-              <Text style={{ color: C.muted, fontSize: 12, textAlign: 'center', marginTop: 8, lineHeight: 18 }}>The selected game is open in this room. Its playable game screen will appear here when that game's mechanics are implemented.</Text>
+              {roomGamePanel?.name === 'Big Win' ? (
+                <Text style={{ color: C.muted, fontSize: 12, textAlign: 'center', marginTop: 8, lineHeight: 18 }}>Big Win is open in {selectedRoom?.room_name || selectedRoom?.name || 'your room'}. Winner history will appear here once Big Win records are connected.</Text>
+              ) : (
+                <Text style={{ color: C.muted, fontSize: 12, textAlign: 'center', marginTop: 8, lineHeight: 18 }}>The selected game is open in this room. Its playable game screen will appear here when that game's mechanics are implemented.</Text>
+              )}
             </View>
-            <TouchableOpacity onPress={() => setRoomGamePanel(null)} style={{ backgroundColor: C.accent, borderRadius: 13, paddingVertical: 13, alignItems: 'center' }}><Text style={{ color: '#FFFFFF', fontWeight: '900' }}>Minimize Game</Text></TouchableOpacity>
+            <TouchableOpacity onPress={() => setRoomGamePanel(null)} style={{ backgroundColor: C.accent, borderRadius: 13, paddingVertical: 13, alignItems: 'center' }}><Text style={{ color: '#FFFFFF', fontWeight: '900' }}>{roomGamePanel?.name === 'Big Win' ? 'Close Big Win' : 'Minimize Game'}</Text></TouchableOpacity>
           </View>
         </View>
       </Modal>
