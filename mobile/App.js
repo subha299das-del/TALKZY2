@@ -3730,7 +3730,8 @@ function renderRoomInterior() {
               setIsMicMuted(false);
 
               await api(`/api/rooms/${roomId}/mic-seats`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                body: JSON.stringify({ expectedSeatNumber: seat })
               });
               return;
             }
@@ -4007,7 +4008,7 @@ function renderRoomInterior() {
         if (micControls.find(x => x.seat_number === micControlSeat)?.seat_closed) { Alert.alert('Seat closed', 'Open the seat first before taking it.'); return; }
         if (occupied && occupied.user_id !== session?.user?.id) { Alert.alert('Seat occupied', 'This mic is already occupied. Takeover is not enabled.'); return; }
         (async () => { try {
-          if (occupied?.user_id === session?.user?.id) await api(`/api/rooms/${selectedRoom.id}/mic-seats`, { method: 'DELETE' });
+          if (occupied?.user_id === session?.user?.id) await api(`/api/rooms/${selectedRoom.id}/mic-seats`, { method: 'DELETE', body: JSON.stringify({ expectedSeatNumber: micControlSeat }) });
           else await api(`/api/rooms/${selectedRoom.id}/mic-seats/${micControlSeat}`, { method: 'POST' });
           await loadRoomMicSeats(selectedRoom.id);
         } catch (e) { Alert.alert('Mic error', e.message); } })();
