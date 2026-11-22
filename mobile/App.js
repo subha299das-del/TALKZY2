@@ -1208,9 +1208,10 @@ useEffect(() => {
 }, [canManageYoutube]);
 const youtubeScreenVisible = Boolean(youtubeState.video_id || showYoutubePanel);
 useEffect(() => {
-  // Never carry a previous small-layout scroll offset into the fixed 14/17-seat layout.
+  // Reset the seat viewport whenever the room or seat layout changes.
+  // This prevents a previous room's scroll offset from shifting a new room's seats.
   micSeatsScrollRef.current?.scrollTo({ y: 0, animated: false });
-}, [micCount, micLayout, youtubeScreenVisible]);
+}, [selectedRoom?.id, micCount, micLayout, youtubeScreenVisible]);
 const [youtubeLoading, setYoutubeLoading] = useState(false);
 const [youtubeSaving, setYoutubeSaving] = useState(false);
 const [youtubeVolume, setYoutubeVolume] = useState(70);
