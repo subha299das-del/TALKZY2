@@ -1378,6 +1378,11 @@ const [isRoomTourist, setIsRoomTourist] = useState(false);
     function resetAccountScopedState() {
   profileLoadRef.current = null;
   setProfile(null);
+  setAuthMode('login');
+  setEmail('');
+  setPassword('');
+  setConfirmPassword('');
+  setSaving(false);
   setDisplayName('');
   setGender('Male');
   setDateOfBirth('');
