@@ -16,6 +16,7 @@ import {
   ActivityIndicator,
 Modal,
 Platform,
+BackHandler,
 Animated,
 Dimensions,
   Keyboard
@@ -696,7 +697,7 @@ async function loadRoomPresence(roomId, showLoader = false) {
 // WORLD LUCKY BAG BROADCAST RECEIVER (sender integration will publish on this channel)
 useEffect(() => {
   if (!session?.user?.id) return;
-  const channel = supabase.channel('talkzy-world-lucky-bag-notifications')
+  const channel = supabase.channel('talkzy-world-lucky-bag-notifications', { config: { private: true } })
     .on('broadcast', { event: 'world_lucky_bag' }, ({ payload }) => {
       const bagId = String(payload?.id || '');
       if (!bagId || worldLuckyBagSeenRef.current.has(bagId)) return;
@@ -831,7 +832,7 @@ useEffect(() => {
     return;
   }
   const roomId = selectedRoom.id;
-  const channel = supabase.channel(`room-mic-reactions-${roomId}`, { config: { broadcast: { self: false } } })
+  const channel = supabase.channel(`room-mic-reactions-${roomId}`, { config: { private: true, broadcast: { self: false } } })
     .on('broadcast', { event: 'mic_reaction' }, ({ payload }) => {
       if (!payload?.userId || !payload?.emoji) return;
       displayMicReaction(payload);
@@ -850,7 +851,7 @@ useEffect(() => {
 useEffect(() => {
   if (!selectedRoom?.id) return;
   const roomId = selectedRoom.id;
-  const channel = supabase.channel(`room-arrival-sync-${roomId}`, { config: { broadcast: { self: false } } })
+  const channel = supabase.channel(`room-arrival-sync-${roomId}`, { config: { private: true, broadcast: { self: false } } })
     .on('broadcast', { event: 'member_arrived' }, ({ payload }) => {
       if (!payload?.userId || payload.userId === session?.user?.id) return;
       setRoomChatMessages(prev => [...prev, {
@@ -1124,7 +1125,7 @@ async function sendLuckyBag() {
     setWalletBalance(Number(data?.balance ?? walletBalance - total));
     setShowLuckyBagPopup(false);
     if (luckyBagTab === 'World') {
-      const tickerChannel = supabase.channel('talkzy-world-lucky-bag-notifications');
+      const tickerChannel = supabase.channel('talkzy-world-lucky-bag-notifications', { config: { private: true } });
       tickerChannel.subscribe(status => {
         if (status === 'SUBSCRIBED') {
           tickerChannel.send({ type: 'broadcast', event: 'world_lucky_bag', payload: {
@@ -1200,6 +1201,16 @@ useEffect(() => {
     hideSubscription.remove();
   };
 }, []);
+  useEffect(() => {
+    if (!showRoomChatComposer || screen !== 'roomInterior') return;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      setShowRoomChatComposer(false);
+      Keyboard.dismiss();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [showRoomChatComposer, screen]);
+
   const [showJoinPassword, setShowJoinPassword] = useState(false);
 const [joinPassword, setJoinPassword] = useState('');
 const [joiningRoom, setJoiningRoom] = useState(false);
@@ -2370,6 +2381,7 @@ async function toggleFollowRoom(room) {
       setRoomChatMessages(prev => [...prev, { id: item.id, text: '📷 Photo', sender: profile?.display_name || displayName || 'You', senderId: session?.user?.id, image_url: imageUrl, message_type: 'image', time: new Date(item.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
       setRoomChatImagePreview(null);
       setShowRoomChatComposer(false);
+      Keyboard.dismiss();
     } catch (error) { Alert.alert('Picture not sent', error.message || 'Could not share this picture.'); }
     finally { setRoomChatImageSending(false); }
   }
@@ -3097,6 +3109,7 @@ async function sendRoomChatMessage() {
     }]);
     setRoomChatText('');
     setShowRoomChatComposer(false);
+    Keyboard.dismiss();
   } catch (error) {
     Alert.alert('Message not sent', error.message || 'Could not send your message.');
   }
@@ -3964,6 +3977,9 @@ onContentSizeChange={() =>
           editable={!(isRoomTourist && !touristsSendText)}
           style={{ color: C.text, fontSize: 15, paddingTop: 9, paddingBottom: 8, flex: 1 }}
         />
+        <TouchableOpacity onPress={() => { setShowRoomChatComposer(false); Keyboard.dismiss(); }} accessibilityRole="button" accessibilityLabel="Close chat composer" style={{ width: 34, height: 34, borderRadius: 17, marginLeft: 5, alignItems: 'center', justifyContent: 'center', backgroundColor: '#303D58', borderWidth: 1, borderColor: '#526181' }}>
+          <Text style={{ color: '#FFFFFF', fontSize: 17, fontWeight: '900' }}>✕</Text>
+        </TouchableOpacity>
       </View>
     </View>
   )}
@@ -10513,7 +10529,7 @@ if (screen === 'profile' || profileIncomplete) {
           borderBottomColor: C.line
         }}
       >
-        {['Information', 'Members', 'Activity'].map(tab => (
+        {['Information', 'Members', ...(roomDetails?.owner_id === session?.user?.id ? ['Activity'] : [])].map(tab => (
           <TouchableOpacity
             key={tab}
             onPress={() => { setRoomDetailsTab(tab); if (tab === 'Activity') loadRoomActivities(roomDetails?.id); }}
@@ -10908,6 +10924,7 @@ if (screen === 'profile' || profileIncomplete) {
 
     // Immediately and synchronously leave the room UI. No network/storage wait
     // is allowed to block navigation.
+    Keyboard.dismiss();
     setShowRoomMenu(false);
     setShowRoomTools(false);
     setShowRoomGiftPanel(false);
