@@ -1013,6 +1013,7 @@ const [luckyBagHistoryLoading, setLuckyBagHistoryLoading] = useState(false);
 const [luckyBagSending, setLuckyBagSending] = useState(false);
 const [activeLuckyBags, setActiveLuckyBags] = useState([]);
 const [claimingLuckyBagId, setClaimingLuckyBagId] = useState(null);
+const activeLuckyBagRefreshVersionRef = useRef(0);
 const luckyBagPulse = useRef(new Animated.Value(1)).current;
 useEffect(() => { const pulse = Animated.loop(Animated.sequence([Animated.timing(luckyBagPulse, { toValue: 1.06, duration: 850, useNativeDriver: true }), Animated.timing(luckyBagPulse, { toValue: 1, duration: 850, useNativeDriver: true })])); pulse.start(); return () => pulse.stop(); }, [luckyBagPulse]);
 async function loadLuckyBagHistory() {
@@ -1066,28 +1067,33 @@ async function loadLuckyBagHistory() {
 }
 
 async function refreshActiveLuckyBags() {
-  if (!session?.user?.id || !selectedRoom?.id) { setActiveLuckyBags([]); return; }
+  const requestVersion = ++activeLuckyBagRefreshVersionRef.current;
+  const roomId = selectedRoom?.id;
+  const userId = session?.user?.id;
+  if (!userId || !roomId) { setActiveLuckyBags([]); return; }
   try {
     const nowIso = new Date().toISOString();
     const { data: bags, error } = await supabase.from('talkzy_lucky_bags')
       .select('id,sender_id,room_id,scope,total_coins,remaining_coins,remaining_bags,expires_at,created_at')
       .eq('status','active').gt('expires_at',nowIso)
-      .or('room_id.eq.' + selectedRoom.id + ',scope.eq.world')
+      .or('room_id.eq.' + roomId + ',scope.eq.world')
       .order('created_at',{ascending:false}).limit(20);
     if (error) throw error;
+    if (requestVersion !== activeLuckyBagRefreshVersionRef.current || selectedRoom?.id !== roomId || session?.user?.id !== userId) return;
     const list = bags || [];
     if (!list.length) { setActiveLuckyBags([]); return; }
     const senderIds = [...new Set(list.map(b => b.sender_id))];
     const bagIds = list.map(b => b.id);
     const [{ data: profiles }, { data: claims }] = await Promise.all([
       supabase.from('talkzy_profiles').select('id,display_name').in('id',senderIds),
-      supabase.from('talkzy_lucky_bag_claims').select('bag_id').eq('claimer_id',session.user.id).in('bag_id',bagIds)
+      supabase.from('talkzy_lucky_bag_claims').select('bag_id').eq('claimer_id',userId).in('bag_id',bagIds)
     ]);
+    if (requestVersion !== activeLuckyBagRefreshVersionRef.current || selectedRoom?.id !== roomId || session?.user?.id !== userId) return;
     const nameMap = new Map((profiles || []).map(p => [p.id,p.display_name]));
     const claimed = new Set((claims || []).map(x => x.bag_id));
     setActiveLuckyBags(list.map(b => ({...b,senderName:nameMap.get(b.sender_id) || 'TALKZY User',alreadyClaimed:claimed.has(b.id)})));
   } catch (error) {
-    console.log('Lucky Bag refresh:',error.message);
+    if (requestVersion === activeLuckyBagRefreshVersionRef.current) console.log('Lucky Bag refresh:',error.message);
   }
 }
 
@@ -1130,13 +1136,21 @@ useEffect(() => {
 }, [session?.user?.id]);
 
 useEffect(() => {
-  if (!selectedRoom?.id || !session?.user?.id) { setActiveLuckyBags([]); return; }
+  if (!selectedRoom?.id || !session?.user?.id) {
+    ++activeLuckyBagRefreshVersionRef.current;
+    setActiveLuckyBags([]);
+    return;
+  }
   refreshActiveLuckyBags();
   const channel=supabase.channel('lucky-bag-room-feed-' + selectedRoom.id)
     .on('postgres_changes',{event:'*',schema:'public',table:'talkzy_lucky_bags'},refreshActiveLuckyBags)
     .subscribe();
   const interval=setInterval(refreshActiveLuckyBags,5000);
-  return () => { clearInterval(interval); supabase.removeChannel(channel); };
+  return () => {
+    clearInterval(interval);
+    ++activeLuckyBagRefreshVersionRef.current;
+    supabase.removeChannel(channel);
+  };
 }, [selectedRoom?.id,session?.user?.id]);
 
 async function sendLuckyBag() {
