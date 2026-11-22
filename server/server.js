@@ -1583,6 +1583,7 @@ app.get('/api/rooms/:roomId/presence', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
+    if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
     const userId = req.talkzyUser.id;
     const allowed = room.owner_id === userId || await isRoomAdmin(room.id, userId) ||
       await isRoomMember(room.id, userId) || await isRoomVisitor(room.id, userId);
