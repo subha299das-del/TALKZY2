@@ -3197,25 +3197,6 @@ function renderRoomInterior() {
           )}
         </View>
       )}
-      {/* Everyone can view the shared playlist; only this room's creator/admins can manage it. */}
-      {youtubeState.queue?.length > 0 && (
-        <View style={{ marginHorizontal: 10, marginBottom: 5, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: '#10172A', borderRadius: 12, borderWidth: 1, borderColor: '#354466' }}>
-          <Text style={{ color: '#C5CFEA', fontSize: 10, fontWeight: '900', marginBottom: 5 }}>SAVED PLAYLIST · {youtubeState.queue.length}</Text>
-          {youtubeState.queue.map((item, index) => (
-            <View key={`${item.video_id || 'video'}-${index}`} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 4, borderTopWidth: index ? 1 : 0, borderTopColor: '#27334D' }}>
-              <Text numberOfLines={1} style={{ color: '#AAB7D4', fontSize: 10, flex: 1, paddingRight: 6 }}>{index + 1}. {item.title || 'YouTube video'}</Text>
-              {(selectedRoom?.owner_id === session?.user?.id || roomPresence.some(person => person.user_id === session?.user?.id && person.presence_role === 'admin')) && (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                  <TouchableOpacity disabled={index === 0 || youtubeSaving} onPress={() => moveYoutubeQueueItem(index, -1)} style={{ paddingHorizontal: 7, paddingVertical: 4, borderRadius: 6, backgroundColor: '#263653', opacity: index === 0 ? 0.35 : 1 }}><Text style={{ color: '#E3E8FF', fontSize: 11, fontWeight: '900' }}>↑</Text></TouchableOpacity>
-                  <TouchableOpacity disabled={index === youtubeState.queue.length - 1 || youtubeSaving} onPress={() => moveYoutubeQueueItem(index, 1)} style={{ paddingHorizontal: 7, paddingVertical: 4, borderRadius: 6, backgroundColor: '#263653', opacity: index === youtubeState.queue.length - 1 ? 0.35 : 1 }}><Text style={{ color: '#E3E8FF', fontSize: 11, fontWeight: '900' }}>↓</Text></TouchableOpacity>
-                  <TouchableOpacity disabled={youtubeSaving} onPress={() => removeYoutubeQueueItem(index)} style={{ paddingHorizontal: 7, paddingVertical: 4, borderRadius: 6, backgroundColor: '#48263A' }}><Text style={{ color: '#FFB5C5', fontSize: 10, fontWeight: '900' }}>✕</Text></TouchableOpacity>
-                </View>
-              )}
-            </View>
-          ))}
-        </View>
-      )}
-
       {/* YOUTUBE SEARCH PICKER — separate popup for controllers */}
       <Modal visible={showYoutubePicker} transparent animationType="slide" onRequestClose={() => { setShowYoutubePicker(false); setYoutubePickedItem(null); }}>
         <View style={{ flex: 1, backgroundColor: 'rgba(2,4,12,0.88)', justifyContent: 'flex-end' }}>
