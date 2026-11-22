@@ -1015,6 +1015,7 @@ app.post('/api/rooms/:roomId/leave', userAuth, async (req, res) => {
     });
     if (error) {
       if (error.code === '22023') return res.status(403).json({ error: 'Room owners cannot leave their own room.' });
+      if (error.code === '42501') return res.status(403).json({ error: 'You are not an active participant in this room.' });
       if (error.code === '55000') return res.status(409).json({ error: 'This room is closed.' });
       if (error.code === 'P0002') return res.status(404).json({ error: 'Room not found.' });
       throw error;
@@ -1587,7 +1588,10 @@ app.post('/api/rooms/:roomId/presence/leave', userAuth, async (req, res) => {
       p_user_id: userId,
       p_remove_membership: false
     });
-    if (error) throw error;
+    if (error) {
+      if (error.code === '42501') return res.status(403).json({ error: 'You are not an active participant in this room.' });
+      throw error;
+    }
 
     const musicPaths = (Array.isArray(data?.music_paths) ? data.music_paths : [])
       .filter(path => typeof path === 'string' && path.startsWith(`${userId}/${room.id}/`) && !path.includes('..'));
@@ -1599,7 +1603,7 @@ app.post('/api/rooms/:roomId/presence/leave', userAuth, async (req, res) => {
     res.set('Cache-Control', 'no-store').json({ left: true, clearedAt: data.cleared_at });
   } catch (error) {
     console.error('Could not complete room exit cleanup:', error.message);
-    const status = error.code === '55000' ? 409 : error.code === 'P0002' ? 404 : 500;
+    const status = error.code === '42501' ? 403 : error.code === '55000' ? 409 : error.code === 'P0002' ? 404 : 500;
     res.status(status).json({ error: 'Could not complete room exit cleanup.' });
   }
 });
