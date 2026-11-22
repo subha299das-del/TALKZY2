@@ -471,6 +471,8 @@ export default function App() {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
 
+  const activeAuthUserIdRef = useRef(null);
+  activeAuthUserIdRef.current = session?.user?.id || null;
   const profileLoadRef = useRef(null);
 
   const [loading, setLoading] = useState(true);
@@ -1352,6 +1354,7 @@ const [isRoomTourist, setIsRoomTourist] = useState(false);
 
         if (!mounted) return;
 
+        activeAuthUserIdRef.current = currentSession?.user?.id || null;
         setSession(currentSession);
 
         if (currentSession) {
@@ -1372,25 +1375,76 @@ const [isRoomTourist, setIsRoomTourist] = useState(false);
 
     loadSession();
 
-    
+    function resetAccountScopedState() {
+  profileLoadRef.current = null;
+  setProfile(null);
+  setMyRooms([]);
+  setJoinedRooms([]);
+  setFollowedRooms([]);
+  setRoomCreationEligibilityLoaded(false);
+  setHasEverCreatedRoom(false);
+  setWalletBalance(0);
+  setLuckyBagHistoryItems([]);
+  setLuckyBagHistoryLoading(false);
+  setActiveLuckyBags([]);
+  setClaimingLuckyBagId(null);
+  setShowLuckyBagPopup(false);
+  setLuckyBagHistoryView(false);
+  setWorldLuckyBagNotification(null);
+  setWorldLuckyBagQueue([]);
+  worldLuckyBagSeenRef.current.clear();
+  setSelectedRoom(null);
+  setRoomChatMessages([]);
+  setRoomEntrySystemMessages([]);
+  setRoomPresence([]);
+  setRoomPresenceLoading(false);
+  setMicSeats([]);
+  setMicControls([]);
+  setIsOnMic(false);
+  setMyMicSeat(null);
+  setIsMicMuted(false);
+  setIsRoomTourist(false);
+  setRoomGamePanel(null);
+  setShowYoutubePanel(false);
+  setShowYoutubePicker(false);
+  setYoutubeState({ video_id: null, queue: [], is_playing: false, current_time_seconds: 0, updated_at: null });
+  setShowMusicPanel(false);
+  setMusicMinimized(false);
+  setShowRoomUsers(false);
+  setRoomDetailsVisible(false);
+  setRoomDetails(null);
+  setSelectedOfficialEvent(null);
+  setOfficialEvents([]);
+  ++roomMessagesLoadVersionRef.current;
+  ++roomPresenceLoadVersionRef.current;
+  ++micSeatLoadVersionRef.current;
+  ++roomSettingsLoadRequestVersionRef.current;
+  ++activeLuckyBagRefreshVersionRef.current;
+  setScreen('login');
+}
+
 const {
   data: { subscription }
 } = supabase.auth.onAuthStateChange(
   (_event, newSession) => {
     if (!mounted) return;
 
+    const nextUserId = newSession?.user?.id || null;
+    const previousUserId = activeAuthUserIdRef.current;
+    activeAuthUserIdRef.current = nextUserId;
     setSession(newSession);
 
     if (newSession) {
+      if (previousUserId && previousUserId !== nextUserId) {
+        resetAccountScopedState();
+      }
       Promise.resolve().then(() => {
         if (mounted) {
           loadUserProfile(newSession);
         }
       });
     } else {
-      profileLoadRef.current = null;
-      setProfile(null);
-      setScreen('login');
+      resetAccountScopedState();
     }
   }
 );
