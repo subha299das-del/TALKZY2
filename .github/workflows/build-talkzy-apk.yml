@@ -9,7 +9,7 @@ on:
       - '.github/workflows/build-talkzy-apk.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: talkzy-apk-${{ github.ref }}
@@ -56,6 +56,20 @@ jobs:
       - name: Install JavaScript dependencies
         working-directory: mobile
         run: npm ci --no-fund
+
+      - name: Apply non-breaking dependency security updates
+        working-directory: mobile
+        run: npm audit fix --no-fund
+
+      - name: Commit dependency security updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mobile/package.json mobile/package-lock.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Apply compatible dependency security fixes"
+            git push
+          fi
 
       - name: Check Expo dependency compatibility
         working-directory: mobile
