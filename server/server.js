@@ -2220,16 +2220,6 @@ if (
   });
 }
 
-    // Preserve the user's mute state when moving from one mic to another.
-    const { data: previousSeat, error: previousSeatError } = await supabase
-      .from('talkzy_room_mic_seats')
-      .select('is_muted')
-      .eq('room_id', room.id)
-      .eq('user_id', userId)
-      .maybeSingle();
-    if (previousSeatError) throw previousSeatError;
-    const preservedMute = !!previousSeat?.is_muted;
-
     const { data, error } = await supabase.rpc('talkzy_take_mic_seat', {
       p_room_id: room.id,
       p_seat_number: seatNumber,
@@ -2240,29 +2230,17 @@ if (
       if (error.message.includes('SEAT_TAKEN')) {
         return res.status(409).json({ error: 'This microphone is already occupied.' });
       }
-
+      if (error.message.includes('SEAT_CLOSED')) {
+        return res.status(403).json({ error: 'This microphone seat is closed by the room owner or admin.' });
+      }
       if (error.message.includes('INVALID_SEAT')) {
         return res.status(400).json({ error: 'Invalid microphone seat.' });
       }
-
+      if (error.message.includes('ROOM_NOT_FOUND')) {
+        return res.status(409).json({ error: 'This room is closed.' });
+      }
       throw error;
     }
-
-    const { data: currentControl, error: currentControlError } = await supabase
-      .from('talkzy_room_mic_controls')
-      .select('mic_closed')
-      .eq('room_id', room.id)
-      .eq('seat_number', seatNumber)
-      .maybeSingle();
-    if (currentControlError) throw currentControlError;
-    const { error: muteSyncError } = await supabase.from('talkzy_room_mic_seats')
-      .update({
-        is_muted: currentControl?.mic_closed ? true : preservedMute,
-        updated_at: new Date().toISOString()
-      })
-      .eq('room_id', room.id)
-      .eq('user_id', userId);
-    if (muteSyncError) throw muteSyncError;
 
     res.set('Cache-Control', 'no-store').json({
       success: true,
@@ -2303,51 +2281,37 @@ app.patch('/api/rooms/:roomId/mic-seats/:seatNumber/control', userAuth, async (r
     const room = await requireRoom(req, res);
     if (!room) return;
     if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
-    const userId = req.talkzyUser.id;
-    if (!(await canManageRoom(room, userId))) {
-      return res.status(403).json({ error: 'Only the room owner or room admin can control microphone seats.' });
-    }
+
     const seatNumber = Number(req.params.seatNumber);
     if (!Number.isInteger(seatNumber) || seatNumber < 1 || seatNumber > 17) {
       return res.status(400).json({ error: 'Invalid microphone seat.' });
     }
-    const { data: roomMicSettings, error: roomMicSettingsError } = await supabase
-      .from('talkzy_rooms').select('mic_count').eq('id', room.id).single();
-    if (roomMicSettingsError) throw roomMicSettingsError;
-    if (seatNumber > roomMicSettings.mic_count) {
-      return res.status(400).json({ error: 'This microphone seat is outside the room’s current layout.' });
-    }
+
     const action = req.body?.action;
     if (!['close_seat', 'open_seat', 'close_mic', 'open_mic'].includes(action)) {
       return res.status(400).json({ error: 'Invalid microphone control action.' });
     }
-    const updates = {
-      room_id: room.id,
-      seat_number: seatNumber,
-      updated_by: userId,
-      updated_at: new Date().toISOString()
-    };
-    if (action === 'close_seat') updates.seat_closed = true;
-    if (action === 'open_seat') updates.seat_closed = false;
-    if (action === 'close_mic') updates.mic_closed = true;
-    if (action === 'open_mic') updates.mic_closed = false;
 
-    const { data, error } = await supabase
-      .from('talkzy_room_mic_controls')
-      .upsert(updates, { onConflict: 'room_id,seat_number' })
-      .select()
-      .single();
-    if (error) throw error;
+    const { data, error } = await supabase.rpc('talkzy_control_mic_seat_atomic', {
+      p_room_id: room.id,
+      p_actor_id: req.talkzyUser.id,
+      p_seat_number: seatNumber,
+      p_action: action
+    });
 
-    if (action === 'close_seat') {
-      const { error: removeSeatError } = await supabase.from('talkzy_room_mic_seats').delete()
-        .eq('room_id', room.id).eq('seat_number', seatNumber);
-      if (removeSeatError) throw removeSeatError;
-    } else if (action === 'close_mic') {
-      const { error: forceMuteError } = await supabase.from('talkzy_room_mic_seats').update({ is_muted: true, updated_at: new Date().toISOString() })
-        .eq('room_id', room.id).eq('seat_number', seatNumber);
-      if (forceMuteError) throw forceMuteError;
+    if (error) {
+      if (error.message.includes('FORBIDDEN')) {
+        return res.status(403).json({ error: 'Only the room owner or room admin can control microphone seats.' });
+      }
+      if (error.message.includes('INVALID_SEAT')) {
+        return res.status(400).json({ error: 'This microphone seat is outside the room’s current layout.' });
+      }
+      if (error.message.includes('ROOM_CLOSED') || error.message.includes('ROOM_NOT_FOUND')) {
+        return res.status(409).json({ error: 'This room is closed.' });
+      }
+      throw error;
     }
+
     res.set('Cache-Control', 'no-store').json({ success: true, control: data });
   } catch (error) {
     console.error('Could not update mic seat control:', error.message);
