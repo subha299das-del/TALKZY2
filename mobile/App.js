@@ -1140,6 +1140,11 @@ async function sendLuckyBag() {
 }
 
 const [showRoomThemeMenu, setShowRoomThemeMenu] = useState(false);
+const [roomThemeTab, setRoomThemeTab] = useState('Theme');
+const [roomThemeDraftUri, setRoomThemeDraftUri] = useState(null);
+const [roomThemeDuration, setRoomThemeDuration] = useState(7);
+const [roomThemePreviewUri, setRoomThemePreviewUri] = useState(null);
+const [roomThemeOwnItems, setRoomThemeOwnItems] = useState([]);
 const [showYoutubePanel, setShowYoutubePanel] = useState(false);
 const [showYoutubePicker, setShowYoutubePicker] = useState(false);
 const [showYoutubeQueuePopup, setShowYoutubeQueuePopup] = useState(false);
@@ -3033,6 +3038,16 @@ function renderRoomInterior() {
 
   return (
     <View style={{ flex: 1, backgroundColor: 'transparent', minHeight: 0 }}>
+      {roomThemePreviewUri && (
+        <>
+          <Image source={{ uri: roomThemePreviewUri }} resizeMode="cover" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', opacity: 0.72 }} />
+          <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(5,8,18,0.24)' }} />
+          <TouchableOpacity onPress={() => setRoomThemePreviewUri(null)} style={{ position: 'absolute', right: 12, bottom: Platform.OS === 'android' ? 100 : 78, zIndex: 80, elevation: 30, paddingHorizontal: 16, paddingVertical: 11, borderRadius: 22, backgroundColor: '#5B45A8', borderWidth: 1, borderColor: '#D0C3FF' }}>
+            <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 12 }}>End Preview</Text>
+          </TouchableOpacity>
+        </>
+      )}
+
 
       {worldLuckyBagNotification && (
         <WorldLuckyBagTicker
@@ -4072,33 +4087,133 @@ onContentSizeChange={() =>
         </View>
       )}
 
-      {showRoomThemeMenu && selectedRoom?.owner_id === session?.user?.id && (
-        <View style={{
-          position: 'absolute',
-          left: 12,
-          right: 12,
-          bottom: 86,
-          backgroundColor: 'rgba(15, 19, 31, 0.96)',
-          borderRadius: 16,
-          padding: 15,
-          borderWidth: 1,
-          borderColor: C.line,
-          zIndex: 42,
-          elevation: 24
-        }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <Text style={{ color: C.text, fontSize: 15, fontWeight: '900' }}>🎨 Room Theme</Text>
-            <TouchableOpacity onPress={() => setShowRoomThemeMenu(false)} style={{ paddingHorizontal: 7, paddingVertical: 3 }}>
-              <Text style={{ color: C.muted, fontSize: 20 }}>✕</Text>
+      <Modal
+        visible={showRoomThemeMenu && selectedRoom?.owner_id === session?.user?.id}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => setShowRoomThemeMenu(false)}
+      >
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#090F1D' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 17, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#26334D' }}>
+            <TouchableOpacity onPress={() => setShowRoomThemeMenu(false)} style={{ width: 38, height: 38, borderRadius: 13, backgroundColor: '#17233A', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: '#F4F6FF', fontSize: 23 }}>‹</Text>
+            </TouchableOpacity>
+            <Text style={{ color: '#F4F6FF', fontSize: 18, fontWeight: '900' }}>Room Themes</Text>
+            <TouchableOpacity onPress={async () => {
+              try {
+                const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                if (!permission.granted) {
+                  Alert.alert('Photo permission required', 'Allow gallery access to choose your room theme.');
+                  return;
+                }
+                const picked = await ImagePicker.launchImageLibraryAsync({
+                  mediaTypes: ['images'],
+                  allowsEditing: true,
+                  aspect: [9, 16],
+                  quality: 0.9
+                });
+                if (!picked.canceled && picked.assets?.[0]?.uri) {
+                  setRoomThemeDraftUri(picked.assets[0].uri);
+                  setRoomThemeTab('Custom');
+                }
+              } catch (error) {
+                Alert.alert('Theme image error', error?.message || 'Could not open your gallery.');
+              }
+            }} style={{ width: 38, height: 38, borderRadius: 13, backgroundColor: '#5B45A8', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: '#FFFFFF', fontSize: 25, fontWeight: '500', lineHeight: 29 }}>＋</Text>
             </TouchableOpacity>
           </View>
-          <View style={{ minHeight: 112, borderRadius: 12, borderWidth: 1, borderColor: C.line, backgroundColor: 'rgba(255,255,255,0.035)', alignItems: 'center', justifyContent: 'center', padding: 14 }}>
-            <Text style={{ fontSize: 30, marginBottom: 7 }}>🖼️</Text>
-            <Text style={{ color: C.text, fontSize: 13, fontWeight: '800' }}>Room themes are coming soon</Text>
-            <Text style={{ color: C.muted, fontSize: 11, textAlign: 'center', marginTop: 5 }}>Theme selection and customization will be added here later.</Text>
+
+          <View style={{ flexDirection: 'row', paddingHorizontal: 14, paddingTop: 15, gap: 8 }}>
+            {['Theme', 'Premium', 'Own'].map(tab => (
+              <TouchableOpacity key={tab} onPress={() => setRoomThemeTab(tab)} style={{ flex: 1, paddingVertical: 11, borderRadius: 12, backgroundColor: roomThemeTab === tab ? '#6048B6' : '#17233A', borderWidth: 1, borderColor: roomThemeTab === tab ? '#A995FF' : '#2A3855', alignItems: 'center' }}>
+                <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 12 }}>{tab}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
-        </View>
-      )}
+
+          <ScrollView contentContainerStyle={{ padding: 15, paddingBottom: 30 }}>
+            {roomThemeTab === 'Theme' && (
+              <View>
+                <Text style={{ color: '#AAB7D0', fontSize: 12, marginBottom: 13 }}>Choose a room look or add your own vertical background.</Text>
+                <TouchableOpacity onPress={async () => {
+                  try {
+                    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                    if (!permission.granted) { Alert.alert('Photo permission required', 'Allow gallery access to choose your room theme.'); return; }
+                    const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [9, 16], quality: 0.9 });
+                    if (!picked.canceled && picked.assets?.[0]?.uri) { setRoomThemeDraftUri(picked.assets[0].uri); setRoomThemeTab('Custom'); }
+                  } catch (error) { Alert.alert('Theme image error', error?.message || 'Could not open your gallery.'); }
+                }} style={{ borderRadius: 18, borderWidth: 1, borderColor: '#7561C7', backgroundColor: '#191C39', padding: 18, alignItems: 'center', marginBottom: 14 }}>
+                  <Text style={{ fontSize: 30 }}>＋</Text>
+                  <Text style={{ color: '#FFFFFF', fontWeight: '900', marginTop: 5 }}>Create Custom Theme</Text>
+                  <Text style={{ color: '#B9B5D8', fontSize: 11, marginTop: 4 }}>Choose an image · Crop to 9:16</Text>
+                </TouchableOpacity>
+                <View style={{ borderRadius: 16, borderWidth: 1, borderColor: '#2A3855', backgroundColor: '#111B30', padding: 15 }}>
+                  <Text style={{ color: '#F4F6FF', fontWeight: '900' }}>Room background themes</Text>
+                  <Text style={{ color: '#AAB7D0', fontSize: 11, lineHeight: 17, marginTop: 6 }}>Your room's own background can be added here. Premium theme packs will appear in the Premium tab when they are configured.</Text>
+                </View>
+              </View>
+            )}
+
+            {roomThemeTab === 'Premium' && (
+              <View style={{ borderRadius: 18, borderWidth: 1, borderColor: '#725B9F', backgroundColor: '#201832', padding: 18 }}>
+                <Text style={{ color: '#F4E8FF', fontSize: 16, fontWeight: '900' }}>✦ Premium Themes</Text>
+                <Text style={{ color: '#C8B8E0', fontSize: 12, lineHeight: 19, marginTop: 8 }}>Premium themes are designed for 30-day access. Theme packs and coin prices have not been configured yet, so no coins will be charged from this screen.</Text>
+              </View>
+            )}
+
+            {roomThemeTab === 'Own' && (
+              <View>
+                {roomThemeOwnItems.length === 0 ? (
+                  <View style={{ alignItems: 'center', paddingVertical: 42, borderRadius: 18, backgroundColor: '#111B30', borderWidth: 1, borderColor: '#2A3855' }}>
+                    <Text style={{ fontSize: 35 }}>🖼️</Text>
+                    <Text style={{ color: '#F4F6FF', fontWeight: '900', marginTop: 10 }}>No themes yet</Text>
+                    <Text style={{ color: '#AAB7D0', fontSize: 11, marginTop: 5 }}>Themes you create or purchase will appear here.</Text>
+                  </View>
+                ) : roomThemeOwnItems.map((item, index) => (
+                  <TouchableOpacity key={item.id || index} onPress={() => { setRoomThemeDraftUri(item.uri); setRoomThemeDuration(item.days || 7); setRoomThemeTab('Custom'); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 14, backgroundColor: '#111B30', marginBottom: 9 }}>
+                    <Image source={{ uri: item.uri }} style={{ width: 54, height: 78, borderRadius: 9 }} />
+                    <View style={{ flex: 1, marginLeft: 12 }}>
+                      <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>{item.name || 'My Theme'}</Text>
+                      <Text style={{ color: '#AAB7D0', fontSize: 11, marginTop: 4 }}>{item.days || 7} days · Created</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            {roomThemeTab === 'Custom' && (
+              <View>
+                <Text style={{ color: '#F4F6FF', fontSize: 16, fontWeight: '900', marginBottom: 5 }}>Custom Theme</Text>
+                <Text style={{ color: '#AAB7D0', fontSize: 11, marginBottom: 14 }}>Your image is cropped vertically to 9:16.</Text>
+                {roomThemeDraftUri ? (
+                  <Image source={{ uri: roomThemeDraftUri }} style={{ width: 180, height: 320, alignSelf: 'center', borderRadius: 16, backgroundColor: '#17233A' }} resizeMode="cover" />
+                ) : (
+                  <TouchableOpacity onPress={() => setRoomThemeTab('Theme')} style={{ height: 180, borderRadius: 16, borderWidth: 1, borderColor: '#52638A', alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ color: '#FFFFFF', fontWeight: '800' }}>Choose an image from gallery</Text>
+                  </TouchableOpacity>
+                )}
+                <Text style={{ color: '#DDE4F5', fontSize: 12, fontWeight: '900', marginTop: 18, marginBottom: 9 }}>Theme duration</Text>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  {[7, 15, 30].map(days => (
+                    <TouchableOpacity key={days} onPress={() => setRoomThemeDuration(days)} style={{ flex: 1, paddingVertical: 12, borderRadius: 11, alignItems: 'center', backgroundColor: roomThemeDuration === days ? '#6048B6' : '#17233A', borderWidth: 1, borderColor: roomThemeDuration === days ? '#B7A5FF' : '#2A3855' }}>
+                      <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>{days} Days</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <TouchableOpacity disabled={!roomThemeDraftUri} onPress={() => {
+                  if (!roomThemeDraftUri) return;
+                  setRoomThemePreviewUri(roomThemeDraftUri);
+                  setShowRoomThemeMenu(false);
+                }} style={{ marginTop: 17, paddingVertical: 14, borderRadius: 13, alignItems: 'center', backgroundColor: roomThemeDraftUri ? '#6048B6' : '#33394A', opacity: roomThemeDraftUri ? 1 : 0.5 }}>
+                  <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>Preview in Room</Text>
+                </TouchableOpacity>
+                <Text style={{ color: '#8998B4', fontSize: 10, textAlign: 'center', marginTop: 9, lineHeight: 15 }}>Preview is private to you. It does not change the room for other members or charge coins.</Text>
+              </View>
+            )}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
 
       <RoomMusicPanel visible={showMusicPanel} roomId={selectedRoom?.id} userId={session?.user?.id} api={api} supabase={supabase} colors={C} onClose={() => { setShowMusicPanel(false); setMusicMinimized(false); }} onMinimize={() => { setShowMusicPanel(false); setMusicMinimized(true); }} />
       {showLuckyBagPopup && (
