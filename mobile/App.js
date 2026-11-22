@@ -1563,7 +1563,14 @@ const [isRoomTourist, setIsRoomTourist] = useState(false);
   ++roomPresenceLoadVersionRef.current;
   ++micSeatLoadVersionRef.current;
   ++roomSettingsLoadRequestVersionRef.current;
+  ++roomSettingsListRequestVersionRef.current;
+  ++roomDetailRequestVersionRef.current;
+  ++roomActivitiesRequestVersionRef.current;
   ++activeLuckyBagRefreshVersionRef.current;
+  roomExitInProgressRef.current = false;
+  roomLeaveCleanupRef.current = null;
+  roomChatLocalCutoffRef.current = null;
+  youtubePanelDismissedRef.current = false;
   setScreen('login');
 }
 
