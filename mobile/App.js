@@ -6242,6 +6242,7 @@ function renderEvents() {
                     loadPublicRooms();
                     loadMyRooms();
                     if (item === 'Mine') loadFollowedRooms();
+                    if (item === 'Popular') loadOfficialEvents();
                   }
 
                   if (item === 'Events') {
