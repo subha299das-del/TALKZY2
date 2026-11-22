@@ -3171,17 +3171,17 @@ function renderRoomInterior() {
 
       {/* SHARED YOUTUBE SCREEN CONTROLS — hidden together with the player */}
       {youtubeScreenVisible && (
-        <View style={{ marginHorizontal: 10, marginTop: 5, marginBottom: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 7 }}>
-          <TouchableOpacity onPress={refreshYoutubeScreen} disabled={youtubeLoading} style={{ width: 27, height: 25, borderRadius: 7, backgroundColor: '#17213A', borderWidth: 1, borderColor: '#53618A', alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: '#E8E9FF', fontSize: 15, fontWeight: '900' }}>↻</Text>
+        <View style={{ marginHorizontal: 10, marginTop: 5, marginBottom: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
+          <TouchableOpacity onPress={refreshYoutubeScreen} disabled={youtubeLoading} style={{ width: 20, height: 20, borderRadius: 5, backgroundColor: '#17213A', borderWidth: 1, borderColor: '#53618A', alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: '#E8E9FF', fontSize: 11, fontWeight: '900' }}>↻</Text>
           </TouchableOpacity>
           {(selectedRoom?.owner_id === session?.user?.id || roomPresence.some(person => person.user_id === session?.user?.id && person.presence_role === 'admin')) && (
             <TouchableOpacity onPress={() => setShowYoutubeQueueModal(true)} style={{ width: 27, height: 25, borderRadius: 7, backgroundColor: '#17213A', borderWidth: 1, borderColor: '#53618A', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: '#E8E9FF', fontSize: 14, fontWeight: '900' }}>☷</Text>
+              <Text style={{ color: '#E8E9FF', fontSize: 11, fontWeight: '900' }}>☷</Text>
             </TouchableOpacity>
           )}
           <TouchableOpacity onPress={() => setShowYoutubeVolumeModal(true)} style={{ width: 27, height: 25, borderRadius: 7, backgroundColor: '#17213A', borderWidth: 1, borderColor: '#53618A', alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: '#E8E9FF', fontSize: 14, fontWeight: '900' }}>◖))</Text>
+            <Text style={{ color: '#E8E9FF', fontSize: 10, fontWeight: '900' }}>◖))</Text>
           </TouchableOpacity>
         </View>
       )}
