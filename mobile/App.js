@@ -62,6 +62,12 @@ const C = {
 };
 
 
+const HOT_EVENT_CARDS = [
+  { title: 'TALKZY SPOTLIGHT', subtitle: 'Discover exciting community events', emoji: '🔥', color: '#7C3AED' },
+  { title: 'VOICE ROOM CHALLENGE', subtitle: 'Join the excitement and participate', emoji: '🎤', color: '#E04F5F' },
+  { title: 'GIFT FESTIVAL', subtitle: 'Celebrate with the TALKZY community', emoji: '🎁', color: '#D69B24' }
+];
+
 const supabase = createClient(
   SUPABASE_URL || 'https://placeholder.supabase.co',
   SUPABASE_KEY || 'placeholder-key',
@@ -4370,6 +4376,48 @@ onContentSizeChange={() =>
       </Modal>
 
 
+     {/* FLOATING ROOM SHORTCUTS: overlay only; never changes chat or mic layout */}
+      {screen === 'roomInterior' && selectedRoom && !showRoomChatComposer && (
+        <View pointerEvents="box-none" style={{ position: 'absolute', right: 8, bottom: Platform.OS === 'android' ? 98 : 76, alignItems: 'center', gap: 7, zIndex: 36, elevation: 20 }}>
+          <TouchableOpacity
+            activeOpacity={0.88}
+            accessibilityRole="button"
+            accessibilityLabel="Open Popular Hot Events"
+            onPress={() => {
+              setIsRoomMinimized(true);
+              setScreen('main');
+              setActiveTab('Room');
+              setRoomTab('Popular');
+            }}
+            style={{ width: 82, height: 41, borderRadius: 9, overflow: 'hidden', borderWidth: 1, borderColor: '#E8C77A', backgroundColor: '#27164D', alignItems: 'center', justifyContent: 'center', shadowColor: '#A875FF', shadowOpacity: 0.42, shadowRadius: 7, elevation: 5 }}
+          >
+            <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: HOT_EVENT_CARDS[hotEventIndex]?.color || '#7C3AED', opacity: 0.92 }} />
+            <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 8, fontWeight: '900', letterSpacing: 0.45, textAlign: 'center', paddingHorizontal: 4 }}>{HOT_EVENT_CARDS[hotEventIndex]?.emoji || '🔥'} HOT EVENT</Text>
+            <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 7, fontWeight: '800', textAlign: 'center', paddingHorizontal: 4, marginTop: 2 }}>{HOT_EVENT_CARDS[hotEventIndex]?.title || 'TALKZY SPOTLIGHT'}</Text>
+          </TouchableOpacity>
+          {[
+            { key: 'rocket', icon: '🚀', label: 'Rocket' },
+            { key: 'greedy', icon: '🤑', label: 'Greedy' },
+            { key: 'game', icon: '🎮', label: 'Game' }
+          ].map(shortcut => (
+            <TouchableOpacity key={shortcut.key} activeOpacity={0.82} accessibilityRole="button" accessibilityLabel={shortcut.label}
+              onPress={() => {
+                if (shortcut.key === 'game') {
+                  setIsRoomMinimized(true);
+                  setScreen('main');
+                  setActiveTab('Games');
+                } else {
+                  Alert.alert(shortcut.label, shortcut.label + ' feature will be available here soon.');
+                }
+              }}
+              style={{ width: 39, height: 39, borderRadius: 20, backgroundColor: 'rgba(17,23,43,0.96)', borderWidth: 1, borderColor: shortcut.key === 'rocket' ? '#E59B62' : shortcut.key === 'greedy' ? '#D8B65F' : '#8D75DB', alignItems: 'center', justifyContent: 'center', shadowColor: '#000000', shadowOpacity: 0.28, shadowRadius: 5, elevation: 4 }}
+            >
+              <Text style={{ fontSize: 20 }}>{shortcut.icon}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
      {/* ROOM BOTTOM CONTROLS */}
 {!showRoomChatComposer && (
 <View
@@ -5135,26 +5183,7 @@ function renderPopular() {
           setHotEventIndex(Math.min(index, 2));
         }}
       >
-        {[
-          {
-            title: 'TALKZY SPOTLIGHT',
-            subtitle: 'Discover exciting community events',
-            emoji: '🔥',
-            color: '#7C3AED'
-          },
-          {
-            title: 'VOICE ROOM CHALLENGE',
-            subtitle: 'Join the excitement and participate',
-            emoji: '🎤',
-            color: '#E04F5F'
-          },
-          {
-            title: 'GIFT FESTIVAL',
-            subtitle: 'Celebrate with the TALKZY community',
-            emoji: '🎁',
-            color: '#D69B24'
-          }
-        ].map((event, index) => (
+        {HOT_EVENT_CARDS.map((event, index) => (
           <View
             key={index}
             style={{
