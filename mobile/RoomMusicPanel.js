@@ -291,6 +291,7 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
           if (isNewOwnPlayer || Math.abs(Number(ownPlayer.currentTime || 0) - ownExpected) > 3) {
             try { await ownPlayer.seekTo(ownExpected); } catch {}
           }
+          if (requestGeneration !== syncGenerationRef.current) return;
           ownPlayer.volume = Math.min(1, Math.max(0, Number(mine.volume ?? 0.8)));
           if (mine.is_playing && !ownPlayer.playing) ownPlayer.play();
           if (!mine.is_playing && ownPlayer.playing) ownPlayer.pause();
@@ -320,6 +321,7 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
           if (Math.abs(Number(remote.currentTime || 0) - expected) > 3) {
             try { await remote.seekTo(expected); } catch {}
           }
+          if (requestGeneration !== syncGenerationRef.current) return;
           if (!remote.playing) remote.play();
         } else if (remote.playing) remote.pause();
       }
