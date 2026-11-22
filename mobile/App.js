@@ -3482,7 +3482,7 @@ function renderRoomInterior() {
           <TouchableOpacity onPress={refreshYoutubeScreen} disabled={youtubeLoading} style={{ width: 20, height: 20, borderRadius: 5, backgroundColor: '#17213A', borderWidth: 1, borderColor: '#53618A', alignItems: 'center', justifyContent: 'center' }}>
             <Text style={{ color: '#E8E9FF', fontSize: 11, fontWeight: '900' }}>↻</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => setShowYoutubeQueueModal(true) style={{ width: 27, height: 25, borderRadius: 7, backgroundColor: '#17213A', borderWidth: 1, borderColor: '#53618A', alignItems: 'center', justifyContent: 'center' }}>
+          <TouchableOpacity onPress={() => setShowYoutubeQueueModal(true)} style={{ width: 27, height: 25, borderRadius: 7, backgroundColor: '#17213A', borderWidth: 1, borderColor: '#53618A', alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{ color: '#E8E9FF', fontSize: 11, fontWeight: '900' }}>☷</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setShowYoutubeVolumeModal(true)} style={{ width: 27, height: 25, borderRadius: 7, backgroundColor: '#17213A', borderWidth: 1, borderColor: '#53618A', alignItems: 'center', justifyContent: 'center' }}>
