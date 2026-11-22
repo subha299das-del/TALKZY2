@@ -4585,7 +4585,63 @@ function renderRoomInterior() {
             { key: 'theme', label: 'THEME', subtitle: 'Customize your room' },
           ].map((item) => (
             <TouchableOpacity key={item.key} activeOpacity={0.82}
-              onPress={() => Alert.alert(item.label, 'The premium shortcut artwork is installed. Existing feature access and permissions remain unchanged.')}
+              onPress={() => {
+                setShowRoomShortcutsPage(false);
+                if (item.key === 'music') {
+                  setShowMusicPanel(true);
+                } else if (item.key === 'youtube') {
+                  const canBrowseYoutube = selectedRoom?.owner_id === session?.user?.id || roomPresence.some(person => person.user_id === session?.user?.id && person.presence_role === 'admin');
+                  youtubePanelDismissedRef.current = false;
+                  setShowYoutubePanel(canBrowseYoutube || Boolean(youtubeState.video_id));
+                  if (canBrowseYoutube) {
+                    setYoutubeBrowseTab('Music');
+                    setYoutubeBrowseUrl('https://www.youtube.com/results?search_query=music');
+                    setYoutubePickedItem(null);
+                    setShowYoutubePicker(true);
+                  }
+                  loadYoutubeState(true);
+                } else if (item.key === 'dice' || item.key === 'luckyNo') {
+                  const gameTitle = item.key === 'dice' ? 'Dice' : 'Lucky Number';
+                  if (!isOnMic || myMicSeat == null) {
+                    Alert.alert('Sit on a mic first!', 'Please sit on a microphone before playing.');
+                  } else if (isRoomTourist && !touristsSendText) {
+                    Alert.alert('Game unavailable', 'The room owner does not allow tourists to send text messages.');
+                  } else {
+                    setMicGame({
+                      roomId: selectedRoom.id,
+                      seat: myMicSeat,
+                      kind: gameTitle,
+                      phase: 'spinning',
+                      value: gameTitle === 'Lucky Number' ? '000' : '1'
+                    });
+                  }
+                } else if (item.key === 'luckyBag') {
+                  setLuckyBagTab('Room');
+                  setLuckyBagCoins(500);
+                  setLuckyBagQuantity(1);
+                  setLuckyBagHistoryView(false);
+                  setShowLuckyBagPopup(true);
+                } else if (item.key === 'activity') {
+                  if (selectedRoom?.owner_id !== session?.user?.id) {
+                    Alert.alert('Activity', 'Only the original creator of this room can access Room Activity.');
+                    return;
+                  }
+                  setRoomDetails(selectedRoom);
+                  setRoomDetailsTab('Activity');
+                  setRoomDetailsVisible(true);
+                  loadRoomActivities(selectedRoom.id);
+                } else if (item.key === 'theme') {
+                  if (selectedRoom?.owner_id !== session?.user?.id) {
+                    Alert.alert('Room Themes', 'Only the original creator of this room can manage its theme.');
+                    return;
+                  }
+                  setShowRoomThemeMenu(true);
+                } else if (item.key === 'effects') {
+                  Alert.alert('Voice Effects', 'Voice effects are not available in this build yet.');
+                } else if (item.key === 'propStore') {
+                  Alert.alert('Prop Store', 'The Prop Store is not available in this build yet.');
+                }
+              }}
               style={{ width: '31.5%', minHeight: 126, borderRadius: 17, paddingVertical: 12, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center', backgroundColor: '#15110C', borderWidth: 1, borderColor: '#72582E', shadowColor: '#D5AD60', shadowOpacity: 0.13, shadowRadius: 7, elevation: 3 }}>
               <View style={{ width: 66, height: 66, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: '#21190F', borderWidth: 1, borderColor: '#B58B45', marginBottom: 8 }}>
                 <RoomShortcutIcon type={item.key} size={54} />
