@@ -5000,10 +5000,30 @@ borderTopWidth: 1,
                       <Text style={{ color: C.text, fontSize: 13, fontWeight: '900' }} numberOfLines={1}>{person.display_name || 'TALKZY User'}</Text>
                       <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, minHeight: 18 }}>
                         <Text style={{ color: C.muted, fontSize: 10 }}>Level: {person.level || 'Not assigned'}</Text>
-                        {/* Reserved inline space for future profile badges */}
                         <View style={{ flex: 1, minHeight: 18, marginLeft: 8 }} />
                       </View>
                     </View>
+                    {(selectedRoom?.owner_id === session?.user?.id || roomPresence.some(item => item.user_id === session?.user?.id && item.presence_role === 'admin')) &&
+                      person.user_id !== selectedRoom?.owner_id &&
+                      (selectedRoom?.owner_id === session?.user?.id || person.presence_role !== 'admin') ? (
+                      <TouchableOpacity
+                        onPress={() => Alert.alert('Remove member?', `${person.display_name || 'This user'} will be removed and blocked from rejoining until the room creator unblocks them.`, [
+                          { text: 'Cancel', style: 'cancel' },
+                          { text: 'Remove', style: 'destructive', onPress: async () => {
+                            try {
+                              await api(`/api/rooms/${selectedRoom.id}/members/${person.user_id}/kick`, { method: 'POST' });
+                              setRoomPresence(items => items.filter(item => item.user_id !== person.user_id));
+                              setRoomDetailMembers(items => items.filter(item => item.user_id !== person.user_id));
+                            } catch (error) {
+                              Alert.alert('Could not remove member', error.message || 'Please try again.');
+                            }
+                          }}
+                        ])}
+                        style={{ paddingHorizontal: 10, paddingVertical: 7, borderRadius: 9, backgroundColor: 'rgba(255,91,112,0.14)', borderWidth: 1, borderColor: 'rgba(255,91,112,0.35)' }}
+                      >
+                        <Text style={{ color: '#FF8798', fontSize: 10, fontWeight: '900' }}>Remove</Text>
+                      </TouchableOpacity>
+                    ) : null}
                     <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: '#35C987', marginLeft: 6 }} />
                   </View>
                 ))}
