@@ -1289,27 +1289,23 @@ app.post('/api/rooms/:roomId/presence/ping', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
-    if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
-    const userId = req.talkzyUser.id;
-    const owner = room.owner_id === userId;
-    const admin = !owner && await isRoomAdmin(room.id, userId);
-    const member = !owner && !admin && await isRoomMember(room.id, userId);
-    const tourist = !owner && !admin && !member && await isRoomVisitor(room.id, userId);
-    if (!owner && !admin && !member && !tourist) {
-      return res.status(403).json({ error: 'Enter the room to appear in its live user list.' });
+
+    const { data, error } = await supabase.rpc('talkzy_room_presence_ping_atomic', {
+      p_room_id: room.id,
+      p_user_id: req.talkzyUser.id
+    });
+
+    if (error) {
+      if (error.message.includes('NOT_IN_ROOM')) {
+        return res.status(403).json({ error: 'Enter the room to appear in its live user list.' });
+      }
+      if (error.message.includes('ROOM_CLOSED') || error.message.includes('ROOM_NOT_FOUND')) {
+        return res.status(409).json({ error: 'This room is closed.' });
+      }
+      throw error;
     }
-    const presenceRole = owner ? 'owner' : admin ? 'admin' : tourist ? 'tourist' : 'member';
-    const now = new Date().toISOString();
-    const { error } = await supabase.from('talkzy_room_presence').upsert({
-      room_id: room.id, user_id: userId, presence_role: presenceRole, last_seen_at: now
-    }, { onConflict: 'room_id,user_id' });
-    if (error) throw error;
-    if (tourist) {
-      const { error: visitorError } = await supabase.from('talkzy_room_visitors')
-        .update({ last_seen_at: now }).eq('room_id', room.id).eq('user_id', userId);
-      if (visitorError) throw visitorError;
-    }
-    res.json({ active: true, role: presenceRole });
+
+    res.set('Cache-Control', 'no-store').json(data);
   } catch (error) {
     console.error('Could not update room presence:', error.message);
     res.status(500).json({ error: 'Could not update room presence.' });
