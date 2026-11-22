@@ -712,7 +712,7 @@ app.delete('/api/rooms/:roomId/messages', userAuth, async (req, res) => {
     }
 
     const { data: existing, error: readError } = await supabase.from('talkzy_room_messages')
-      .select('id, image_url').eq('room_id', room.id);
+      .select('id, sender_id, image_url').eq('room_id', room.id);
     if (readError) throw readError;
 
     const { error: deleteError } = await supabase.from('talkzy_room_messages')
@@ -723,11 +723,15 @@ app.delete('/api/rooms/:roomId/messages', userAuth, async (req, res) => {
     const legacyPublicPaths = [];
     const privateChatPaths = [];
     (existing || []).forEach(item => {
+      const expectedSenderPrefix = `${item.sender_id}/rooms/${room.id}/messages/`;
       const value = String(item.image_url || '');
       const index = value.indexOf(publicPrefix);
       if (index >= 0) {
-        try { legacyPublicPaths.push(decodeURIComponent(value.slice(index + publicPrefix.length).split('?')[0])); } catch {}
-      } else if (!/^https?:\/\//i.test(value) && value.includes('/rooms/' + room.id + '/messages/')) {
+        try {
+          const path = decodeURIComponent(value.slice(index + publicPrefix.length).split('?')[0]);
+          if (path.startsWith(expectedSenderPrefix) && !path.includes('..')) legacyPublicPaths.push(path);
+        } catch {}
+      } else if (!/^https?:\/\//i.test(value) && value.startsWith(expectedSenderPrefix) && !value.includes('..')) {
         privateChatPaths.push(value);
       }
     });
