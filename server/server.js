@@ -1144,23 +1144,26 @@ app.post('/api/rooms/:roomId/admins', userAuth, async (req, res) => {
     }
 
     const userId = String(req.body?.userId || '').trim();
-
-    if (!userId || userId === room.owner_id) {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId)) {
       return res.status(400).json({ error: 'Enter a valid member user ID.' });
     }
 
-    if (!await isRoomMember(room.id, userId)) {
-      return res.status(400).json({ error: 'That user must join the room before becoming an admin.' });
+    // The RPC locks the room row and rechecks the creator and current
+    // membership before inserting the admin record. This serializes
+    // appointment against member removal and kick operations.
+    const { error } = await supabase.rpc('talkzy_add_room_admin_atomic', {
+      p_room_id: room.id,
+      p_actor_id: req.talkzyUser.id,
+      p_target_id: userId
+    });
+
+    if (error) {
+      if (error.code === '42501') return res.status(403).json({ error: 'Only the room creator can appoint admins.' });
+      if (error.code === '55000') return res.status(409).json({ error: 'Cannot manage admins in a closed room.' });
+      if (error.code === 'P0002') return res.status(404).json({ error: 'Room not found.' });
+      if (error.code === '22023') return res.status(400).json({ error: 'That user must be a current room member before becoming an admin.' });
+      throw error;
     }
-
-    const { error } = await supabase
-      .from('talkzy_room_admins')
-      .upsert(
-        { room_id: room.id, user_id: userId },
-        { onConflict: 'room_id,user_id' }
-      );
-
-    if (error) throw error;
 
     res.status(201).json({ adminAdded: true, userId });
   } catch (error) {
