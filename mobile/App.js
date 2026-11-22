@@ -27,6 +27,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import 'react-native-url-polyfill/auto';
 import * as ImagePicker from 'expo-image-picker';
+import { BlurView } from 'expo-blur';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { WebView } from 'react-native-webview';
@@ -1201,6 +1202,20 @@ useEffect(() => {
     hideSubscription.remove();
   };
 }, []);
+  useEffect(() => {
+    if (screen !== 'roomInterior' || !selectedRoom) return;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (showRoomMenu) {
+        setShowRoomMenu(false);
+      } else {
+        Keyboard.dismiss();
+        setShowRoomMenu(true);
+      }
+      return true;
+    });
+    return () => subscription.remove();
+  }, [screen, selectedRoom?.id, showRoomMenu]);
+
   useEffect(() => {
     if (!showRoomChatComposer || screen !== 'roomInterior') return;
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -4551,84 +4566,124 @@ borderTopWidth: 1,
         </Pressable>
       </Modal>
 
-      {/* POWER MENU */}
-      {showRoomMenu && (
-        <View
-          style={{
-            position: 'absolute',
-            top: 75,
-            right: 12,
-            zIndex: 100,
-            elevation: 10,
-            backgroundColor: C.card,
-            borderWidth: 1,
-            borderColor: C.line,
-            borderRadius: 12,
-            width: 150,
-            overflow: 'hidden'
-          }}
-        >
-
-          {/* MINIMIZE */}
-          <TouchableOpacity
-            style={{
-              padding: 14,
-              borderBottomWidth: 1,
-              borderBottomColor: C.line
-            }}
-            onPress={() => {
-  setShowRoomMenu(false);
-  setShowRoomTools(false);
-  setShowRoomGiftPanel(false);
-  setShowRoomThemeMenu(false);
-  setIsRoomMinimized(true);
-  setScreen('main');
-}}
+      {/* CENTERED ROOM ACTION MENU */}
+      <Modal
+        visible={showRoomMenu && screen === 'roomInterior'}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={() => setShowRoomMenu(false)}
+      >
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Pressable
+            onPress={() => setShowRoomMenu(false)}
+            style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 }}
           >
-            <Text style={{ color: C.text, fontSize: 15 }}>
-              Minimize
-            </Text>
-          </TouchableOpacity>
+            <BlurView
+              intensity={38}
+              tint="dark"
+              style={{ flex: 1, backgroundColor: 'rgba(5, 7, 18, 0.48)' }}
+            />
+          </Pressable>
 
-          {/* FOLLOW / UNFOLLOW ROOM - HIDE FOR ROOM OWNER */}
-          {selectedRoom?.owner_id !== session?.user?.id && (
+          <View style={{
+            width: '82%',
+            maxWidth: 340,
+            backgroundColor: '#15172A',
+            borderRadius: 24,
+            borderWidth: 1,
+            borderColor: '#7256A8',
+            padding: 20,
+            shadowColor: '#000000',
+            shadowOpacity: 0.4,
+            shadowRadius: 22,
+            elevation: 18
+          }}>
+            <Text style={{ color: '#FFFFFF', fontSize: 19, fontWeight: '900', textAlign: 'center' }}>
+              ROOM OPTIONS
+            </Text>
+            <Text style={{ color: '#AEB4CC', fontSize: 12, textAlign: 'center', marginTop: 5, marginBottom: 18 }}>
+              What would you like to do?
+            </Text>
+
             <TouchableOpacity
-              style={{
-                padding: 14,
-                borderBottomWidth: 1,
-                borderBottomColor: C.line
-              }}
+              activeOpacity={0.82}
               onPress={() => {
                 setShowRoomMenu(false);
-                toggleFollowRoom(selectedRoom);
+                setShowRoomTools(false);
+                setShowRoomGiftPanel(false);
+                setShowRoomThemeMenu(false);
+                setIsRoomMinimized(true);
+                setScreen('main');
+              }}
+              style={{
+                minHeight: 52,
+                borderRadius: 15,
+                backgroundColor: '#292344',
+                borderWidth: 1,
+                borderColor: '#8068B8',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 10
               }}
             >
-              <Text style={{ color: C.text, fontSize: 15 }}>
-                {followedRooms.some(item => item.id === selectedRoom?.id)
-                  ? 'Unfollow Room'
-                  : 'Follow Room'}
-              </Text>
+              <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '800' }}>⌄  Minimize Room</Text>
+              <Text style={{ color: '#BDB3D8', fontSize: 10, marginTop: 2 }}>Stay inside and return anytime</Text>
             </TouchableOpacity>
-          )}
 
-          {/* EXIT */}
-          <TouchableOpacity
-            activeOpacity={0.65}
-            accessibilityRole="button"
-            onPress={exitCurrentRoom}
-            style={{
-              padding: 16,
-              minHeight: 50,
-              justifyContent: 'center',
-              backgroundColor: 'transparent'
-            }}
-          >
-            <Text style={{ color: '#FF5B5B', fontSize: 15, fontWeight: '700' }}>
-              Exit Room
-            </Text>
-          </TouchableOpacity>
+            {selectedRoom?.owner_id !== session?.user?.id && (
+              <TouchableOpacity
+                activeOpacity={0.82}
+                onPress={() => {
+                  setShowRoomMenu(false);
+                  toggleFollowRoom(selectedRoom);
+                }}
+                style={{
+                  minHeight: 46,
+                  borderRadius: 15,
+                  backgroundColor: '#20283A',
+                  borderWidth: 1,
+                  borderColor: '#45516C',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 10
+                }}
+              >
+                <Text style={{ color: '#E5E9F5', fontSize: 14, fontWeight: '800' }}>
+                  {followedRooms.some(item => item.id === selectedRoom?.id) ? 'Unfollow Room' : 'Follow Room'}
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity
+              activeOpacity={0.82}
+              accessibilityRole="button"
+              onPress={exitCurrentRoom}
+              style={{
+                minHeight: 50,
+                borderRadius: 15,
+                backgroundColor: 'rgba(255, 76, 100, 0.13)',
+                borderWidth: 1,
+                borderColor: 'rgba(255, 91, 112, 0.62)',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 10
+              }}
+            >
+              <Text style={{ color: '#FF7185', fontSize: 15, fontWeight: '900' }}>↗  Exit Room</Text>
+              <Text style={{ color: '#D49AA6', fontSize: 10, marginTop: 2 }}>Leave this room completely</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.75}
+              onPress={() => setShowRoomMenu(false)}
+              style={{ minHeight: 38, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Text style={{ color: '#AEB4CC', fontSize: 13, fontWeight: '700' }}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      )}
+      </Modal>
 
       {/* ROOM TYPE / MICROPHONE LAYOUT POPUP */}
       <Modal visible={showMicCountPicker} transparent animationType="fade" onRequestClose={() => setShowMicCountPicker(false)}>
