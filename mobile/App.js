@@ -737,15 +737,66 @@ useEffect(() => {
   return () => clearTimeout(timer);
 }, [worldLuckyBagNotification?.id]);
 
-// ROOM CHAT: Android Back opens the action menu only when chat itself is closed.
+// // APP-WIDE ANDROID BACK: mirror each screen's Back/Close behaviour.
+// Native Modal components continue to use their own onRequestClose handlers.
+// The shared YouTube player is intentionally excluded: Android Back must not
+// invoke its main Close action.
 useEffect(() => {
-  if (!selectedRoom?.id || showRoomChatComposer || showRoomChatActionMenu) return;
   const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-    setShowRoomChatActionMenu(true);
-    return true;
+    // Room Chat: first Back closes the composer; the next Back opens options.
+    if (showRoomChatComposer) {
+      setShowRoomChatComposer(false);
+      return true;
+    }
+    if (showRoomChatActionMenu) {
+      setShowRoomChatActionMenu(false);
+      return true;
+    }
+    if (selectedRoom?.id && screen === 'roomInterior') {
+      if (showYoutubePanel) {
+        // Deliberate exception: do not close/dismiss YouTube from Android Back.
+        return true;
+      }
+      setShowRoomChatActionMenu(true);
+      return true;
+    }
+
+    // Full-page flows: mirror their visible Back navigation.
+    if (screen === 'eventDetail') {
+      setScreen('eventFront');
+      return true;
+    }
+    if (screen === 'eventFront') {
+      setScreen(eventFrontReturnScreen || 'roomInterior');
+      return true;
+    }
+    if (screen === 'eventManagement') {
+      setScreen('eventManagementList');
+      return true;
+    }
+    if (screen === 'eventManagementList' || screen === 'hotRooms' || screen === 'newRooms' || screen === 'createRoom') {
+      setScreen('main');
+      return true;
+    }
+    if (screen === 'roomSettings') {
+      setScreen(roomSettingsReturnScreen || 'main');
+      return true;
+    }
+    if (screen !== 'main' && screen !== 'login' && screen !== 'roomInterior') {
+      setScreen('main');
+      return true;
+    }
+    if (screen === 'main' && activeTab !== 'Room') {
+      setActiveTab('Room');
+      return true;
+    }
+    return false;
   });
   return () => subscription.remove();
-}, [selectedRoom?.id, showRoomChatComposer, showRoomChatActionMenu]);
+}, [
+  selectedRoom?.id, screen, showRoomChatComposer, showRoomChatActionMenu,
+  showYoutubePanel, eventFrontReturnScreen, roomSettingsReturnScreen, activeTab
+]);
 
 // REALTIME MICROPHONE SEAT SYNC
 useEffect(() => {
