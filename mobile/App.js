@@ -1912,10 +1912,21 @@ if (!gender || !country.trim() || !language.trim() || !bio.trim()) {
 }
     
 
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)) {
+    const dobMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateOfBirth);
+    const dobDate = dobMatch
+      ? new Date(Number(dobMatch[1]), Number(dobMatch[2]) - 1, Number(dobMatch[3]))
+      : null;
+    const validDob = dobMatch && dobDate &&
+      dobDate.getFullYear() === Number(dobMatch[1]) &&
+      dobDate.getMonth() === Number(dobMatch[2]) - 1 &&
+      dobDate.getDate() === Number(dobMatch[3]);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (!validDob || dobDate > today) {
       Alert.alert(
         'Invalid date',
-        'Use YYYY-MM-DD format, for example 2000-05-15.'
+        'Enter a real date of birth in YYYY-MM-DD format that is not in the future.'
       );
       return;
     }
