@@ -133,6 +133,32 @@ function seatDisplayName(value, compact = false) {
   return name.split(/\\s+/).filter(Boolean).slice(0, 2).join(' ');
 }
 
+function VibratingGiftIcon() {
+  const shake = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const nudge = (toValue) => Animated.timing(shake, {
+      toValue,
+      duration: 58,
+      useNativeDriver: true
+    });
+    const vibration = Animated.loop(Animated.sequence([
+      nudge(-1), nudge(1), nudge(-1), nudge(1), nudge(0),
+      Animated.delay(1500)
+    ]));
+    vibration.start();
+    return () => vibration.stop();
+  }, [shake]);
+  const rotation = shake.interpolate({
+    inputRange: [-1, 0, 1],
+    outputRange: ['-9deg', '0deg', '9deg']
+  });
+  return (
+    <Animated.View style={{ transform: [{ rotate: rotation }] }}>
+      <Text style={{ fontSize: 19 }}>🎁</Text>
+    </Animated.View>
+  );
+}
+
 function WorldLuckyBagTicker({ notification, onPress }) {
   const translateX = useRef(new Animated.Value(Dimensions.get('window').width)).current;
 
@@ -4421,7 +4447,7 @@ borderTopWidth: 1,
       justifyContent: 'center'
     }}
   >
-    <Text style={{ fontSize: 19 }}>🎁</Text>
+    <VibratingGiftIcon />
   </TouchableOpacity>
 </View>
 )}
