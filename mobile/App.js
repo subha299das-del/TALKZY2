@@ -3636,7 +3636,7 @@ function renderRoomInterior() {
                   ? item.progress.interpolate({ inputRange: [0, 1], outputRange: [-24, 24] })
                   : item.progress.interpolate({ inputRange: [0, 1], outputRange: [0, 0] }) }]
             }}>
-              <Text style={{ fontSize: 22 }}>{item.emoji}</Text>
+              <Text style={{ fontSize: 22, transform: item.direction === 'left' ? [{ scaleX: -1 }] : [] }}>{item.emoji}</Text>
             </Animated.View>
           ))}
 
@@ -4370,7 +4370,7 @@ onContentSizeChange={() =>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
         {[["Welcome","👋"],["Happy","😊"],["Thanks","🙏"],["Gosh","😲"],["Wronged","😞"],["Nausea","🤢"],["Left kiss","😘","left"],["Right kiss","😘","right"],["Money face","🤑"],["Party","🥳"],["Fear","😨"],["Silence","🤫"],["Like","👍"],["Cry","😭"],["Naughty","😜"],["Sweat","😓"],["LOL","😂"],["Cool","😎"],["Angry","😡"]].map(([label, emoji, direction]) => (
           <TouchableOpacity key={label} onPress={() => sendRoomReaction({ label, emoji, direction })} style={{ width: '19%', minHeight: 62, alignItems: 'center', justifyContent: 'center', marginBottom: 7, backgroundColor: C.card, borderRadius: 12, borderWidth: 1, borderColor: C.line }}>
-            <Text style={{ fontSize: 25 }}>{emoji}</Text>
+            <Text style={{ fontSize: 25, transform: direction === 'left' ? [{ scaleX: -1 }] : [] }}>{emoji}</Text>
             <Text numberOfLines={1} style={{ color: C.muted, fontSize: 8, marginTop: 3 }}>{label}</Text>
           </TouchableOpacity>
         ))}
