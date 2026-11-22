@@ -40,7 +40,8 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
   const volumeRef = useRef(0.8);
   const playingRef = useRef(false);
   const lastWriteRef = useRef(0);
-  const syncBusyRef = useRef(false);
+  const syncBusyRef = useRef(null);
+  const syncGenerationRef = useRef(0);
   const endHandlerRef = useRef(null);
 
   const applyState = state => {
@@ -255,11 +256,13 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
     setDuration(0);
   };
 
-  const refreshStreams = async () => {
-    if (!roomId || syncBusyRef.current) return;
-    syncBusyRef.current = true;
+  const refreshStreams = async generation => {
+    const requestGeneration = generation ?? syncGenerationRef.current;
+    if (!roomId || syncBusyRef.current === requestGeneration) return;
+    syncBusyRef.current = requestGeneration;
     try {
       const result = await api(`/api/rooms/${roomId}/music`);
+      if (requestGeneration !== syncGenerationRef.current) return;
       const list = Array.isArray(result.streams) ? result.streams : [];
       setStreams(list);
 
@@ -298,6 +301,7 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
 
       const keep = new Set();
       for (const stream of list) {
+        if (requestGeneration !== syncGenerationRef.current) return;
         if (stream.user_id === userId) continue;
         const item = stream.queue?.[stream.current_index];
         if (!item?.url) continue;
@@ -330,7 +334,7 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
     } catch (error) {
       console.log('Room music sync error:', error.message);
     } finally {
-      syncBusyRef.current = false;
+      if (syncBusyRef.current === requestGeneration) syncBusyRef.current = null;
     }
   };
 
@@ -339,8 +343,10 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
   useEffect(() => {
     if (!roomId) return undefined;
     let active = true;
+    const generation = ++syncGenerationRef.current;
+    syncBusyRef.current = null;
     setAudioModeAsync({ playsInSilentMode: true, interruptionMode: 'mixWithOthers', shouldPlayInBackground: true }).catch(() => {});
-    const refresh = () => { if (active) refreshStreams(); };
+    const refresh = () => { if (active) refreshStreams(generation); };
     refresh();
     const poll = setInterval(refresh, 3500);
     const progress = setInterval(() => {
@@ -357,6 +363,10 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
       active = false;
       clearInterval(poll);
       clearInterval(progress);
+      if (syncGenerationRef.current === generation) {
+        ++syncGenerationRef.current;
+        syncBusyRef.current = null;
+      }
       // Room exit already clears this stream atomically through the
       // presence/leave endpoint. Do not send a delayed duplicate delete here:
       // it could erase a newly-created stream after a quick room re-entry.
