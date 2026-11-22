@@ -816,7 +816,12 @@ useEffect(() => {
   return () => subscription.remove();
 }, [
   selectedRoom?.id, screen, showRoomChatComposer, showRoomChatActionMenu,
-  showYoutubePanel, eventFrontReturnScreen, roomSettingsReturnScreen, activeTab
+  showYoutubePanel, eventFrontReturnScreen, roomSettingsReturnScreen, activeTab,
+  showMicEmojiPicker, showMicControlPopup, showRoomUsers, showMicCountPicker,
+  showRoomMessageMenu, showRoomInfo, showRoomGiftPanel, showGreedyPanel,
+  showRoomGamePanel, showRocketPanel, showRoomTools, showRoomThemeMenu,
+  showLuckyBagPopup, showHotEventsPopup, showJoinPassword, roomDetailsVisible,
+  showRoomMenu, showMicChatPopup, showMusicPanel
 ]);
 
 // REALTIME MICROPHONE SEAT SYNC
