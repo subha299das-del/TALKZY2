@@ -1931,7 +1931,7 @@ app.post('/api/rooms/:roomId/members/:userId/kick', userAuth, async (req, res) =
       p_reason: String(req.body?.reason || '').trim().slice(0, 200)
     });
     if (error) {
-      if (error.code === '42501') return res.status(403).json({ error: 'Only the room creator can kick members.' });
+      if (error.code === '42501') return res.status(403).json({ error: error.message || 'You cannot kick this room member.' });
       if (error.code === '22023') return res.status(400).json({ error: 'The room creator cannot be kicked.' });
       if (error.code === '55000') return res.status(409).json({ error: 'This room is closed.' });
       if (error.code === 'P0002') return res.status(404).json({ error: 'Room not found.' });
