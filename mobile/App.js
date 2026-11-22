@@ -752,6 +752,27 @@ useEffect(() => {
       setShowRoomChatActionMenu(false);
       return true;
     }
+    // Close any active room-level panel before opening the room action menu.
+    if (showMicEmojiPicker) { setShowMicEmojiPicker(false); return true; }
+    if (showMicControlPopup) { setShowMicControlPopup(false); return true; }
+    if (showRoomUsers) { setShowRoomUsers(false); return true; }
+    if (showMicCountPicker) { setShowMicCountPicker(false); return true; }
+    if (showRoomMessageMenu) { setShowRoomMessageMenu(false); return true; }
+    if (showRoomInfo) { setShowRoomInfo(false); return true; }
+    if (showRoomGiftPanel) { setShowRoomGiftPanel(false); return true; }
+    if (showGreedyPanel) { setShowGreedyPanel(false); return true; }
+    if (showRoomGamePanel) { setShowRoomGamePanel(false); return true; }
+    if (showRocketPanel) { setShowRocketPanel(false); return true; }
+    if (showRoomTools) { setShowRoomTools(false); return true; }
+    if (showRoomThemeMenu) { setShowRoomThemeMenu(false); return true; }
+    if (showLuckyBagPopup) { setShowLuckyBagPopup(false); return true; }
+    if (showHotEventsPopup) { setShowHotEventsPopup(false); return true; }
+    if (showJoinPassword) { setShowJoinPassword(false); return true; }
+    if (roomDetailsVisible) { setRoomDetailsVisible(false); return true; }
+    if (showRoomMenu) { setShowRoomMenu(false); return true; }
+    if (showMicChatPopup) { setShowMicChatPopup(false); return true; }
+    if (showMusicPanel) { setShowMusicPanel(false); return true; }
+
     if (selectedRoom?.id && screen === 'roomInterior') {
       if (showYoutubePanel) {
         // Deliberate exception: do not close/dismiss YouTube from Android Back.
