@@ -1184,6 +1184,12 @@ const [youtubePreviewVideoId, setYoutubePreviewVideoId] = useState(null);
 const youtubeBrowseWebViewRef = useRef(null);
 const [youtubeState, setYoutubeState] = useState({ video_id: null, queue: [], is_playing: false, current_time_seconds: 0, updated_at: null });
 const canManageYoutube = selectedRoom?.owner_id === session?.user?.id || roomPresence.some(person => person.user_id === session?.user?.id && person.presence_role === 'admin');
+useEffect(() => {
+  if (!canManageYoutube) {
+    setShowYoutubePicker(false);
+    setYoutubePickedItem(null);
+  }
+}, [canManageYoutube]);
 const youtubeScreenVisible = Boolean(youtubeState.video_id || showYoutubePanel);
 const [youtubeLoading, setYoutubeLoading] = useState(false);
 const [youtubeSaving, setYoutubeSaving] = useState(false);
