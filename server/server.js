@@ -1859,6 +1859,9 @@ app.post('/api/rooms/:roomId/members/:userId/kick', userAuth, async (req, res) =
     const room = await requireRoom(req, res);
     if (!room) return;
     const targetId = req.params.userId;
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(targetId)) {
+      return res.status(400).json({ error: 'Invalid member ID.' });
+    }
     const { data, error } = await supabase.rpc('talkzy_kick_room_member_atomic', {
       p_room_id: room.id,
       p_actor_id: req.talkzyUser.id,
@@ -1970,8 +1973,10 @@ app.patch('/api/rooms/:roomId/activities/:activityId', userAuth, async (req, res
     if (nextStart && nextEnd && Date.parse(nextEnd) <= Date.parse(nextStart)) return res.status(400).json({ error: 'Activity end time must be after its start time.' });
     if (!Object.keys(patch).length) return res.status(400).json({ error: 'No activity changes provided.' });
     const { data, error } = await supabase.from('talkzy_room_activities').update(patch)
-      .eq('id', existing.id).select('*').single();
+      .eq('id', existing.id).eq('room_id', room.id).eq('status', 'draft')
+      .select('*').maybeSingle();
     if (error) throw error;
+    if (!data) return res.status(409).json({ error: 'This activity is no longer a draft and cannot be edited.' });
     res.json({ activity: data });
   } catch (error) {
     if (/PUBLISHED_POSTER_LOCKED/.test(error.message || '')) return res.status(409).json({ error: 'A published activity poster cannot be changed.' });
