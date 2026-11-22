@@ -11272,6 +11272,10 @@ if (screen === 'profile' || profileIncomplete) {
     setShowYoutubePanel(false);
     setShowYoutubePicker(false);
     setYoutubePickedItem(null);
+    setYoutubeState({ video_id: null, queue: [], is_playing: false, current_time_seconds: 0, updated_at: null });
+    youtubeLastUpdateRef.current = null;
+    youtubeLoadedVideoRef.current = null;
+    setRoomGamePanel(null);
     setYoutubeSelectedVideo(null);
     setYoutubePreviewVideoId(null);
     setYoutubeUrlInput('');
