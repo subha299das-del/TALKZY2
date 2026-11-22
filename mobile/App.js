@@ -3629,39 +3629,75 @@ function renderRoomInterior() {
         {activeMicReactions[occupiedSeat?.user_id] && (() => {
           const reaction = activeMicReactions[occupiedSeat.user_id];
           const progress = reaction.animation;
-          const isClap = reaction.type === 'clap';
-          const isAngry = reaction.type === 'angry';
-          const isLeftKiss = reaction.type === 'left_kiss';
-          const isRightKiss = reaction.type === 'right_kiss';
-          const clapScale = progress.interpolate({ inputRange: [0, 0.12, 0.24, 0.36, 0.48, 0.60, 0.72, 0.84, 1], outputRange: [0.75, 1.22, 0.82, 1.22, 0.82, 1.22, 0.82, 1.12, 0.8] });
-          const angryShake = progress.interpolate({ inputRange: [0, 0.12, 0.22, 0.32, 0.42, 0.52, 0.62, 1], outputRange: [0, -5, 5, -5, 5, -3, 3, 0] });
-          const kissTravel = progress.interpolate({ inputRange: [0, 1], outputRange: [isLeftKiss ? 18 : isRightKiss ? -18 : 0, isLeftKiss ? -42 : isRightKiss ? 42 : 0] });
+          const type = reaction.type;
+          const isClap = type === 'clap';
+          const isAngry = type === 'angry';
+          const isLeftKiss = type === 'left_kiss';
+          const isRightKiss = type === 'right_kiss';
+          const isWelcome = type === 'welcome';
+          const isHappy = type === 'happy';
+          const isThanks = type === 'thanks';
+          const isGosh = type === 'gosh';
+          const isWronged = type === 'wronged';
+          const isNausea = type === 'nausea';
+          const isMoney = type === 'money_face';
+          const isParty = type === 'party';
+          const isFear = type === 'fear';
+          const isSilence = type === 'silence';
+          const isLike = type === 'like';
+          const isCry = type === 'cry';
+          const isNaughty = type === 'naughty';
+          const isSweat = type === 'sweat';
+          const isLol = type === 'lol';
+          const isCool = type === 'cool';
+          const wobble = progress.interpolate({ inputRange: [0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1], outputRange: ['0deg', '-12deg', '12deg', '-10deg', '10deg', '-6deg', '5deg', '0deg'] });
+          const shake = progress.interpolate({ inputRange: [0, 0.12, 0.24, 0.36, 0.48, 0.6, 0.72, 0.84, 1], outputRange: [0, -6, 6, -6, 6, -4, 4, -2, 0] });
+          const pulse = progress.interpolate({ inputRange: [0, 0.16, 0.32, 0.48, 0.64, 0.8, 1], outputRange: [0.55, 1.2, 0.88, 1.16, 0.9, 1.1, 0.8] });
+          const bounce = progress.interpolate({ inputRange: [0, 0.16, 0.32, 0.48, 0.64, 0.8, 1], outputRange: [12, -12, 2, -9, 1, -5, 18] });
+          const kissTravel = progress.interpolate({ inputRange: [0, 1], outputRange: [isLeftKiss ? 18 : -18, isLeftKiss ? -48 : 48] });
+          const moneySpin = progress.interpolate({ inputRange: [0, 1], outputRange: ['-25deg', '335deg'] });
+          const partySpin = progress.interpolate({ inputRange: [0, 0.25, 0.5, 0.75, 1], outputRange: ['-12deg', '12deg', '-12deg', '12deg', '0deg'] });
+          const cryDrop = progress.interpolate({ inputRange: [0, 0.25, 0.55, 1], outputRange: [-8, 3, 14, 28] });
+          const coolDrop = progress.interpolate({ inputRange: [0, 0.2, 0.35, 1], outputRange: [-24, 4, 0, 12] });
+          let motion = [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [8, -18] }) }, { scale: progress.interpolate({ inputRange: [0, 0.16, 1], outputRange: [0.6, 1.12, 0.9] }) }];
+          if (isClap) motion = [{ translateX: shake }, { scale: pulse }];
+          else if (isAngry || isFear || isLol) motion = [{ translateX: shake }, { rotate: wobble }, { scale: isAngry ? pulse : 1 }];
+          else if (isWelcome || isWronged || isNaughty || isSweat) motion = [{ rotate: wobble }, { translateY: bounce }, { scale: pulse }];
+          else if (isHappy || isParty || isLike) motion = [{ translateY: bounce }, { rotate: isParty ? partySpin : wobble }, { scale: pulse }];
+          else if (isThanks || isSilence) motion = [{ scale: pulse }, { translateY: isSilence ? -bounce : bounce }];
+          else if (isGosh) motion = [{ scale: progress.interpolate({ inputRange: [0, 0.12, 0.28, 1], outputRange: [0.15, 1.35, 0.95, 0.8] }) }, { translateY: bounce }];
+          else if (isNausea) motion = [{ rotate: wobble }, { translateY: progress.interpolate({ inputRange: [0, 0.5, 1], outputRange: [-8, 8, 18] }) }];
+          else if (isLeftKiss || isRightKiss) motion = [{ translateX: kissTravel }, { rotate: isLeftKiss ? '-18deg' : '18deg' }, { scale: pulse }];
+          else if (isMoney) motion = [{ rotate: moneySpin }, { scale: pulse }, { translateY: bounce }];
+          else if (isCry) motion = [{ translateY: cryDrop }, { rotate: wobble }, { scale: pulse }];
+          else if (isCool) motion = [{ translateY: coolDrop }, { rotate: wobble }, { scale: pulse }];
+          const angry = isAngry;
+          const bubbleColor = angry ? '#68101D' : isClap ? '#604018' : isCry || isWronged ? '#183D68' : isParty || isHappy ? '#5B236F' : isNausea ? '#315126' : isMoney ? '#5C4A16' : isCool ? '#173D50' : '#281344';
+          const borderColor = angry ? '#FF303D' : isClap ? '#FFD36A' : isCry || isWronged ? '#70B9FF' : isParty || isHappy ? '#FF8BE5' : isNausea ? '#B5E66B' : isMoney ? '#FFE36B' : isCool ? '#62E8E0' : '#C78AFF';
           return (
             <Animated.View pointerEvents="none" style={{
               position: 'absolute', top: youtubeScreenVisible ? -22 : -46, left: 0, right: 0,
               zIndex: 50, elevation: 12, alignItems: 'center',
               opacity: progress.interpolate({ inputRange: [0, 0.12, 0.82, 1], outputRange: [0, 1, 1, 0] }),
-              transform: [
-                { translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [8, -18] }) },
-                { translateX: isClap || isAngry ? angryShake : isLeftKiss || isRightKiss ? kissTravel : 0 },
-                { scale: isClap ? clapScale : progress.interpolate({ inputRange: [0, 0.16, 1], outputRange: [0.6, 1.12, 0.9] }) }
-              ]
+              transform: motion
             }}>
               <View style={{
-                minWidth: isClap ? 52 : 46, height: isClap ? 48 : 46, paddingHorizontal: 8, borderRadius: 24,
-                backgroundColor: isAngry ? 'rgba(112,12,24,0.98)' : isClap ? 'rgba(74,35,112,0.98)' : 'rgba(28,8,55,0.97)',
-                borderWidth: 2, borderColor: isAngry ? '#FF303D' : isClap ? '#FFD36A' : '#B65CFF',
+                minWidth: isClap ? 54 : 46, height: isClap ? 50 : 46, paddingHorizontal: 8, borderRadius: 24,
+                backgroundColor: bubbleColor, borderWidth: 2, borderColor,
                 alignItems: 'center', justifyContent: 'center',
-                shadowColor: isAngry ? '#FF172B' : isClap ? '#FFD36A' : '#B65CFF',
-                shadowOpacity: 0.95, shadowRadius: isAngry ? 14 : 10, elevation: 9
+                shadowColor: borderColor, shadowOpacity: 0.95, shadowRadius: angry ? 15 : 10, elevation: 9
               }}>
-                <Text style={{ fontSize: isClap ? 29 : 27, color: isAngry ? '#FF3A45' : '#FFFFFF' }}>{reaction.emoji}</Text>
+                <Text style={{ fontSize: isClap ? 29 : 27, color: '#FFFFFF' }}>{reaction.emoji}</Text>
                 {isClap && <Text style={{ position: 'absolute', bottom: -7, color: '#FFE6A3', fontSize: 9, fontWeight: '900' }}>CLAP!</Text>}
-                {isAngry && <View style={{ position: 'absolute', top: -4, right: -2, width: 10, height: 10, borderRadius: 5, backgroundColor: '#FF2638' }} />}
+                {angry && <View style={{ position: 'absolute', top: -4, right: -2, width: 10, height: 10, borderRadius: 5, backgroundColor: '#FF2638' }} />}
+                {isCry && <Text style={{ position: 'absolute', right: -7, bottom: -5, fontSize: 13 }}>💧</Text>}
+                {isParty && <Text style={{ position: 'absolute', top: -12, right: -8, fontSize: 13 }}>✦</Text>}
+                {isMoney && <Text style={{ position: 'absolute', top: -9, right: -7, fontSize: 12, color: '#FFE36B' }}>✧</Text>}
+                {isCool && <View style={{ position: 'absolute', top: 8, left: 7, width: 12, height: 3, borderRadius: 2, backgroundColor: '#62E8E0' }} />}
               </View>
             </Animated.View>
           );
-        })()}
+        })()}}
 
         <Text
           style={{
