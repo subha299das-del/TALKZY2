@@ -3131,6 +3131,31 @@ function renderRoomInterior() {
 
             </View>
 
+      {/* ROOM TROPHY / COINS */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingHorizontal: 14,
+          paddingTop: 4,
+          paddingBottom: 0
+        }}
+      >
+        <Text style={{ fontSize: 18 }}>🏆</Text>
+
+        <Text
+          style={{
+            color: C.text,
+            fontSize: 14,
+            fontWeight: 'bold',
+            marginLeft: 6
+          }}
+        >
+          0
+        </Text>
+      </View>
+
+
       {/* SHARED YOUTUBE SCREEN — visible to the room while active, or locally when opened by a controller */}
       {youtubeScreenVisible && (
       <View style={{ marginHorizontal: 10, marginTop: 5, marginBottom: 5, height: 170, backgroundColor: '#050914', borderRadius: 13, borderWidth: 1, borderColor: '#6B54C7', overflow: 'hidden' }}>
@@ -3252,30 +3277,6 @@ function renderRoomInterior() {
           </View>
         </View>
       </Modal>
-      {/* ROOM TROPHY / COINS */}
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          paddingHorizontal: 14,
-          paddingTop: 4,
-          paddingBottom: 0
-        }}
-      >
-        <Text style={{ fontSize: 18 }}>🏆</Text>
-
-        <Text
-          style={{
-            color: C.text,
-            fontSize: 14,
-            fontWeight: 'bold',
-            marginLeft: 6
-          }}
-        >
-          0
-        </Text>
-      </View>
-
            {/* MICROPHONE SEATS */}
 <ScrollView
   style={{ height: micCount >= 14 && !youtubeScreenVisible ? 390 : (youtubeScreenVisible ? 170 : 300), flexShrink: 0 }}
