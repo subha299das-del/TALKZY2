@@ -1097,6 +1097,7 @@ const youtubePanelDismissedRef = useRef(false);
 const youtubeLastPositionWriteRef = useRef(0);
  const [showRoomInfo, setShowRoomInfo] = useState(false);
 const [showRoomGiftPanel, setShowRoomGiftPanel] = useState(false);
+const [showGreedyPanel, setShowGreedyPanel] = useState(false);
 const [roomChatText, setRoomChatText] = useState('');
  const [roomChatMessages, setRoomChatMessages] = useState([]);
  const roomChatScrollRef = useRef(null);
@@ -3841,6 +3842,51 @@ onContentSizeChange={() =>
       )}
 
 
+      {showGreedyPanel && screen === 'roomInterior' && selectedRoom && (
+        <View style={{
+          position: 'absolute',
+          left: 12,
+          right: 12,
+          bottom: 86,
+          backgroundColor: 'rgba(18, 13, 37, 0.98)',
+          borderRadius: 18,
+          padding: 16,
+          borderWidth: 1,
+          borderColor: '#7044B8',
+          zIndex: 44,
+          elevation: 26
+        }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={{ fontSize: 21, marginRight: 8 }}>🎲</Text>
+              <Text style={{ color: C.text, fontSize: 16, fontWeight: '900' }}>Greedy</Text>
+            </View>
+            <TouchableOpacity onPress={() => setShowGreedyPanel(false)} style={{ paddingHorizontal: 7, paddingVertical: 3 }}>
+              <Text style={{ color: C.muted, fontSize: 20 }}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={{
+            minHeight: 126,
+            borderRadius: 14,
+            borderWidth: 1,
+            borderColor: '#49316E',
+            backgroundColor: 'rgba(112, 68, 184, 0.12)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 18
+          }}>
+            <Text style={{ fontSize: 34, marginBottom: 9 }}>🪙</Text>
+            <Text style={{ color: C.text, fontSize: 14, fontWeight: '800', textAlign: 'center' }}>Greedy games are coming</Text>
+            <Text style={{ color: C.muted, fontSize: 11, textAlign: 'center', marginTop: 7, lineHeight: 17 }}>
+              This section is ready. The game list and coin entry details will be added after the games are decided.
+            </Text>
+          </View>
+          <Text style={{ color: '#B99AE8', fontSize: 10, textAlign: 'center', marginTop: 10 }}>
+            Private panel · Only visible to you
+          </Text>
+        </View>
+      )}
+
       {showRoomThemeMenu && selectedRoom?.owner_id === session?.user?.id && (
         <View style={{
           position: 'absolute',
@@ -4228,11 +4274,31 @@ borderTopWidth: 1,
     <Text style={{ fontSize: 19 }}>⊞</Text>
   </TouchableOpacity>
 
+  {/* GREEDY */}
+  <TouchableOpacity
+    onPress={() => {
+      setShowGreedyPanel(value => !value);
+      setShowRoomTools(false);
+      setShowRoomGiftPanel(false);
+    }}
+    style={{
+      width: 38,
+      height: 38,
+      borderRadius: 20,
+      backgroundColor: showGreedyPanel ? C.primary : C.card,
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}
+  >
+    <Text style={{ fontSize: 19 }}>🎲</Text>
+  </TouchableOpacity>
+
   {/* GIFT */}
   <TouchableOpacity
     onPress={() => {
       setShowRoomGiftPanel(!showRoomGiftPanel);
       setShowRoomTools(false);
+      setShowGreedyPanel(false);
     }}
     style={{
       width: 38,
