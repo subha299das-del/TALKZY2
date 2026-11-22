@@ -29,10 +29,31 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { WebView } from 'react-native-webview';
+import LottieView from 'lottie-react-native';
 import RoomMusicPanel from './RoomMusicPanel';
 
 WebBrowser.maybeCompleteAuthSession();
 const MIC_ON_ICON = require('./assets/mic_on.png');
+const MIC_REACTION_LOTTIES = {
+  Happy: require('./assets/mic-reactions/happy.json'),
+  Gosh: require('./assets/mic-reactions/shocked.json'),
+  Wronged: require('./assets/mic-reactions/sad.json'),
+  Nausea: require('./assets/mic-reactions/nausea.json'),
+  'Left kiss': require('./assets/mic-reactions/kiss.json'),
+  'Right kiss': require('./assets/mic-reactions/kiss.json'),
+  'Money face': require('./assets/mic-reactions/money.json'),
+  Party: require('./assets/mic-reactions/party.json'),
+  Fear: require('./assets/mic-reactions/fear.json'),
+  Silence: require('./assets/mic-reactions/silence.json'),
+  Cry: require('./assets/mic-reactions/cry.json'),
+  Naughty: require('./assets/mic-reactions/naughty.json'),
+  Sweat: require('./assets/mic-reactions/sweat.json'),
+  LOL: require('./assets/mic-reactions/lol.json'),
+  Cool: require('./assets/mic-reactions/cool.json'),
+  Angry: require('./assets/mic-reactions/angry.json')
+};
+const MIC_REACTION_FACE_LABELS = Object.keys(MIC_REACTION_LOTTIES);
+
 const MIC_OFF_ICON = require('./assets/mic_off.png');
 const SUPABASE_URL =
   process.env.EXPO_PUBLIC_SUPABASE_URL || '';
@@ -3769,8 +3790,8 @@ function renderRoomInterior() {
           {isOccupied && roomReactions.filter(item => item.userId === occupiedSeat.user_id).slice(-1).map(item => (
             <Animated.View key={item.id} pointerEvents="none" style={{
               position: 'absolute', top: -30, alignSelf: 'center', zIndex: 30, elevation: 12,
-              backgroundColor: 'rgba(25,18,38,0.96)', borderWidth: 1, borderColor: '#E7C16D',
-              borderRadius: 18, paddingHorizontal: 9, paddingVertical: 3,
+              backgroundColor: 'transparent', borderWidth: 0,
+              borderRadius: 0, paddingHorizontal: 0, paddingVertical: 0,
               opacity: item.progress.interpolate({ inputRange: [0, 0.12, 0.82, 1], outputRange: [0, 1, 1, 0] }),
               transform: [{ translateX: item.direction === 'left'
                 ? item.progress.interpolate({ inputRange: [0, 1], outputRange: [24, -24] })
@@ -3778,43 +3799,15 @@ function renderRoomInterior() {
                   ? item.progress.interpolate({ inputRange: [0, 1], outputRange: [-24, 24] })
                   : item.progress.interpolate({ inputRange: [0, 1], outputRange: [0, 0] }) }]
             }}>
-              {['Happy','LOL','Left kiss','Right kiss','Gosh','Cry','Angry','Naughty'].includes(item.label) ? (() => {
-                const happy = item.label === 'Happy';
-                const laugh = item.label === 'LOL';
-                const kiss = item.label === 'Left kiss' || item.label === 'Right kiss';
-                const shocked = item.label === 'Gosh';
-                const crying = item.label === 'Cry';
-                const angry = item.label === 'Angry';
-                const naughty = item.label === 'Naughty';
-                const blink = item.progress.interpolate({ inputRange: [0,0.22,0.29,0.36,0.66,0.73,0.8,1], outputRange: [1,1,0.12,1,1,0.12,1,1] });
-                const mouthOpen = item.progress.interpolate({ inputRange: [0,0.18,0.34,0.52,0.7,1], outputRange: shocked ? [0.65,1.25,0.7,1.2,0.8,0.65] : laugh ? [0.55,1.3,0.7,1.35,0.75,0.55] : crying ? [0.8,1.15,0.8,1.1,0.9,0.8] : [1,1,1,1,1,1] });
-                const faceMotion = item.progress.interpolate({ inputRange: [0,0.18,0.38,0.58,0.78,1], outputRange: ['0deg','-7deg','7deg','-5deg','3deg','0deg'] });
-                return (
-                  <Animated.View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFD84D', borderWidth: 2, borderColor: '#FFF0A6', alignItems: 'center', justifyContent: 'center', shadowColor: '#FFC83D', shadowOpacity: 0.9, shadowRadius: 10, elevation: 8, transform: [{ rotate: faceMotion }, { scale: item.progress.interpolate({ inputRange: [0,0.12,0.24,0.42,0.72,1], outputRange: [0.35,1.28,0.92,1.1,1,0.75] }) }] }}>
-                    <View style={{ position: 'absolute', top: 14, left: 11, width: 5, height: 7, borderRadius: 4, backgroundColor: '#342018', transform: [{ scaleY: naughty ? 0.18 : blink }] }} />
-                    <View style={{ position: 'absolute', top: angry ? 13 : 14, right: 11, width: 5, height: 7, borderRadius: 4, backgroundColor: '#342018', transform: [{ scaleY: naughty ? blink : blink }, { rotate: angry ? '-22deg' : '0deg' }] }} />
-                    {angry && <>
-                      <View style={{ position: 'absolute', top: 10, left: 8, width: 12, height: 3, borderRadius: 2, backgroundColor: '#342018', transform: [{ rotate: '18deg' }] }} />
-                      <View style={{ position: 'absolute', top: 10, right: 8, width: 12, height: 3, borderRadius: 2, backgroundColor: '#342018', transform: [{ rotate: '-18deg' }] }} />
-                    </>}
-                    {kiss ? (
-                      <Animated.View style={{ position: 'absolute', bottom: 8, width: 10, height: 9, borderRadius: 8, backgroundColor: '#B92F4D', transform: [{ scale: mouthOpen }] }} />
-                    ) : shocked || laugh || crying ? (
-                      <Animated.View style={{ position: 'absolute', bottom: shocked ? 7 : 6, width: shocked ? 10 : 17, height: shocked ? 13 : 12, borderRadius: 9, backgroundColor: '#4B1720', transform: [{ scaleY: mouthOpen }] }}>
-                        {(laugh || crying) && <View style={{ position: 'absolute', bottom: 1, alignSelf: 'center', width: 9, height: 4, borderRadius: 5, backgroundColor: '#F26A75' }} />}
-                      </Animated.View>
-                    ) : (
-                      <Animated.View style={{ position: 'absolute', bottom: 9, width: 19, height: 9, borderBottomWidth: 3, borderColor: angry ? '#6B2020' : '#71321E', borderRadius: 12, transform: [{ scaleY: angry ? -0.7 : naughty ? 0.7 : 1 }] }} />
-                    )}
-                    {crying && <>
-                      <Animated.View style={{ position: 'absolute', top: 22, left: 7, width: 5, height: 10, borderRadius: 5, backgroundColor: '#55BDF4', opacity: item.progress.interpolate({ inputRange: [0,0.18,0.4,0.7,1], outputRange: [0,1,0.4,1,0] }), transform: [{ translateY: item.progress.interpolate({ inputRange: [0,0.3,0.7,1], outputRange: [-3,5,10,15] }) }] }} />
-                      <Animated.View style={{ position: 'absolute', top: 22, right: 7, width: 5, height: 10, borderRadius: 5, backgroundColor: '#55BDF4', opacity: item.progress.interpolate({ inputRange: [0,0.18,0.4,0.7,1], outputRange: [0,0.8,0.2,1,0] }), transform: [{ translateY: item.progress.interpolate({ inputRange: [0,0.3,0.7,1], outputRange: [-3,5,10,15] }) }] }} />
-                    </>}
-                    {kiss && <Text style={{ position: 'absolute', top: -10, right: -10, fontSize: 17 }}>💗</Text>}
-                    {naughty && <View style={{ position: 'absolute', bottom: 3, right: 10, width: 8, height: 7, borderRadius: 5, backgroundColor: '#F06B83' }} />}
-                  </Animated.View>
-                );
-              })() : (
+              {MIC_REACTION_LOTTIES[item.label] ? (
+                <LottieView
+                  source={MIC_REACTION_LOTTIES[item.label]}
+                  autoPlay
+                  loop
+                  style={{ width: 58, height: 58, transform: item.direction === 'left' ? [{ scaleX: -1 }] : [] }}
+                  resizeMode="contain"
+                />
+              ) : (
                 <Animated.Text style={{ fontSize: 30, transform: [{ scale: item.progress.interpolate({ inputRange: [0,0.12,0.24,0.38,0.55,0.78,1], outputRange: [0.25,1.35,0.88,1.18,1,1.08,0.72] }) }, { rotate: item.progress.interpolate({ inputRange: [0,0.2,0.42,0.68,1], outputRange: ['-18deg','14deg','-9deg','5deg','0deg'] }) }, ...(item.direction === 'left' ? [{ scaleX: -1 }] : [])] }}>{item.emoji}</Animated.Text>
               )}
             </Animated.View>
@@ -4599,7 +4592,11 @@ function renderRoomInterior() {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
         {[["Welcome","👋"],["Happy","😊"],["Thanks","🙏"],["Gosh","😲"],["Wronged","😞"],["Nausea","🤢"],["Left kiss","😘","left"],["Right kiss","😘","right"],["Money face","🤑"],["Party","🥳"],["Fear","😨"],["Silence","🤫"],["Like","👍"],["Cry","😭"],["Naughty","😜"],["Sweat","😓"],["LOL","😂"],["Cool","😎"],["Angry","😡"]].map(([label, emoji, direction]) => (
           <TouchableOpacity key={label} onPress={() => sendRoomReaction({ label, emoji, direction })} style={{ width: '19%', minHeight: 62, alignItems: 'center', justifyContent: 'center', marginBottom: 7, backgroundColor: C.card, borderRadius: 12, borderWidth: 1, borderColor: C.line }}>
-            <Text style={{ fontSize: 25, transform: direction === 'left' ? [{ scaleX: -1 }] : [] }}>{emoji}</Text>
+            {MIC_REACTION_LOTTIES[label] ? (
+              <LottieView source={MIC_REACTION_LOTTIES[label]} autoPlay loop style={{ width: 42, height: 42, transform: direction === 'left' ? [{ scaleX: -1 }] : [] }} resizeMode="contain" />
+            ) : (
+              <Text style={{ fontSize: 25, transform: direction === 'left' ? [{ scaleX: -1 }] : [] }}>{emoji}</Text>
+            )}
             <Text numberOfLines={1} style={{ color: C.muted, fontSize: 8, marginTop: 3 }}>{label}</Text>
           </TouchableOpacity>
         ))}
