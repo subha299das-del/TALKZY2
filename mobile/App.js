@@ -11327,6 +11327,8 @@ if (screen === 'profile' || profileIncomplete) {
     setLuckyBagHistoryView(false);
     setShowYoutubePanel(false);
     setShowYoutubePicker(false);
+    setYoutubeLoading(false);
+    setYoutubeSaving(false);
     setYoutubePickedItem(null);
     setYoutubeState({ video_id: null, queue: [], is_playing: false, current_time_seconds: 0, updated_at: null });
     youtubeLastUpdateRef.current = null;
