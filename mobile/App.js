@@ -2495,7 +2495,12 @@ async function toggleFollowRoom(room) {
   async function handleGameSelection(game) {
     if (!game) return;
     setShowRoomGamePicker(false);
-    if (screen === 'roomInterior' && selectedRoom?.id) {
+    if (selectedRoom?.id && (screen === 'roomInterior' || isRoomMinimized)) {
+      if (isRoomMinimized) {
+        setIsRoomMinimized(false);
+        setScreen('roomInterior');
+        loadRoomMicSeats(selectedRoom.id);
+      }
       setRoomGamePanel({ ...game, roomId: selectedRoom.id, openedAt: Date.now() });
       return;
     }
