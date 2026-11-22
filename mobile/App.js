@@ -802,7 +802,9 @@ useEffect(() => {
         // Deliberate exception: do not close/dismiss YouTube from Android Back.
         return true;
       }
-      setShowRoomChatActionMenu(true);
+      // Android system Back opens the room's Minimize / Exit menu.
+      // Do not route it to the separate chat-options menu.
+      setShowRoomMenu(true);
       return true;
     }
 
