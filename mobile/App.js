@@ -504,6 +504,7 @@ const [roomSettingAdmins, setRoomSettingAdmins] = useState([]);
 const [roomSettingKicked, setRoomSettingKicked] = useState([]);
 const [roomSettingMembers, setRoomSettingMembers] = useState([]);
 const roomSettingsListRequestVersionRef = useRef(0);
+const roomSettingsLoadRequestVersionRef = useRef(0);
 const [roomActivities, setRoomActivities] = useState([]);
 const [loadingRoomActivities, setLoadingRoomActivities] = useState(false);
 const roomActivitiesRequestVersionRef = useRef(0);
@@ -5112,7 +5113,7 @@ borderTopWidth: 1,
     return (
       <View style={{ flex: 1, backgroundColor: C.bg }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: '#10182A' }}>
-          <TouchableOpacity onPress={() => setScreen(roomSettingsReturnScreen || 'main')} style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: '#202A40', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+          <TouchableOpacity onPress={() => { ++roomSettingsLoadRequestVersionRef.current; setScreen(roomSettingsReturnScreen || 'main'); }} style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: '#202A40', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
             <Text style={{ color: C.text, fontSize: 25, marginTop: -2 }}>‹</Text>
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
@@ -11321,6 +11322,7 @@ if (screen === 'profile' || profileIncomplete) {
     setRoomChatMessages([]);
     setRoomEntrySystemMessages([]);
     ++roomMessagesLoadVersionRef.current;
+    ++roomSettingsLoadRequestVersionRef.current;
     roomArrivalPendingRef.current = null;
     setSelectedRoom(null);
     ++micSeatLoadVersionRef.current;
@@ -11367,6 +11369,7 @@ if (screen === 'profile' || profileIncomplete) {
   }
 
   async function openRoomSettings(room) {
+    const requestVersion = ++roomSettingsLoadRequestVersionRef.current;
     if (!room?.id || room.owner_id !== session?.user?.id) {
       return Alert.alert('Room Settings', 'Only the original creator of this room can open these settings.');
     }
@@ -11394,6 +11397,7 @@ if (screen === 'profile' || profileIncomplete) {
 
     try {
       const result = await api(`/api/rooms/${room.id}/settings`);
+      if (requestVersion !== roomSettingsLoadRequestVersionRef.current) return;
       const latestRoom = {
         ...initialRoom,
         ...(result.room || {}),
@@ -11410,7 +11414,9 @@ if (screen === 'profile' || profileIncomplete) {
       setRoomSettingDp(latestRoom.room_dp_url || null);
       setRoomSettingsType(latestRoom.room_type || 'public');
     } catch (e) {
-      Alert.alert('Room Settings', e.message || 'Could not load room settings. You can still view the room details already loaded.');
+      if (requestVersion === roomSettingsLoadRequestVersionRef.current) {
+        Alert.alert('Room Settings', e.message || 'Could not load room settings. You can still view the room details already loaded.');
+      }
     }
   }
 
