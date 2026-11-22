@@ -1276,22 +1276,6 @@ const [roomThemeDraftUri, setRoomThemeDraftUri] = useState(null);
 const [roomThemeDuration, setRoomThemeDuration] = useState(7);
 const [roomThemePreviewUri, setRoomThemePreviewUri] = useState(null);
 const [roomThemeOwnItems, setRoomThemeOwnItems] = useState([]);
-useEffect(() => {
-  let active = true;
-  const loadLocalRoomThemes = async () => {
-    if (!selectedRoom?.id) { setRoomThemeOwnItems([]); return; }
-    try {
-      const raw = await AsyncStorage.getItem(`talkzy-room-themes:${selectedRoom.id}`);
-      const parsed = raw ? JSON.parse(raw) : [];
-      const valid = Array.isArray(parsed) ? parsed.filter(item => Number(item.expiresAt || 0) > Date.now()) : [];
-      if (active) setRoomThemeOwnItems(valid);
-    } catch (error) {
-      console.log('Local room theme load error:', error?.message || error);
-    }
-  };
-  loadLocalRoomThemes();
-  return () => { active = false; };
-}, [selectedRoom?.id]);
 const [showYoutubePanel, setShowYoutubePanel] = useState(false);
 const [showYoutubePicker, setShowYoutubePicker] = useState(false);
 const [showYoutubeQueuePopup, setShowYoutubeQueuePopup] = useState(false);
@@ -3220,7 +3204,7 @@ function renderRoomInterior() {
         <>
           <Image source={{ uri: roomThemePreviewUri }} resizeMode="cover" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', opacity: 0.72 }} />
           <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(5,8,18,0.24)' }} />
-          <TouchableOpacity onPress={() => { setRoomThemePreviewUri(null); setRoomThemeTab('Custom'); setShowRoomThemeMenu(true); }} style={{ position: 'absolute', right: 12, bottom: Platform.OS === 'android' ? 100 : 78, zIndex: 80, elevation: 30, paddingHorizontal: 16, paddingVertical: 11, borderRadius: 22, backgroundColor: '#5B45A8', borderWidth: 1, borderColor: '#D0C3FF' }}>
+          <TouchableOpacity onPress={() => { setRoomThemePreviewUri(null); setRoomThemePage('custom'); setShowRoomThemeMenu(true); }} style={{ position: 'absolute', right: 12, bottom: Platform.OS === 'android' ? 100 : 78, zIndex: 80, elevation: 30, paddingHorizontal: 16, paddingVertical: 11, borderRadius: 22, backgroundColor: '#5B45A8', borderWidth: 1, borderColor: '#D0C3FF' }}>
             <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 12 }}>End Preview</Text>
           </TouchableOpacity>
         </>
@@ -4053,6 +4037,7 @@ function renderRoomInterior() {
                       } else if (tool.title === 'Music') {
                         setShowMusicPanel(true);
                       } else if (tool.title === 'Theme') {
+                        setRoomThemePage('catalog');
                         setShowRoomThemeMenu(true);
                       } else if (tool.title === 'Lucky Number' || tool.title === 'Dice') {
                         if (!isOnMic || myMicSeat == null) {
@@ -4659,6 +4644,7 @@ function renderRoomInterior() {
                     Alert.alert('Room Themes', 'Only the original creator of this room can manage its theme.');
                     return;
                   }
+                  setRoomThemePage('catalog');
                   setShowRoomThemeMenu(true);
                 } else if (item.key === 'effects') {
                   Alert.alert('Voice Effects', 'Voice effects are not available in this build yet.');
