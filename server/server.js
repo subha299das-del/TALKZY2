@@ -1892,9 +1892,7 @@ app.get('/api/rooms/:roomId/activities', userAuth, async (req, res) => {
     if (!room) return;
     if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
     const owner = room.owner_id === req.talkzyUser.id;
-    const member = owner || await isRoomMember(room.id, req.talkzyUser.id);
-    const tourist = !member && await isRoomVisitor(room.id, req.talkzyUser.id);
-    if (!member && !tourist) return res.status(403).json({ error: 'Enter the room to view its activities.' });
+    if (!owner) return res.status(403).json({ error: 'Only the original room creator can view room activities.' });
     let query = supabase.from('talkzy_room_activities')
       .select('id, room_id, created_by, title, description, poster_url, starts_at, ends_at, status, published_at, created_at')
       .eq('room_id', room.id).order('starts_at', { ascending: true, nullsFirst: false });
