@@ -3428,7 +3428,7 @@ function renderRoomInterior() {
         }}
         style={{
           opacity: (isRoomTourist && !touristsOnMic) || (seatIsClosed && !canControlMics) ? 0.4 : 1,
-          width: `${100 / rowSeats.length}%`,
+          width: `${100 / Math.max(...(MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.map(row => row.length))}%`,
           height: youtubeScreenVisible ? 38 : 88,
           alignItems: 'center',
           justifyContent: 'flex-start',
@@ -10469,12 +10469,14 @@ if (screen === 'profile' || profileIncomplete) {
                   .filter(member => `${member.display_name || ''} ${member.talkzy_id || ''} ${member.user_id || ''}`.toLowerCase().includes(memberSearch.toLowerCase()))
                   .map(member => (
                     <View key={member.user_id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
-                      {member.avatar_url ? <Image source={{ uri: member.avatar_url }} style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10 }} /> : <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: C.panel2, marginRight: 10, alignItems: 'center', justifyContent: 'center' }}><Text>👤</Text></View>}
+                      {member.avatar_url ? <Image source={{ uri: member.avatar_url }} style={{ width: 40, height: 40, borderRadius: 20, marginRight: 8 }} /> : <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: C.panel2, marginRight: 8, alignItems: 'center', justifyContent: 'center' }}><Text>👤</Text></View>}
+                      <View style={{ minWidth: 58, marginRight: 9, paddingHorizontal: 7, paddingVertical: 4, borderRadius: 6, backgroundColor: (member.user_id === roomDetails?.owner_id) ? 'rgba(255,210,122,0.16)' : member.is_admin ? 'rgba(147,102,255,0.18)' : 'rgba(156,169,201,0.12)', borderWidth: 1, borderColor: (member.user_id === roomDetails?.owner_id) ? C.gold : member.is_admin ? C.accent : C.line, alignItems: 'center' }}>
+                        <Text style={{ color: (member.user_id === roomDetails?.owner_id) ? C.gold : member.is_admin ? '#C7B5FF' : C.muted, fontSize: 9, fontWeight: '900', letterSpacing: 0.35 }}>{member.user_id === roomDetails?.owner_id ? 'OWNER' : member.is_admin ? 'ADMIN' : 'MEMBER'}</Text>
+                      </View>
                       <View style={{ flex: 1 }}>
                         <Text style={{ color: C.text, fontSize: 13, fontWeight: '800' }}>{member.display_name || 'TALKZY User'}</Text>
                         <Text style={{ color: C.muted, fontSize: 10, marginTop: 2 }}>TALKZY ID: {member.talkzy_id || '—'}</Text>
                       </View>
-                      <Text style={{ color: C.gold, fontSize: 11, fontWeight: '800' }}>{member.is_admin ? 'ADMIN' : (member.role || 'Member')}</Text>
                     </View>
                   ))}
               </View>
