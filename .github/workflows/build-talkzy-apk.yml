@@ -9,7 +9,7 @@ on:
       - '.github/workflows/build-talkzy-apk.yml'
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: talkzy-apk-${{ github.ref }}
@@ -55,27 +55,7 @@ jobs:
 
       - name: Install JavaScript dependencies
         working-directory: mobile
-        run: npm install --no-fund
-
-      - name: Export generated dependency lockfile for audit
-        uses: actions/upload-artifact@v4
-        with:
-          name: TALKZY-mobile-package-lock
-          path: mobile/package-lock.json
-          if-no-files-found: error
-          retention-days: 7
-
-      - name: Commit dependency lockfile if missing
-        run: |
-          if [ -f mobile/package-lock.json ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add mobile/package-lock.json
-            if ! git diff --cached --quiet; then
-              git commit -m "Add mobile npm lockfile"
-              git push
-            fi
-          fi
+        run: npm ci --no-fund
 
       - name: Check Expo dependency compatibility
         working-directory: mobile
