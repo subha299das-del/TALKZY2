@@ -1145,6 +1145,22 @@ const [roomThemeDraftUri, setRoomThemeDraftUri] = useState(null);
 const [roomThemeDuration, setRoomThemeDuration] = useState(7);
 const [roomThemePreviewUri, setRoomThemePreviewUri] = useState(null);
 const [roomThemeOwnItems, setRoomThemeOwnItems] = useState([]);
+useEffect(() => {
+  let active = true;
+  const loadLocalRoomThemes = async () => {
+    if (!selectedRoom?.id) { setRoomThemeOwnItems([]); return; }
+    try {
+      const raw = await AsyncStorage.getItem(`talkzy-room-themes:${selectedRoom.id}`);
+      const parsed = raw ? JSON.parse(raw) : [];
+      const valid = Array.isArray(parsed) ? parsed.filter(item => Number(item.expiresAt || 0) > Date.now()) : [];
+      if (active) setRoomThemeOwnItems(valid);
+    } catch (error) {
+      console.log('Local room theme load error:', error?.message || error);
+    }
+  };
+  loadLocalRoomThemes();
+  return () => { active = false; };
+}, [selectedRoom?.id]);
 const [showYoutubePanel, setShowYoutubePanel] = useState(false);
 const [showYoutubePicker, setShowYoutubePicker] = useState(false);
 const [showYoutubeQueuePopup, setShowYoutubeQueuePopup] = useState(false);
@@ -4212,7 +4228,11 @@ onContentSizeChange={() =>
                   if (!roomThemeDraftUri) return;
                   const createdAt = Date.now();
                   const item = { id: String(createdAt), uri: roomThemeDraftUri, days: roomThemeDuration, createdAt, expiresAt: createdAt + roomThemeDuration * 86400000, name: 'Custom Room Theme' };
-                  setRoomThemeOwnItems(current => [...current.filter(theme => theme.uri !== item.uri), item]);
+                  setRoomThemeOwnItems(current => {
+                    const updated = [...current.filter(theme => theme.uri !== item.uri), item];
+                    AsyncStorage.setItem(`talkzy-room-themes:${selectedRoom.id}`, JSON.stringify(updated)).catch(error => console.log('Local theme save error:', error?.message || error));
+                    return updated;
+                  });
                   setRoomThemeTab('Own');
                   Alert.alert('Theme saved on this device', 'This theme is saved locally for now. Cloud sync, room-wide application and coin purchases will be connected after the theme storage and pricing setup.');
                 }} style={{ marginTop: 9, paddingVertical: 13, borderRadius: 13, alignItems: 'center', backgroundColor: '#17233A', borderWidth: 1, borderColor: '#52638A', opacity: roomThemeDraftUri ? 1 : 0.5 }}>
