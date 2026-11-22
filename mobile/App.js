@@ -17,7 +17,8 @@ import {
 Modal,
 Platform,
 Animated,
-Dimensions
+Dimensions,
+  Keyboard
 
 } from 'react-native';
 
@@ -4208,14 +4209,13 @@ onContentSizeChange={() =>
 
       )}
 
-      <Modal visible={showRoomChatComposer} transparent animationType="slide" onRequestClose={() => setShowRoomChatComposer(false)}>
+      <Modal visible={showRoomChatComposer} transparent animationType="slide" onRequestClose={() => { Keyboard.dismiss(); setShowRoomChatComposer(false); }}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.28)' }}>
-          <Pressable style={{ flex: 1 }} onPress={() => setShowRoomChatComposer(false)} />
+          <Pressable style={{ flex: 1 }} onPress={() => { Keyboard.dismiss(); setShowRoomChatComposer(false); }} />
           <View style={{ backgroundColor: '#0B1020', borderTopWidth: 1, borderTopColor: '#34415F', paddingHorizontal: 12, paddingTop: 12, paddingBottom: Platform.OS === 'android' ? 14 : 22 }}>
             <View style={{ minHeight: 52, maxHeight: 140, flexDirection: 'row', alignItems: 'flex-end', backgroundColor: '#182139', borderRadius: 25, borderWidth: 1, borderColor: '#3A496C', paddingHorizontal: 8, paddingVertical: 7 }}>
               <TouchableOpacity onPress={sendRoomImage} disabled={isRoomTourist && !touristsSendPic} style={{ width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: '#263451', marginRight: 7, opacity: isRoomTourist && !touristsSendPic ? 0.4 : 1 }}><Text style={{ color: '#FFFFFF', fontSize: 25 }}>＋</Text></TouchableOpacity>
               <TextInput value={roomChatText} onChangeText={setRoomChatText} placeholder={isRoomTourist && !touristsSendText ? 'Tourist chat disabled' : 'Message the room...'} placeholderTextColor={C.muted} multiline autoFocus editable={!(isRoomTourist && !touristsSendText)} style={{ color: C.text, fontSize: 15, paddingTop: 9, paddingBottom: 8, flex: 1, maxHeight: 116 }} />
-              <TouchableOpacity onPress={roomChatText.trim() ? sendRoomChatMessage : () => Alert.alert('Voice messages', 'Voice messaging will be added as a separate TALKZY feature.')} disabled={roomChatText.trim() ? (isRoomTourist && !touristsSendText) : false} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: roomChatText.trim() ? C.accent : '#263451', alignItems: 'center', justifyContent: 'center', marginLeft: 6 }}><Text style={{ color: '#FFFFFF', fontSize: 19, fontWeight: '900' }}>{roomChatText.trim() ? '➤' : '🎙'}</Text></TouchableOpacity>
             </View>
           </View>
         </KeyboardAvoidingView>
@@ -4233,6 +4233,7 @@ onContentSizeChange={() =>
 
 
      {/* ROOM BOTTOM CONTROLS */}
+{!showRoomChatComposer && (
 <View
   style={{
     flexDirection: 'row',
@@ -4389,6 +4390,7 @@ borderTopWidth: 1,
     <Text style={{ fontSize: 19 }}>🎁</Text>
   </TouchableOpacity>
 </View>
+)}
         
             
   
