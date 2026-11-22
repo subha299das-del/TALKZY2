@@ -4198,7 +4198,7 @@ onContentSizeChange={() =>
                 const isCurrentRoomAdmin = myPresence?.presence_role === 'admin';
                 const roomToolItems = [
                   { icon: '🎵', title: 'Music' },
-                  ...((isCurrentRoomAdmin || isCurrentRoomOwner) ? [{ icon: '▶️', title: 'YouTube' }] : []),
+                  ...((isCurrentRoomAdmin || isCurrentRoomOwner || Boolean(youtubeState.video_id) || (youtubeState.queue || []).length > 0) ? [{ icon: '▶️', title: 'YouTube' }] : []),
                   { icon: '✨', title: 'Effect' },
                   { icon: '🎒', title: 'My Props' },
                   { icon: '🍀', title: 'Lucky Number' },
