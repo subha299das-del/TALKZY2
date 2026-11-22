@@ -57,6 +57,14 @@ jobs:
         working-directory: mobile
         run: npm install --no-fund
 
+      - name: Export generated dependency lockfile for audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: TALKZY-mobile-package-lock
+          path: mobile/package-lock.json
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Check Expo dependency compatibility
         working-directory: mobile
         run: npx expo install --check
