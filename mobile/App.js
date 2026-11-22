@@ -1098,6 +1098,7 @@ const youtubeLastPositionWriteRef = useRef(0);
  const [showRoomInfo, setShowRoomInfo] = useState(false);
 const [showRoomGiftPanel, setShowRoomGiftPanel] = useState(false);
 const [showGreedyPanel, setShowGreedyPanel] = useState(false);
+const [showRoomGamePanel, setShowRoomGamePanel] = useState(false);
 const [roomChatText, setRoomChatText] = useState('');
  const [roomChatMessages, setRoomChatMessages] = useState([]);
  const roomChatScrollRef = useRef(null);
@@ -3842,6 +3843,51 @@ onContentSizeChange={() =>
       )}
 
 
+      {showRoomGamePanel && screen === 'roomInterior' && selectedRoom && (
+        <View style={{
+          position: 'absolute',
+          left: 12,
+          right: 12,
+          bottom: 86,
+          backgroundColor: 'rgba(10, 22, 34, 0.98)',
+          borderRadius: 18,
+          padding: 16,
+          borderWidth: 1,
+          borderColor: '#287B91',
+          zIndex: 43,
+          elevation: 25
+        }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={{ fontSize: 21, marginRight: 8 }}>🎮</Text>
+              <Text style={{ color: C.text, fontSize: 16, fontWeight: '900' }}>Room Games</Text>
+            </View>
+            <TouchableOpacity onPress={() => setShowRoomGamePanel(false)} style={{ paddingHorizontal: 7, paddingVertical: 3 }}>
+              <Text style={{ color: C.muted, fontSize: 20 }}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={{
+            minHeight: 126,
+            borderRadius: 14,
+            borderWidth: 1,
+            borderColor: '#24566B',
+            backgroundColor: 'rgba(40, 123, 145, 0.12)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 18
+          }}>
+            <Text style={{ fontSize: 34, marginBottom: 9 }}>🕹️</Text>
+            <Text style={{ color: C.text, fontSize: 14, fontWeight: '800', textAlign: 'center' }}>Games section is ready</Text>
+            <Text style={{ color: C.muted, fontSize: 11, textAlign: 'center', marginTop: 7, lineHeight: 17 }}>
+              The game cards and play experience will be added after the game section is finalized.
+            </Text>
+          </View>
+          <Text style={{ color: '#80C9DA', fontSize: 10, textAlign: 'center', marginTop: 10 }}>
+            Room Games · Gameplay not active yet
+          </Text>
+        </View>
+      )}
+
       {showGreedyPanel && screen === 'roomInterior' && selectedRoom && (
         <View style={{
           position: 'absolute',
@@ -4278,6 +4324,7 @@ borderTopWidth: 1,
   <TouchableOpacity
     onPress={() => {
       setShowGreedyPanel(value => !value);
+      setShowRoomGamePanel(false);
       setShowRoomTools(false);
       setShowRoomGiftPanel(false);
     }}
@@ -4291,6 +4338,26 @@ borderTopWidth: 1,
     }}
   >
     <Text style={{ fontSize: 19 }}>🎲</Text>
+  </TouchableOpacity>
+
+  {/* GAME */}
+  <TouchableOpacity
+    onPress={() => {
+      setShowRoomGamePanel(value => !value);
+      setShowGreedyPanel(false);
+      setShowRoomTools(false);
+      setShowRoomGiftPanel(false);
+    }}
+    style={{
+      width: 38,
+      height: 38,
+      borderRadius: 20,
+      backgroundColor: showRoomGamePanel ? C.primary : C.card,
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}
+  >
+    <Text style={{ fontSize: 19 }}>🎮</Text>
   </TouchableOpacity>
 
   {/* GIFT */}
