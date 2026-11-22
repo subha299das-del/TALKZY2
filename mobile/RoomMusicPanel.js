@@ -179,6 +179,8 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
     const selected = localAssets.filter(asset => selectedLocalIds.includes(asset.id)); const existing = queueRef.current;
     if (existing.length + selected.length > 20) { Alert.alert('My Music', 'Your playlist can contain up to 20 songs.'); return; }
     setUploading(true);
+    const uploadedPaths = [];
+    let playlistSaved = false;
     try {
       const additions = [];
       for (let i = 0; i < selected.length; i += 1) {
@@ -198,6 +200,7 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
           if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 900 * (attempt + 1)));
         }
         if (result?.error) throw new Error('Upload failed after 3 attempts: ' + (lastUploadError.message || 'Network connection failed.'));
+        uploadedPaths.push(path);
         additions.push({ object_path: path, title: String(name).replace(/\.[^.]+$/, '').slice(0, 120) });
       }
       const nextQueue = [...existing, ...additions]; const first = existing.length === 0;
@@ -212,9 +215,18 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
         }
       }
       if (!state) throw new Error('Songs uploaded, but TALKZY could not sync your playlist: ' + (lastSaveError?.message || 'Network error. Please retry when connection is stable.'));
+      playlistSaved = true;
       if (first && state?.queue?.[0]?.url) { queueRef.current = state.queue; await playAt(0, true); }
       setSelectedLocalIds([]); setMusicPage('library'); setMinimized(false);
     } catch (error) {
+      if (!playlistSaved && uploadedPaths.length) {
+        try {
+          const { error: cleanupError } = await supabase.storage.from('talkzy-room-music').remove(uploadedPaths);
+          if (cleanupError) console.log('Could not clean up unsaved music uploads:', cleanupError.message);
+        } catch (cleanupError) {
+          console.log('Could not clean up unsaved music uploads:', cleanupError?.message || cleanupError);
+        }
+      }
       const message = error?.message || 'Could not upload selected songs.';
       const networkLike = /network|fetch|timeout|connection|offline/i.test(message);
       Alert.alert('Music upload', networkLike ? message + '\n\nPlease check your internet connection and try again. Your selected songs are still selected.' : message);
