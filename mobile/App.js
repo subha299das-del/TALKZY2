@@ -644,6 +644,7 @@ const [micControlSeat, setMicControlSeat] = useState(null);
 const [roomPresence, setRoomPresence] = useState([]);
 const [roomPresenceLoading, setRoomPresenceLoading] = useState(false);
 const [showRoomUsers, setShowRoomUsers] = useState(false);
+const roomPresenceLoadVersionRef = useRef(0);
 const micSeatLoadVersionRef = useRef(0);
 const roomLeaveCleanupRef = useRef({});
 const roomExitInProgressRef = useRef({});
@@ -703,14 +704,19 @@ async function loadRoomMicSeats(roomId) {
 
 async function loadRoomPresence(roomId, showLoader = false) {
   if (!roomId) return;
+  const requestVersion = ++roomPresenceLoadVersionRef.current;
   if (showLoader) setRoomPresenceLoading(true);
   try {
     const result = await api(`/api/rooms/${roomId}/presence`);
-    if (selectedRoom?.id === roomId) setRoomPresence(Array.isArray(result.users) ? result.users : []);
+    if (requestVersion === roomPresenceLoadVersionRef.current && selectedRoom?.id === roomId) {
+      setRoomPresence(Array.isArray(result.users) ? result.users : []);
+    }
   } catch (error) {
-    console.log('Room presence loading error:', error.message);
+    if (requestVersion === roomPresenceLoadVersionRef.current) {
+      console.log('Room presence loading error:', error.message);
+    }
   } finally {
-    if (showLoader) setRoomPresenceLoading(false);
+    if (showLoader && requestVersion === roomPresenceLoadVersionRef.current) setRoomPresenceLoading(false);
   }
 }
 
@@ -913,9 +919,11 @@ useEffect(() => {
 // Keep live room presence current for members, owners, admins and tourists.
 useEffect(() => {
   if (!selectedRoom?.id) {
+    ++roomPresenceLoadVersionRef.current;
     setRoomPresence([]);
     return;
   }
+  ++roomPresenceLoadVersionRef.current;
   const roomId = selectedRoom.id;
   setRoomPresence([]);
   let active = true;
@@ -937,6 +945,7 @@ useEffect(() => {
   return () => {
     active = false;
     clearInterval(interval);
+    ++roomPresenceLoadVersionRef.current;
   };
 }, [selectedRoom?.id]);
 
