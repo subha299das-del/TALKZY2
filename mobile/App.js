@@ -18,21 +18,47 @@ Modal,
 Platform,
 Animated,
 Dimensions,
-  BackHandler
+  BackHandler,
+  Keyboard
 
 } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import 'react-native-url-polyfill/auto';
+import RoomShortcutIcon from './RoomShortcutIcon';
 import * as ImagePicker from 'expo-image-picker';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { WebView } from 'react-native-webview';
+import LottieView from 'lottie-react-native';
 import RoomMusicPanel from './RoomMusicPanel';
 
 WebBrowser.maybeCompleteAuthSession();
 const MIC_ON_ICON = require('./assets/mic_on.png');
+const MIC_REACTION_LOTTIES = {
+  Welcome: require('./assets/mic-reactions/welcome.json'),
+  Thanks: require('./assets/mic-reactions/thanks.json'),
+  Like: require('./assets/mic-reactions/like.json'),
+  Happy: require('./assets/mic-reactions/happy.json'),
+  Gosh: require('./assets/mic-reactions/shocked.json'),
+  Wronged: require('./assets/mic-reactions/sad.json'),
+  Nausea: require('./assets/mic-reactions/nausea.json'),
+  'Left kiss': require('./assets/mic-reactions/kiss.json'),
+  'Right kiss': require('./assets/mic-reactions/kiss.json'),
+  'Money face': require('./assets/mic-reactions/money.json'),
+  Party: require('./assets/mic-reactions/party.json'),
+  Fear: require('./assets/mic-reactions/fear.json'),
+  Silence: require('./assets/mic-reactions/silence.json'),
+  Cry: require('./assets/mic-reactions/cry.json'),
+  Naughty: require('./assets/mic-reactions/naughty.json'),
+  Sweat: require('./assets/mic-reactions/sweat.json'),
+  LOL: require('./assets/mic-reactions/lol.json'),
+  Cool: require('./assets/mic-reactions/cool.json'),
+  Angry: require('./assets/mic-reactions/angry.json')
+};
+const MIC_REACTION_FACE_LABELS = Object.keys(MIC_REACTION_LOTTIES);
+
 const MIC_OFF_ICON = require('./assets/mic_off.png');
 const SUPABASE_URL =
   process.env.EXPO_PUBLIC_SUPABASE_URL || '';
@@ -51,12 +77,21 @@ const YOUTUBE_PLAYER_HTML = `<!DOCTYPE html><html><head><meta name="viewport" co
 
 
 const C = {
-  // TALKZY signature palette: Midnight Aurora
+  // Global TALKZY palette for screens outside the room interior.
   bg: '#080B18', panel: '#11172B', panel2: '#1A2340',
   text: '#F5F6FF', muted: '#9CA9C9',
   accent: '#9366FF', primary: '#9366FF', card: '#11172B',
   line: '#293453', danger: '#FF6685', gold: '#FFD27A',
   teal: '#43DCC5', pink: '#F27BC2', glow: 'rgba(147,102,255,0.22)'
+};
+
+// Room-only Black Marble Luxury palette. The main app theme remains unchanged.
+const ROOM_C = {
+  bg: '#080706', panel: '#14110D', panel2: '#201A12',
+  text: '#F7F0E2', muted: '#B7A98F',
+  accent: '#C6A15B', primary: '#C6A15B', card: '#100E0B',
+  line: '#5A4528', danger: '#B85B52', gold: '#E8C982',
+  teal: '#D9B66B', pink: '#C99A68', glow: 'rgba(215,181,109,0.18)'
 };
 
 
@@ -590,6 +625,15 @@ const [worldLuckyBagQueue, setWorldLuckyBagQueue] = useState([]);
  const [showMicEmojiPicker, setShowMicEmojiPicker] = useState(false);
  const [showMicChatPopup, setShowMicChatPopup] = useState(false);
  const [showRoomChatComposer, setShowRoomChatComposer] = useState(false);
+ useEffect(() => {
+   const keyboardHidden = Keyboard.addListener('keyboardDidHide', () => {
+     if (showRoomChatComposer) {
+       setShowRoomChatComposer(false);
+       setShowRoomChatActionMenu(false);
+     }
+   });
+   return () => keyboardHidden.remove();
+ }, [showRoomChatComposer]);
  const [showRoomChatActionMenu, setShowRoomChatActionMenu] = useState(false);
  const [isRoomChatMinimized, setIsRoomChatMinimized] = useState(false);
  const [roomReactions, setRoomReactions] = useState([]);
@@ -748,10 +792,7 @@ useEffect(() => {
       setShowRoomChatComposer(false);
       return true;
     }
-    if (showRoomChatActionMenu) {
-      setShowRoomChatActionMenu(false);
-      return true;
-    }
+    if (showRoomShortcutsPage) { setShowRoomShortcutsPage(false); return true; }
     // Close any active room-level panel before opening the room action menu.
     if (showMicEmojiPicker) { setShowMicEmojiPicker(false); return true; }
     if (showMicControlPopup) { setShowMicControlPopup(false); return true; }
@@ -778,7 +819,9 @@ useEffect(() => {
         // Deliberate exception: do not close/dismiss YouTube from Android Back.
         return true;
       }
-      setShowRoomChatActionMenu(true);
+      // Android system Back opens the room's Minimize / Exit menu.
+      // Do not route it to the separate chat-options menu.
+      setShowRoomMenu(true);
       return true;
     }
 
@@ -815,8 +858,9 @@ useEffect(() => {
   });
   return () => subscription.remove();
 }, [
-  selectedRoom?.id, screen, showRoomChatComposer, showRoomChatActionMenu,
+  selectedRoom?.id, screen, showRoomChatComposer,
   showYoutubePanel, eventFrontReturnScreen, roomSettingsReturnScreen, activeTab,
+  showRoomShortcutsPage,
   showMicEmojiPicker, showMicControlPopup, showRoomUsers, showMicCountPicker,
   showRoomMessageMenu, showRoomInfo, showRoomGiftPanel, showGreedyPanel,
   showRoomGamePanel, showRocketPanel, showRoomTools, showRoomThemeMenu,
@@ -941,6 +985,7 @@ async function sendRoomReaction(reaction) {
     displayName: profile?.display_name || displayName || 'TALKZY User',
     avatarUrl: profile?.avatar_url || avatarUri || null,
     emoji: reaction.emoji,
+    label: reaction.label || null,
     direction: reaction.direction || null
   };
   displayRoomReaction(payload);
@@ -1232,26 +1277,11 @@ async function sendLuckyBag() {
 
 const [showRoomThemeMenu, setShowRoomThemeMenu] = useState(false);
 const [roomThemeTab, setRoomThemeTab] = useState('Theme');
+const [roomThemePage, setRoomThemePage] = useState('catalog');
 const [roomThemeDraftUri, setRoomThemeDraftUri] = useState(null);
 const [roomThemeDuration, setRoomThemeDuration] = useState(7);
 const [roomThemePreviewUri, setRoomThemePreviewUri] = useState(null);
 const [roomThemeOwnItems, setRoomThemeOwnItems] = useState([]);
-useEffect(() => {
-  let active = true;
-  const loadLocalRoomThemes = async () => {
-    if (!selectedRoom?.id) { setRoomThemeOwnItems([]); return; }
-    try {
-      const raw = await AsyncStorage.getItem(`talkzy-room-themes:${selectedRoom.id}`);
-      const parsed = raw ? JSON.parse(raw) : [];
-      const valid = Array.isArray(parsed) ? parsed.filter(item => Number(item.expiresAt || 0) > Date.now()) : [];
-      if (active) setRoomThemeOwnItems(valid);
-    } catch (error) {
-      console.log('Local room theme load error:', error?.message || error);
-    }
-  };
-  loadLocalRoomThemes();
-  return () => { active = false; };
-}, [selectedRoom?.id]);
 const [showYoutubePanel, setShowYoutubePanel] = useState(false);
 const [showYoutubePicker, setShowYoutubePicker] = useState(false);
 const [showYoutubeQueuePopup, setShowYoutubeQueuePopup] = useState(false);
@@ -1281,6 +1311,8 @@ const [showRoomGiftPanel, setShowRoomGiftPanel] = useState(false);
 const [showGreedyPanel, setShowGreedyPanel] = useState(false);
 const [showRoomGamePanel, setShowRoomGamePanel] = useState(false);
 const [showRocketPanel, setShowRocketPanel] = useState(false);
+const [showRoomShortcutsPage, setShowRoomShortcutsPage] = useState(false);
+const [roomShortcutCategory, setRoomShortcutCategory] = useState('Treasury');
 const [roomChatText, setRoomChatText] = useState('');
  const [roomChatMessages, setRoomChatMessages] = useState([]);
  const roomChatScrollRef = useRef(null);
@@ -3145,6 +3177,8 @@ async function sendRoomChatMessage() {
 }
 
 function renderRoomInterior() {
+  // Shadow the global palette only inside this room renderer.
+  const C = ROOM_C;
   if (!selectedRoom) {
     return (
       <Card>
@@ -3160,12 +3194,23 @@ function renderRoomInterior() {
   const roomIsLocked = selectedRoom.room_type === 'locked';
 
   return (
-    <View style={{ flex: 1, backgroundColor: 'transparent', minHeight: 0 }}>
+    <View style={{ flex: 1, backgroundColor: C.bg, minHeight: 0 }}>
+      {!roomThemePreviewUri && (
+        <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#080706', overflow: 'hidden' }}>
+          <View style={{ position: 'absolute', width: '145%', height: 1, top: '13%', left: '-18%', backgroundColor: 'rgba(218,181,105,0.20)', transform: [{ rotate: '-17deg' }] }} />
+          <View style={{ position: 'absolute', width: '118%', height: 1, top: '31%', left: '-8%', backgroundColor: 'rgba(218,181,105,0.12)', transform: [{ rotate: '11deg' }] }} />
+          <View style={{ position: 'absolute', width: '132%', height: 1, top: '57%', left: '-15%', backgroundColor: 'rgba(218,181,105,0.16)', transform: [{ rotate: '-9deg' }] }} />
+          <View style={{ position: 'absolute', width: '110%', height: 1, top: '78%', left: '-4%', backgroundColor: 'rgba(218,181,105,0.11)', transform: [{ rotate: '14deg' }] }} />
+          <View style={{ position: 'absolute', width: 1, height: '68%', top: '8%', left: '23%', backgroundColor: 'rgba(218,181,105,0.08)', transform: [{ rotate: '24deg' }] }} />
+          <View style={{ position: 'absolute', width: 1, height: '74%', top: '22%', right: '19%', backgroundColor: 'rgba(218,181,105,0.10)', transform: [{ rotate: '-21deg' }] }} />
+          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.28)' }} />
+        </View>
+      )}
       {roomThemePreviewUri && (
         <>
           <Image source={{ uri: roomThemePreviewUri }} resizeMode="cover" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', opacity: 0.72 }} />
           <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(5,8,18,0.24)' }} />
-          <TouchableOpacity onPress={() => { setRoomThemePreviewUri(null); setRoomThemeTab('Custom'); setShowRoomThemeMenu(true); }} style={{ position: 'absolute', right: 12, bottom: Platform.OS === 'android' ? 100 : 78, zIndex: 80, elevation: 30, paddingHorizontal: 16, paddingVertical: 11, borderRadius: 22, backgroundColor: '#5B45A8', borderWidth: 1, borderColor: '#D0C3FF' }}>
+          <TouchableOpacity onPress={() => { setRoomThemePreviewUri(null); setRoomThemePage('custom'); setShowRoomThemeMenu(true); }} style={{ position: 'absolute', right: 12, bottom: Platform.OS === 'android' ? 100 : 78, zIndex: 80, elevation: 30, paddingHorizontal: 16, paddingVertical: 11, borderRadius: 22, backgroundColor: '#5B45A8', borderWidth: 1, borderColor: '#D0C3FF' }}>
             <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 12 }}>End Preview</Text>
           </TouchableOpacity>
         </>
@@ -3204,32 +3249,16 @@ function renderRoomInterior() {
         }}
       >
 
-        {/* ROOM DP */}
-        {selectedRoom.room_dp_url ? (
-          <Image
-            source={{ uri: selectedRoom.room_dp_url }}
-            style={{
-              width: 58,
-              height: 58,
-              borderRadius: 12,
-              marginRight: 10
-            }}
-          />
-        ) : (
-          <View
-            style={{
-              width: 58,
-              height: 58,
-              borderRadius: 12,
-              backgroundColor: C.line,
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginRight: 10
-            }}
-          >
-            <Text style={{ fontSize: 27 }}>🎙️</Text>
-          </View>
-        )}
+        {/* ROOM DP — black-marble identity with a champagne-gold frame */}
+        <View style={{ width: 64, height: 64, borderRadius: 32, marginRight: 11, padding: 3, borderWidth: 1.5, borderColor: C.gold, backgroundColor: '#17120A', alignItems: 'center', justifyContent: 'center', shadowColor: C.gold, shadowOpacity: 0.24, shadowRadius: 8, elevation: 4 }}>
+          {selectedRoom.room_dp_url ? (
+            <Image source={{ uri: selectedRoom.room_dp_url }} style={{ width: 54, height: 54, borderRadius: 27, borderWidth: 1, borderColor: '#8F713D' }} />
+          ) : (
+            <View style={{ width: 54, height: 54, borderRadius: 27, backgroundColor: '#211A10', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 25, color: C.gold }}>♬</Text>
+            </View>
+          )}
+        </View>
 
         {/* ROOM DETAILS */}
 <View style={{ flex: 1, minWidth: 0, justifyContent: 'center' }}>
@@ -3239,9 +3268,10 @@ function renderRoomInterior() {
   >
     <Text
       style={{
-        color: C.text,
+        color: C.gold,
         fontSize: 16,
-        fontWeight: 'bold',
+        fontWeight: '900',
+        letterSpacing: 0.25,
         flexShrink: 1
       }}
       numberOfLines={2}
@@ -3269,7 +3299,7 @@ function renderRoomInterior() {
   )}
   <Text
     style={{
-      color: C.muted,
+      color: '#C4B89F',
       fontSize: 11,
       marginTop: 3
     }}
@@ -3355,25 +3385,25 @@ function renderRoomInterior() {
       {/* YOUTUBE QUICK CONTROLS — shown only while the shared screen is open */}
       {youtubeScreenVisible && (
         <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginHorizontal: 12, marginTop: 4, marginBottom: 1, gap: 5 }}>
-          <TouchableOpacity onPress={() => loadYoutubeState(true)} style={{ width: 20, height: 20, borderRadius: 6, backgroundColor: '#202B45', borderWidth: 1, borderColor: '#53658C', alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: '#E8E9FF', fontSize: 11, lineHeight: 13 }}>↻</Text>
+          <TouchableOpacity onPress={() => loadYoutubeState(true)} style={{ width: 20, height: 20, borderRadius: 6, backgroundColor: '#211A10', borderWidth: 1, borderColor: '#53658C', alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: '#F7F0E2', fontSize: 11, lineHeight: 13 }}>↻</Text>
           </TouchableOpacity>
           {(selectedRoom?.owner_id === session?.user?.id || roomPresence.some(person => person.user_id === session?.user?.id && person.presence_role === 'admin')) && (
-            <TouchableOpacity onPress={() => setShowYoutubeQueuePopup(true)} style={{ width: 20, height: 20, borderRadius: 6, backgroundColor: '#202B45', borderWidth: 1, borderColor: '#53658C', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: '#E8E9FF', fontSize: 10, lineHeight: 12 }}>☷</Text>
+            <TouchableOpacity onPress={() => setShowYoutubeQueuePopup(true)} style={{ width: 20, height: 20, borderRadius: 6, backgroundColor: '#211A10', borderWidth: 1, borderColor: '#53658C', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: '#F7F0E2', fontSize: 10, lineHeight: 12 }}>☷</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity onPress={() => setShowYoutubeVolumePopup(true)} style={{ width: 20, height: 20, borderRadius: 6, backgroundColor: '#202B45', borderWidth: 1, borderColor: '#53658C', alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: '#E8E9FF', fontSize: 10, lineHeight: 12 }}>◖))</Text>
+          <TouchableOpacity onPress={() => setShowYoutubeVolumePopup(true)} style={{ width: 20, height: 20, borderRadius: 6, backgroundColor: '#211A10', borderWidth: 1, borderColor: '#53658C', alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: '#F7F0E2', fontSize: 10, lineHeight: 12 }}>◖))</Text>
           </TouchableOpacity>
         </View>
       )}
 
       {/* SHARED YOUTUBE SCREEN — visible to the room while active, or locally when opened by a controller */}
       {youtubeScreenVisible && (
-      <View style={{ marginHorizontal: 10, marginTop: 5, marginBottom: 5, height: 170, backgroundColor: '#050914', borderRadius: 13, borderWidth: 1, borderColor: '#6B54C7', overflow: 'hidden' }}>
+      <View style={{ marginHorizontal: 10, marginTop: 5, marginBottom: 5, height: 170, backgroundColor: '#050914', borderRadius: 13, borderWidth: 1, borderColor: '#8F713D', overflow: 'hidden' }}>
           {(selectedRoom?.owner_id === session?.user?.id || roomPresence.some(person => person.user_id === session?.user?.id && person.presence_role === 'admin')) && (
-            <TouchableOpacity onPress={closeYoutubeScreen} style={{ position: 'absolute', zIndex: 5, top: 7, right: 7, width: 27, height: 27, borderRadius: 14, backgroundColor: 'rgba(9,12,25,0.88)', borderWidth: 1, borderColor: '#B9A8FF', alignItems: 'center', justifyContent: 'center' }}>
+            <TouchableOpacity onPress={closeYoutubeScreen} style={{ position: 'absolute', zIndex: 5, top: 7, right: 7, width: 27, height: 27, borderRadius: 14, backgroundColor: 'rgba(9,12,25,0.88)', borderWidth: 1, borderColor: '#E8C982', alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{ color: '#FFFFFF', fontSize: 17, lineHeight: 20, fontWeight: '900' }}>✕</Text>
             </TouchableOpacity>
           )}
@@ -3400,8 +3430,8 @@ function renderRoomInterior() {
               style={{ flex: 1, backgroundColor: '#000' }} />
           ) : (
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18 }}>
-              <Text style={{ color: '#D9D2FF', fontSize: 13, fontWeight: '900', marginBottom: 6 }}>TALKZY · SHARED YOUTUBE</Text>
-              <Text style={{ color: '#AAB7D4', fontSize: 11, textAlign: 'center' }}>
+              <Text style={{ color: '#E8D7B1', fontSize: 13, fontWeight: '900', marginBottom: 6 }}>TALKZY · SHARED YOUTUBE</Text>
+              <Text style={{ color: '#B7A98F', fontSize: 11, textAlign: 'center' }}>
                 {selectedRoom?.owner_id === session?.user?.id || roomPresence.some(person => person.user_id === session?.user?.id && person.presence_role === 'admin')
                   ? 'Choose Music or Video, select a result, then press ADD to start playback here.'
                   : 'Waiting for the Room Owner or an authorized Admin to add music or video.'}
@@ -3415,20 +3445,20 @@ function renderRoomInterior() {
       {/* OWNER / ADMIN QUEUE POPUP */}
       <Modal visible={showYoutubeQueuePopup} transparent animationType="fade" onRequestClose={() => setShowYoutubeQueuePopup(false)}>
         <View style={{ flex: 1, backgroundColor: 'rgba(2,4,12,0.82)', justifyContent: 'center', padding: 20 }}>
-          <View style={{ maxHeight: '70%', backgroundColor: '#10172A', borderRadius: 18, borderWidth: 1, borderColor: '#6B54C7', padding: 14 }}>
+          <View style={{ maxHeight: '70%', backgroundColor: '#14110D', borderRadius: 18, borderWidth: 1, borderColor: '#8F713D', padding: 14 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <Text style={{ color: '#F5F6FF', fontSize: 14, fontWeight: '900' }}>YOUTUBE QUEUE · {youtubeState.queue?.length || 0}</Text>
-              <TouchableOpacity onPress={() => setShowYoutubeQueuePopup(false)}><Text style={{ color: '#C5CFEA', fontSize: 20 }}>✕</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowYoutubeQueuePopup(false)}><Text style={{ color: '#C4B89F', fontSize: 20 }}>✕</Text></TouchableOpacity>
             </View>
             <ScrollView>
               {(youtubeState.queue || []).length === 0 ? (
-                <Text style={{ color: '#AAB7D4', fontSize: 12, textAlign: 'center', paddingVertical: 22 }}>No videos waiting in the queue.</Text>
+                <Text style={{ color: '#B7A98F', fontSize: 12, textAlign: 'center', paddingVertical: 22 }}>No videos waiting in the queue.</Text>
               ) : (youtubeState.queue || []).map((item, index) => (
-                <View key={`${item.video_id || 'video'}-${index}`} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderTopWidth: index ? 1 : 0, borderTopColor: '#27334D' }}>
-                  <Text numberOfLines={2} style={{ color: '#E8E9FF', fontSize: 11, flex: 1, paddingRight: 8 }}>{index + 1}. {item.title || 'YouTube video'}</Text>
+                <View key={`${item.video_id || 'video'}-${index}`} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderTopWidth: index ? 1 : 0, borderTopColor: '#5A4528' }}>
+                  <Text numberOfLines={2} style={{ color: '#F7F0E2', fontSize: 11, flex: 1, paddingRight: 8 }}>{index + 1}. {item.title || 'YouTube video'}</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <TouchableOpacity disabled={index === 0 || youtubeSaving} onPress={() => moveYoutubeQueueItem(index, -1)} style={{ paddingHorizontal: 7, paddingVertical: 5, borderRadius: 6, backgroundColor: '#263653', opacity: index === 0 ? 0.35 : 1 }}><Text style={{ color: '#E3E8FF', fontSize: 11, fontWeight: '900' }}>↑</Text></TouchableOpacity>
-                    <TouchableOpacity disabled={index === youtubeState.queue.length - 1 || youtubeSaving} onPress={() => moveYoutubeQueueItem(index, 1)} style={{ paddingHorizontal: 7, paddingVertical: 5, borderRadius: 6, backgroundColor: '#263653', opacity: index === youtubeState.queue.length - 1 ? 0.35 : 1 }}><Text style={{ color: '#E3E8FF', fontSize: 11, fontWeight: '900' }}>↓</Text></TouchableOpacity>
+                    <TouchableOpacity disabled={index === 0 || youtubeSaving} onPress={() => moveYoutubeQueueItem(index, -1)} style={{ paddingHorizontal: 7, paddingVertical: 5, borderRadius: 6, backgroundColor: '#302719', opacity: index === 0 ? 0.35 : 1 }}><Text style={{ color: '#E3E8FF', fontSize: 11, fontWeight: '900' }}>↑</Text></TouchableOpacity>
+                    <TouchableOpacity disabled={index === youtubeState.queue.length - 1 || youtubeSaving} onPress={() => moveYoutubeQueueItem(index, 1)} style={{ paddingHorizontal: 7, paddingVertical: 5, borderRadius: 6, backgroundColor: '#302719', opacity: index === youtubeState.queue.length - 1 ? 0.35 : 1 }}><Text style={{ color: '#E3E8FF', fontSize: 11, fontWeight: '900' }}>↓</Text></TouchableOpacity>
                     <TouchableOpacity disabled={youtubeSaving} onPress={() => removeYoutubeQueueItem(index)} style={{ paddingHorizontal: 7, paddingVertical: 5, borderRadius: 6, backgroundColor: '#48263A' }}><Text style={{ color: '#FFB5C5', fontSize: 10, fontWeight: '900' }}>✕</Text></TouchableOpacity>
                   </View>
                 </View>
@@ -3441,18 +3471,18 @@ function renderRoomInterior() {
       {/* PERSONAL VOLUME POPUP — affects only this participant's local player */}
       <Modal visible={showYoutubeVolumePopup} transparent animationType="fade" onRequestClose={() => setShowYoutubeVolumePopup(false)}>
         <View style={{ flex: 1, backgroundColor: 'rgba(2,4,12,0.82)', justifyContent: 'center', padding: 28 }}>
-          <View style={{ backgroundColor: '#10172A', borderRadius: 18, borderWidth: 1, borderColor: '#6B54C7', padding: 18 }}>
+          <View style={{ backgroundColor: '#14110D', borderRadius: 18, borderWidth: 1, borderColor: '#8F713D', padding: 18 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <Text style={{ color: '#F5F6FF', fontSize: 14, fontWeight: '900' }}>MY YOUTUBE VOLUME</Text>
-              <TouchableOpacity onPress={() => setShowYoutubeVolumePopup(false)}><Text style={{ color: '#C5CFEA', fontSize: 20 }}>✕</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowYoutubeVolumePopup(false)}><Text style={{ color: '#C4B89F', fontSize: 20 }}>✕</Text></TouchableOpacity>
             </View>
-            <Text style={{ color: '#D9D2FF', fontSize: 13, textAlign: 'center', marginBottom: 14 }}>{youtubeVolume}%</Text>
+            <Text style={{ color: '#E8D7B1', fontSize: 13, textAlign: 'center', marginBottom: 14 }}>{youtubeVolume}%</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <TouchableOpacity onPress={() => { const v = Math.max(0, youtubeVolume - 10); setYoutubeVolume(v); youtubeWebViewRef.current?.injectJavaScript(`window.talkzySetVolume && window.talkzySetVolume(${v});true;`); }} style={{ width: 42, height: 38, borderRadius: 10, backgroundColor: '#263653', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: '#FFFFFF', fontSize: 20 }}>−</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => { const v = Math.max(0, youtubeVolume - 10); setYoutubeVolume(v); youtubeWebViewRef.current?.injectJavaScript(`window.talkzySetVolume && window.talkzySetVolume(${v});true;`); }} style={{ width: 42, height: 38, borderRadius: 10, backgroundColor: '#302719', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: '#FFFFFF', fontSize: 20 }}>−</Text></TouchableOpacity>
               <View style={{ flex: 1, marginHorizontal: 12, flexDirection: 'row', justifyContent: 'space-between' }}>
-                {[0,20,40,60,80,100].map(v => <TouchableOpacity key={v} onPress={() => { setYoutubeVolume(v); youtubeWebViewRef.current?.injectJavaScript(`window.talkzySetVolume && window.talkzySetVolume(${v});true;`); }} style={{ width: 8, height: 22, borderRadius: 4, backgroundColor: youtubeVolume >= v ? '#9C8AFF' : '#354466' }} />)}
+                {[0,20,40,60,80,100].map(v => <TouchableOpacity key={v} onPress={() => { setYoutubeVolume(v); youtubeWebViewRef.current?.injectJavaScript(`window.talkzySetVolume && window.talkzySetVolume(${v});true;`); }} style={{ width: 8, height: 22, borderRadius: 4, backgroundColor: youtubeVolume >= v ? '#D8B66D' : '#5A4528' }} />)}
               </View>
-              <TouchableOpacity onPress={() => { const v = Math.min(100, youtubeVolume + 10); setYoutubeVolume(v); youtubeWebViewRef.current?.injectJavaScript(`window.talkzySetVolume && window.talkzySetVolume(${v});true;`); }} style={{ width: 42, height: 38, borderRadius: 10, backgroundColor: '#263653', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: '#FFFFFF', fontSize: 20 }}>＋</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => { const v = Math.min(100, youtubeVolume + 10); setYoutubeVolume(v); youtubeWebViewRef.current?.injectJavaScript(`window.talkzySetVolume && window.talkzySetVolume(${v});true;`); }} style={{ width: 42, height: 38, borderRadius: 10, backgroundColor: '#302719', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: '#FFFFFF', fontSize: 20 }}>＋</Text></TouchableOpacity>
             </View>
           </View>
         </View>
@@ -3461,15 +3491,15 @@ function renderRoomInterior() {
       {/* YOUTUBE SEARCH PICKER — separate popup for controllers */}
       <Modal visible={showYoutubePicker} transparent animationType="slide" onRequestClose={() => { setShowYoutubePicker(false); setYoutubePickedItem(null); }}>
         <View style={{ flex: 1, backgroundColor: 'rgba(2,4,12,0.88)', justifyContent: 'flex-end' }}>
-          <View style={{ height: '88%', backgroundColor: '#10172A', borderTopLeftRadius: 22, borderTopRightRadius: 22, borderWidth: 1, borderColor: '#6B54C7', overflow: 'hidden' }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 13, backgroundColor: '#17213A' }}>
-              <Text style={{ color: '#E8E9FF', fontSize: 15, fontWeight: '900' }}>Choose YouTube content</Text>
-              <TouchableOpacity onPress={() => { setShowYoutubePicker(false); setYoutubePickedItem(null); }}><Text style={{ color: '#C5CFEA', fontSize: 22 }}>✕</Text></TouchableOpacity>
+          <View style={{ height: '88%', backgroundColor: '#14110D', borderTopLeftRadius: 22, borderTopRightRadius: 22, borderWidth: 1, borderColor: '#8F713D', overflow: 'hidden' }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 13, backgroundColor: '#201A12' }}>
+              <Text style={{ color: '#F7F0E2', fontSize: 15, fontWeight: '900' }}>Choose YouTube content</Text>
+              <TouchableOpacity onPress={() => { setShowYoutubePicker(false); setYoutubePickedItem(null); }}><Text style={{ color: '#C4B89F', fontSize: 22 }}>✕</Text></TouchableOpacity>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', padding: 8, gap: 6 }}>
               {['Music', 'Video'].map(tab => (
                 <TouchableOpacity key={tab} onPress={() => { setYoutubeBrowseTab(tab); setYoutubeSearchQuery(''); setYoutubePickedItem(null); setYoutubeBrowseUrl('https://www.youtube.com/results?search_query=' + encodeURIComponent(tab === 'Music' ? 'music' : 'video')); }}
-                  style={{ flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center', backgroundColor: youtubeBrowseTab === tab ? '#6B54C7' : '#202B45', borderWidth: 1, borderColor: youtubeBrowseTab === tab ? '#9C8AFF' : '#354466' }}>
+                  style={{ flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center', backgroundColor: youtubeBrowseTab === tab ? '#8F713D' : '#211A10', borderWidth: 1, borderColor: youtubeBrowseTab === tab ? '#D8B66D' : '#5A4528' }}>
                   <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '900' }}>{tab === 'Music' ? '♫ MUSIC' : '▶ VIDEO'}</Text>
                 </TouchableOpacity>
               ))}
@@ -3477,7 +3507,7 @@ function renderRoomInterior() {
             <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 9, marginBottom: 8, gap: 6 }}>
               <TextInput value={youtubeSearchQuery} onChangeText={setYoutubeSearchQuery} placeholder={youtubeBrowseTab === 'Music' ? 'Search music…' : 'Search videos…'} placeholderTextColor="#8290AE" autoCapitalize="none" returnKeyType="search"
                 onSubmitEditing={() => { const q = youtubeSearchQuery.trim() || (youtubeBrowseTab === 'Music' ? 'music' : 'video'); setYoutubePickedItem(null); setYoutubeBrowseUrl('https://www.youtube.com/results?search_query=' + encodeURIComponent(q)); }}
-                style={{ flex: 1, color: '#FFFFFF', fontSize: 12, paddingVertical: 10, paddingHorizontal: 10, backgroundColor: '#080B18', borderRadius: 8, borderWidth: 1, borderColor: '#354466' }} />
+                style={{ flex: 1, color: '#FFFFFF', fontSize: 12, paddingVertical: 10, paddingHorizontal: 10, backgroundColor: '#080706', borderRadius: 8, borderWidth: 1, borderColor: '#5A4528' }} />
               <TouchableOpacity onPress={() => { const q = youtubeSearchQuery.trim() || (youtubeBrowseTab === 'Music' ? 'music' : 'video'); setYoutubePickedItem(null); setYoutubeBrowseUrl('https://www.youtube.com/results?search_query=' + encodeURIComponent(q)); }}
                 style={{ paddingHorizontal: 12, paddingVertical: 10, borderRadius: 8, backgroundColor: '#D8B45D' }}>
                 <Text style={{ color: '#211A12', fontSize: 11, fontWeight: '900' }}>SEARCH</Text>
@@ -3508,11 +3538,11 @@ function renderRoomInterior() {
                 }}
                 style={{ flex: 1 }} />
             </View>
-            <View style={{ paddingHorizontal: 12, paddingBottom: 14, paddingTop: 8, backgroundColor: '#17213A', borderTopWidth: 1, borderTopColor: '#354466' }}>
-              <Text numberOfLines={1} style={{ color: youtubePickedItem ? '#FFFFFF' : '#AAB7D4', fontWeight: '800', fontSize: 11, marginBottom: 7 }}>
+            <View style={{ paddingHorizontal: 12, paddingBottom: 14, paddingTop: 8, backgroundColor: '#201A12', borderTopWidth: 1, borderTopColor: '#5A4528' }}>
+              <Text numberOfLines={1} style={{ color: youtubePickedItem ? '#FFFFFF' : '#B7A98F', fontWeight: '800', fontSize: 11, marginBottom: 7 }}>
                 {youtubePickedItem ? 'SELECTED: ' + (youtubePickedItem.title || 'YouTube video') : 'Select a video above to add it to the room'}
               </Text>
-              <TouchableOpacity disabled={!youtubePickedItem || youtubeSaving} onPress={() => youtubePickedItem && addYoutubeItem(youtubePickedItem)} style={{ backgroundColor: youtubePickedItem ? '#6B54C7' : '#303A52', borderColor: youtubePickedItem ? '#B9A8FF' : '#46516A', borderWidth: 1, borderRadius: 12, paddingVertical: 13, alignItems: 'center', opacity: youtubePickedItem && !youtubeSaving ? 1 : 0.65 }}>
+              <TouchableOpacity disabled={!youtubePickedItem || youtubeSaving} onPress={() => youtubePickedItem && addYoutubeItem(youtubePickedItem)} style={{ backgroundColor: youtubePickedItem ? '#8F713D' : '#302719', borderColor: youtubePickedItem ? '#E8C982' : '#5A4528', borderWidth: 1, borderRadius: 12, paddingVertical: 13, alignItems: 'center', opacity: youtubePickedItem && !youtubeSaving ? 1 : 0.65 }}>
                 <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '900' }}>{youtubeSaving ? 'ADDING…' : '＋ ADD ' + (youtubeBrowseTab === 'Music' ? 'SONG' : 'VIDEO')}</Text>
               </TouchableOpacity>
             </View>
@@ -3555,9 +3585,9 @@ function renderRoomInterior() {
     : (MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows
   ).filter(rowSeats => rowSeats.length > 0).map((rowSeats, rowIndex) => {
     const isTopCoupleRow = !youtubeScreenVisible && rowIndex === 0 && rowSeats.length === 2;
-    const couplePairWidth = micCount >= 17 ? 88 : micCount >= 14 ? 96 : 104;
+    const couplePairWidth = micCount >= 17 ? 112 : micCount >= 14 ? 120 : 128;
     return (
-    <View key={rowIndex} style={{ width: isTopCoupleRow ? couplePairWidth : '100%', alignSelf: 'center', flexDirection: 'row', justifyContent: 'center', alignItems: 'stretch', backgroundColor: isTopCoupleRow ? 'rgba(213,166,78,0.10)' : youtubeScreenVisible ? '#360D14' : 'transparent', borderWidth: isTopCoupleRow ? 1 : youtubeScreenVisible ? 1.5 : 0, borderColor: '#B88743', borderRadius: isTopCoupleRow ? 28 : youtubeScreenVisible ? 10 : 0, paddingHorizontal: youtubeScreenVisible ? 2 : 0, paddingTop: isTopCoupleRow ? 1 : youtubeScreenVisible ? 2 : 0, paddingBottom: isTopCoupleRow ? 1 : youtubeScreenVisible ? 2 : 0, marginBottom: youtubeScreenVisible ? 3 : 7, shadowColor: youtubeScreenVisible || isTopCoupleRow ? '#D5A64E' : 'transparent', shadowOpacity: isTopCoupleRow ? 0.14 : youtubeScreenVisible ? 0.22 : 0, shadowRadius: isTopCoupleRow ? 3 : youtubeScreenVisible ? 7 : 0, elevation: isTopCoupleRow ? 2 : youtubeScreenVisible ? 4 : 0 }}>
+    <View key={rowIndex} style={{ width: isTopCoupleRow ? couplePairWidth : '100%', alignSelf: 'center', flexDirection: 'row', justifyContent: 'center', alignItems: 'stretch', backgroundColor: isTopCoupleRow ? 'transparent' : youtubeScreenVisible ? '#360D14' : 'transparent', borderWidth: isTopCoupleRow ? 0 : youtubeScreenVisible ? 1.5 : 0, borderColor: '#B88743', borderRadius: youtubeScreenVisible ? 10 : 0, paddingHorizontal: youtubeScreenVisible && !isTopCoupleRow ? 2 : 0, paddingTop: youtubeScreenVisible && !isTopCoupleRow ? 2 : 0, paddingBottom: youtubeScreenVisible && !isTopCoupleRow ? 2 : 0, marginBottom: youtubeScreenVisible ? 3 : 7, shadowColor: youtubeScreenVisible && !isTopCoupleRow ? '#D5A64E' : 'transparent', shadowOpacity: youtubeScreenVisible && !isTopCoupleRow ? 0.22 : 0, shadowRadius: youtubeScreenVisible && !isTopCoupleRow ? 7 : 0, elevation: youtubeScreenVisible && !isTopCoupleRow ? 4 : 0 }}>
       {rowSeats.map((seat) => {
 
     const occupiedSeat = micSeats.find(
@@ -3671,9 +3701,9 @@ function renderRoomInterior() {
             height: youtubeScreenVisible ? 22 : (micCount >= 17 ? 42 : micCount >= 14 ? 46 : 50),
             borderRadius: youtubeScreenVisible ? 11 : (micCount >= 17 ? 21 : micCount >= 14 ? 23 : 25),
             borderWidth: 2,
-            borderColor: isMySeat ? '#F6D37B' : isOccupied ? '#D5A64E' : '#9A613E',
-            backgroundColor: '#320C13',
-            shadowColor: '#D5A64E',
+            borderColor: isMySeat ? '#F4D99A' : isOccupied ? '#D8B66D' : '#80643A',
+            backgroundColor: '#17120B',
+            shadowColor: '#D8B66D',
             shadowOpacity: 0.18,
             shadowRadius: 4,
             elevation: 2,
@@ -3753,14 +3783,14 @@ function renderRoomInterior() {
           )}
           {seatIsClosed && (
             <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(15,8,27,0.78)', alignItems: 'center', justifyContent: 'center', borderRadius: 30 }}>
-              <View style={{ width: 26, height: 20, borderWidth: 2, borderColor: '#C28BFF', borderRadius: 4, transform: [{ rotate: '-8deg' }] }}>
+              <View style={{ width: 26, height: 20, borderWidth: 2, borderColor: '#D8B66D', borderRadius: 4, transform: [{ rotate: '-8deg' }] }}>
                 <View style={{ position: 'absolute', width: 33, height: 3, backgroundColor: '#FF6685', top: 8, left: -4, transform: [{ rotate: '42deg' }] }} />
               </View>
             </View>
           )}
           {seatMicIsClosed && !seatIsClosed && (
-            <View style={{ position: 'absolute', bottom: 2, right: 2, width: 20, height: 20, borderRadius: 10, backgroundColor: '#142B3B', borderWidth: 1, borderColor: '#43DCC5', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: '#43DCC5', fontSize: 11, fontWeight: '900' }}>×</Text>
+            <View style={{ position: 'absolute', bottom: 2, right: 2, width: 20, height: 20, borderRadius: 10, backgroundColor: '#211A10', borderWidth: 1, borderColor: '#D8B66D', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: '#E8C982', fontSize: 11, fontWeight: '900' }}>×</Text>
             </View>
           )}
         </View>
@@ -3768,8 +3798,8 @@ function renderRoomInterior() {
           {isOccupied && roomReactions.filter(item => item.userId === occupiedSeat.user_id).slice(-1).map(item => (
             <Animated.View key={item.id} pointerEvents="none" style={{
               position: 'absolute', top: -30, alignSelf: 'center', zIndex: 30, elevation: 12,
-              backgroundColor: 'rgba(25,18,38,0.96)', borderWidth: 1, borderColor: '#E7C16D',
-              borderRadius: 18, paddingHorizontal: 9, paddingVertical: 3,
+              backgroundColor: 'transparent', borderWidth: 0,
+              borderRadius: 0, paddingHorizontal: 0, paddingVertical: 0,
               opacity: item.progress.interpolate({ inputRange: [0, 0.12, 0.82, 1], outputRange: [0, 1, 1, 0] }),
               transform: [{ translateX: item.direction === 'left'
                 ? item.progress.interpolate({ inputRange: [0, 1], outputRange: [24, -24] })
@@ -3777,7 +3807,17 @@ function renderRoomInterior() {
                   ? item.progress.interpolate({ inputRange: [0, 1], outputRange: [-24, 24] })
                   : item.progress.interpolate({ inputRange: [0, 1], outputRange: [0, 0] }) }]
             }}>
-              <Text style={{ fontSize: 22, transform: item.direction === 'left' ? [{ scaleX: -1 }] : [] }}>{item.emoji}</Text>
+              {MIC_REACTION_LOTTIES[item.label] ? (
+                <LottieView
+                  source={MIC_REACTION_LOTTIES[item.label]}
+                  autoPlay
+                  loop
+                  style={{ width: 58, height: 58, transform: item.direction === 'left' ? [{ scaleX: -1 }] : [] }}
+                  resizeMode="contain"
+                />
+              ) : (
+                <Animated.Text style={{ fontSize: 30, transform: [{ scale: item.progress.interpolate({ inputRange: [0,0.12,0.24,0.38,0.55,0.78,1], outputRange: [0.25,1.35,0.88,1.18,1,1.08,0.72] }) }, { rotate: item.progress.interpolate({ inputRange: [0,0.2,0.42,0.68,1], outputRange: ['-18deg','14deg','-9deg','5deg','0deg'] }) }, ...(item.direction === 'left' ? [{ scaleX: -1 }] : [])] }}>{item.emoji}</Animated.Text>
+              )}
             </Animated.View>
           ))}
 
@@ -3815,7 +3855,7 @@ function renderRoomInterior() {
 
 <Modal visible={showMicControlPopup} transparent animationType="fade" onRequestClose={() => setShowMicControlPopup(false)}>
   <View style={{ flex: 1, backgroundColor: 'rgba(3,5,14,0.78)', justifyContent: 'center', padding: 22 }}>
-    <View style={{ backgroundColor: '#11172B', borderRadius: 24, borderWidth: 1, borderColor: '#60439A', padding: 18, shadowColor: '#9366FF', shadowOpacity: 0.4, shadowRadius: 18, elevation: 14 }}>
+    <View style={{ backgroundColor: '#14110D', borderRadius: 24, borderWidth: 1, borderColor: '#A9874A', padding: 18, shadowColor: '#D8B66D', shadowOpacity: 0.4, shadowRadius: 18, elevation: 14 }}>
       <View style={{ alignItems: 'center', marginBottom: 14 }}>
         <Text style={{ color: '#F5F6FF', fontSize: 18, fontWeight: '900' }}>MIC CONTROL · {micControlSeat}</Text>
         <Text style={{ color: '#9CA9C9', fontSize: 11, marginTop: 4 }}>Room owner / admin controls</Text>
@@ -3830,19 +3870,19 @@ function renderRoomInterior() {
           else await api(`/api/rooms/${selectedRoom.id}/mic-seats/${micControlSeat}`, { method: 'POST' });
           await loadRoomMicSeats(selectedRoom.id);
         } catch (e) { Alert.alert('Mic error', e.message); } })();
-      }} style={{ flexDirection: 'row', alignItems: 'center', padding: 13, borderRadius: 15, backgroundColor: '#241B43', borderWidth: 1, borderColor: '#9366FF', marginBottom: 9 }}>
-        <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: '#382564', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}><Text style={{ fontSize: 23, color: '#C6A6FF' }}>♬</Text></View>
-        <View style={{ flex: 1 }}><Text style={{ color: '#F5F6FF', fontWeight: '900', fontSize: 14 }}>Take the mic</Text><Text style={{ color: '#B9A6F5', fontSize: 11, marginTop: 2 }}>Join this seat or leave it if it's yours</Text></View>
+      }} style={{ flexDirection: 'row', alignItems: 'center', padding: 13, borderRadius: 15, backgroundColor: '#211A10', borderWidth: 1, borderColor: '#B99755', marginBottom: 9 }}>
+        <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: '#342818', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}><Text style={{ fontSize: 23, color: '#E8C982' }}>♬</Text></View>
+        <View style={{ flex: 1 }}><Text style={{ color: '#F5F6FF', fontWeight: '900', fontSize: 14 }}>Take the mic</Text><Text style={{ color: '#D9C18F', fontSize: 11, marginTop: 2 }}>Join this seat or leave it if it's yours</Text></View>
       </TouchableOpacity>
       <TouchableOpacity onPress={async () => {
         const closed = !!micControls.find(x => x.seat_number === micControlSeat)?.seat_closed; const action = closed ? 'open_seat' : 'close_seat';
         try { await api(`/api/rooms/${selectedRoom.id}/mic-seats/${micControlSeat}/control`, { method: 'PATCH', body: JSON.stringify({ action }) }); await loadRoomMicSeats(selectedRoom.id); setShowMicControlPopup(false); } catch (e) { Alert.alert('Control failed', e.message); }
-      }} style={{ flexDirection: 'row', alignItems: 'center', padding: 13, borderRadius: 15, backgroundColor: '#28172F', borderWidth: 1, borderColor: '#B56BFF', marginBottom: 9 }}>
-        <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: '#46204D', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-          <View style={{ width: 24, height: 18, borderWidth: 2, borderColor: '#D5A3FF', borderRadius: 4 }}><View style={{ position: 'absolute', width: 30, height: 3, backgroundColor: '#FF6685', top: 7, left: -4, transform: [{ rotate: '42deg' }] }} /></View>
+      }} style={{ flexDirection: 'row', alignItems: 'center', padding: 13, borderRadius: 15, backgroundColor: '#211A10', borderWidth: 1, borderColor: '#A9874A', marginBottom: 9 }}>
+        <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: '#342818', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+          <View style={{ width: 24, height: 18, borderWidth: 2, borderColor: '#E8C982', borderRadius: 4 }}><View style={{ position: 'absolute', width: 30, height: 3, backgroundColor: '#B85B52', top: 7, left: -4, transform: [{ rotate: '42deg' }] }} /></View>
         </View>
         <View style={{ flex: 1 }}><Text style={{ color: '#F5F6FF', fontWeight: '900', fontSize: 14 }}>{micControls.find(x => x.seat_number === micControlSeat)?.seat_closed ? 'Open seat' : 'Close seat'}</Text><Text style={{ color: '#D3A5FF', fontSize: 11, marginTop: 2 }}>{micControls.find(x => x.seat_number === micControlSeat)?.seat_closed ? 'Allow anyone to sit again' : 'Block everyone, including owner/admin'}</Text></View>
-        <Text style={{ color: '#D5A3FF', fontSize: 18 }}>{micControls.find(x => x.seat_number === micControlSeat)?.seat_closed ? '↗' : '⛔'}</Text>
+        <Text style={{ color: '#E8C982', fontSize: 18 }}>{micControls.find(x => x.seat_number === micControlSeat)?.seat_closed ? '↗' : '⛔'}</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={async () => {
         const closed = !!micControls.find(x => x.seat_number === micControlSeat)?.mic_closed; const action = closed ? 'open_mic' : 'close_mic';
@@ -3858,29 +3898,7 @@ function renderRoomInterior() {
 </Modal>
 
                     
-            {/* ROOM CHAT MESSAGES — keep the room/microphone layout stable */}
-{roomChatMessages.length > 0 && (
-  <ScrollView
-    ref={roomChatScrollRef}
-    showsVerticalScrollIndicator={false}
-    onContentSizeChange={() => roomChatScrollRef.current?.scrollToEnd({ animated: true })}
-    style={{ maxHeight: 108, marginTop: 6, marginBottom: 5, flexGrow: 0 }}
-    contentContainerStyle={{ paddingHorizontal: 12 }}
-  >
-    {roomChatMessages.slice(-3).map(message => (
-      <View key={message.id} style={{ backgroundColor: C.card, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, marginBottom: 5, alignSelf: 'flex-start', maxWidth: '88%' }}>
-        <Text style={{ color: '#8E9AFF', fontSize: 10, fontWeight: 'bold', marginBottom: 2 }}>{message.sender?.display_name || message.sender || 'TALKZY User'}</Text>
-        {message.image_url ? (
-          <Image source={{ uri: message.image_url }} style={{ width: 150, height: 100, borderRadius: 8, marginTop: 2 }} resizeMode="cover" />
-        ) : (
-          <Text style={{ color: C.text, fontSize: 13 }}>{message.text || message.message_text}</Text>
-        )}
-        <Text style={{ color: C.muted, fontSize: 9, textAlign: 'right', marginTop: 3 }}>{message.time}</Text>
-      </View>
-    ))}
-  </ScrollView>
-)}
-
+            {/* Room messages are shown in the keyboard chat space. */}
 {/* EMPTY ROOM SPACE */}
 <View style={{ flexGrow: 1, minHeight: 12 }} />
 
@@ -4003,6 +4021,7 @@ function renderRoomInterior() {
                       } else if (tool.title === 'Music') {
                         setShowMusicPanel(true);
                       } else if (tool.title === 'Theme') {
+                        setRoomThemePage('catalog');
                         setShowRoomThemeMenu(true);
                       } else if (tool.title === 'Lucky Number' || tool.title === 'Dice') {
                         if (!isOnMic || myMicSeat == null) {
@@ -4180,141 +4199,164 @@ function renderRoomInterior() {
         visible={showRoomThemeMenu && selectedRoom?.owner_id === session?.user?.id}
         animationType="slide"
         presentationStyle="fullScreen"
-        onRequestClose={() => setShowRoomThemeMenu(false)}
+        onRequestClose={() => {
+          if (roomThemePage === 'review') setRoomThemePage('custom');
+          else if (roomThemePage === 'custom') setRoomThemePage('catalog');
+          else setShowRoomThemeMenu(false);
+        }}
       >
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#090F1D' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 17, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#26334D' }}>
-            <TouchableOpacity onPress={() => setShowRoomThemeMenu(false)} style={{ width: 38, height: 38, borderRadius: 13, backgroundColor: '#17233A', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: '#F4F6FF', fontSize: 23 }}>‹</Text>
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#080D19' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 17, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#27334A' }}>
+            <TouchableOpacity onPress={() => {
+              if (roomThemePage === 'review') setRoomThemePage('custom');
+              else if (roomThemePage === 'custom') setRoomThemePage('catalog');
+              else setShowRoomThemeMenu(false);
+            }} style={{ width: 40, height: 40, borderRadius: 13, backgroundColor: '#172238', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: '#F7F4EA', fontSize: 24 }}>‹</Text>
             </TouchableOpacity>
-            <Text style={{ color: '#F4F6FF', fontSize: 18, fontWeight: '900' }}>Room Themes</Text>
-            <TouchableOpacity onPress={async () => {
-              try {
-                const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-                if (!permission.granted) {
-                  Alert.alert('Photo permission required', 'Allow gallery access to choose your room theme.');
-                  return;
-                }
-                const picked = await ImagePicker.launchImageLibraryAsync({
-                  mediaTypes: ['images'],
-                  allowsEditing: true,
-                  aspect: [9, 16],
-                  quality: 0.9
-                });
-                if (!picked.canceled && picked.assets?.[0]?.uri) {
-                  setRoomThemeDraftUri(picked.assets[0].uri);
-                  setRoomThemeTab('Custom');
-                }
-              } catch (error) {
-                Alert.alert('Theme image error', error?.message || 'Could not open your gallery.');
-              }
-            }} style={{ width: 38, height: 38, borderRadius: 13, backgroundColor: '#5B45A8', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: '#FFFFFF', fontSize: 25, fontWeight: '500', lineHeight: 29 }}>＋</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={{ flexDirection: 'row', paddingHorizontal: 14, paddingTop: 15, gap: 8 }}>
-            {['Theme', 'Premium', 'Own'].map(tab => (
-              <TouchableOpacity key={tab} onPress={() => setRoomThemeTab(tab)} style={{ flex: 1, paddingVertical: 11, borderRadius: 12, backgroundColor: roomThemeTab === tab ? '#6048B6' : '#17233A', borderWidth: 1, borderColor: roomThemeTab === tab ? '#A995FF' : '#2A3855', alignItems: 'center' }}>
-                <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 12 }}>{tab}</Text>
+            <Text style={{ color: '#F7F4EA', fontSize: 17, fontWeight: '900', letterSpacing: 0.3 }}>
+              {roomThemePage === 'catalog' ? 'Room Themes' : roomThemePage === 'custom' ? 'Custom Room Theme' : 'Review Image'}
+            </Text>
+            {roomThemePage === 'catalog' ? (
+              <TouchableOpacity onPress={() => { setRoomThemeDraftUri(null); setRoomThemeDuration(7); setRoomThemePage('custom'); }} style={{ width: 40, height: 40, borderRadius: 13, backgroundColor: '#6A50B8', borderWidth: 1, borderColor: '#BDA8FF', alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: '#FFFFFF', fontSize: 26, fontWeight: '500', lineHeight: 29 }}>＋</Text>
               </TouchableOpacity>
-            ))}
+            ) : <View style={{ width: 40 }} />}
           </View>
 
-          <ScrollView contentContainerStyle={{ padding: 15, paddingBottom: 30 }}>
-            {roomThemeTab === 'Theme' && (
-              <View>
-                <Text style={{ color: '#AAB7D0', fontSize: 12, marginBottom: 13 }}>Choose a room look or add your own vertical background.</Text>
-                <TouchableOpacity onPress={async () => {
-                  try {
-                    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-                    if (!permission.granted) { Alert.alert('Photo permission required', 'Allow gallery access to choose your room theme.'); return; }
-                    const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [9, 16], quality: 0.9 });
-                    if (!picked.canceled && picked.assets?.[0]?.uri) { setRoomThemeDraftUri(picked.assets[0].uri); setRoomThemeTab('Custom'); }
-                  } catch (error) { Alert.alert('Theme image error', error?.message || 'Could not open your gallery.'); }
-                }} style={{ borderRadius: 18, borderWidth: 1, borderColor: '#7561C7', backgroundColor: '#191C39', padding: 18, alignItems: 'center', marginBottom: 14 }}>
-                  <Text style={{ fontSize: 30 }}>＋</Text>
-                  <Text style={{ color: '#FFFFFF', fontWeight: '900', marginTop: 5 }}>Create Custom Theme</Text>
-                  <Text style={{ color: '#B9B5D8', fontSize: 11, marginTop: 4 }}>Choose an image · Crop to 9:16</Text>
-                </TouchableOpacity>
-                <View style={{ borderRadius: 16, borderWidth: 1, borderColor: '#2A3855', backgroundColor: '#111B30', padding: 15 }}>
-                  <Text style={{ color: '#F4F6FF', fontWeight: '900' }}>Room background themes</Text>
-                  <Text style={{ color: '#AAB7D0', fontSize: 11, lineHeight: 17, marginTop: 6 }}>Your room's own background can be added here. Premium theme packs will appear in the Premium tab when they are configured.</Text>
-                </View>
-              </View>
-            )}
-
-            {roomThemeTab === 'Premium' && (
-              <View style={{ borderRadius: 18, borderWidth: 1, borderColor: '#725B9F', backgroundColor: '#201832', padding: 18 }}>
-                <Text style={{ color: '#F4E8FF', fontSize: 16, fontWeight: '900' }}>✦ Premium Themes</Text>
-                <Text style={{ color: '#C8B8E0', fontSize: 12, lineHeight: 19, marginTop: 8 }}>Premium themes are designed for 30-day access. Theme packs and coin prices have not been configured yet, so no coins will be charged from this screen.</Text>
-              </View>
-            )}
-
-            {roomThemeTab === 'Own' && (
-              <View>
-                {roomThemeOwnItems.length === 0 ? (
-                  <View style={{ alignItems: 'center', paddingVertical: 42, borderRadius: 18, backgroundColor: '#111B30', borderWidth: 1, borderColor: '#2A3855' }}>
-                    <Text style={{ fontSize: 35 }}>🖼️</Text>
-                    <Text style={{ color: '#F4F6FF', fontWeight: '900', marginTop: 10 }}>No themes yet</Text>
-                    <Text style={{ color: '#AAB7D0', fontSize: 11, marginTop: 5 }}>Themes you create or purchase will appear here.</Text>
-                  </View>
-                ) : roomThemeOwnItems.map((item, index) => (
-                  <TouchableOpacity key={item.id || index} onPress={() => { setRoomThemeDraftUri(item.uri); setRoomThemeDuration(item.days || 7); setRoomThemeTab('Custom'); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 14, backgroundColor: '#111B30', marginBottom: 9 }}>
-                    <Image source={{ uri: item.uri }} style={{ width: 54, height: 78, borderRadius: 9 }} />
-                    <View style={{ flex: 1, marginLeft: 12 }}>
-                      <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>{item.name || 'My Theme'}</Text>
-                      <Text style={{ color: '#AAB7D0', fontSize: 11, marginTop: 4 }}>{Math.max(0, Math.ceil(((item.expiresAt || (item.createdAt || Date.now()) + (item.days || 7) * 86400000) - Date.now()) / 86400000))} days remaining · Created on this device</Text>
-                    </View>
+          {roomThemePage === 'catalog' && (
+            <>
+              <View style={{ flexDirection: 'row', paddingHorizontal: 14, paddingTop: 14, gap: 8 }}>
+                {['Theme', 'Premium', 'Own'].map(tab => (
+                  <TouchableOpacity key={tab} onPress={() => setRoomThemeTab(tab)} style={{ flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: roomThemeTab === tab ? '#6249B4' : '#141F33', borderWidth: 1, borderColor: roomThemeTab === tab ? '#B7A2FF' : '#2A3850', alignItems: 'center' }}>
+                    <Text style={{ color: roomThemeTab === tab ? '#FFFFFF' : '#AEBBD2', fontWeight: '900', fontSize: 12 }}>{tab}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
-            )}
-
-            {roomThemeTab === 'Custom' && (
-              <View>
-                <Text style={{ color: '#F4F6FF', fontSize: 16, fontWeight: '900', marginBottom: 5 }}>Custom Theme</Text>
-                <Text style={{ color: '#AAB7D0', fontSize: 11, marginBottom: 14 }}>Your image is cropped vertically to 9:16.</Text>
-                {roomThemeDraftUri ? (
-                  <Image source={{ uri: roomThemeDraftUri }} style={{ width: 180, height: 320, alignSelf: 'center', borderRadius: 16, backgroundColor: '#17233A' }} resizeMode="cover" />
-                ) : (
-                  <TouchableOpacity onPress={() => setRoomThemeTab('Theme')} style={{ height: 180, borderRadius: 16, borderWidth: 1, borderColor: '#52638A', alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ color: '#FFFFFF', fontWeight: '800' }}>Choose an image from gallery</Text>
-                  </TouchableOpacity>
+              <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
+                {roomThemeTab === 'Theme' && (
+                  <View>
+                    <Text style={{ color: '#EDEAFF', fontSize: 15, fontWeight: '900', marginBottom: 5 }}>Free Company Themes</Text>
+                    <Text style={{ color: '#9EABC3', fontSize: 11, lineHeight: 17, marginBottom: 15 }}>Room themes provided by TALKZY. Select a theme to use it for free.</Text>
+                    <View style={{ minHeight: 210, borderRadius: 19, borderWidth: 1, borderColor: '#2C3B56', backgroundColor: '#111B2D', alignItems: 'center', justifyContent: 'center', padding: 22 }}>
+                      <Text style={{ fontSize: 38 }}>✦</Text>
+                      <Text style={{ color: '#F4F1FF', fontWeight: '900', marginTop: 12 }}>Company themes will appear here</Text>
+                      <Text style={{ color: '#9EABC3', fontSize: 11, textAlign: 'center', lineHeight: 17, marginTop: 6 }}>Free backgrounds curated and provided by TALKZY.</Text>
+                    </View>
+                  </View>
                 )}
-                <Text style={{ color: '#DDE4F5', fontSize: 12, fontWeight: '900', marginTop: 18, marginBottom: 9 }}>Theme duration</Text>
-                <View style={{ flexDirection: 'row', gap: 8 }}>
-                  {[7, 15, 30].map(days => (
-                    <TouchableOpacity key={days} onPress={() => setRoomThemeDuration(days)} style={{ flex: 1, paddingVertical: 12, borderRadius: 11, alignItems: 'center', backgroundColor: roomThemeDuration === days ? '#6048B6' : '#17233A', borderWidth: 1, borderColor: roomThemeDuration === days ? '#B7A5FF' : '#2A3855' }}>
-                      <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>{days} Days</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-                <TouchableOpacity disabled={!roomThemeDraftUri} onPress={() => {
-                  if (!roomThemeDraftUri) return;
-                  setRoomThemePreviewUri(roomThemeDraftUri);
-                  setShowRoomThemeMenu(false);
-                }} style={{ marginTop: 17, paddingVertical: 14, borderRadius: 13, alignItems: 'center', backgroundColor: roomThemeDraftUri ? '#6048B6' : '#33394A', opacity: roomThemeDraftUri ? 1 : 0.5 }}>
-                  <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>Preview in Room</Text>
-                </TouchableOpacity>
-                <TouchableOpacity disabled={!roomThemeDraftUri} onPress={() => {
-                  if (!roomThemeDraftUri) return;
-                  const createdAt = Date.now();
-                  const item = { id: String(createdAt), uri: roomThemeDraftUri, days: roomThemeDuration, createdAt, expiresAt: createdAt + roomThemeDuration * 86400000, name: 'Custom Room Theme' };
-                  setRoomThemeOwnItems(current => {
-                    const updated = [...current.filter(theme => theme.uri !== item.uri), item];
-                    AsyncStorage.setItem(`talkzy-room-themes:${selectedRoom.id}`, JSON.stringify(updated)).catch(error => console.log('Local theme save error:', error?.message || error));
-                    return updated;
-                  });
-                  setRoomThemeTab('Own');
-                  Alert.alert('Theme saved on this device', 'This theme is saved locally for now. Cloud sync, room-wide application and coin purchases will be connected after the theme storage and pricing setup.');
-                }} style={{ marginTop: 9, paddingVertical: 13, borderRadius: 13, alignItems: 'center', backgroundColor: '#17233A', borderWidth: 1, borderColor: '#52638A', opacity: roomThemeDraftUri ? 1 : 0.5 }}>
-                  <Text style={{ color: '#E8EDFF', fontWeight: '900' }}>Save to Own</Text>
-                </TouchableOpacity>
-                <Text style={{ color: '#8998B4', fontSize: 10, textAlign: 'center', marginTop: 9, lineHeight: 15 }}>Preview is private to you. It does not change the room for other members or charge coins.</Text>
+                {roomThemeTab === 'Premium' && (
+                  <View>
+                    <Text style={{ color: '#F4E9FF', fontSize: 15, fontWeight: '900', marginBottom: 5 }}>Premium Themes</Text>
+                    <Text style={{ color: '#C1B1D9', fontSize: 11, lineHeight: 17, marginBottom: 15 }}>Exclusive company themes available to purchase with coins.</Text>
+                    <View style={{ minHeight: 210, borderRadius: 19, borderWidth: 1, borderColor: '#70569D', backgroundColor: '#211832', alignItems: 'center', justifyContent: 'center', padding: 22 }}>
+                      <Text style={{ fontSize: 38 }}>♛</Text>
+                      <Text style={{ color: '#FFF0D1', fontWeight: '900', marginTop: 12 }}>Premium collection</Text>
+                      <Text style={{ color: '#C1B1D9', fontSize: 11, textAlign: 'center', lineHeight: 17, marginTop: 6 }}>Paid themes provided by TALKZY will appear here with their coin prices.</Text>
+                    </View>
+                  </View>
+                )}
+                {roomThemeTab === 'Own' && (
+                  <View>
+                    {roomThemeOwnItems.length === 0 ? (
+                      <View style={{ alignItems: 'center', paddingVertical: 46, paddingHorizontal: 22, borderRadius: 19, backgroundColor: '#111B2D', borderWidth: 1, borderColor: '#2A3850' }}>
+                        <Text style={{ fontSize: 38 }}>▧</Text>
+                        <Text style={{ color: '#F4F1FF', fontWeight: '900', marginTop: 12 }}>Your themes will appear here</Text>
+                        <Text style={{ color: '#9EABC3', fontSize: 11, textAlign: 'center', lineHeight: 17, marginTop: 6 }}>Only themes you have purchased or custom themes approved by TALKZY administration will be shown here.</Text>
+                      </View>
+                    ) : roomThemeOwnItems.map((item, index) => (
+                      <View key={item.id || index} style={{ flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 14, backgroundColor: '#111B2D', marginBottom: 9 }}>
+                        <Image source={{ uri: item.uri }} style={{ width: 58, height: 82, borderRadius: 9 }} />
+                        <View style={{ flex: 1, marginLeft: 12 }}>
+                          <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>{item.name || 'Owned Theme'}</Text>
+                          <Text style={{ color: '#AAB7D0', fontSize: 11, marginTop: 4 }}>Owned theme</Text>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </ScrollView>
+            </>
+          )}
+
+          {roomThemePage === 'custom' && (
+            <ScrollView contentContainerStyle={{ padding: 17, paddingBottom: 34 }}>
+              <Text style={{ color: '#F4F1FF', fontSize: 15, fontWeight: '900' }}>Create your room background</Text>
+              <Text style={{ color: '#9EABC3', fontSize: 11, lineHeight: 17, marginTop: 5, marginBottom: 17 }}>Choose a vertical image, review it, then confirm to continue.</Text>
+              <TouchableOpacity onPress={async () => {
+                try {
+                  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                  if (!permission.granted) { Alert.alert('Photo permission required', 'Allow gallery access to choose your room theme.'); return; }
+                  const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [9, 16], quality: 0.9 });
+                  if (!picked.canceled && picked.assets?.[0]?.uri) {
+                    setRoomThemeDraftUri(picked.assets[0].uri);
+                    setRoomThemePage('review');
+                  }
+                } catch (error) { Alert.alert('Theme image error', error?.message || 'Could not open your gallery.'); }
+              }} style={{ minHeight: 245, borderRadius: 20, borderWidth: 1.5, borderStyle: 'dashed', borderColor: '#8E78D3', backgroundColor: '#131D32', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                {roomThemeDraftUri ? (
+                  <Image source={{ uri: roomThemeDraftUri }} style={{ width: '100%', height: 245 }} resizeMode="cover" />
+                ) : (
+                  <>
+                    <View style={{ width: 66, height: 66, borderRadius: 22, backgroundColor: '#282047', borderWidth: 1, borderColor: '#9276D8', alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ color: '#E7DFFF', fontSize: 31 }}>＋</Text>
+                    </View>
+                    <Text style={{ color: '#F4F1FF', fontWeight: '900', marginTop: 15 }}>Select Part</Text>
+                    <Text style={{ color: '#9EABC3', fontSize: 11, marginTop: 5 }}>Tap here to open your phone gallery</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+              <Text style={{ color: '#DCE4F5', fontSize: 12, fontWeight: '900', marginTop: 22, marginBottom: 10 }}>Select Duration</Text>
+              <View style={{ flexDirection: 'row', gap: 9 }}>
+                {[7, 15, 30].map(days => (
+                  <TouchableOpacity key={days} onPress={() => setRoomThemeDuration(days)} style={{ flex: 1, paddingVertical: 14, borderRadius: 13, alignItems: 'center', backgroundColor: roomThemeDuration === days ? '#6249B4' : '#152137', borderWidth: 1, borderColor: roomThemeDuration === days ? '#BDA8FF' : '#2B3A54' }}>
+                    <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 15 }}>{days}</Text>
+                    <Text style={{ color: '#D2C8F4', fontSize: 10, fontWeight: '800', marginTop: 2 }}>DAYS</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
-            )}
-          </ScrollView>
+              <Text style={{ color: '#DCE4F5', fontSize: 12, fontWeight: '900', marginTop: 21, marginBottom: 9 }}>Coins</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 15, borderRadius: 14, borderWidth: 1, borderColor: '#6E5A32', backgroundColor: '#211D18' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 23, marginRight: 10 }}>🪙</Text>
+                  <View>
+                    <Text style={{ color: '#FFE4A6', fontWeight: '900', fontSize: 13 }}>Custom theme price</Text>
+                    <Text style={{ color: '#B9A98B', fontSize: 10, marginTop: 3 }}>Price configured by TALKZY</Text>
+                  </View>
+                </View>
+                <Text style={{ color: '#FFE4A6', fontWeight: '900', fontSize: 15 }}>—</Text>
+              </View>
+              <TouchableOpacity disabled={!roomThemeDraftUri} onPress={() => Alert.alert('Purchase not connected yet', 'This is the layout preview. Coin pricing, payment and administration approval will be connected in the next implementation stage.')} style={{ marginTop: 20, paddingVertical: 15, borderRadius: 14, alignItems: 'center', backgroundColor: roomThemeDraftUri ? '#6A50B8' : '#30394A', borderWidth: 1, borderColor: roomThemeDraftUri ? '#BDA8FF' : '#46516A', opacity: roomThemeDraftUri ? 1 : 0.55 }}>
+                <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 14 }}>BUY WITH COINS</Text>
+              </TouchableOpacity>
+              <Text style={{ color: '#8492AB', fontSize: 10, textAlign: 'center', marginTop: 10, lineHeight: 15 }}>Your custom theme will be added to Own only after administration approval.</Text>
+            </ScrollView>
+          )}
+
+          {roomThemePage === 'review' && (
+            <View style={{ flex: 1, padding: 17, justifyContent: 'space-between' }}>
+              <View>
+                <Text style={{ color: '#F4F1FF', fontSize: 15, fontWeight: '900' }}>Review your selected image</Text>
+                <Text style={{ color: '#9EABC3', fontSize: 11, lineHeight: 17, marginTop: 5, marginBottom: 17 }}>Check the crop before confirming your custom room theme.</Text>
+                {roomThemeDraftUri ? <Image source={{ uri: roomThemeDraftUri }} style={{ width: '100%', height: undefined, aspectRatio: 9 / 13, borderRadius: 19, backgroundColor: '#141F33' }} resizeMode="cover" /> : null}
+              </View>
+              <View style={{ flexDirection: 'row', gap: 10, paddingBottom: 12 }}>
+                <TouchableOpacity onPress={async () => {
+                  try {
+                    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                    if (!permission.granted) { Alert.alert('Photo permission required', 'Allow gallery access to choose another image.'); return; }
+                    const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [9, 16], quality: 0.9 });
+                    if (!picked.canceled && picked.assets?.[0]?.uri) setRoomThemeDraftUri(picked.assets[0].uri);
+                  } catch (error) { Alert.alert('Theme image error', error?.message || 'Could not reopen your gallery.'); }
+                }} style={{ flex: 1, paddingVertical: 15, borderRadius: 13, alignItems: 'center', backgroundColor: '#172238', borderWidth: 1, borderColor: '#566581' }}>
+                  <Text style={{ color: '#E7EAF4', fontWeight: '900' }}>RESELECT</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setRoomThemePage('custom')} style={{ flex: 1, paddingVertical: 15, borderRadius: 13, alignItems: 'center', backgroundColor: '#6A50B8', borderWidth: 1, borderColor: '#BDA8FF' }}>
+                  <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>CONFIRM</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
         </SafeAreaView>
       </Modal>
 
@@ -4333,7 +4375,7 @@ function renderRoomInterior() {
                   <Text style={{ color: '#E9D8FF', fontSize: 17, fontWeight: '800' }}>×</Text>
                 </TouchableOpacity>
                 <View style={{ alignItems: 'center' }}>
-                  <Animated.View style={{ width: 88, height: 88, borderRadius: 27, backgroundColor: '#4B267B', borderWidth: 1.5, borderColor: '#E5C16B', alignItems: 'center', justifyContent: 'center', shadowColor: '#B56BFF', shadowOpacity: 0.55, shadowRadius: 18, elevation: 9, transform: [{ scale: luckyBagPulse }] }}>
+                  <Animated.View style={{ width: 88, height: 88, borderRadius: 27, backgroundColor: '#4B267B', borderWidth: 1.5, borderColor: '#E5C16B', alignItems: 'center', justifyContent: 'center', shadowColor: '#A9874A', shadowOpacity: 0.55, shadowRadius: 18, elevation: 9, transform: [{ scale: luckyBagPulse }] }}>
                     <View style={{ position: 'absolute', width: 70, height: 70, borderRadius: 22, borderWidth: 1, borderColor: 'rgba(226,190,255,0.35)' }} />
                     <Text style={{ fontSize: 50 }}>🧧</Text>
                     <Text style={{ position: 'absolute', bottom: -7, right: -7, fontSize: 24 }}>✨</Text>
@@ -4490,43 +4532,184 @@ function renderRoomInterior() {
         </TouchableOpacity>
       )}
 
-     {/* HOT EVENTS MINI BANNER */}
-<TouchableOpacity
-  onPress={() => {
-    setShowGreedyPanel(false);
-    setShowRoomGamePanel(false);
-    setShowRocketPanel(false);
-    setShowRoomTools(false);
-    setShowRoomGiftPanel(false);
-    setActiveTab('Room');
-    setShowHotEventsPopup(true);
-    if (!loadingOfficialEvents) loadOfficialEvents();
-  }}
-  activeOpacity={0.86}
-  style={{
-    position: 'absolute',
-    right: 10,
-    bottom: Platform.OS === 'android' ? 150 : 118,
-    width: 76,
-    height: 38,
-    borderRadius: 8,
-    overflow: 'hidden',
-    backgroundColor: '#7C3AED',
-    borderWidth: 1,
-    borderColor: '#C4A5FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 39,
-    elevation: 20
-  }}
->
-  <Text style={{ color: '#FFFFFF', fontSize: 9, fontWeight: '900', letterSpacing: 0.6 }}>
-    🔥 HOT EVENTS
-  </Text>
-  <Text style={{ color: '#F4EFFF', fontSize: 7, fontWeight: '700', marginTop: 1 }}>
-    TAP TO EXPLORE
-  </Text>
-</TouchableOpacity>
+{/* ROOM SHORTCUT LAUNCHER + GIFT */}
+<View style={{ position: 'absolute', right: 10, bottom: Platform.OS === 'android' ? 92 : 70, zIndex: 55, elevation: 28, alignItems: 'center', gap: 10 }}>
+  <TouchableOpacity accessibilityRole="button" accessibilityLabel="Open room shortcuts" onPress={() => { setRoomShortcutCategory('Treasury'); setShowRoomShortcutsPage(true); }} style={{ width: 48, height: 48, borderRadius: 17, backgroundColor: '#24163D', borderWidth: 1.5, borderColor: '#D6B15E', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.38, shadowRadius: 7, shadowOffset: { width: 0, height: 3 }, elevation: 8 }}>
+    <Text style={{ fontSize: 23 }}>✧</Text><Text style={{ color: '#EBD18A', fontSize: 7, fontWeight: '900', letterSpacing: 0.8 }}>SHORTCUTS</Text>
+  </TouchableOpacity>
+  <TouchableOpacity onPress={() => { setShowRoomGiftPanel(value => !value); setShowRoomTools(false); setShowGreedyPanel(false); setShowRoomGamePanel(false); setShowRocketPanel(false); }} style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: C.card, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 20 }}>🎁</Text></TouchableOpacity>
+</View>
+
+<Modal visible={showRoomShortcutsPage && screen === 'roomInterior' && Boolean(selectedRoom)} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setShowRoomShortcutsPage(false)}>
+  <SafeAreaView style={{ flex: 1, backgroundColor: '#090711' }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 12, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#3A2A50' }}>
+      <View>
+        <Text style={{ color: '#F6EEDB', fontSize: 21, fontWeight: '900', letterSpacing: 0.5 }}>ROOM SHORTCUTS</Text>
+        <Text style={{ color: '#A99BB9', fontSize: 10, marginTop: 3, letterSpacing: 1.1 }}>YOUR ROOM • QUICK ACCESS</Text>
+      </View>
+      <TouchableOpacity onPress={() => setShowRoomShortcutsPage(false)} accessibilityRole="button" accessibilityLabel="Close shortcuts" style={{ width: 38, height: 38, borderRadius: 13, backgroundColor: '#21182D', borderWidth: 1, borderColor: '#59456D', alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ color: '#F4E8D2', fontSize: 23, fontWeight: '700' }}>×</Text>
+      </TouchableOpacity>
+    </View>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 14, paddingVertical: 14, gap: 9, alignItems: 'center' }}>
+      {['Quick Access', 'Treasury', 'Games', 'Greedy', 'Hot Event'].map((category) => {
+        const active = roomShortcutCategory === category;
+        return <TouchableOpacity key={category} onPress={() => setRoomShortcutCategory(category)} style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 15, backgroundColor: active ? '#35204E' : '#17131F', borderWidth: 1, borderColor: active ? '#D7B35F' : '#393044' }}>
+          <Text style={{ color: active ? '#F4D98E' : '#B8AFC2', fontSize: 12, fontWeight: '900' }}>{category}</Text>
+        </TouchableOpacity>;
+      })}
+    </ScrollView>
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}>
+      {roomShortcutCategory === 'Quick Access' && <>
+        <View style={{ paddingTop: 4, paddingBottom: 16 }}>
+          <Text style={{ color: '#E8C982', fontSize: 16, fontWeight: '900', letterSpacing: 1 }}>ROOM QUICK ACCESS</Text>
+          <Text style={{ color: '#B7A98F', fontSize: 10, marginTop: 4 }}>Premium shortcuts • Black marble and gold collection</Text>
+        </View>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 13 }}>
+          {[
+            { key: 'music', label: 'MUSIC', subtitle: 'Listen together' },
+            { key: 'youtube', label: 'YOUTUBE', subtitle: 'Watch together' },
+            { key: 'effects', label: 'EFFECTS', subtitle: 'Voice effects' },
+            { key: 'propStore', label: 'PROP STORE', subtitle: 'Room props' },
+            { key: 'dice', label: 'DICE', subtitle: 'Play dice games' },
+            { key: 'luckyNo', label: 'LUCKY NO', subtitle: 'Lucky 777' },
+            { key: 'luckyBag', label: 'LUCKY BAG', subtitle: 'Mystery rewards' },
+            { key: 'activity', label: 'ACTIVITY', subtitle: 'Room activities' },
+            { key: 'theme', label: 'THEME', subtitle: 'Customize your room' },
+          ].map((item) => (
+            <TouchableOpacity key={item.key} activeOpacity={0.82}
+              onPress={() => {
+                setShowRoomShortcutsPage(false);
+                if (item.key === 'music') {
+                  setShowMusicPanel(true);
+                } else if (item.key === 'youtube') {
+                  const canBrowseYoutube = selectedRoom?.owner_id === session?.user?.id || roomPresence.some(person => person.user_id === session?.user?.id && person.presence_role === 'admin');
+                  youtubePanelDismissedRef.current = false;
+                  setShowYoutubePanel(canBrowseYoutube || Boolean(youtubeState.video_id));
+                  if (canBrowseYoutube) {
+                    setYoutubeBrowseTab('Music');
+                    setYoutubeBrowseUrl('https://www.youtube.com/results?search_query=music');
+                    setYoutubePickedItem(null);
+                    setShowYoutubePicker(true);
+                  }
+                  loadYoutubeState(true);
+                } else if (item.key === 'dice' || item.key === 'luckyNo') {
+                  const gameTitle = item.key === 'dice' ? 'Dice' : 'Lucky Number';
+                  if (!isOnMic || myMicSeat == null) {
+                    Alert.alert('Sit on a mic first!', 'Please sit on a microphone before playing.');
+                  } else if (isRoomTourist && !touristsSendText) {
+                    Alert.alert('Game unavailable', 'The room owner does not allow tourists to send text messages.');
+                  } else {
+                    setMicGame({
+                      roomId: selectedRoom.id,
+                      seat: myMicSeat,
+                      kind: gameTitle,
+                      phase: 'spinning',
+                      value: gameTitle === 'Lucky Number' ? '000' : '1'
+                    });
+                  }
+                } else if (item.key === 'luckyBag') {
+                  setLuckyBagTab('Room');
+                  setLuckyBagCoins(500);
+                  setLuckyBagQuantity(1);
+                  setLuckyBagHistoryView(false);
+                  setShowLuckyBagPopup(true);
+                } else if (item.key === 'activity') {
+                  if (selectedRoom?.owner_id !== session?.user?.id) {
+                    Alert.alert('Activity', 'Only the original creator of this room can access Room Activity.');
+                    return;
+                  }
+                  setRoomDetails(selectedRoom);
+                  setRoomDetailsTab('Activity');
+                  setRoomDetailsVisible(true);
+                  loadRoomActivities(selectedRoom.id);
+                } else if (item.key === 'theme') {
+                  if (selectedRoom?.owner_id !== session?.user?.id) {
+                    Alert.alert('Room Themes', 'Only the original creator of this room can manage its theme.');
+                    return;
+                  }
+                  setRoomThemePage('catalog');
+                  setShowRoomThemeMenu(true);
+                } else if (item.key === 'effects') {
+                  Alert.alert('Voice Effects', 'Voice effects are not available in this build yet.');
+                } else if (item.key === 'propStore') {
+                  Alert.alert('Prop Store', 'The Prop Store is not available in this build yet.');
+                }
+              }}
+              style={{ width: '31.5%', minHeight: 126, borderRadius: 17, paddingVertical: 12, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center', backgroundColor: '#15110C', borderWidth: 1, borderColor: '#72582E', shadowColor: '#D5AD60', shadowOpacity: 0.13, shadowRadius: 7, elevation: 3 }}>
+              <View style={{ width: 66, height: 66, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: '#21190F', borderWidth: 1, borderColor: '#B58B45', marginBottom: 8 }}>
+                <RoomShortcutIcon type={item.key} size={54} />
+              </View>
+              <Text style={{ color: '#F1D69A', fontSize: 9, fontWeight: '900', letterSpacing: 0.55, textAlign: 'center' }}>{item.label}</Text>
+              <Text style={{ color: '#A99A80', fontSize: 8, marginTop: 3, textAlign: 'center' }}>{item.subtitle}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </>}
+      {roomShortcutCategory === 'Treasury' && <>
+        <View style={{ borderRadius: 22, padding: 18, backgroundColor: '#211331', borderWidth: 1, borderColor: '#A77A39', marginBottom: 16 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ width: 76, height: 76, borderRadius: 20, backgroundColor: '#382052', borderWidth: 2, borderColor: '#E0BD70', alignItems: 'center', justifyContent: 'center', marginRight: 15, shadowColor: '#C49A45', shadowOpacity: 0.35, shadowRadius: 10, elevation: 8 }}>
+              <View style={{ position: 'absolute', top: 7, left: 7, right: 7, bottom: 7, borderRadius: 15, borderWidth: 1, borderColor: '#8D68B2' }} />
+              <Text style={{ fontSize: 39 }}>💎</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: '#E9CC83', fontSize: 17, fontWeight: '900' }}>ENCHANTED TREASURY</Text>
+              <Text style={{ color: '#C4B5D5', fontSize: 11, marginTop: 4 }}>Your TALKZY coins and rewards</Text>
+              <Text style={{ color: '#FFF0C3', fontSize: 18, fontWeight: '900', marginTop: 8 }}>🪙 {Number(walletBalance || 0).toLocaleString()} coins</Text>
+            </View>
+          </View>
+        </View>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+          <TouchableOpacity onPress={() => { setShowRoomShortcutsPage(false); setLuckyBagHistoryView(false); setShowLuckyBagPopup(true); }} style={{ width: '48%', minHeight: 126, flexGrow: 1, borderRadius: 18, padding: 14, backgroundColor: '#21172D', borderWidth: 1, borderColor: '#8D6A43', alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: 31 }}>🎁</Text><Text style={{ color: '#F0D28B', fontSize: 12, fontWeight: '900', marginTop: 8 }}>LUCKY BAGS</Text><Text style={{ color: '#AFA0BE', fontSize: 9, marginTop: 4 }}>Open room rewards</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => { setShowRoomShortcutsPage(false); setLuckyBagHistoryView(true); loadLuckyBagHistory(); setShowLuckyBagPopup(true); }} style={{ width: '48%', minHeight: 126, flexGrow: 1, borderRadius: 18, padding: 14, backgroundColor: '#21172D', borderWidth: 1, borderColor: '#8D6A43', alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: 31 }}>📜</Text><Text style={{ color: '#F0D28B', fontSize: 12, fontWeight: '900', marginTop: 8 }}>TREASURY HISTORY</Text><Text style={{ color: '#AFA0BE', fontSize: 9, marginTop: 4 }}>View reward records</Text>
+          </TouchableOpacity>
+        </View>
+      </>}
+      {roomShortcutCategory === 'Games' && <>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14 }}>
+          <View style={{ width: 76, height: 76, borderRadius: 21, backgroundColor: '#142D3B', borderWidth: 2, borderColor: '#65C8D5', alignItems: 'center', justifyContent: 'center', marginRight: 14, shadowColor: '#4AC4D6', shadowOpacity: 0.35, shadowRadius: 10, elevation: 8 }}>
+            <View style={{ position: 'absolute', top: 7, left: 7, right: 7, bottom: 7, borderRadius: 15, borderWidth: 1, borderColor: '#347D91' }} />
+            <Text style={{ fontSize: 39 }}>🎮</Text>
+          </View>
+          <View style={{ flex: 1 }}><Text style={{ color: '#8EE6F0', fontSize: 17, fontWeight: '900' }}>CRYSTAL CONTROLLER</Text><Text style={{ color: '#A9B8C4', fontSize: 11, marginTop: 4 }}>Choose a room game</Text></View>
+        </View>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 11 }}>
+          {['Ludo', 'Carrom', 'Quiz', 'Lucky Wheel', 'Fruit Game', 'Cards', 'Dice', 'More Games'].map((game, index) => <TouchableOpacity key={game} onPress={() => { setShowRoomShortcutsPage(false); setShowGreedyPanel(false); setShowRocketPanel(false); setShowRoomGamePanel(true); }} style={{ width: '47%', flexGrow: 1, minHeight: 94, borderRadius: 16, padding: 12, backgroundColor: '#111E2A', borderWidth: 1, borderColor: '#28596B', alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: 27 }}>{['🎯','🔴','🧠','🎡','🍉','🃏','🎲','🕹️'][index]}</Text><Text style={{ color: '#D5F4F6', fontSize: 11, fontWeight: '900', marginTop: 7 }}>{game.toUpperCase()}</Text>
+          </TouchableOpacity>)}
+        </View>
+      </>}
+      {roomShortcutCategory === 'Greedy' && <>
+        <View style={{ alignItems: 'center', paddingVertical: 18, marginBottom: 14, borderRadius: 22, backgroundColor: '#211331', borderWidth: 1, borderColor: '#8056B1' }}>
+          <View style={{ width: 92, height: 92, borderRadius: 24, backgroundColor: '#42235F', borderWidth: 2, borderColor: '#D3AE6A', alignItems: 'center', justifyContent: 'center', shadowColor: '#9B69D6', shadowOpacity: 0.4, shadowRadius: 12, elevation: 9 }}>
+            <Text style={{ fontSize: 47 }}>🎰</Text>
+          </View>
+          <Text style={{ color: '#E4C5FF', fontSize: 17, fontWeight: '900', marginTop: 12 }}>JEWEL ARCADE</Text>
+          <Text style={{ color: '#B5A3C8', fontSize: 10, marginTop: 4 }}>Greedy • Premium game corner</Text>
+        </View>
+        <TouchableOpacity onPress={() => { setShowRoomShortcutsPage(false); setShowRoomGamePanel(false); setShowRocketPanel(false); setShowGreedyPanel(true); }} style={{ minHeight: 112, borderRadius: 18, backgroundColor: '#21172D', borderWidth: 1, borderColor: '#8056B1', alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: 33 }}>💎</Text><Text style={{ color: '#E4C5FF', fontSize: 13, fontWeight: '900', marginTop: 8 }}>OPEN GREEDY</Text><Text style={{ color: '#B5A3C8', fontSize: 10, marginTop: 4 }}>Enter the Jewel Arcade</Text>
+        </TouchableOpacity>
+      </>}
+      {roomShortcutCategory === 'Hot Event' && <>
+        <View style={{ alignItems: 'center', paddingVertical: 18, marginBottom: 14, borderRadius: 22, backgroundColor: '#24152B', borderWidth: 1, borderColor: '#B78A48' }}>
+          <View style={{ width: 92, height: 92, borderRadius: 24, backgroundColor: '#492B36', borderWidth: 2, borderColor: '#E2C174', alignItems: 'center', justifyContent: 'center', shadowColor: '#D69B4D', shadowOpacity: 0.38, shadowRadius: 12, elevation: 9 }}>
+            <Text style={{ fontSize: 47 }}>🏆</Text>
+          </View>
+          <Text style={{ color: '#F1D38E', fontSize: 17, fontWeight: '900', marginTop: 12 }}>HOT EVENT</Text>
+          <Text style={{ color: '#C7AFAF', fontSize: 10, marginTop: 4 }}>Event icon artwork can be customized later</Text>
+        </View>
+        <TouchableOpacity onPress={() => { setShowRoomShortcutsPage(false); setActiveTab('Room'); setShowHotEventsPopup(true); if (!loadingOfficialEvents) loadOfficialEvents(); }} style={{ minHeight: 112, borderRadius: 18, backgroundColor: '#21172D', borderWidth: 1, borderColor: '#B78A48', alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: 33 }}>🔥</Text><Text style={{ color: '#F1D38E', fontSize: 13, fontWeight: '900', marginTop: 8 }}>VIEW HOT EVENTS</Text><Text style={{ color: '#C7AFAF', fontSize: 10, marginTop: 4 }}>Discover current room events</Text>
+        </TouchableOpacity>
+      </>}
+    </ScrollView>
+  </SafeAreaView>
+</Modal>
 
       <Modal
         visible={showHotEventsPopup}
@@ -4588,7 +4771,7 @@ function renderRoomInterior() {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
         {[["Welcome","👋"],["Happy","😊"],["Thanks","🙏"],["Gosh","😲"],["Wronged","😞"],["Nausea","🤢"],["Left kiss","😘","left"],["Right kiss","😘","right"],["Money face","🤑"],["Party","🥳"],["Fear","😨"],["Silence","🤫"],["Like","👍"],["Cry","😭"],["Naughty","😜"],["Sweat","😓"],["LOL","😂"],["Cool","😎"],["Angry","😡"]].map(([label, emoji, direction]) => (
           <TouchableOpacity key={label} onPress={() => sendRoomReaction({ label, emoji, direction })} style={{ width: '19%', minHeight: 62, alignItems: 'center', justifyContent: 'center', marginBottom: 7, backgroundColor: C.card, borderRadius: 12, borderWidth: 1, borderColor: C.line }}>
-            <Text style={{ fontSize: 25, transform: direction === 'left' ? [{ scaleX: -1 }] : [] }}>{emoji}</Text>
+            <LottieView source={MIC_REACTION_LOTTIES[label]} autoPlay loop style={{ width: 42, height: 42, transform: direction === 'left' ? [{ scaleX: -1 }] : [] }} resizeMode="contain" />
             <Text numberOfLines={1} style={{ color: C.muted, fontSize: 8, marginTop: 3 }}>{label}</Text>
           </TouchableOpacity>
         ))}
@@ -4597,46 +4780,63 @@ function renderRoomInterior() {
   </Pressable>
 </Modal>
 
-{/* ROOM CHAT COMPOSER — Android Back closes this panel */}
+{/* ROOM CHAT SPACE — appears with the Android keyboard; no title or overflow menu */}
 <Modal
   visible={showRoomChatComposer}
   transparent
   animationType="fade"
+  statusBarTranslucent
   onRequestClose={() => {
-    setShowRoomChatActionMenu(false);
+    Keyboard.dismiss();
     setShowRoomChatComposer(false);
+    setShowRoomChatActionMenu(false);
   }}
 >
-  <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.28)', padding: 14 }}>
-    <View style={{ backgroundColor: C.panel, borderColor: C.line, borderWidth: 1, borderRadius: 18, padding: 14, marginBottom: Platform.OS === 'android' ? 12 : 8 }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <Text style={{ color: C.text, fontWeight: '900', fontSize: 14 }}>Room Chat</Text>
-        <TouchableOpacity onPress={() => setShowRoomChatActionMenu(true)} accessibilityRole="button" accessibilityLabel="Chat options" style={{ width: 34, height: 30, alignItems: 'center', justifyContent: 'center', borderRadius: 9, backgroundColor: C.card }}>
-          <Text style={{ color: C.text, fontSize: 21, fontWeight: '900', lineHeight: 23 }}>⋮</Text>
-        </TouchableOpacity>
-      </View>
+  <KeyboardAvoidingView
+    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.16)' }}
+  >
+    <View style={{ backgroundColor: C.panel, borderTopLeftRadius: 20, borderTopRightRadius: 20, borderColor: C.line, borderWidth: 1, paddingHorizontal: 12, paddingTop: 10, paddingBottom: Platform.OS === 'android' ? 8 : 12, maxHeight: '58%' }}>
+      {roomChatMessages.length > 0 && (
+        <ScrollView
+          ref={roomChatScrollRef}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          onContentSizeChange={() => roomChatScrollRef.current?.scrollToEnd({ animated: true })}
+          style={{ maxHeight: 230, marginBottom: 9 }}
+          contentContainerStyle={{ paddingHorizontal: 2 }}
+        >
+          {roomChatMessages.slice(-30).map(message => (
+            <View key={message.id} style={{ backgroundColor: C.card, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 7, marginBottom: 6, alignSelf: 'flex-start', maxWidth: '94%' }}>
+              <Text style={{ color: '#8E9AFF', fontSize: 10, fontWeight: 'bold', marginBottom: 2 }}>{message.sender?.display_name || message.sender || 'TALKZY User'}</Text>
+              {message.image_url ? (
+                <Image source={{ uri: message.image_url }} style={{ width: 150, height: 100, borderRadius: 8, marginTop: 2 }} resizeMode="cover" />
+              ) : (
+                <Text style={{ color: C.text, fontSize: 13 }}>{message.text || message.message_text}</Text>
+              )}
+              <Text style={{ color: C.muted, fontSize: 9, textAlign: 'right', marginTop: 3 }}>{message.time}</Text>
+            </View>
+          ))}
+        </ScrollView>
+      )}
       <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: 22, paddingLeft: 12, paddingRight: 5 }}>
-        <TextInput value={roomChatText} onChangeText={setRoomChatText} placeholder={isRoomTourist && !touristsSendText ? 'Tourist chat disabled' : 'Write a message...'} placeholderTextColor={C.muted} onSubmitEditing={sendRoomChatMessage} editable={!(isRoomTourist && !touristsSendText)} returnKeyType="send" blurOnSubmit={false} style={{ color: C.text, fontSize: 13, padding: 0, flex: 1, height: 44 }} />
+        <TextInput
+          autoFocus
+          value={roomChatText}
+          onChangeText={setRoomChatText}
+          placeholder={isRoomTourist && !touristsSendText ? 'Tourist chat disabled' : 'Write a message...'}
+          placeholderTextColor={C.muted}
+          onSubmitEditing={sendRoomChatMessage}
+          editable={!(isRoomTourist && !touristsSendText)}
+          returnKeyType="send"
+          blurOnSubmit={false}
+          style={{ color: C.text, fontSize: 13, padding: 0, flex: 1, height: 44 }}
+        />
         <TouchableOpacity onPress={sendRoomImage} disabled={isRoomTourist && !touristsSendPic} style={{ width: 34, height: 38, alignItems: 'center', justifyContent: 'center', opacity: isRoomTourist && !touristsSendPic ? 0.35 : 1 }}><Text style={{ fontSize: 18 }}>▣</Text></TouchableOpacity>
         <TouchableOpacity onPress={sendRoomChatMessage} disabled={isRoomTourist && !touristsSendText} style={{ paddingHorizontal: 11, paddingVertical: 9, opacity: isRoomTourist && !touristsSendText ? 0.4 : 1 }}><Text style={{ color: C.accent, fontSize: 18, fontWeight: '900' }}>➤</Text></TouchableOpacity>
       </View>
     </View>
   </KeyboardAvoidingView>
-</Modal>
-
-{/* ROOM CHAT ACTION MENU — used by top-right icon or Android Back while chat is closed */}
-<Modal visible={showRoomChatActionMenu} transparent animationType="fade" onRequestClose={() => setShowRoomChatActionMenu(false)}>
-  <Pressable onPress={() => setShowRoomChatActionMenu(false)} style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.20)', padding: 20 }}>
-    <Pressable onPress={() => {}} style={{ width: '78%', maxWidth: 300, backgroundColor: C.panel, borderColor: C.line, borderWidth: 1, borderRadius: 18, padding: 16, elevation: 14 }}>
-      <Text style={{ color: C.text, fontSize: 15, fontWeight: '900', textAlign: 'center', marginBottom: 14 }}>Room options</Text>
-      <TouchableOpacity onPress={() => { setShowRoomChatActionMenu(false); setShowRoomChatComposer(false); setIsRoomChatMinimized(true); }} style={{ backgroundColor: C.card, borderRadius: 12, paddingVertical: 13, alignItems: 'center', marginBottom: 9 }}>
-        <Text style={{ color: C.text, fontWeight: '800', fontSize: 14 }}>Minimise</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => { setShowRoomChatActionMenu(false); setShowRoomChatComposer(false); setIsRoomChatMinimized(false); setRoomChatText(''); }} style={{ backgroundColor: 'rgba(220,70,80,0.14)', borderRadius: 12, paddingVertical: 13, alignItems: 'center' }}>
-        <Text style={{ color: '#F07880', fontWeight: '800', fontSize: 14 }}>Exit</Text>
-      </TouchableOpacity>
-    </Pressable>
-  </Pressable>
 </Modal>
 
 {isRoomChatMinimized && !showRoomChatComposer && (
@@ -4792,85 +4992,6 @@ function renderRoomInterior() {
     <Text style={{ fontSize: 19 }}>⊞</Text>
   </TouchableOpacity>
 
-  {/* ROCKET */}
-  <TouchableOpacity
-    onPress={() => {
-      setShowRocketPanel(value => !value);
-      setShowGreedyPanel(false);
-      setShowRoomGamePanel(false);
-      setShowRoomTools(false);
-      setShowRoomGiftPanel(false);
-    }}
-    style={{
-      width: 38,
-      height: 38,
-      borderRadius: 20,
-      backgroundColor: showRocketPanel ? C.primary : C.card,
-      alignItems: 'center',
-      justifyContent: 'center'
-    }}
-  >
-    <Text style={{ fontSize: 19 }}>🚀</Text>
-  </TouchableOpacity>
-
-  {/* GREEDY */}
-  <TouchableOpacity
-    onPress={() => {
-      setShowGreedyPanel(value => !value);
-      setShowRoomGamePanel(false);
-      setShowRoomTools(false);
-      setShowRoomGiftPanel(false);
-    }}
-    style={{
-      width: 38,
-      height: 38,
-      borderRadius: 20,
-      backgroundColor: showGreedyPanel ? C.primary : C.card,
-      alignItems: 'center',
-      justifyContent: 'center'
-    }}
-  >
-    <Text style={{ fontSize: 19 }}>🎲</Text>
-  </TouchableOpacity>
-
-  {/* GAME */}
-  <TouchableOpacity
-    onPress={() => {
-      setShowRoomGamePanel(value => !value);
-      setShowGreedyPanel(false);
-      setShowRoomTools(false);
-      setShowRoomGiftPanel(false);
-    }}
-    style={{
-      width: 38,
-      height: 38,
-      borderRadius: 20,
-      backgroundColor: showRoomGamePanel ? C.primary : C.card,
-      alignItems: 'center',
-      justifyContent: 'center'
-    }}
-  >
-    <Text style={{ fontSize: 19 }}>🎮</Text>
-  </TouchableOpacity>
-
-  {/* GIFT */}
-  <TouchableOpacity
-    onPress={() => {
-      setShowRoomGiftPanel(!showRoomGiftPanel);
-      setShowRoomTools(false);
-      setShowGreedyPanel(false);
-    }}
-    style={{
-      width: 38,
-      height: 38,
-      borderRadius: 20,
-      backgroundColor: C.card,
-      alignItems: 'center',
-      justifyContent: 'center'
-    }}
-  >
-    <Text style={{ fontSize: 19 }}>🎁</Text>
-  </TouchableOpacity>
 </ScrollView>
         
             
@@ -4914,27 +5035,6 @@ function renderRoomInterior() {
               Minimize
             </Text>
           </TouchableOpacity>
-
-          {/* FOLLOW / UNFOLLOW ROOM - HIDE FOR ROOM OWNER */}
-          {selectedRoom?.owner_id !== session?.user?.id && (
-            <TouchableOpacity
-              style={{
-                padding: 14,
-                borderBottomWidth: 1,
-                borderBottomColor: C.line
-              }}
-              onPress={() => {
-                setShowRoomMenu(false);
-                toggleFollowRoom(selectedRoom);
-              }}
-            >
-              <Text style={{ color: C.text, fontSize: 15 }}>
-                {followedRooms.some(item => item.id === selectedRoom?.id)
-                  ? 'Unfollow Room'
-                  : 'Follow Room'}
-              </Text>
-            </TouchableOpacity>
-          )}
 
           {/* EXIT */}
           <TouchableOpacity
