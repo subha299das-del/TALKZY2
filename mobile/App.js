@@ -4434,10 +4434,30 @@ borderTopWidth: 1,
 >
   {/* CHAT BAR / OPEN EXPANDED COMPOSER */}
  <TouchableOpacity onPress={() => setShowRoomChatComposer(true)} activeOpacity={0.85}
-   style={{ flexDirection: 'row', alignItems: 'center', flex: 1, maxWidth: 190, height: 38, marginRight: 4, backgroundColor: C.card, borderRadius: 20, paddingHorizontal: 12, borderWidth: 1, borderColor: C.line }}>
+   accessibilityRole="button"
+   accessibilityLabel="Open room chat composer"
+   style={{ flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 78, maxWidth: 160, height: 38, marginRight: 4, backgroundColor: C.card, borderRadius: 20, paddingHorizontal: 12, borderWidth: 1, borderColor: C.line }}>
    <Text style={{ color: C.muted, fontSize: 12, flex: 1 }}>Message...</Text>
    <Text style={{ color: '#AFA0D8', fontSize: 17 }}>✎</Text>
  </TouchableOpacity>
+
+  {/* MIC REACTIONS: only visible while the current user occupies a mic.
+      Positioned directly between Chat and the mic mute control. */}
+  {isOnMic && (
+    <TouchableOpacity
+      onPress={() => setShowMicReactionPicker(true)}
+      accessibilityRole="button"
+      accessibilityLabel="Open microphone emoji reactions"
+      activeOpacity={0.82}
+      style={{
+        width: 36, height: 38, borderRadius: 19, marginHorizontal: 2,
+        backgroundColor: '#34204F', borderWidth: 1, borderColor: '#9B70E8',
+        alignItems: 'center', justifyContent: 'center'
+      }}
+    >
+      <Text style={{ fontSize: 20 }}>😊</Text>
+    </TouchableOpacity>
+  )}
 
   {/* MIC - MUTE / UNMUTE WHILE REMAINING ON SEAT */}
 {isOnMic && (
