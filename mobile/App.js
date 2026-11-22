@@ -503,6 +503,7 @@ const [roomSettingsReturnScreen, setRoomSettingsReturnScreen] = useState('main')
 const [roomSettingAdmins, setRoomSettingAdmins] = useState([]);
 const [roomSettingKicked, setRoomSettingKicked] = useState([]);
 const [roomSettingMembers, setRoomSettingMembers] = useState([]);
+const roomSettingsListRequestVersionRef = useRef(0);
 const [roomActivities, setRoomActivities] = useState([]);
 const [loadingRoomActivities, setLoadingRoomActivities] = useState(false);
 const [showRoomActivityComposer, setShowRoomActivityComposer] = useState(false);
@@ -11429,14 +11430,22 @@ if (screen === 'profile' || profileIncomplete) {
   }
 
   async function loadRoomSettingsSubpage(page) {
+    const requestVersion = ++roomSettingsListRequestVersionRef.current;
+    const roomId = selectedRoom?.id;
     setRoomSettingsSubpage(page);
+    if (!roomId) return;
     try {
       const suffix = page === 'admins' ? 'admins' : page === 'kicklist' ? 'kicklist' : 'members';
-      const result = await api(`/api/rooms/${selectedRoom.id}/${suffix}`);
+      const result = await api(`/api/rooms/${roomId}/${suffix}`);
+      if (requestVersion !== roomSettingsListRequestVersionRef.current) return;
       if (page === 'admins') setRoomSettingAdmins(result.admins || []);
       else if (page === 'kicklist') setRoomSettingKicked(result.kicked || []);
       else setRoomSettingMembers(result.members || []);
-    } catch (e) { Alert.alert('Room Management', e.message); }
+    } catch (e) {
+      if (requestVersion === roomSettingsListRequestVersionRef.current) {
+        Alert.alert('Room Management', e.message);
+      }
+    }
   }
 
   async function addRoomAdmin(userId) {
