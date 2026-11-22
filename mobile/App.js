@@ -4215,7 +4215,7 @@ onContentSizeChange={() =>
           <View style={{ backgroundColor: '#0B1020', borderTopWidth: 1, borderTopColor: '#34415F', paddingHorizontal: 12, paddingTop: 12, paddingBottom: Platform.OS === 'android' ? 14 : 22 }}>
             <View style={{ minHeight: 52, maxHeight: 140, flexDirection: 'row', alignItems: 'flex-end', backgroundColor: '#182139', borderRadius: 25, borderWidth: 1, borderColor: '#3A496C', paddingHorizontal: 8, paddingVertical: 7 }}>
               <TouchableOpacity onPress={sendRoomImage} disabled={isRoomTourist && !touristsSendPic} style={{ width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: '#263451', marginRight: 7, opacity: isRoomTourist && !touristsSendPic ? 0.4 : 1 }}><Text style={{ color: '#FFFFFF', fontSize: 25 }}>＋</Text></TouchableOpacity>
-              <TextInput value={roomChatText} onChangeText={setRoomChatText} placeholder={isRoomTourist && !touristsSendText ? 'Tourist chat disabled' : 'Message the room...'} placeholderTextColor={C.muted} multiline autoFocus editable={!(isRoomTourist && !touristsSendText)} style={{ color: C.text, fontSize: 15, paddingTop: 9, paddingBottom: 8, flex: 1, maxHeight: 116 }} />
+              <TextInput value={roomChatText} onChangeText={setRoomChatText} placeholder={isRoomTourist && !touristsSendText ? 'Tourist chat disabled' : 'Message the room...'} placeholderTextColor={C.muted} returnKeyType="send" blurOnSubmit onSubmitEditing={sendRoomChatMessage} autoFocus editable={!(isRoomTourist && !touristsSendText)} style={{ color: C.text, fontSize: 15, paddingTop: 9, paddingBottom: 8, flex: 1 }} />
             </View>
           </View>
         </KeyboardAvoidingView>
