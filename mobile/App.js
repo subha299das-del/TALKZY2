@@ -62,6 +62,13 @@ const C = {
 };
 
 
+const TALKZY_FREE_GAMES = [
+  { name: 'Greedy', emoji: '🎲' }, { name: 'Ludo', emoji: '🎯' },
+  { name: 'Carrom', emoji: '🔴' }, { name: 'Quiz', emoji: '🧠' },
+  { name: 'Lucky Wheel', emoji: '🎡' }, { name: 'Fruit Game', emoji: '🍉' },
+  { name: 'Cards', emoji: '🃏' }, { name: 'Dice', emoji: '🎲' }
+];
+
 const HOT_EVENT_CARDS = [
   { title: 'TALKZY SPOTLIGHT', subtitle: 'Discover exciting community events', emoji: '🔥', color: '#7C3AED' },
   { title: 'VOICE ROOM CHALLENGE', subtitle: 'Join the excitement and participate', emoji: '🎤', color: '#E04F5F' },
@@ -623,6 +630,11 @@ const [worldLuckyBagQueue, setWorldLuckyBagQueue] = useState([]);
  const [activeMicReactions, setActiveMicReactions] = useState({});
  const micReactionChannelRef = useRef(null);
  const [micGame, setMicGame] = useState(null);
+ const [showRoomGamePicker, setShowRoomGamePicker] = useState(false);
+ const [roomGamePanel, setRoomGamePanel] = useState(null);
+ const [pendingGameLaunch, setPendingGameLaunch] = useState(null);
+ const [showGameCreateRoomPrompt, setShowGameCreateRoomPrompt] = useState(false);
+ const [gameLaunchBusy, setGameLaunchBusy] = useState(false);
  const [micCount, setMicCount] = useState(8);
 const [micSeats, setMicSeats] = useState([]);
 const [micControls, setMicControls] = useState([]);
@@ -2431,6 +2443,81 @@ async function toggleFollowRoom(room) {
     } catch (error) { console.log('Room chat loading error:', error.message); }
   }
 
+  async function enterOwnRoomAndLaunchGame(room, game) {
+    if (!room?.id || !game || !session?.user?.id || gameLaunchBusy) return;
+    setGameLaunchBusy(true);
+    try {
+      const pendingLeave = roomLeaveCleanupRef.current[room.id];
+      if (pendingLeave) await pendingLeave;
+      try { await api(`/api/rooms/${room.id}/mic-seats`, { method: 'DELETE' }); } catch (e) { console.log('Game entry stale-seat cleanup:', e.message); }
+      setSelectedRoom(room); setIsRoomTourist(false); setIsRoomMinimized(false); setShowRoomMenu(false);
+      setShowRoomGamePicker(false); setMicSeats([]); setMicCount(8); setIsOnMic(false); setMyMicSeat(null); setIsMicMuted(false);
+      setRoomChatMessages([]);
+      setRoomEntrySystemMessages([{ id: 'entry-guidelines', text: 'Welcome to TALKZY! Please respect eachother and talk politely. Abusing third party advertising, fake official information and political sensitive topics are strictly prohibited. Please report if you find this situation.', system: true }, ...(room.description || room.announcement ? [{ id: 'entry-announcement', text: room.description || room.announcement, system: true }] : [])]);
+      const entrantName = profile?.display_name || displayName || 'TALKZY User';
+      const arrivalPayload = { roomId: room.id, userId: session.user.id, userName: entrantName, noticeId: `${session.user.id}-${Date.now()}` };
+      setRoomChatMessages([{ id: `arrival-self-${arrivalPayload.noticeId}`, text: `Welcome ${entrantName} to the room!`, sender: 'TALKZY SYSTEM', system: true, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
+      roomArrivalPendingRef.current = { roomId: room.id, payload: arrivalPayload };
+      setScreen('roomInterior');
+
+      const seatState = await api(`/api/rooms/${room.id}/mic-seats`);
+      const limit = Math.max(1, Number(seatState.micCount) || 8);
+      const occupied = new Set((seatState.seats || []).map(x => Number(x.seat_number)));
+      const closed = new Set((seatState.micControls || []).filter(x => x.seat_closed).map(x => Number(x.seat_number)));
+      let seated = null;
+      for (let number = 1; number <= limit; number++) {
+        if (occupied.has(number) || closed.has(number)) continue;
+        try {
+          const response = await api(`/api/rooms/${room.id}/mic-seats/${number}`, { method: 'POST' });
+          seated = response.seat || { seat_number: number, user_id: session.user.id, is_muted: false };
+          break;
+        } catch (e) {
+          if (/already occupied|seat is already occupied/i.test(e.message || '')) continue;
+          throw e;
+        }
+      }
+      if (!seated) {
+        await loadRoomMicSeats(room.id);
+        Alert.alert('No microphone available', 'All microphone seats are occupied or closed. You are in your room, but the game has not started.');
+        return;
+      }
+      const chosen = Number(seated.seat_number);
+      setMicCount(limit); setMicLayout(seatState.micLayout || 'eight'); setMicControls(seatState.micControls || []);
+      setMicSeats([...(seatState.seats || []).filter(x => x.user_id !== session.user.id), { ...seated, room_id: room.id, seat_number: chosen, user_id: session.user.id, display_name: profile?.display_name || displayName || 'You', avatar_url: profile?.avatar_url || null, is_muted: !!seated.is_muted }]);
+      setIsOnMic(true); setMyMicSeat(chosen); setIsMicMuted(!!seated.is_muted);
+      setRoomGamePanel({ ...game, roomId: room.id, openedAt: Date.now() });
+      loadRoomMessages(room.id);
+    } catch (error) {
+      Alert.alert('Could not open game', error.message || 'TALKZY could not enter your room and open this game.');
+    } finally { setGameLaunchBusy(false); }
+  }
+
+  async function handleGameSelection(game) {
+    if (!game) return;
+    setShowRoomGamePicker(false);
+    if (screen === 'roomInterior' && selectedRoom?.id) {
+      setRoomGamePanel({ ...game, roomId: selectedRoom.id, openedAt: Date.now() });
+      return;
+    }
+    setPendingGameLaunch(game);
+    let ownRoom = (myRooms || []).find(r => r?.owner_id === session?.user?.id && r?.status !== 'closed' && r?.status !== 'deleted');
+    if (!ownRoom) {
+      try {
+        const mine = await api('/api/rooms/mine');
+        const ownRooms = Array.isArray(mine.rooms) ? mine.rooms : [];
+        setMyRooms(ownRooms);
+        ownRoom = ownRooms.find(r => r?.owner_id === session?.user?.id && r?.status !== 'closed' && r?.status !== 'deleted');
+      } catch (error) {
+        setPendingGameLaunch(null);
+        Alert.alert('Could not load your room', error.message || 'Please try again.');
+        return;
+      }
+    }
+    if (!ownRoom) { setShowGameCreateRoomPrompt(true); return; }
+    await enterOwnRoomAndLaunchGame(ownRoom, game);
+    setPendingGameLaunch(null);
+  }
+
   // =========================================
   // ROOM: CREATE ROOM
   // =========================================
@@ -2523,6 +2610,24 @@ password: roomType === 'locked' ? roomPassword : null,
     setRoomTab('Mine');
     setMineTab('Recent');
     setScreen('main');
+
+    if (pendingGameLaunch) {
+      try {
+        const mine = await api('/api/rooms/mine');
+        const newRoom = (mine.rooms || []).find(r => r.owner_id === session?.user?.id && r.status !== 'closed' && r.status !== 'deleted');
+        if (!newRoom) throw new Error('Your room was created, but TALKZY could not find it. Open Mine and try again.');
+        setMyRooms(mine.rooms || []);
+        const game = pendingGameLaunch;
+        setShowGameCreateRoomPrompt(false);
+        await enterOwnRoomAndLaunchGame(newRoom, game);
+        setPendingGameLaunch(null);
+        return;
+      } catch (launchError) {
+        setPendingGameLaunch(null);
+        Alert.alert('Room created', launchError.message || 'Your room is ready. Open it from Mine to continue.');
+        return;
+      }
+    }
 
     Alert.alert(
       'Success',
@@ -4403,9 +4508,7 @@ onContentSizeChange={() =>
             <TouchableOpacity key={shortcut.key} activeOpacity={0.82} accessibilityRole="button" accessibilityLabel={shortcut.label}
               onPress={() => {
                 if (shortcut.key === 'game') {
-                  setIsRoomMinimized(true);
-                  setScreen('main');
-                  setActiveTab('Games');
+                  setShowRoomGamePicker(true);
                 } else {
                   Alert.alert(shortcut.label, shortcut.label + ' feature will be available here soon.');
                 }
@@ -6458,16 +6561,7 @@ function renderEvents() {
   // =========================================
 
   function renderGames() {
-    const games = [
-      { name: 'Greedy', emoji: '🎲' },
-      { name: 'Ludo', emoji: '🎯' },
-      { name: 'Carrom', emoji: '🔴' },
-      { name: 'Quiz', emoji: '🧠' },
-      { name: 'Lucky Wheel', emoji: '🎡' },
-      { name: 'Fruit Game', emoji: '🍉' },
-      { name: 'Cards', emoji: '🃏' },
-      { name: 'Dice', emoji: '🎲' }
-    ];
+    const games = TALKZY_FREE_GAMES;
 
     return (
       <>
@@ -6539,12 +6633,7 @@ function renderEvents() {
           {games.map(game => (
             <TouchableOpacity
               key={game.name}
-              onPress={() =>
-                Alert.alert(
-                  game.name,
-                  'This game will be available soon.'
-                )
-              }
+              onPress={() => handleGameSelection(game)}
               style={{
                 width: '48%',
                 marginRight: '2%',
@@ -6571,15 +6660,7 @@ function renderEvents() {
                 {game.name}
               </Text>
 
-              <Text
-                style={{
-                  color: C.gold,
-                  fontSize: 11,
-                  marginTop: 5
-                }}
-              >
-                Coming soon
-              </Text>
+              <Text style={{ color: C.teal, fontSize: 11, marginTop: 5 }}>Play in your room</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -11012,7 +11093,49 @@ if (screen === 'profile' || profileIncomplete) {
   </View>
 </Modal>
       
-          </SafeAreaView>
+      
+      <Modal visible={showRoomGamePicker} transparent animationType="fade" onRequestClose={() => setShowRoomGamePicker(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.76)', justifyContent: 'center', padding: 18 }}>
+          <View style={{ backgroundColor: '#11172B', borderRadius: 22, borderWidth: 1, borderColor: '#6B55A6', padding: 17, maxHeight: '78%' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <View><Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '900' }}>Choose a Game</Text><Text style={{ color: C.muted, fontSize: 11, marginTop: 3 }}>Select a game to play in this room</Text></View>
+              <TouchableOpacity onPress={() => setShowRoomGamePicker(false)}><Text style={{ color: C.muted, fontSize: 24 }}>×</Text></TouchableOpacity>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false}><View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+              {TALKZY_FREE_GAMES.map(game => <TouchableOpacity key={game.name} onPress={() => handleGameSelection(game)} style={{ width: '48%', backgroundColor: '#1B2540', borderWidth: 1, borderColor: '#354568', borderRadius: 15, paddingVertical: 16, marginBottom: 10, alignItems: 'center' }}><Text style={{ fontSize: 29 }}>{game.emoji}</Text><Text style={{ color: '#FFFFFF', fontWeight: '900', marginTop: 7 }}>{game.name}</Text></TouchableOpacity>)}
+            </View></ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={showGameCreateRoomPrompt} transparent animationType="fade" onRequestClose={() => { setShowGameCreateRoomPrompt(false); setPendingGameLaunch(null); }}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.78)', justifyContent: 'center', padding: 22 }}>
+          <View style={{ backgroundColor: '#151C32', borderRadius: 22, borderWidth: 1, borderColor: '#8B70D0', padding: 22 }}>
+            <Text style={{ color: '#FFFFFF', fontSize: 19, fontWeight: '900', textAlign: 'center' }}>Create Your Room</Text>
+            <Text style={{ color: C.muted, fontSize: 13, lineHeight: 20, textAlign: 'center', marginTop: 9 }}>You need your own room to play {pendingGameLaunch?.name || 'this game'}. Create your room and TALKZY will open the game there.</Text>
+            <TouchableOpacity onPress={() => { setShowGameCreateRoomPrompt(false); setScreen('createRoom'); }} style={{ backgroundColor: C.accent, borderRadius: 13, paddingVertical: 14, alignItems: 'center', marginTop: 18 }}><Text style={{ color: '#FFFFFF', fontWeight: '900' }}>Create Room</Text></TouchableOpacity>
+            <TouchableOpacity onPress={() => { setShowGameCreateRoomPrompt(false); setPendingGameLaunch(null); }} style={{ paddingVertical: 12, alignItems: 'center', marginTop: 4 }}><Text style={{ color: C.muted, fontWeight: '800' }}>Cancel</Text></TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={!!roomGamePanel && screen === 'roomInterior'} transparent animationType="fade" onRequestClose={() => setRoomGamePanel(null)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.82)', justifyContent: 'center', padding: 16 }}>
+          <View style={{ backgroundColor: '#10172C', borderRadius: 22, borderWidth: 1, borderColor: '#9A7AE8', padding: 20, minHeight: 260, justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}><Text style={{ fontSize: 30, marginRight: 10 }}>{roomGamePanel?.emoji}</Text><View><Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '900' }}>{roomGamePanel?.name}</Text><Text style={{ color: C.teal, fontSize: 10, fontWeight: '900', marginTop: 3 }}>ROOM GAME PANEL</Text></View></View>
+              <TouchableOpacity onPress={() => setRoomGamePanel(null)}><Text style={{ color: C.muted, fontSize: 25 }}>×</Text></TouchableOpacity>
+            </View>
+            <View style={{ backgroundColor: '#1B2540', borderRadius: 16, padding: 20, alignItems: 'center', marginVertical: 20 }}>
+              <Text style={{ fontSize: 42 }}>{roomGamePanel?.emoji}</Text><Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '900', marginTop: 10 }}>{roomGamePanel?.name}</Text>
+              <Text style={{ color: C.muted, fontSize: 12, textAlign: 'center', marginTop: 8, lineHeight: 18 }}>The selected game is open in this room. Its playable game screen will appear here when that game's mechanics are implemented.</Text>
+            </View>
+            <TouchableOpacity onPress={() => setRoomGamePanel(null)} style={{ backgroundColor: C.accent, borderRadius: 13, paddingVertical: 13, alignItems: 'center' }}><Text style={{ color: '#FFFFFF', fontWeight: '900' }}>Minimize Game</Text></TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+    </SafeAreaView>
   );
 
   function exitCurrentRoom() {
