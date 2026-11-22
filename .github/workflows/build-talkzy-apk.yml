@@ -57,17 +57,17 @@ jobs:
         working-directory: mobile
         run: npm ci --no-fund
 
-      - name: Apply non-breaking dependency security updates
+      - name: Reconcile lockfile with package overrides
         working-directory: mobile
-        run: npm audit fix --no-fund
+        run: npm install --no-fund
 
-      - name: Commit dependency security updates
+      - name: Commit lockfile updates
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add mobile/package.json mobile/package-lock.json
           if ! git diff --cached --quiet; then
-            git commit -m "Apply compatible dependency security fixes"
+            git commit -m "Update locked mobile dependencies"
             git push
           fi
 
