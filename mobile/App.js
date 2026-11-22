@@ -1510,6 +1510,55 @@ const [isRoomTourist, setIsRoomTourist] = useState(false);
   setJoinMode('member');
   setSelectedOfficialEvent(null);
   setOfficialEvents([]);
+  setLoadingOfficialEvents(false);
+  setEventDraft({
+    event_name: '',
+    poster_uri: null,
+    background_uri: null,
+    border_uri: null,
+    duration: '7_days',
+    start_at: '',
+    rules: '',
+    gifts: [
+      { name: '', coin_value: '', image_uri: null },
+      { name: '', coin_value: '', image_uri: null },
+      { name: '', coin_value: '', image_uri: null }
+    ],
+    top_rewards: [
+      { description: '' },
+      { description: '' },
+      { description: '' }
+    ],
+    milestones: []
+  });
+  setShowEventPreview(false);
+  setPopularPage('main');
+  setPopularReturnScreen('main');
+  setActiveTab('Room');
+  setRoomTab('Mine');
+  setMineTab('Recent');
+  setCountrySearch('');
+  setSelectedCountry(null);
+  setShowCountryRooms(false);
+  setShowCountryRegion(false);
+  setCountryRoomsFromRegion(false);
+  setShowMySubscription(false);
+  setShowCreateRoomActivity(false);
+  setSubscriptionTab('My Subscription');
+  setActivityTitle('');
+  setActivityDescription('');
+  setActivitySelectedRoom(null);
+  setActivityPoster(null);
+  setShowPosterOptions(false);
+  setShowPosterTemplates(false);
+  setShowPosterEditor(false);
+  setActivityPosterTemplate(null);
+  setActivityDate('');
+  setActivityStartTime('');
+  setActivityEndTime('');
+  setHotEventIndex(0);
+  setRooms([]);
+  setLoadingRooms(false);
   ++roomMessagesLoadVersionRef.current;
   ++roomPresenceLoadVersionRef.current;
   ++micSeatLoadVersionRef.current;
