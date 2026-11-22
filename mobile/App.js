@@ -716,7 +716,7 @@ async function loadRoomPresence(roomId, showLoader = false) {
       console.log('Room presence loading error:', error.message);
     }
   } finally {
-    if (showLoader && requestVersion === roomPresenceLoadVersionRef.current) setRoomPresenceLoading(false);
+    if (requestVersion === roomPresenceLoadVersionRef.current) setRoomPresenceLoading(false);
   }
 }
 
