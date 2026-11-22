@@ -625,6 +625,15 @@ const [worldLuckyBagQueue, setWorldLuckyBagQueue] = useState([]);
  const [showMicEmojiPicker, setShowMicEmojiPicker] = useState(false);
  const [showMicChatPopup, setShowMicChatPopup] = useState(false);
  const [showRoomChatComposer, setShowRoomChatComposer] = useState(false);
+ useEffect(() => {
+   const keyboardHidden = Keyboard.addListener('keyboardDidHide', () => {
+     if (showRoomChatComposer) {
+       setShowRoomChatComposer(false);
+       setShowRoomChatActionMenu(false);
+     }
+   });
+   return () => keyboardHidden.remove();
+ }, [showRoomChatComposer]);
  const [showRoomChatActionMenu, setShowRoomChatActionMenu] = useState(false);
  const [isRoomChatMinimized, setIsRoomChatMinimized] = useState(false);
  const [roomReactions, setRoomReactions] = useState([]);
