@@ -145,7 +145,7 @@ async function api(path, options = {}) {
 function seatDisplayName(value, compact = false) {
   const name = String(value || 'User').trim() || 'User';
   if (!compact) return name;
-  return name.split(/\\s+/).filter(Boolean).slice(0, 2).join(' ');
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).join(' ');
 }
 
 function VibratingGiftIcon() {
