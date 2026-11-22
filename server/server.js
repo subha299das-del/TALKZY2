@@ -1813,51 +1813,25 @@ app.patch('/api/rooms/:roomId/settings', userAuth, async (req, res) => {
         approval[column] = body[key];
       }
     }
-    if ((body.roomType !== undefined || body.password !== undefined) && nextType === 'locked' && passwordHash) {
-      const { error: passwordWriteError } = await supabase.from('talkzy_room_passwords')
-        .upsert({ room_id: room.id, password_hash: passwordHash }, { onConflict: 'room_id' });
-      if (passwordWriteError) throw passwordWriteError;
+    const writePassword = (body.roomType !== undefined || body.password !== undefined) && nextType === 'locked' && !!passwordHash;
+    const deletePassword = (body.roomType !== undefined || body.password !== undefined) && nextType === 'public';
+
+    // One database transaction updates room metadata, privacy/password, approval
+    // settings and any visitor mic-seat removals together.
+    const { data: result, error: updateError } = await supabase.rpc('talkzy_update_room_settings_atomic', {
+      p_room_id: room.id,
+      p_user_id: req.talkzyUser.id,
+      p_room_patch: patch,
+      p_approval: approval,
+      p_write_password: writePassword,
+      p_password_hash: writePassword ? passwordHash : null,
+      p_delete_password: deletePassword
+    });
+    if (updateError) throw updateError;
+    if (!result?.room || !result?.settings) {
+      throw new Error('Room settings transaction returned an incomplete result.');
     }
-    let updatedRoom = room;
-    if (Object.keys(patch).length) {
-      const { data, error } = await supabase.from('talkzy_rooms').update(patch)
-        .eq('id', room.id).eq('owner_id', req.talkzyUser.id)
-        .select('id, owner_id, room_name, description, room_dp_url, room_type')
-        .single();
-      if (error) throw error;
-      updatedRoom = data;
-    }
-    if ((body.roomType !== undefined || body.password !== undefined) && nextType === 'public') {
-      const { error: passwordDeleteError } = await supabase.from('talkzy_room_passwords')
-        .delete().eq('room_id', room.id);
-      if (passwordDeleteError) throw passwordDeleteError;
-    }
-    let settings = null;
-    if (Object.keys(approval).length) {
-      const { data, error } = await supabase.from('talkzy_room_settings')
-        .upsert({ room_id: room.id, ...approval, updated_at: new Date().toISOString() }, { onConflict: 'room_id' })
-        .select('tourists_on_mic, tourists_send_text, tourists_send_pic, updated_at').single();
-      if (error) throw error;
-      settings = data;
-      if (settings.tourists_on_mic === false) {
-        const { data: visitors, error: visitorError } = await supabase.from('talkzy_room_visitors')
-          .select('user_id').eq('room_id', room.id);
-        if (visitorError) throw visitorError;
-        const visitorIds = (visitors || []).map(visitor => visitor.user_id);
-        if (visitorIds.length) {
-          const { error: seatCleanupError } = await supabase.from('talkzy_room_mic_seats')
-            .delete().eq('room_id', room.id).in('user_id', visitorIds);
-          if (seatCleanupError) throw seatCleanupError;
-        }
-      }
-    } else {
-      const { data, error } = await supabase.from('talkzy_room_settings')
-        .select('tourists_on_mic, tourists_send_text, tourists_send_pic, updated_at')
-        .eq('room_id', room.id).maybeSingle();
-      if (error) throw error;
-      settings = data || { tourists_on_mic: true, tourists_send_text: true, tourists_send_pic: false };
-    }
-    res.set('Cache-Control', 'no-store').json({ room: updatedRoom, settings });
+    res.set('Cache-Control', 'no-store').json({ room: result.room, settings: result.settings });
   } catch (error) {
     console.error('Could not save room settings:', error.message);
     res.status(500).json({ error: 'Could not save room settings.' });
