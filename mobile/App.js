@@ -1393,6 +1393,8 @@ const [isRoomTourist, setIsRoomTourist] = useState(false);
   setWorldLuckyBagNotification(null);
   setWorldLuckyBagQueue([]);
   worldLuckyBagSeenRef.current.clear();
+  selectedRoomIdRef.current = null;
+  roomArrivalPendingRef.current = null;
   setSelectedRoom(null);
   setRoomChatMessages([]);
   setRoomEntrySystemMessages([]);
