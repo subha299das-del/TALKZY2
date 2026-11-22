@@ -1252,35 +1252,31 @@ app.patch('/api/rooms/:roomId/members/:userId/role', userAuth, async (req, res) 
   });
     }
 
-    if (!await canManageRoom(room, req.talkzyUser.id)) {
-      return res.status(403).json({ error: 'Only the owner or a room admin can manage speakers.' });
-    }
-
     const role = String(req.body?.role || '');
     if (!['listener', 'speaker'].includes(role)) {
       return res.status(400).json({ error: 'Role must be listener or speaker.' });
     }
-
-    if (req.params.userId === room.owner_id) {
-  return res.status(400).json({
-    error: 'The room owner role cannot be changed.'
-  });
-}
-    
-    const { data, error } = await supabase
-      .from('talkzy_room_members')
-      .update({ role })
-      .eq('room_id', room.id)
-      .eq('user_id', req.params.userId)
-      .select('room_id, user_id, role')
-      .maybeSingle();
-
-    if (error) throw error;
-    if (!data) {
-      return res.status(404).json({ error: 'Room member not found.' });
+    const targetUserId = String(req.params.userId || '').trim();
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(targetUserId)) {
+      return res.status(400).json({ error: 'A valid member user ID is required.' });
     }
 
-    res.json({ member: data });
+    const { data, error } = await supabase.rpc('talkzy_set_room_member_role_atomic', {
+      p_room_id: room.id,
+      p_actor_id: req.talkzyUser.id,
+      p_target_id: targetUserId,
+      p_role: role
+    });
+    if (error) {
+      if (error.code === '42501') return res.status(403).json({ error: 'Only the owner or a room admin can manage speakers.' });
+      if (error.code === '55000') return res.status(409).json({ error: 'Cannot manage members in a closed room.' });
+      if (error.code === 'P0002' && /ROOM_MEMBER_NOT_FOUND/.test(error.message || '')) return res.status(404).json({ error: 'Room member not found.' });
+      if (error.code === 'P0002') return res.status(404).json({ error: 'Room not found.' });
+      if (error.code === '22023') return res.status(400).json({ error: 'The room owner role cannot be changed.' });
+      throw error;
+    }
+
+    res.set('Cache-Control', 'no-store').json({ member: data?.member || null });
   } catch (error) {
     console.error('Could not change member role:', error.message);
     res.status(500).json({ error: 'Could not change member role.' });
