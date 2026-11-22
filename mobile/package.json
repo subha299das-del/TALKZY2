@@ -26,5 +26,8 @@
     "expo-media-library": "~18.2.1",
     "expo-file-system": "~19.0.24",
     "expo-blur": "~15.0.7"
+  },
+  "overrides": {
+    "postcss": "8.5.33"
   }
 }
