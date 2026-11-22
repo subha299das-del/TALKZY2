@@ -781,9 +781,13 @@ app.post('/api/rooms/:roomId/messages', userAuth, roomMessageLimiter, async (req
       signedImageUrl = signed?.signedUrl || null;
       if (!signedImageUrl) throw new Error('Could not create a secure room image link.');
     }
-    const { data, error } = await supabase.from('talkzy_room_messages').insert({
-      room_id: room.id, sender_id: userId, message_type: type, message_text: messageText, image_url: imagePath
-    }).select('id, sender_id, message_type, message_text, image_url, created_at').single();
+    const { data, error } = await supabase.rpc('talkzy_send_room_message_atomic', {
+      p_room_id: room.id,
+      p_user_id: userId,
+      p_message_type: type,
+      p_message_text: messageText,
+      p_image_path: imagePath
+    });
     if (error) throw error;
     pendingImagePath = null;
     res.status(201).json({ message: { ...data, image_url: signedImageUrl } });
@@ -797,6 +801,11 @@ app.post('/api/rooms/:roomId/messages', userAuth, roomMessageLimiter, async (req
       }
     }
     console.error('Could not send room message:', error.message);
+    if (error.message?.includes('NOT_IN_ROOM')) return res.status(403).json({ error: 'Enter the room first.' });
+    if (error.message?.includes('TOURIST_TEXT_DISABLED')) return res.status(403).json({ error: 'The room owner has disabled text messages for tourists.' });
+    if (error.message?.includes('TOURIST_IMAGE_DISABLED')) return res.status(403).json({ error: 'The room owner has disabled picture sharing for tourists.' });
+    if (error.message?.includes('ROOM_CLOSED')) return res.status(409).json({ error: 'This room is closed.' });
+    if (error.message?.includes('INVALID_MESSAGE') || error.message?.includes('INVALID_IMAGE')) return res.status(400).json({ error: 'Invalid room message.' });
     res.status(500).json({ error: 'Could not send room message.' });
   }
 });
