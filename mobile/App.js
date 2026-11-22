@@ -2372,13 +2372,13 @@ async function toggleFollowRoom(room) {
       const response = await fetch(roomChatImagePreview.uri);
       const bytes = await response.blob();
       const contentType = roomChatImagePreview.mimeType || 'image/jpeg';
-      const path = `${session.user.id}/rooms/${selectedRoom.id}/messages/${Date.now()}.jpg`;
-      const { error: uploadError } = await supabase.storage.from('talkzy-rooms').upload(path, bytes, { contentType, upsert: false });
+      const extension = contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : contentType.includes('heic') ? 'heic' : 'jpg';
+      const path = `${session.user.id}/rooms/${selectedRoom.id}/messages/${Date.now()}.${extension}`;
+      const { error: uploadError } = await supabase.storage.from('talkzy-room-chat').upload(path, bytes, { contentType, upsert: false });
       if (uploadError) throw uploadError;
-      const imageUrl = supabase.storage.from('talkzy-rooms').getPublicUrl(path).data.publicUrl;
-      const result = await api(`/api/rooms/${selectedRoom.id}/messages`, { method: 'POST', body: JSON.stringify({ type: 'image', imageUrl }) });
+      const result = await api(`/api/rooms/${selectedRoom.id}/messages`, { method: 'POST', body: JSON.stringify({ type: 'image', imagePath: path }) });
       const item = result.message;
-      setRoomChatMessages(prev => [...prev, { id: item.id, text: '📷 Photo', sender: profile?.display_name || displayName || 'You', senderId: session?.user?.id, image_url: imageUrl, message_type: 'image', time: new Date(item.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
+      setRoomChatMessages(prev => [...prev, { id: item.id, text: '📷 Photo', sender: profile?.display_name || displayName || 'You', senderId: session?.user?.id, image_url: item.image_url, message_type: 'image', time: new Date(item.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
       setRoomChatImagePreview(null);
       setShowRoomChatComposer(false);
       Keyboard.dismiss();
