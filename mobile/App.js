@@ -589,6 +589,8 @@ const [worldLuckyBagQueue, setWorldLuckyBagQueue] = useState([]);
  const [showMicEmojiPicker, setShowMicEmojiPicker] = useState(false);
  const [showMicChatPopup, setShowMicChatPopup] = useState(false);
  const [showRoomChatComposer, setShowRoomChatComposer] = useState(false);
+ const [showRoomChatActionMenu, setShowRoomChatActionMenu] = useState(false);
+ const [isRoomChatMinimized, setIsRoomChatMinimized] = useState(false);
  const [roomReactions, setRoomReactions] = useState([]);
  const roomReactionChannelRef = useRef(null);
  const [micGame, setMicGame] = useState(null);
@@ -4503,13 +4505,23 @@ function renderRoomInterior() {
   </Pressable>
 </Modal>
 
-{/* ROOM CHAT COMPOSER — opens only from Chat; overlays without resizing microphone seats */}
-<Modal visible={showRoomChatComposer} transparent animationType="fade" onRequestClose={() => setShowRoomChatComposer(false)}>
-  <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.55)', padding: 14 }}>
+{/* ROOM CHAT COMPOSER — action menu is shared by the top-right icon and Android Back */}
+<Modal
+  visible={showRoomChatComposer}
+  transparent
+  animationType="fade"
+  onRequestClose={() => {
+    if (showRoomChatActionMenu) setShowRoomChatActionMenu(false);
+    else setShowRoomChatActionMenu(true);
+  }}
+>
+  <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.28)', padding: 14 }}>
     <View style={{ backgroundColor: C.panel, borderColor: C.line, borderWidth: 1, borderRadius: 18, padding: 14, marginBottom: Platform.OS === 'android' ? 12 : 8 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <Text style={{ color: C.text, fontWeight: '900', fontSize: 14 }}>Room Chat</Text>
-        <TouchableOpacity onPress={() => setShowRoomChatComposer(false)} style={{ paddingHorizontal: 5, paddingVertical: 2 }}><Text style={{ color: C.muted, fontSize: 21 }}>×</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => setShowRoomChatActionMenu(true)} accessibilityRole="button" accessibilityLabel="Chat options" style={{ width: 34, height: 30, alignItems: 'center', justifyContent: 'center', borderRadius: 9, backgroundColor: C.card }}>
+          <Text style={{ color: C.text, fontSize: 21, fontWeight: '900', lineHeight: 23 }}>⋮</Text>
+        </TouchableOpacity>
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: 22, paddingLeft: 12, paddingRight: 5 }}>
         <TextInput value={roomChatText} onChangeText={setRoomChatText} placeholder={isRoomTourist && !touristsSendText ? 'Tourist chat disabled' : 'Write a message...'} placeholderTextColor={C.muted} onSubmitEditing={sendRoomChatMessage} editable={!(isRoomTourist && !touristsSendText)} returnKeyType="send" blurOnSubmit={false} style={{ color: C.text, fontSize: 13, padding: 0, flex: 1, height: 44 }} />
@@ -4517,10 +4529,29 @@ function renderRoomInterior() {
         <TouchableOpacity onPress={sendRoomChatMessage} disabled={isRoomTourist && !touristsSendText} style={{ paddingHorizontal: 11, paddingVertical: 9, opacity: isRoomTourist && !touristsSendText ? 0.4 : 1 }}><Text style={{ color: C.accent, fontSize: 18, fontWeight: '900' }}>➤</Text></TouchableOpacity>
       </View>
     </View>
+    {showRoomChatActionMenu && (
+      <Pressable onPress={() => setShowRoomChatActionMenu(false)} style={{ position: 'absolute', left: -14, right: -14, top: -1000, bottom: -1000, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.18)' }}>
+        <Pressable onPress={() => {}} style={{ width: '78%', maxWidth: 300, backgroundColor: C.panel, borderColor: C.line, borderWidth: 1, borderRadius: 18, padding: 16, elevation: 14 }}>
+          <Text style={{ color: C.text, fontSize: 15, fontWeight: '900', textAlign: 'center', marginBottom: 14 }}>Room Chat</Text>
+          <TouchableOpacity onPress={() => { setShowRoomChatActionMenu(false); setShowRoomChatComposer(false); setIsRoomChatMinimized(true); }} style={{ backgroundColor: C.card, borderRadius: 12, paddingVertical: 13, alignItems: 'center', marginBottom: 9 }}>
+            <Text style={{ color: C.text, fontWeight: '800', fontSize: 14 }}>Minimise</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => { setShowRoomChatActionMenu(false); setShowRoomChatComposer(false); setIsRoomChatMinimized(false); setRoomChatText(''); }} style={{ backgroundColor: 'rgba(220,70,80,0.14)', borderRadius: 12, paddingVertical: 13, alignItems: 'center' }}>
+            <Text style={{ color: '#F07880', fontWeight: '800', fontSize: 14 }}>Exit</Text>
+          </TouchableOpacity>
+        </Pressable>
+      </Pressable>
+    )}
   </KeyboardAvoidingView>
 </Modal>
 
-     {/* ROOM BOTTOM CONTROLS */}
+{isRoomChatMinimized && !showRoomChatComposer && (
+  <TouchableOpacity onPress={() => { setIsRoomChatMinimized(false); setShowRoomChatComposer(true); }} accessibilityRole="button" accessibilityLabel="Restore minimised room chat" style={{ position: 'absolute', right: 16, bottom: Platform.OS === 'android' ? 92 : 64, zIndex: 30, backgroundColor: C.panel, borderColor: C.line, borderWidth: 1, borderRadius: 22, paddingHorizontal: 15, paddingVertical: 11, elevation: 8 }}>
+    <Text style={{ color: C.text, fontSize: 13, fontWeight: '800' }}>💬 Chat</Text>
+  </TouchableOpacity>
+)}
+
+{/* ROOM BOTTOM CONTROLS */}
 <View
   style={{
     flexDirection: 'row',
@@ -4534,7 +4565,7 @@ borderTopWidth: 1,
   }}
 >
   {/* CHAT — composer stays hidden until this control is tapped */}
-<TouchableOpacity onPress={() => setShowRoomChatComposer(true)} style={{ width: 42, height: 38, alignItems: 'center', justifyContent: 'center', marginRight: 5 }} accessibilityRole="button" accessibilityLabel="Open room chat">
+<TouchableOpacity onPress={() => { setIsRoomChatMinimized(false); setShowRoomChatActionMenu(false); setShowRoomChatComposer(true); }} style={{ width: 42, height: 38, alignItems: 'center', justifyContent: 'center', marginRight: 5 }} accessibilityRole="button" accessibilityLabel="Open room chat">
   <Text style={{ fontSize: 21 }}>💬</Text>
 </TouchableOpacity>
 
