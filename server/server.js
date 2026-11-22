@@ -1490,7 +1490,8 @@ app.delete('/api/rooms/:roomId/music/me', userAuth, async (req, res) => {
       .select('queue').eq('room_id', room.id).eq('user_id', req.talkzyUser.id).maybeSingle();
     if (readError) throw readError;
     const paths = (Array.isArray(previous?.queue) ? previous.queue : [])
-      .map(item => item?.object_path).filter(path => typeof path === 'string');
+      .map(item => item?.object_path)
+      .filter(path => typeof path === 'string' && path.startsWith(`${req.talkzyUser.id}/${room.id}/`) && !path.includes('..'));
     const { error } = await supabase.from('talkzy_room_music_state')
       .delete().eq('room_id', room.id).eq('user_id', req.talkzyUser.id);
     if (error) throw error;
