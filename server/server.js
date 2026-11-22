@@ -777,8 +777,12 @@ app.post('/api/rooms/:roomId/messages', userAuth, roomMessageLimiter, async (req
     res.status(201).json({ message: { ...data, image_url: signedImageUrl } });
   } catch (error) {
     if (pendingImagePath && pendingImagePath.startsWith(req.talkzyUser.id + '/rooms/' + req.params.roomId + '/messages/') && !pendingImagePath.includes('..')) {
-      const { error: cleanupError } = await supabase.storage.from('talkzy-room-chat').remove([pendingImagePath]);
-      if (cleanupError) console.error('Could not clean up an unsent room image:', cleanupError.message);
+      try {
+        const { error: cleanupError } = await supabase.storage.from('talkzy-room-chat').remove([pendingImagePath]);
+        if (cleanupError) console.error('Could not clean up an unsent room image:', cleanupError.message);
+      } catch (cleanupError) {
+        console.error('Could not clean up an unsent room image:', cleanupError.message);
+      }
     }
     console.error('Could not send room message:', error.message);
     res.status(500).json({ error: 'Could not send room message.' });
