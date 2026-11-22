@@ -4424,7 +4424,8 @@ onContentSizeChange={() =>
   style={{
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
+    columnGap: 3,
     paddingHorizontal: 6,
 paddingTop: 12,
 paddingBottom: Platform.OS === 'android' ? 40 : 12,
@@ -4436,7 +4437,7 @@ borderTopWidth: 1,
  <TouchableOpacity onPress={() => setShowRoomChatComposer(true)} activeOpacity={0.85}
    accessibilityRole="button"
    accessibilityLabel="Open room chat composer"
-   style={{ flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 78, maxWidth: 160, height: 38, marginRight: 4, backgroundColor: C.card, borderRadius: 20, paddingHorizontal: 12, borderWidth: 1, borderColor: C.line }}>
+   style={{ flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 70, maxWidth: 150, height: 36, marginRight: 4, backgroundColor: C.card, borderRadius: 20, paddingHorizontal: 12, borderWidth: 1, borderColor: C.line }}>
    <Text style={{ color: C.muted, fontSize: 12, flex: 1 }}>Message...</Text>
    <Text style={{ color: '#AFA0D8', fontSize: 17 }}>✎</Text>
  </TouchableOpacity>
@@ -4450,7 +4451,7 @@ borderTopWidth: 1,
       accessibilityLabel="Open microphone emoji reactions"
       activeOpacity={0.82}
       style={{
-        width: 36, height: 38, borderRadius: 19, marginHorizontal: 2,
+        width: 34, height: 34, borderRadius: 17, marginHorizontal: 1,
         backgroundColor: '#34204F', borderWidth: 1, borderColor: '#9B70E8',
         alignItems: 'center', justifyContent: 'center'
       }}
@@ -4509,8 +4510,8 @@ borderTopWidth: 1,
       }
     }}
     style={{
-      width: 38,
-      height: 38,
+      width: 34,
+      height: 34,
       borderRadius: 20,
       backgroundColor: isMicMuted ? '#555555' : '#D94B4B',
       alignItems: 'center',
@@ -4532,8 +4533,8 @@ borderTopWidth: 1,
   <TouchableOpacity
     onPress={() => setIsRoomSpeakerOn(!isRoomSpeakerOn)}
     style={{
-      width: 38,
-      height: 38,
+      width: 34,
+      height: 34,
       borderRadius: 20,
       backgroundColor: C.card,
       alignItems: 'center',
@@ -4549,8 +4550,8 @@ borderTopWidth: 1,
   <TouchableOpacity
     onPress={() => setShowRoomMessageMenu(true)}
     style={{
-      width: 38,
-      height: 38,
+      width: 34,
+      height: 34,
       borderRadius: 20,
       backgroundColor: C.card,
       alignItems: 'center',
@@ -4567,8 +4568,8 @@ borderTopWidth: 1,
       setShowRoomGiftPanel(false);
     }}
     style={{
-      width: 38,
-      height: 38,
+      width: 34,
+      height: 34,
       borderRadius: 20,
       backgroundColor: C.card,
       alignItems: 'center',
@@ -4585,8 +4586,8 @@ borderTopWidth: 1,
       setShowRoomTools(false);
     }}
     style={{
-      width: 38,
-      height: 38,
+      width: 34,
+      height: 34,
       borderRadius: 20,
       backgroundColor: C.card,
       alignItems: 'center',
