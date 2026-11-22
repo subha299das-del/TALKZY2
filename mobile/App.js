@@ -3042,7 +3042,7 @@ function renderRoomInterior() {
         <>
           <Image source={{ uri: roomThemePreviewUri }} resizeMode="cover" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', opacity: 0.72 }} />
           <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(5,8,18,0.24)' }} />
-          <TouchableOpacity onPress={() => setRoomThemePreviewUri(null)} style={{ position: 'absolute', right: 12, bottom: Platform.OS === 'android' ? 100 : 78, zIndex: 80, elevation: 30, paddingHorizontal: 16, paddingVertical: 11, borderRadius: 22, backgroundColor: '#5B45A8', borderWidth: 1, borderColor: '#D0C3FF' }}>
+          <TouchableOpacity onPress={() => { setRoomThemePreviewUri(null); setRoomThemeTab('Custom'); setShowRoomThemeMenu(true); }} style={{ position: 'absolute', right: 12, bottom: Platform.OS === 'android' ? 100 : 78, zIndex: 80, elevation: 30, paddingHorizontal: 16, paddingVertical: 11, borderRadius: 22, backgroundColor: '#5B45A8', borderWidth: 1, borderColor: '#D0C3FF' }}>
             <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 12 }}>End Preview</Text>
           </TouchableOpacity>
         </>
@@ -4175,7 +4175,7 @@ onContentSizeChange={() =>
                     <Image source={{ uri: item.uri }} style={{ width: 54, height: 78, borderRadius: 9 }} />
                     <View style={{ flex: 1, marginLeft: 12 }}>
                       <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>{item.name || 'My Theme'}</Text>
-                      <Text style={{ color: '#AAB7D0', fontSize: 11, marginTop: 4 }}>{item.days || 7} days · Created</Text>
+                      <Text style={{ color: '#AAB7D0', fontSize: 11, marginTop: 4 }}>{Math.max(0, Math.ceil(((item.expiresAt || (item.createdAt || Date.now()) + (item.days || 7) * 86400000) - Date.now()) / 86400000))} days remaining · Created on this device</Text>
                     </View>
                   </TouchableOpacity>
                 ))}
@@ -4207,6 +4207,16 @@ onContentSizeChange={() =>
                   setShowRoomThemeMenu(false);
                 }} style={{ marginTop: 17, paddingVertical: 14, borderRadius: 13, alignItems: 'center', backgroundColor: roomThemeDraftUri ? '#6048B6' : '#33394A', opacity: roomThemeDraftUri ? 1 : 0.5 }}>
                   <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>Preview in Room</Text>
+                </TouchableOpacity>
+                <TouchableOpacity disabled={!roomThemeDraftUri} onPress={() => {
+                  if (!roomThemeDraftUri) return;
+                  const createdAt = Date.now();
+                  const item = { id: String(createdAt), uri: roomThemeDraftUri, days: roomThemeDuration, createdAt, expiresAt: createdAt + roomThemeDuration * 86400000, name: 'Custom Room Theme' };
+                  setRoomThemeOwnItems(current => [...current.filter(theme => theme.uri !== item.uri), item]);
+                  setRoomThemeTab('Own');
+                  Alert.alert('Theme saved on this device', 'This theme is saved locally for now. Cloud sync, room-wide application and coin purchases will be connected after the theme storage and pricing setup.');
+                }} style={{ marginTop: 9, paddingVertical: 13, borderRadius: 13, alignItems: 'center', backgroundColor: '#17233A', borderWidth: 1, borderColor: '#52638A', opacity: roomThemeDraftUri ? 1 : 0.5 }}>
+                  <Text style={{ color: '#E8EDFF', fontWeight: '900' }}>Save to Own</Text>
                 </TouchableOpacity>
                 <Text style={{ color: '#8998B4', fontSize: 10, textAlign: 'center', marginTop: 9, lineHeight: 15 }}>Preview is private to you. It does not change the room for other members or charge coins.</Text>
               </View>
