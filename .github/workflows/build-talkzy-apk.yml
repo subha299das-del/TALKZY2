@@ -3,7 +3,7 @@ name: Build TALKZY Android APK
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, fix-fixed-mic-layout-14-17]
     paths:
       - 'mobile/**'
       - '.github/workflows/build-talkzy-apk.yml'
