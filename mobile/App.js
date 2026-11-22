@@ -819,12 +819,16 @@ useEffect(() => {
     return;
   }
   const channel = supabase.channel(`room-mic-reactions-${selectedRoom.id}`);
-  roomReactionChannelRef.current = channel;
   channel.on('broadcast', { event: 'mic_reaction' }, ({ payload }) => {
     if (payload?.roomId === selectedRoom.id) displayRoomReaction(payload);
-  }).subscribe();
+  }).subscribe(status => {
+    if (status === 'SUBSCRIBED') roomReactionChannelRef.current = channel;
+    if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+      if (roomReactionChannelRef.current === channel) roomReactionChannelRef.current = null;
+    }
+  });
   return () => {
-    roomReactionChannelRef.current = null;
+    if (roomReactionChannelRef.current === channel) roomReactionChannelRef.current = null;
     setRoomReactions([]);
     supabase.removeChannel(channel);
   };
