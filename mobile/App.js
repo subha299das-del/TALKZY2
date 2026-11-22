@@ -657,10 +657,7 @@ const worldLuckyBagSeenRef = useRef(new Set());
  const [showMicCountPicker, setShowMicCountPicker] = useState(false);
  const [micLayout, setMicLayout] = useState('eight');
 const micSeatsScrollRef = useRef(null);
-useEffect(() => {
-  // Never carry a previous small-layout scroll offset into the fixed 14/17-seat layout.
-  micSeatsScrollRef.current?.scrollTo({ y: 0, animated: false });
-}, [micCount, micLayout, youtubeScreenVisible]);
+
  const MIC_LAYOUTS = {
  seven:{count:7,label:'7 Mics',rows:[[1,2],[3,4,5,6,7]]}, eight:{count:8,label:'8 Mics',rows:[[1,2,3,4],[5,6,7,8]]},
  ten_couple:{count:10,label:'10 Mics · Couple',rows:[[1,2],[3,4,5,6],[7,8,9,10]]}, ten_standard:{count:10,label:'10 Mics · Standard',rows:[[1,2,3,4,5],[6,7,8,9,10]]},
@@ -1209,6 +1206,10 @@ useEffect(() => {
   }
 }, [canManageYoutube]);
 const youtubeScreenVisible = Boolean(youtubeState.video_id || showYoutubePanel);
+useEffect(() => {
+  // Never carry a previous small-layout scroll offset into the fixed 14/17-seat layout.
+  micSeatsScrollRef.current?.scrollTo({ y: 0, animated: false });
+}, [micCount, micLayout, youtubeScreenVisible]);
 const [youtubeLoading, setYoutubeLoading] = useState(false);
 const [youtubeSaving, setYoutubeSaving] = useState(false);
 const [youtubeVolume, setYoutubeVolume] = useState(70);
