@@ -2,7 +2,7 @@ name: TALKZY Backend and Migration Audit
 
 on:
   push:
-    branches: [main]
+    branches: [main, fix-fixed-mic-layout-14-17]
     paths:
       - 'server/**'
       - 'supabase/migrations/**'
