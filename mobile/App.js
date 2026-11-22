@@ -1530,7 +1530,7 @@ const {
     setSession(newSession);
 
     if (newSession) {
-      if (previousUserId && previousUserId !== nextUserId) {
+      if (previousUserId !== nextUserId) {
         resetAccountScopedState();
       }
       Promise.resolve().then(() => {
