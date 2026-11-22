@@ -534,19 +534,14 @@ app.post('/api/rooms', userAuth, roomCreateLimiter, async (req, res) => {
       ? await makePasswordHash(password)
       : null;
 
-    const { data, error } = await supabase
-      .from('talkzy_rooms')
-      .insert({
-        owner_id: req.talkzyUser.id,
-        room_name: roomName,
-        description,
-        room_type: roomType,
-        room_dp_url: roomDpUrl || null
-      })
-      .select(
-        'id, room_name, description, room_type, room_dp_url, status, created_at, room_talkzy_id, country_name'
-      )
-      .single();
+    const { data, error } = await supabase.rpc('talkzy_create_room_atomic', {
+      p_owner_id: req.talkzyUser.id,
+      p_room_name: roomName,
+      p_description: description,
+      p_room_type: roomType,
+      p_room_dp_url: roomDpUrl || null,
+      p_password_hash: passwordHash
+    });
 
     if (error) {
       if (error.code === '23505') {
@@ -554,19 +549,27 @@ app.post('/api/rooms', userAuth, roomCreateLimiter, async (req, res) => {
           error: 'You have already created a room. Each user can create only one room ever.'
         });
       }
-
+      if (error.code === '22023') {
+        return res.status(400).json({ error: 'Invalid room details.' });
+      }
       throw error;
     }
-    if (passwordHash) {
-      const { error: passwordError } = await supabase.from('talkzy_room_passwords')
-        .insert({ room_id: data.id, password_hash: passwordHash });
-      if (passwordError) {
-        await supabase.from('talkzy_rooms').delete().eq('id', data.id);
-        throw passwordError;
-      }
-    }
 
-    return res.status(201).json({ room: data });
+    const room = data?.room || null;
+    if (!room) throw new Error('Room creation returned no room data.');
+    return res.status(201).json({
+      room: {
+        id: room.id,
+        room_name: room.room_name,
+        description: room.description,
+        room_type: room.room_type,
+        room_dp_url: room.room_dp_url,
+        status: room.status,
+        created_at: room.created_at,
+        room_talkzy_id: room.room_talkzy_id,
+        country_name: room.country_name
+      }
+    });
   } catch (error) {
     console.error('Room creation failed:', error.message);
 
