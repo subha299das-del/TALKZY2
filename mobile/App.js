@@ -785,6 +785,7 @@ useEffect(() => {
       setShowRoomChatActionMenu(false);
       return true;
     }
+    if (showRoomShortcutsPage) { setShowRoomShortcutsPage(false); return true; }
     // Close any active room-level panel before opening the room action menu.
     if (showMicEmojiPicker) { setShowMicEmojiPicker(false); return true; }
     if (showMicControlPopup) { setShowMicControlPopup(false); return true; }
@@ -852,6 +853,7 @@ useEffect(() => {
 }, [
   selectedRoom?.id, screen, showRoomChatComposer, showRoomChatActionMenu,
   showYoutubePanel, eventFrontReturnScreen, roomSettingsReturnScreen, activeTab,
+  showRoomShortcutsPage,
   showMicEmojiPicker, showMicControlPopup, showRoomUsers, showMicCountPicker,
   showRoomMessageMenu, showRoomInfo, showRoomGiftPanel, showGreedyPanel,
   showRoomGamePanel, showRocketPanel, showRoomTools, showRoomThemeMenu,
@@ -1317,6 +1319,8 @@ const [showRoomGiftPanel, setShowRoomGiftPanel] = useState(false);
 const [showGreedyPanel, setShowGreedyPanel] = useState(false);
 const [showRoomGamePanel, setShowRoomGamePanel] = useState(false);
 const [showRocketPanel, setShowRocketPanel] = useState(false);
+const [showRoomShortcutsPage, setShowRoomShortcutsPage] = useState(false);
+const [roomShortcutCategory, setRoomShortcutCategory] = useState('Treasury');
 const [roomChatText, setRoomChatText] = useState('');
  const [roomChatMessages, setRoomChatMessages] = useState([]);
  const roomChatScrollRef = useRef(null);
@@ -4534,15 +4538,98 @@ function renderRoomInterior() {
         </TouchableOpacity>
       )}
 
-{/* RIGHT-SIDE ROOM SHORTCUTS: Game, Greedy, Rocket, Hot Event, Gift */}
-<View style={{ position: 'absolute', right: 10, bottom: Platform.OS === 'android' ? 92 : 70, zIndex: 55, elevation: 28, alignItems: 'center', gap: 9 }}>
-  <TouchableOpacity onPress={() => { setShowGreedyPanel(false); setShowRoomGamePanel(false); setShowRocketPanel(false); setShowRoomTools(false); setShowRoomGiftPanel(false); setActiveTab('Room'); setShowHotEventsPopup(true); if (!loadingOfficialEvents) loadOfficialEvents(); }} style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: '#7C3AED', borderWidth: 1, borderColor: '#C4A5FF', alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 20 }}>🔥</Text></TouchableOpacity>
-  <TouchableOpacity onPress={() => { setShowRoomGamePanel(value => !value); setShowGreedyPanel(false); setShowRocketPanel(false); setShowRoomTools(false); setShowRoomGiftPanel(false); }} style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: showRoomGamePanel ? C.primary : C.card, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 20 }}>🎮</Text></TouchableOpacity>
-  <TouchableOpacity onPress={() => { setShowGreedyPanel(value => !value); setShowRoomGamePanel(false); setShowRocketPanel(false); setShowRoomTools(false); setShowRoomGiftPanel(false); }} style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: showGreedyPanel ? C.primary : C.card, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 20 }}>🎲</Text></TouchableOpacity>
-  <TouchableOpacity onPress={() => { setShowRocketPanel(value => !value); setShowGreedyPanel(false); setShowRoomGamePanel(false); setShowRoomTools(false); setShowRoomGiftPanel(false); }} style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: showRocketPanel ? C.primary : C.card, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 20 }}>🚀</Text></TouchableOpacity>
-
+{/* ROOM SHORTCUT LAUNCHER + GIFT */}
+<View style={{ position: 'absolute', right: 10, bottom: Platform.OS === 'android' ? 92 : 70, zIndex: 55, elevation: 28, alignItems: 'center', gap: 10 }}>
+  <TouchableOpacity accessibilityRole="button" accessibilityLabel="Open room shortcuts" onPress={() => { setRoomShortcutCategory('Treasury'); setShowRoomShortcutsPage(true); }} style={{ width: 48, height: 48, borderRadius: 17, backgroundColor: '#24163D', borderWidth: 1.5, borderColor: '#D6B15E', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.38, shadowRadius: 7, shadowOffset: { width: 0, height: 3 }, elevation: 8 }}>
+    <Text style={{ fontSize: 23 }}>✧</Text><Text style={{ color: '#EBD18A', fontSize: 7, fontWeight: '900', letterSpacing: 0.8 }}>SHORTCUTS</Text>
+  </TouchableOpacity>
   <TouchableOpacity onPress={() => { setShowRoomGiftPanel(value => !value); setShowRoomTools(false); setShowGreedyPanel(false); setShowRoomGamePanel(false); setShowRocketPanel(false); }} style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: C.card, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 20 }}>🎁</Text></TouchableOpacity>
 </View>
+
+<Modal visible={showRoomShortcutsPage && screen === 'roomInterior' && Boolean(selectedRoom)} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setShowRoomShortcutsPage(false)}>
+  <SafeAreaView style={{ flex: 1, backgroundColor: '#090711' }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 12, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#3A2A50' }}>
+      <View>
+        <Text style={{ color: '#F6EEDB', fontSize: 21, fontWeight: '900', letterSpacing: 0.5 }}>ROOM SHORTCUTS</Text>
+        <Text style={{ color: '#A99BB9', fontSize: 10, marginTop: 3, letterSpacing: 1.1 }}>YOUR ROOM • QUICK ACCESS</Text>
+      </View>
+      <TouchableOpacity onPress={() => setShowRoomShortcutsPage(false)} accessibilityRole="button" accessibilityLabel="Close shortcuts" style={{ width: 38, height: 38, borderRadius: 13, backgroundColor: '#21182D', borderWidth: 1, borderColor: '#59456D', alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ color: '#F4E8D2', fontSize: 23, fontWeight: '700' }}>×</Text>
+      </TouchableOpacity>
+    </View>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 14, paddingVertical: 14, gap: 9, alignItems: 'center' }}>
+      {['Treasury', 'Games', 'Greedy', 'Hot Event'].map((category) => {
+        const active = roomShortcutCategory === category;
+        return <TouchableOpacity key={category} onPress={() => setRoomShortcutCategory(category)} style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 15, backgroundColor: active ? '#35204E' : '#17131F', borderWidth: 1, borderColor: active ? '#D7B35F' : '#393044' }}>
+          <Text style={{ color: active ? '#F4D98E' : '#B8AFC2', fontSize: 12, fontWeight: '900' }}>{category}</Text>
+        </TouchableOpacity>;
+      })}
+    </ScrollView>
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}>
+      {roomShortcutCategory === 'Treasury' && <>
+        <View style={{ borderRadius: 22, padding: 18, backgroundColor: '#211331', borderWidth: 1, borderColor: '#A77A39', marginBottom: 16 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ width: 76, height: 76, borderRadius: 20, backgroundColor: '#382052', borderWidth: 2, borderColor: '#E0BD70', alignItems: 'center', justifyContent: 'center', marginRight: 15, shadowColor: '#C49A45', shadowOpacity: 0.35, shadowRadius: 10, elevation: 8 }}>
+              <View style={{ position: 'absolute', top: 7, left: 7, right: 7, bottom: 7, borderRadius: 15, borderWidth: 1, borderColor: '#8D68B2' }} />
+              <Text style={{ fontSize: 39 }}>💎</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: '#E9CC83', fontSize: 17, fontWeight: '900' }}>ENCHANTED TREASURY</Text>
+              <Text style={{ color: '#C4B5D5', fontSize: 11, marginTop: 4 }}>Your TALKZY coins and rewards</Text>
+              <Text style={{ color: '#FFF0C3', fontSize: 18, fontWeight: '900', marginTop: 8 }}>🪙 {Number(walletBalance || 0).toLocaleString()} coins</Text>
+            </View>
+          </View>
+        </View>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+          <TouchableOpacity onPress={() => { setShowRoomShortcutsPage(false); setLuckyBagHistoryView(false); setShowLuckyBagPopup(true); }} style={{ width: '48%', minHeight: 126, flexGrow: 1, borderRadius: 18, padding: 14, backgroundColor: '#21172D', borderWidth: 1, borderColor: '#8D6A43', alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: 31 }}>🎁</Text><Text style={{ color: '#F0D28B', fontSize: 12, fontWeight: '900', marginTop: 8 }}>LUCKY BAGS</Text><Text style={{ color: '#AFA0BE', fontSize: 9, marginTop: 4 }}>Open room rewards</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => { setShowRoomShortcutsPage(false); setLuckyBagHistoryView(true); loadLuckyBagHistory(); setShowLuckyBagPopup(true); }} style={{ width: '48%', minHeight: 126, flexGrow: 1, borderRadius: 18, padding: 14, backgroundColor: '#21172D', borderWidth: 1, borderColor: '#8D6A43', alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: 31 }}>📜</Text><Text style={{ color: '#F0D28B', fontSize: 12, fontWeight: '900', marginTop: 8 }}>TREASURY HISTORY</Text><Text style={{ color: '#AFA0BE', fontSize: 9, marginTop: 4 }}>View reward records</Text>
+          </TouchableOpacity>
+        </View>
+      </>}
+      {roomShortcutCategory === 'Games' && <>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14 }}>
+          <View style={{ width: 76, height: 76, borderRadius: 21, backgroundColor: '#142D3B', borderWidth: 2, borderColor: '#65C8D5', alignItems: 'center', justifyContent: 'center', marginRight: 14, shadowColor: '#4AC4D6', shadowOpacity: 0.35, shadowRadius: 10, elevation: 8 }}>
+            <View style={{ position: 'absolute', top: 7, left: 7, right: 7, bottom: 7, borderRadius: 15, borderWidth: 1, borderColor: '#347D91' }} />
+            <Text style={{ fontSize: 39 }}>🎮</Text>
+          </View>
+          <View style={{ flex: 1 }}><Text style={{ color: '#8EE6F0', fontSize: 17, fontWeight: '900' }}>CRYSTAL CONTROLLER</Text><Text style={{ color: '#A9B8C4', fontSize: 11, marginTop: 4 }}>Choose a room game</Text></View>
+        </View>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 11 }}>
+          {['Ludo', 'Carrom', 'Quiz', 'Lucky Wheel', 'Fruit Game', 'Cards', 'Dice', 'More Games'].map((game, index) => <TouchableOpacity key={game} onPress={() => { setShowRoomShortcutsPage(false); setShowGreedyPanel(false); setShowRocketPanel(false); setShowRoomGamePanel(true); }} style={{ width: '47%', flexGrow: 1, minHeight: 94, borderRadius: 16, padding: 12, backgroundColor: '#111E2A', borderWidth: 1, borderColor: '#28596B', alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: 27 }}>{['🎯','🔴','🧠','🎡','🍉','🃏','🎲','🕹️'][index]}</Text><Text style={{ color: '#D5F4F6', fontSize: 11, fontWeight: '900', marginTop: 7 }}>{game.toUpperCase()}</Text>
+          </TouchableOpacity>)}
+        </View>
+      </>}
+      {roomShortcutCategory === 'Greedy' && <>
+        <View style={{ alignItems: 'center', paddingVertical: 18, marginBottom: 14, borderRadius: 22, backgroundColor: '#211331', borderWidth: 1, borderColor: '#8056B1' }}>
+          <View style={{ width: 92, height: 92, borderRadius: 24, backgroundColor: '#42235F', borderWidth: 2, borderColor: '#D3AE6A', alignItems: 'center', justifyContent: 'center', shadowColor: '#9B69D6', shadowOpacity: 0.4, shadowRadius: 12, elevation: 9 }}>
+            <Text style={{ fontSize: 47 }}>🎰</Text>
+          </View>
+          <Text style={{ color: '#E4C5FF', fontSize: 17, fontWeight: '900', marginTop: 12 }}>JEWEL ARCADE</Text>
+          <Text style={{ color: '#B5A3C8', fontSize: 10, marginTop: 4 }}>Greedy • Premium game corner</Text>
+        </View>
+        <TouchableOpacity onPress={() => { setShowRoomShortcutsPage(false); setShowRoomGamePanel(false); setShowRocketPanel(false); setShowGreedyPanel(true); }} style={{ minHeight: 112, borderRadius: 18, backgroundColor: '#21172D', borderWidth: 1, borderColor: '#8056B1', alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: 33 }}>💎</Text><Text style={{ color: '#E4C5FF', fontSize: 13, fontWeight: '900', marginTop: 8 }}>OPEN GREEDY</Text><Text style={{ color: '#B5A3C8', fontSize: 10, marginTop: 4 }}>Enter the Jewel Arcade</Text>
+        </TouchableOpacity>
+      </>}
+      {roomShortcutCategory === 'Hot Event' && <>
+        <View style={{ alignItems: 'center', paddingVertical: 18, marginBottom: 14, borderRadius: 22, backgroundColor: '#24152B', borderWidth: 1, borderColor: '#B78A48' }}>
+          <View style={{ width: 92, height: 92, borderRadius: 24, backgroundColor: '#492B36', borderWidth: 2, borderColor: '#E2C174', alignItems: 'center', justifyContent: 'center', shadowColor: '#D69B4D', shadowOpacity: 0.38, shadowRadius: 12, elevation: 9 }}>
+            <Text style={{ fontSize: 47 }}>🏆</Text>
+          </View>
+          <Text style={{ color: '#F1D38E', fontSize: 17, fontWeight: '900', marginTop: 12 }}>HOT EVENT</Text>
+          <Text style={{ color: '#C7AFAF', fontSize: 10, marginTop: 4 }}>Event icon artwork can be customized later</Text>
+        </View>
+        <TouchableOpacity onPress={() => { setShowRoomShortcutsPage(false); setActiveTab('Room'); setShowHotEventsPopup(true); if (!loadingOfficialEvents) loadOfficialEvents(); }} style={{ minHeight: 112, borderRadius: 18, backgroundColor: '#21172D', borderWidth: 1, borderColor: '#B78A48', alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: 33 }}>🔥</Text><Text style={{ color: '#F1D38E', fontSize: 13, fontWeight: '900', marginTop: 8 }}>VIEW HOT EVENTS</Text><Text style={{ color: '#C7AFAF', fontSize: 10, marginTop: 4 }}>Discover current room events</Text>
+        </TouchableOpacity>
+      </>}
+    </ScrollView>
+  </SafeAreaView>
+</Modal>
 
       <Modal
         visible={showHotEventsPopup}
