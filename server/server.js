@@ -639,14 +639,21 @@ app.post('/api/rooms/:roomId/visit/ping', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
-    if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
-    const { data, error } = await supabase.from('talkzy_room_visitors')
-      .update({ last_seen_at: new Date().toISOString() })
-      .eq('room_id', room.id).eq('user_id', req.talkzyUser.id)
-      .select('room_id').maybeSingle();
-    if (error) throw error;
-    if (!data) return res.status(403).json({ error: 'Your tourist visit has expired. Re-enter the room.' });
-    res.json({ active: true });
+    const { data, error } = await supabase.rpc('talkzy_room_visitor_ping_atomic', {
+      p_room_id: room.id,
+      p_user_id: req.talkzyUser.id
+    });
+    if (error) {
+      if (error.code === '42501' && /USER_KICKED/.test(error.message || '')) {
+        return res.status(403).json({ error: 'You are on this room’s Kick List.' });
+      }
+      if (error.code === '42501') return res.status(403).json({ error: 'Your tourist visit has expired. Re-enter the room.' });
+      if (error.code === '55000') return res.status(409).json({ error: 'This room is closed.' });
+      if (error.code === 'P0002') return res.status(404).json({ error: 'Room not found.' });
+      if (error.code === '22023') return res.status(400).json({ error: 'Invalid tourist visit.' });
+      throw error;
+    }
+    res.set('Cache-Control', 'no-store').json(data);
   } catch (error) {
     console.error('Could not refresh tourist visit:', error.message);
     res.status(500).json({ error: 'Could not refresh your room visit.' });
