@@ -3279,10 +3279,11 @@ function renderRoomInterior() {
 
            {/* MICROPHONE SEATS */}
 <ScrollView
-  style={{ maxHeight: micCount >= 16 ? 205 : micCount >= 14 ? 245 : 300, flexShrink: 0 }}
+  style={{ height: micCount >= 14 && !youtubeScreenVisible ? 390 : (youtubeScreenVisible ? 170 : 300), flexShrink: 0 }}
   contentContainerStyle={{ paddingHorizontal: 12, paddingTop: youtubeScreenVisible ? 4 : 8, paddingBottom: 2 }}
-  showsVerticalScrollIndicator={micCount >= 16}
+  showsVerticalScrollIndicator={false}
   nestedScrollEnabled
+  scrollEnabled={micCount < 14 || youtubeScreenVisible}
 >
   {(youtubeScreenVisible
     ? Array.from({ length: Math.ceil((MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().length / 8) }, (_, index) => (MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().slice(index * 8, (index + 1) * 8))
