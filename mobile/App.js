@@ -2849,6 +2849,11 @@ async function loadYoutubeState(showErrors = false) {
 }
 
 async function saveYoutubeState(nextState) {
+  const canControlYoutube = selectedRoom?.owner_id === session?.user?.id || roomPresence.some(person => person.user_id === session?.user?.id && person.presence_role === 'admin');
+  if (!canControlYoutube) {
+    Alert.alert('YouTube controls restricted', 'Only the original Room Owner and authorized Room Admins can change the shared video or playlist.');
+    return false;
+  }
   if (!selectedRoom?.id || youtubeSaving) return false;
   try {
     setYoutubeSaving(true);
@@ -2896,6 +2901,11 @@ async function getYoutubeMetadata(videoId) {
 }
 
 async function addYoutubeItem(item) {
+  const canBrowseYoutube = selectedRoom?.owner_id === session?.user?.id || roomPresence.some(person => person.user_id === session?.user?.id && person.presence_role === 'admin');
+  if (!canBrowseYoutube) {
+    Alert.alert('YouTube access restricted', 'Only the original Room Owner and authorized Room Admins can browse, add or manage shared YouTube content.');
+    return;
+  }
   const videoId = extractYouTubeVideoId(item?.video_id || item?.url);
   if (!videoId) return Alert.alert('Invalid YouTube link', 'Choose a valid YouTube video.');
   const count = (youtubeState.queue || []).length + (youtubeState.video_id ? 1 : 0);
@@ -2928,6 +2938,12 @@ async function closeYoutubeScreen() {
   const saved = await saveYoutubeState({ ...youtubeState, video_id: null, queue: preservedQueue, is_playing: false, current_time_seconds: 0 });
   if (!saved) return;
   setShowYoutubePanel(false);
+  setShowYoutubePicker(false);
+  setShowYoutubeQueuePopup(false);
+  setShowYoutubeVolumePopup(false);
+  setYoutubeSelectedVideo(null);
+  setYoutubePickedItem(null);
+  setYoutubeUrlInput('');
   youtubePanelDismissedRef.current = true;
 }
 
