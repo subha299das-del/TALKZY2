@@ -1466,9 +1466,29 @@ app.put('/api/rooms/:roomId/music/me', userAuth, async (req, res) => {
       volume,
       updated_at: new Date().toISOString()
     };
-    const { error } = await supabase.from('talkzy_room_music_state')
-      .upsert(payload, { onConflict: 'room_id,user_id' });
-    if (error) throw error;
+    const { error } = await supabase.rpc('talkzy_update_room_music_atomic', {
+      p_room_id: room.id,
+      p_user_id: req.talkzyUser.id,
+      p_state: {
+        queue: payload.queue,
+        current_index: payload.current_index,
+        is_playing: payload.is_playing,
+        current_time_seconds: payload.current_time_seconds,
+        repeat_mode: payload.repeat_mode,
+        shuffle: payload.shuffle,
+        volume: payload.volume
+      }
+    });
+    if (error) {
+      if (error.code === '42501' && /USER_KICKED/.test(error.message || '')) {
+        return res.status(403).json({ error: 'You are on this room’s Kick List.' });
+      }
+      if (error.code === '42501') return res.status(403).json({ error: 'Enter the room before sharing music.' });
+      if (error.code === '55000') return res.status(409).json({ error: 'This room is closed.' });
+      if (error.code === 'P0002') return res.status(404).json({ error: 'Room not found.' });
+      if (error.code === '22023') return res.status(400).json({ error: 'Invalid music state.' });
+      throw error;
+    }
     const streams = await buildRoomMusicState(room.id, req.talkzyUser.id);
     const state = streams.find(stream => stream.user_id === req.talkzyUser.id) || null;
     res.set('Cache-Control', 'no-store').json({ state });
