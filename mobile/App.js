@@ -584,6 +584,9 @@ const [worldLuckyBagQueue, setWorldLuckyBagQueue] = useState([]);
  const [isOnMic, setIsOnMic] = useState(false);
  const [myMicSeat, setMyMicSeat] = useState(null);
  const [isMicMuted, setIsMicMuted] = useState(false);
+ const [showMicReactionPicker, setShowMicReactionPicker] = useState(false);
+ const [activeMicReactions, setActiveMicReactions] = useState({});
+ const micReactionChannelRef = useRef(null);
  const [micGame, setMicGame] = useState(null);
  const [micCount, setMicCount] = useState(8);
 const [micSeats, setMicSeats] = useState([]);
@@ -791,6 +794,29 @@ useEffect(() => {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'talkzy_room_settings', filter: `room_id=eq.${roomId}` }, loadApproval)
     .subscribe();
   return () => { active = false; supabase.removeChannel(channel); };
+}, [selectedRoom?.id]);
+
+// LIVE MIC REACTION BROADCASTS
+useEffect(() => {
+  if (!selectedRoom?.id) {
+    micReactionChannelRef.current = null;
+    setActiveMicReactions({});
+    return;
+  }
+  const roomId = selectedRoom.id;
+  const channel = supabase.channel(`room-mic-reactions-${roomId}`, { config: { broadcast: { self: false } } })
+    .on('broadcast', { event: 'mic_reaction' }, ({ payload }) => {
+      if (!payload?.userId || !payload?.emoji) return;
+      displayMicReaction(payload);
+    })
+    .subscribe(status => {
+      if (status === 'SUBSCRIBED') micReactionChannelRef.current = channel;
+    });
+  return () => {
+    micReactionChannelRef.current = null;
+    supabase.removeChannel(channel);
+    setActiveMicReactions({});
+  };
 }, [selectedRoom?.id]);
 
 // ROOM CHAT REALTIME UPDATES
@@ -3560,6 +3586,23 @@ function renderRoomInterior() {
           )}
         </View>
 
+        {activeMicReactions[occupiedSeat?.user_id] && (
+          <Animated.View pointerEvents="none" style={{
+            position: 'absolute', top: youtubeScreenVisible ? -22 : -42, left: 0, right: 0,
+            zIndex: 50, elevation: 12, alignItems: 'center',
+            opacity: activeMicReactions[occupiedSeat.user_id].animation.interpolate({ inputRange: [0, 0.18, 1], outputRange: [0, 1, 0] }),
+            transform: [
+              { translateY: activeMicReactions[occupiedSeat.user_id].animation.interpolate({ inputRange: [0, 1], outputRange: [8, -22] }) },
+              { translateX: activeMicReactions[occupiedSeat.user_id].direction === 'left' ? -10 : activeMicReactions[occupiedSeat.user_id].direction === 'right' ? 10 : 0 },
+              { scale: activeMicReactions[occupiedSeat.user_id].animation.interpolate({ inputRange: [0, 0.18, 1], outputRange: [0.55, 1.18, 0.85] }) }
+            ]
+          }}>
+            <View style={{ minWidth: 42, height: 42, paddingHorizontal: 7, borderRadius: 22, backgroundColor: 'rgba(28,8,55,0.96)', borderWidth: 1.5, borderColor: '#B65CFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#B65CFF', shadowOpacity: 0.9, shadowRadius: 10, elevation: 8 }}>
+              <Text style={{ fontSize: 25 }}>{activeMicReactions[occupiedSeat.user_id].emoji}</Text>
+            </View>
+          </Animated.View>
+        )}
+
         <Text
           style={{
             color: C.text,
@@ -4070,6 +4113,45 @@ borderTopWidth: 1,
     borderTopColor: C.line
   }}
 >
+  function displayMicReaction(payload) {
+    const userId = payload?.userId;
+    const emoji = payload?.emoji;
+    if (!userId || !emoji) return;
+    const animation = new Animated.Value(0);
+    const reactionId = String(payload.reactionId || Date.now());
+    setActiveMicReactions(current => ({ ...current, [userId]: { emoji, direction: payload.direction || 'center', animation, reactionId } }));
+    Animated.sequence([
+      Animated.timing(animation, { toValue: 0.18, duration: 180, useNativeDriver: true }),
+      Animated.timing(animation, { toValue: 1, duration: 2820, useNativeDriver: true })
+    ]).start(() => {
+      setActiveMicReactions(current => current[userId]?.reactionId === reactionId
+        ? Object.fromEntries(Object.entries(current).filter(([key]) => key !== userId))
+        : current);
+    });
+  }
+
+  async function sendMicReaction(reaction) {
+    if (!isOnMic || !selectedRoom?.id || !session?.user?.id) return;
+    const payload = {
+      userId: session.user.id,
+      emoji: reaction.emoji,
+      direction: reaction.direction || 'center',
+      reactionId: String(Date.now())
+    };
+    displayMicReaction(payload);
+    try {
+      await micReactionChannelRef.current?.send({ type: 'broadcast', event: 'mic_reaction', payload });
+    } catch (error) {
+      console.log('Mic reaction broadcast:', error.message);
+    }
+    setShowMicReactionPicker(false);
+  }
+
+  {isOnMic && (
+    <TouchableOpacity onPress={() => setShowMicReactionPicker(true)} style={{ width: 38, height: 38, borderRadius: 20, backgroundColor: '#281044', borderWidth: 1, borderColor: '#A64DFF', alignItems: 'center', justifyContent: 'center', marginRight: 5 }}>
+      <Text style={{ fontSize: 21 }}>✨</Text>
+    </TouchableOpacity>
+  )}
   {/* CHAT BAR / CHAT ICON */}
 <View
   style={{
@@ -4265,6 +4347,39 @@ borderTopWidth: 1,
         
             
   
+
+      <Modal visible={showMicReactionPicker && isOnMic} transparent animationType="fade" onRequestClose={() => setShowMicReactionPicker(false)}>
+        <Pressable onPress={() => setShowMicReactionPicker(false)} style={{ flex: 1, backgroundColor: 'rgba(4,2,14,0.76)', justifyContent: 'flex-end', padding: 14 }}>
+          <Pressable onPress={() => {}} style={{ backgroundColor: '#100821', borderRadius: 24, borderWidth: 1.5, borderColor: '#8B35E8', padding: 15, paddingBottom: 22, shadowColor: '#A33CFF', shadowOpacity: 0.55, shadowRadius: 18, elevation: 18 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={{ fontSize: 24, marginRight: 8 }}>🎙️</Text>
+                <Text style={{ color: '#F4E8FF', fontSize: 20, fontWeight: '900' }}>TALKZY</Text>
+              </View>
+              <TouchableOpacity onPress={() => setShowMicReactionPicker(false)} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#281344', alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: '#FFFFFF', fontSize: 21 }}>×</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={{ color: '#D6B8FF', fontSize: 14, fontWeight: '800', textAlign: 'center', marginBottom: 14 }}>MIC REACTIONS · TAP TO SEND</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' }}>
+              {[
+                { label: 'Welcome', emoji: '👋' }, { label: 'Happy', emoji: '😄' }, { label: 'Thanks', emoji: '🙏' }, { label: 'Gosh', emoji: '😮' },
+                { label: 'Wronged', emoji: '🥺' }, { label: 'Nausea', emoji: '🤮' }, { label: 'Left Kiss', emoji: '💋', direction: 'left' }, { label: 'Right Kiss', emoji: '💋', direction: 'right' },
+                { label: 'Money Face', emoji: '🤑' }, { label: 'Party', emoji: '🥳' }, { label: 'Fear', emoji: '😱' }, { label: 'Silence', emoji: '🤫' },
+                { label: 'Like', emoji: '👍' }, { label: 'Cry', emoji: '😭' }, { label: 'Naughty', emoji: '😈' }, { label: 'Sweat', emoji: '😅' },
+                { label: 'LOL', emoji: '🤣' }, { label: 'Cool', emoji: '😎' }, { label: 'Angry', emoji: '😡' }
+              ].map((reaction, index) => (
+                <TouchableOpacity key={reaction.label} onPress={() => sendMicReaction(reaction)} activeOpacity={0.75} style={{ width: '20%', minHeight: 76, alignItems: 'center', justifyContent: 'center', marginBottom: 5, borderRadius: 13, backgroundColor: '#1C0D31', borderWidth: 1, borderColor: '#48206D', paddingVertical: 7, paddingHorizontal: 2 }}>
+                  <Text style={{ fontSize: 27 }}>{reaction.emoji}</Text>
+                  <Text numberOfLines={1} style={{ color: '#E8D8FF', fontSize: 9, fontWeight: '800', marginTop: 5 }}>{reaction.label}</Text>
+                  {(reaction.direction === 'left' || reaction.direction === 'right') && <Text style={{ color: '#C78AFF', fontSize: 8 }}>{reaction.direction === 'left' ? '←' : '→'}</Text>}
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={{ color: '#9E83BD', fontSize: 10, textAlign: 'center', marginTop: 5 }}>Your reaction floats above your mic for 3 seconds</Text>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* POWER MENU */}
       {showRoomMenu && (
