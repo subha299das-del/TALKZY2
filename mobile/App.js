@@ -436,6 +436,8 @@ export default function App() {
 
   const [screen, setScreen] = useState('login');
  const [selectedOfficialEvent, setSelectedOfficialEvent] = useState(null);
+ const [showHotEventsPopup, setShowHotEventsPopup] = useState(false);
+ const [eventFrontReturnScreen, setEventFrontReturnScreen] = useState('roomInterior');
  const [activeEventSection, setActiveEventSection] = useState('rank');
  const [eventInfoPopup, setEventInfoPopup] = useState(null);
  const [eventCountdown, setEventCountdown] = useState({
@@ -1934,6 +1936,14 @@ function openOfficialEvent(event) {
   setRoomTab('Events');
   setActiveTab('Room');
   setScreen('eventDetail');
+}
+
+function openHotEventFront(event) {
+  setSelectedOfficialEvent(event);
+  setActiveEventSection('rank');
+  setEventFrontReturnScreen('roomInterior');
+  setShowHotEventsPopup(false);
+  setScreen('eventFront');
 }
 
  
@@ -4188,7 +4198,8 @@ onContentSizeChange={() =>
     setShowRoomTools(false);
     setShowRoomGiftPanel(false);
     setActiveTab('Room');
-    setRoomTab('Popular');
+    setShowHotEventsPopup(true);
+    if (!loadingOfficialEvents) loadOfficialEvents();
   }}
   activeOpacity={0.86}
   style={{
@@ -4215,6 +4226,55 @@ onContentSizeChange={() =>
     TAP TO EXPLORE
   </Text>
 </TouchableOpacity>
+
+      <Modal
+        visible={showHotEventsPopup}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowHotEventsPopup(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(4,8,20,0.78)', justifyContent: 'center', paddingHorizontal: 14 }}>
+          <View style={{ backgroundColor: C.panel, borderRadius: 16, borderWidth: 1, borderColor: '#D6A84F', padding: 14 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <Text style={{ color: C.text, fontSize: 16, fontWeight: '900' }}>🔥 HOT EVENTS</Text>
+              <TouchableOpacity onPress={() => setShowHotEventsPopup(false)} style={{ paddingHorizontal: 8, paddingVertical: 3 }}>
+                <Text style={{ color: C.text, fontSize: 23, fontWeight: '800' }}>×</Text>
+              </TouchableOpacity>
+            </View>
+            {loadingOfficialEvents ? (
+              <View style={{ paddingVertical: 25, alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={C.accent} />
+                <Text style={{ color: C.muted, marginTop: 8, fontSize: 11 }}>Loading events...</Text>
+              </View>
+            ) : officialEvents.length === 0 ? (
+              <Text style={{ color: C.muted, textAlign: 'center', paddingVertical: 22, fontSize: 12 }}>No live events available right now.</Text>
+            ) : (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', alignItems: 'stretch' }}>
+                {officialEvents.map((event, index) => (
+                  <Pressable
+                    key={event.id || event.event_name || index}
+                    onPress={() => openHotEventFront(event)}
+                    style={{ width: 225, marginRight: 10, borderRadius: 12, overflow: 'hidden', backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line }}
+                  >
+                    {event.poster_url ? (
+                      <Image source={{ uri: event.poster_url }} style={{ width: '100%', height: 112 }} resizeMode="cover" />
+                    ) : (
+                      <View style={{ width: '100%', height: 112, alignItems: 'center', justifyContent: 'center', backgroundColor: '#21183D' }}>
+                        <Text style={{ color: '#D6A84F', fontSize: 26 }}>🏆</Text>
+                        <Text style={{ color: C.muted, fontSize: 10 }}>EVENT POSTER</Text>
+                      </View>
+                    )}
+                    <Text numberOfLines={1} style={{ color: C.text, fontSize: 12, fontWeight: '900', padding: 9 }}>
+                      {event.event_name || event.name || 'TALKZY EVENT'}
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            )}
+            <Text style={{ color: C.muted, fontSize: 10, marginTop: 10, textAlign: 'center' }}>Select an event to view its front page</Text>
+          </View>
+        </View>
+      </Modal>
 
      {/* ROOM BOTTOM CONTROLS */}
 <View
@@ -5003,94 +5063,46 @@ function renderPopular() {
       <SectionTitle>🔥 Hot Events</SectionTitle>
 
       
-      <ScrollView
-        ref={hotEventsScrollRef}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{ marginBottom: 18 }}
-        onMomentumScrollEnd={(event) => {
-          const index = Math.round(
-            event.nativeEvent.contentOffset.x / 270
-          );
-          setHotEventIndex(Math.min(index, 2));
-        }}
-      >
-        {[
-          {
-            title: 'TALKZY SPOTLIGHT',
-            subtitle: 'Discover exciting community events',
-            emoji: '🔥',
-            color: '#7C3AED'
-          },
-          {
-            title: 'VOICE ROOM CHALLENGE',
-            subtitle: 'Join the excitement and participate',
-            emoji: '🎤',
-            color: '#E04F5F'
-          },
-          {
-            title: 'GIFT FESTIVAL',
-            subtitle: 'Celebrate with the TALKZY community',
-            emoji: '🎁',
-            color: '#D69B24'
-          }
-        ].map((event, index) => (
-          <View
-            key={index}
-            style={{
-              width: 260,
-              height: 125,
-              backgroundColor: event.color,
-              borderRadius: 15,
-              padding: 16,
-              justifyContent: 'center',
-              marginRight: 10
-            }}
-          >
-            <Text style={{ fontSize: 25 }}>
-              {event.emoji}
-            </Text>
-            <Text style={{
-              color: 'white',
-              fontSize: 17,
-              fontWeight: '900',
-              marginTop: 5
-            }}>
-              {event.title}
-            </Text>
-            <Text style={{
-              color: 'white',
-              fontSize: 11,
-              marginTop: 5
-            }}>
-              {event.subtitle}
-            </Text>
-          </View>
-        ))}
-      </ScrollView>
+      {loadingOfficialEvents ? (
+        <View style={{ paddingVertical: 22, alignItems: 'center' }}>
+          <ActivityIndicator size="small" color={C.accent} />
+          <Text style={{ color: C.muted, fontSize: 11, marginTop: 8 }}>Loading live events...</Text>
+        </View>
+      ) : officialEvents.length === 0 ? (
+        <Text style={{ color: C.muted, fontSize: 12, marginBottom: 18 }}>No live events right now.</Text>
+      ) : (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 18 }}>
+          {officialEvents.map((event, index) => (
+            <Pressable
+              key={event.id || event.event_name || index}
+              onPress={() => openOfficialEvent(event)}
+              style={{
+                width: 260,
+                minHeight: 125,
+                backgroundColor: C.panel,
+                borderRadius: 15,
+                overflow: 'hidden',
+                marginRight: 10,
+                borderWidth: 1,
+                borderColor: '#D6A84F'
+              }}
+            >
+              {event.poster_url ? (
+                <Image source={{ uri: event.poster_url }} style={{ width: '100%', height: 92 }} resizeMode="cover" />
+              ) : (
+                <View style={{ height: 92, backgroundColor: '#21183D', alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ color: '#D6A84F', fontSize: 22 }}>🏆</Text>
+                </View>
+              )}
+              <Text numberOfLines={1} style={{ color: C.text, fontSize: 12, fontWeight: '900', paddingHorizontal: 10, paddingVertical: 8 }}>
+                {event.event_name || event.name || 'TALKZY EVENT'}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
 
-      <View style={{
-        flexDirection: 'row',
-        justifyContent: 'center',
-        marginBottom: 18
-      }}>
-        {[0, 1, 2].map(index => (
-          <View
-            key={index}
-            style={{
-              width: hotEventIndex === index ? 18 : 6,
-              height: 6,
-              borderRadius: 5,
-              backgroundColor:
-                hotEventIndex === index ? C.accent : C.line,
-              marginHorizontal: 3
-            }}
-          />
-        ))}
-      </View>
-
-              
-      <SectionTitle>🏆 TALKZY Rankings</SectionTitle>
+            <SectionTitle>🏆 TALKZY Rankings</SectionTitle>
 
       <ScrollView
         horizontal
@@ -9030,6 +9042,39 @@ function handlePreviewEvent() {
 
            
 // =========================================
+// EVENTS: HOT EVENT FRONT PAGE
+// =========================================
+
+function renderEventFront() {
+  const eventName = selectedOfficialEvent?.event_name || selectedOfficialEvent?.name || 'TALKZY Event';
+  return (
+    <View style={{ flex: 1, padding: 16 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+        <TouchableOpacity onPress={() => setScreen(eventFrontReturnScreen)} style={{ paddingRight: 14, paddingVertical: 5 }}>
+          <Text style={{ color: C.text, fontSize: 28 }}>‹</Text>
+        </TouchableOpacity>
+        <Text numberOfLines={1} style={{ color: C.text, fontSize: 18, fontWeight: '900', flex: 1 }}>Event Preview</Text>
+      </View>
+      <Pressable onPress={() => openOfficialEvent(selectedOfficialEvent)} style={{ borderRadius: 16, overflow: 'hidden', backgroundColor: C.panel, borderWidth: 1, borderColor: '#D6A84F' }}>
+        {selectedOfficialEvent?.poster_url ? (
+          <Image source={{ uri: selectedOfficialEvent.poster_url }} style={{ width: '100%', aspectRatio: 1.65 }} resizeMode="cover" />
+        ) : (
+          <View style={{ width: '100%', aspectRatio: 1.65, alignItems: 'center', justifyContent: 'center', backgroundColor: '#21183D' }}>
+            <Text style={{ color: '#D6A84F', fontSize: 34 }}>🏆</Text>
+            <Text style={{ color: C.muted, marginTop: 6 }}>EVENT POSTER</Text>
+          </View>
+        )}
+        <View style={{ padding: 16 }}>
+          <Text style={{ color: C.text, fontSize: 20, fontWeight: '900' }}>{eventName}</Text>
+          <Text style={{ color: C.muted, fontSize: 12, marginTop: 7 }}>Tap this event again to open its full event page.</Text>
+          <Text style={{ color: C.accent, fontSize: 13, fontWeight: '900', marginTop: 15 }}>OPEN FULL EVENT PAGE  ›</Text>
+        </View>
+      </Pressable>
+    </View>
+  );
+}
+
+// =========================================
 // EVENTS: EVENT DETAIL PAGE
 // =========================================
 
@@ -10082,6 +10127,9 @@ function renderMainContent() {
     if (screen === 'eventManagement') {
     return renderEventManagement();
     }
+   if (screen === 'eventFront') {
+    return renderEventFront();
+   }
    if (screen === 'eventDetail') {
     return renderEventDetail();
    }
