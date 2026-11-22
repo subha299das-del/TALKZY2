@@ -25,6 +25,7 @@ Dimensions,
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import 'react-native-url-polyfill/auto';
+import RoomShortcutIcon from './RoomShortcutIcon';
 import * as ImagePicker from 'expo-image-picker';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
@@ -4558,7 +4559,7 @@ function renderRoomInterior() {
       </TouchableOpacity>
     </View>
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 14, paddingVertical: 14, gap: 9, alignItems: 'center' }}>
-      {['Treasury', 'Games', 'Greedy', 'Hot Event'].map((category) => {
+      {['Quick Access', 'Treasury', 'Games', 'Greedy', 'Hot Event'].map((category) => {
         const active = roomShortcutCategory === category;
         return <TouchableOpacity key={category} onPress={() => setRoomShortcutCategory(category)} style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 15, backgroundColor: active ? '#35204E' : '#17131F', borderWidth: 1, borderColor: active ? '#D7B35F' : '#393044' }}>
           <Text style={{ color: active ? '#F4D98E' : '#B8AFC2', fontSize: 12, fontWeight: '900' }}>{category}</Text>
@@ -4566,6 +4567,35 @@ function renderRoomInterior() {
       })}
     </ScrollView>
     <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}>
+      {roomShortcutCategory === 'Quick Access' && <>
+        <View style={{ paddingTop: 4, paddingBottom: 16 }}>
+          <Text style={{ color: '#E8C982', fontSize: 16, fontWeight: '900', letterSpacing: 1 }}>ROOM QUICK ACCESS</Text>
+          <Text style={{ color: '#B7A98F', fontSize: 10, marginTop: 4 }}>Premium shortcuts • Black marble and gold collection</Text>
+        </View>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 13 }}>
+          {[
+            { key: 'music', label: 'MUSIC', subtitle: 'Listen together' },
+            { key: 'youtube', label: 'YOUTUBE', subtitle: 'Watch together' },
+            { key: 'effects', label: 'EFFECTS', subtitle: 'Voice effects' },
+            { key: 'propStore', label: 'PROP STORE', subtitle: 'Room props' },
+            { key: 'dice', label: 'DICE', subtitle: 'Play dice games' },
+            { key: 'luckyNo', label: 'LUCKY NO', subtitle: 'Lucky 777' },
+            { key: 'luckyBag', label: 'LUCKY BAG', subtitle: 'Mystery rewards' },
+            { key: 'activity', label: 'ACTIVITY', subtitle: 'Room activities' },
+            { key: 'theme', label: 'THEME', subtitle: 'Customize your room' },
+          ].map((item) => (
+            <TouchableOpacity key={item.key} activeOpacity={0.82}
+              onPress={() => Alert.alert(item.label, 'The premium shortcut artwork is installed. Existing feature access and permissions remain unchanged.')}
+              style={{ width: '31.5%', minHeight: 126, borderRadius: 17, paddingVertical: 12, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center', backgroundColor: '#15110C', borderWidth: 1, borderColor: '#72582E', shadowColor: '#D5AD60', shadowOpacity: 0.13, shadowRadius: 7, elevation: 3 }}>
+              <View style={{ width: 66, height: 66, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: '#21190F', borderWidth: 1, borderColor: '#B58B45', marginBottom: 8 }}>
+                <RoomShortcutIcon type={item.key} size={54} />
+              </View>
+              <Text style={{ color: '#F1D69A', fontSize: 9, fontWeight: '900', letterSpacing: 0.55, textAlign: 'center' }}>{item.label}</Text>
+              <Text style={{ color: '#A99A80', fontSize: 8, marginTop: 3, textAlign: 'center' }}>{item.subtitle}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </>}
       {roomShortcutCategory === 'Treasury' && <>
         <View style={{ borderRadius: 22, padding: 18, backgroundColor: '#211331', borderWidth: 1, borderColor: '#A77A39', marginBottom: 16 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
