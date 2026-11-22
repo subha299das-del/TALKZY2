@@ -846,6 +846,31 @@ useEffect(() => {
   };
 }, [selectedRoom?.id]);
 
+// ROOM ARRIVAL SYSTEM NOTIFICATIONS
+useEffect(() => {
+  if (!selectedRoom?.id) return;
+  const roomId = selectedRoom.id;
+  const channel = supabase.channel(`room-arrival-sync-${roomId}`, { config: { broadcast: { self: false } } })
+    .on('broadcast', { event: 'member_arrived' }, ({ payload }) => {
+      if (!payload?.userId || payload.userId === session?.user?.id) return;
+      setRoomChatMessages(prev => [...prev, {
+        id: `arrival-${payload.noticeId || Date.now()}`,
+        text: `Welcome ${payload.userName || 'TALKZY User'} to the room!`,
+        sender: 'TALKZY SYSTEM', system: true,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }]);
+    })
+    .subscribe(status => {
+      if (status === 'SUBSCRIBED' && roomArrivalPendingRef.current?.roomId === roomId) {
+        const pending = roomArrivalPendingRef.current;
+        roomArrivalPendingRef.current = null;
+        channel.send({ type: 'broadcast', event: 'member_arrived', payload: pending.payload })
+          .catch(error => console.log('Room arrival broadcast:', error?.message || error));
+      }
+    });
+  return () => { supabase.removeChannel(channel); };
+}, [selectedRoom?.id, session?.user?.id]);
+
 // ROOM CHAT REALTIME UPDATES
 useEffect(() => {
   if (!selectedRoom?.id) return;
@@ -1156,6 +1181,8 @@ const [roomKeyboardLift, setRoomKeyboardLift] = useState(0);
 const [roomChatImagePreview, setRoomChatImagePreview] = useState(null);
 const [roomChatImageSending, setRoomChatImageSending] = useState(false);
  const [roomChatMessages, setRoomChatMessages] = useState([]);
+ const [roomEntrySystemMessages, setRoomEntrySystemMessages] = useState([]);
+ const roomArrivalPendingRef = useRef(null);
  const roomChatScrollRef = useRef(null);
 
 // Lift the room slightly while the keyboard is visible; the avoiding view
@@ -2229,6 +2256,14 @@ async function toggleFollowRoom(room) {
       setIsRoomMinimized(false); setShowRoomMenu(false);
       setMicCount(8); setMicSeats([]); setIsOnMic(false); setMyMicSeat(null); setIsMicMuted(false);
       setRoomChatMessages([]);
+      const entrantName = profile?.display_name || displayName || 'TALKZY User';
+      setRoomEntrySystemMessages([
+        { id: 'entry-guidelines', text: 'Welcome to TALKZY! Please respect eachother and talk politely. Abusing third party advertising, fake official information and political sensitive topics are strictly prohibited. Please report if you find this situation.', system: true },
+        ...(room.description || room.announcement ? [{ id: 'entry-announcement', text: room.description || room.announcement, system: true }] : [])
+      ]);
+      const arrivalPayload = { roomId: room.id, userId: session?.user?.id, userName: entrantName, noticeId: `${session?.user?.id || 'user'}-${Date.now()}` };
+      setRoomChatMessages([{ id: `arrival-self-${arrivalPayload.noticeId}`, text: `Welcome ${entrantName} to the room!`, sender: 'TALKZY SYSTEM', system: true, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
+      roomArrivalPendingRef.current = { roomId: room.id, payload: arrivalPayload };
       setScreen('roomInterior');
       loadRoomMicSeats(room.id);
       loadRoomMessages(room.id);
@@ -2649,6 +2684,14 @@ setIsMicMuted(false);
 
 // Reset the chat UI before fetching; never clear a completed fetch afterward.
 setRoomChatMessages([]);
+const entrantName = profile?.display_name || displayName || 'TALKZY User';
+setRoomEntrySystemMessages([
+  { id: 'entry-guidelines', text: 'Welcome to TALKZY! Please respect eachother and talk politely. Abusing third party advertising, fake official information and political sensitive topics are strictly prohibited. Please report if you find this situation.', system: true },
+  ...(room.description || room.announcement ? [{ id: 'entry-announcement', text: room.description || room.announcement, system: true }] : [])
+]);
+const arrivalPayload = { roomId: room.id, userId: session?.user?.id, userName: entrantName, noticeId: `${session?.user?.id || 'user'}-${Date.now()}` };
+setRoomChatMessages([{ id: `arrival-self-${arrivalPayload.noticeId}`, text: `Welcome ${entrantName} to the room!`, sender: 'TALKZY SYSTEM', system: true, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
+roomArrivalPendingRef.current = { roomId: room.id, payload: arrivalPayload };
 // Load this room's microphone data and room chat
 loadRoomMicSeats(room.id);
 loadRoomMessages(room.id);
@@ -3836,7 +3879,7 @@ function renderRoomInterior() {
 
                     
             {/* ROOM CHAT SECTION: inline composer never overlays or replaces the mic-seat layout */}
-{(roomChatMessages.length > 0 || showRoomChatComposer) && (
+{(roomEntrySystemMessages.length > 0 || roomChatMessages.length > 0 || showRoomChatComposer) && (
   <View style={{ marginTop: 6, marginBottom: 5 }}>
   <ScrollView
  ref={roomChatScrollRef}
@@ -3852,11 +3895,19 @@ onContentSizeChange={() =>
       paddingHorizontal: 12
     }}
   >
+    {roomEntrySystemMessages.map(message => (
+      <View key={message.id} style={{ alignSelf: 'center', maxWidth: '94%', backgroundColor: '#21183A', borderWidth: 1, borderColor: '#6D55A8', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9, marginBottom: 7 }}>
+        <Text style={{ color: '#C9B7FF', fontSize: 9, fontWeight: '900', letterSpacing: 1, marginBottom: 4, textAlign: 'center' }}>TALKZY SYSTEM · WELCOME</Text>
+        <Text style={{ color: '#F0EAFE', fontSize: 12, lineHeight: 18, textAlign: 'center' }}>{message.text}</Text>
+      </View>
+    ))}
     {(showRoomChatComposer ? roomChatMessages.slice(-3) : roomChatMessages).map((message) => (
       <View
         key={message.id}
         style={{
-          backgroundColor: C.card,
+          backgroundColor: message.system ? '#102C31' : C.card,
+          borderWidth: message.system ? 1 : 0,
+          borderColor: message.system ? '#2D8C83' : 'transparent',
           borderRadius: 12,
           paddingHorizontal: 12,
           paddingVertical: 8,
@@ -3873,7 +3924,7 @@ onContentSizeChange={() =>
             marginBottom: 3
           }}
         >
-          {message.sender?.display_name || message.sender || 'TALKZY User'}
+          {message.system ? 'TALKZY SYSTEM' : (message.sender?.display_name || message.sender || 'TALKZY User')}
         </Text>
 
         {message.image_url ? (
@@ -10900,6 +10951,8 @@ if (screen === 'profile' || profileIncomplete) {
     setMicSeats([]);
     setRoomPresence([]);
     setRoomChatMessages([]);
+    setRoomEntrySystemMessages([]);
+    roomArrivalPendingRef.current = null;
     setSelectedRoom(null);
     ++micSeatLoadVersionRef.current;
     setActiveTab('Room');
