@@ -2231,6 +2231,12 @@ if (
     });
 
     if (error) {
+      if (error.message.includes('NOT_IN_ROOM')) {
+        return res.status(403).json({ error: 'Enter the room first.' });
+      }
+      if (error.message.includes('TOURIST_MIC_DISABLED')) {
+        return res.status(403).json({ error: 'The room owner has disabled microphone access for tourists.' });
+      }
       if (error.message.includes('SEAT_TAKEN')) {
         return res.status(409).json({ error: 'This microphone is already occupied.' });
       }
@@ -2364,6 +2370,12 @@ app.patch('/api/rooms/:roomId/mic-seats/mute', userAuth, async (req, res) => {
     });
 
     if (error) {
+      if (error.message.includes('NOT_IN_ROOM')) {
+        return res.status(403).json({ error: 'Enter the room first.' });
+      }
+      if (error.message.includes('TOURIST_MIC_DISABLED')) {
+        return res.status(403).json({ error: 'The room owner has disabled microphone access for tourists.' });
+      }
       if (error.message.includes('NOT_ON_MIC')) {
         return res.status(404).json({ error: 'You are not occupying a microphone seat.' });
       }
