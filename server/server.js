@@ -1928,7 +1928,6 @@ app.get('/api/rooms/:roomId/activities', userAuth, async (req, res) => {
     let query = supabase.from('talkzy_room_activities')
       .select('id, room_id, created_by, title, description, poster_url, starts_at, ends_at, status, published_at, created_at')
       .eq('room_id', room.id).order('starts_at', { ascending: true, nullsFirst: false });
-    if (!owner) query = query.in('status', ['published','completed']);
     const { data, error } = await query;
     if (error) throw error;
     res.set('Cache-Control', 'no-store').json({ activities: data || [] });
