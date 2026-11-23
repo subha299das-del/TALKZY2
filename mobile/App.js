@@ -4832,10 +4832,29 @@ function renderRoomInterior() {
     columnGap: 9
   }}
 >
-  {/* CHAT — composer stays hidden until this control is tapped */}
-<TouchableOpacity onPress={() => { setIsRoomChatMinimized(false); setShowRoomChatActionMenu(false); setShowRoomChatComposer(true); }} style={{ width: 44, height: 44, borderRadius: 15, backgroundColor: '#0B2B43', borderWidth: 1.2, borderColor: '#3D9BB8', alignItems: 'center', justifyContent: 'center', marginRight: 2, shadowColor: '#2CB8DF', shadowOpacity: 0.24, shadowRadius: 5, elevation: 4 }} accessibilityRole="button" accessibilityLabel="Open room chat">
-  <Text style={{ fontSize: 21 }}>💬</Text>
-</TouchableOpacity>
+  {/* CHAT ENTRY — one slot: message bar off-mic, compact chat icon on-mic. Both open the same focused composer. */}
+  {!isOnMic ? (
+    <TouchableOpacity
+      onPress={() => { setIsRoomChatMinimized(false); setShowRoomChatActionMenu(false); setShowRoomChatComposer(true); }}
+      activeOpacity={0.85}
+      accessibilityRole="button"
+      accessibilityLabel="Open room chat composer"
+      style={{ flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 90, maxWidth: 150, height: 40, marginRight: 2, backgroundColor: '#0B2B43', borderRadius: 20, paddingHorizontal: 13, borderWidth: 1.2, borderColor: '#3D9BB8' }}
+    >
+      <Text style={{ color: '#B9C8D5', fontSize: 12, flex: 1 }}>Message...</Text>
+      <Text style={{ color: '#AFA0D8', fontSize: 17 }}>✎</Text>
+    </TouchableOpacity>
+  ) : (
+    <TouchableOpacity
+      onPress={() => { setIsRoomChatMinimized(false); setShowRoomChatActionMenu(false); setShowRoomChatComposer(true); }}
+      activeOpacity={0.85}
+      accessibilityRole="button"
+      accessibilityLabel="Open room chat composer"
+      style={{ width: 44, height: 44, borderRadius: 15, backgroundColor: '#0B2B43', borderWidth: 1.2, borderColor: '#3D9BB8', alignItems: 'center', justifyContent: 'center', marginRight: 2, shadowColor: '#2CB8DF', shadowOpacity: 0.24, shadowRadius: 5, elevation: 4 }}
+    >
+      <Text style={{ fontSize: 21 }}>💬</Text>
+    </TouchableOpacity>
+  )}
 
   {/* MIC - MUTE / UNMUTE WHILE REMAINING ON SEAT */}
 {isOnMic && (
