@@ -468,6 +468,8 @@ export default function App() {
   const [profile, setProfile] = useState(null);
 
   const profileLoadRef = useRef(null);
+  const activeAuthUserIdRef = useRef(null);
+  const authStateVersionRef = useRef(0);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -1390,6 +1392,41 @@ const [isRoomTourist, setIsRoomTourist] = useState(false);
   // LOAD SUPABASE SESSION
   // ---------------------------------
 
+  function resetAccountScopedUi() {
+    setProfile(null);
+    setMyRooms([]);
+    setJoinedRooms([]);
+    setFollowedRooms([]);
+    setHasEverCreatedRoom(false);
+    setRoomCreationEligibilityLoaded(false);
+    setSelectedRoom(null);
+    setRoomDetails(null);
+    setRoomDetailsVisible(false);
+    setRoomDetailMembers([]);
+    setRoomChatMessages([]);
+    setRoomChatText('');
+    setShowRoomChatComposer(false);
+    setShowRoomChatActionMenu(false);
+    roomChatActiveRoomIdRef.current = null;
+    ++roomChatLoadVersionRef.current;
+    ++micSeatLoadVersionRef.current;
+    setMicSeats([]);
+    setMicControls([]);
+    setMicCount(8);
+    setMicLayout('eight');
+    setIsOnMic(false);
+    setMyMicSeat(null);
+    setIsMicMuted(false);
+    setRoomPresence([]);
+    setIsRoomTourist(false);
+    setActiveLuckyBags([]);
+    setWalletBalance(0);
+    setLuckyBagHistoryItems([]);
+    setWorldLuckyBagNotification(null);
+    setWorldLuckyBagQueue([]);
+    setScreen('login');
+  }
+
   useEffect(() => {
     let mounted = true;
 
@@ -1398,6 +1435,7 @@ const [isRoomTourist, setIsRoomTourist] = useState(false);
     fetch(`${API_BASE_URL}/api/health`).catch(() => {});
 
     async function loadSession() {
+      const requestAuthVersion = authStateVersionRef.current;
       try {
         if (!SUPABASE_URL || !SUPABASE_KEY) {
           throw new Error(
@@ -1412,8 +1450,9 @@ const [isRoomTourist, setIsRoomTourist] = useState(false);
 
         if (error) throw error;
 
-        if (!mounted) return;
+        if (!mounted || authStateVersionRef.current !== requestAuthVersion) return;
 
+        activeAuthUserIdRef.current = currentSession?.user?.id || null;
         setSession(currentSession);
 
         if (currentSession) {
@@ -1441,18 +1480,25 @@ const {
   (_event, newSession) => {
     if (!mounted) return;
 
+    authStateVersionRef.current += 1;
+    const nextUserId = newSession?.user?.id || null;
+    const previousUserId = activeAuthUserIdRef.current;
+    activeAuthUserIdRef.current = nextUserId;
+    if (previousUserId && previousUserId !== nextUserId) {
+      profileLoadRef.current = null;
+      resetAccountScopedUi();
+    }
     setSession(newSession);
 
     if (newSession) {
       Promise.resolve().then(() => {
-        if (mounted) {
+        if (mounted && activeAuthUserIdRef.current === newSession.user.id) {
           loadUserProfile(newSession);
         }
       });
     } else {
       profileLoadRef.current = null;
-      setProfile(null);
-      setScreen('login');
+      resetAccountScopedUi();
     }
   }
 );
@@ -2076,6 +2122,10 @@ loadFollowedRooms(session);
 
   async function signOut() {
     try {
+      if (selectedRoom?.id) {
+        try { await api(`/api/rooms/${selectedRoom.id}/presence/leave`, { method: 'POST' }); }
+        catch (cleanupError) { console.log('Sign-out room cleanup:', cleanupError.message); }
+      }
       const { error } = await supabase.auth.signOut();
 
       if (error) throw error;
@@ -2220,14 +2270,18 @@ async function loadMyRooms(currentSession = session) {
     setRoomCreationEligibilityLoaded(false);
     return;
   }
+  const requestUserId = currentSession.user.id;
+  if (activeAuthUserIdRef.current && activeAuthUserIdRef.current !== requestUserId) return;
+  const isCurrentUserRequest = () => activeAuthUserIdRef.current === requestUserId;
 
-  const cacheKey = `talkzy_my_rooms_${currentSession.user.id}`;
+  const cacheKey = `talkzy_my_rooms_${requestUserId}`;
 
   // Render cached room details immediately while the server request runs.
   // This prevents the user's room name/card from waiting for a cold backend.
   let hasCachedData = false;
   try {
     const cachedRaw = await AsyncStorage.getItem(cacheKey);
+    if (!isCurrentUserRequest()) return;
     if (cachedRaw) {
       const cached = JSON.parse(cachedRaw);
       if (Array.isArray(cached.rooms)) {
@@ -2251,6 +2305,7 @@ async function loadMyRooms(currentSession = session) {
       }
     });
 
+    if (!isCurrentUserRequest()) return;
     const allRooms = Array.isArray(result.rooms) ? result.rooms : [];
     const eligibility = result.hasEverCreatedRoom === true;
 
@@ -2279,11 +2334,13 @@ async function loadJoinedRooms(currentSession = session) {
   try {
     if (!currentSession?.access_token) return;
 
+    const requestUserId = currentSession.user.id;
     const result = await api('/api/rooms/joined', {
       headers: {
         Authorization: `Bearer ${currentSession.access_token}`
       }
     });
+    if (activeAuthUserIdRef.current !== requestUserId) return;
 
     const allRooms = Array.isArray(result.rooms)
       ? result.rooms
@@ -2300,11 +2357,13 @@ async function loadFollowedRooms(currentSession = session) {
   try {
     if (!currentSession?.access_token) return;
 
+    const requestUserId = currentSession.user.id;
     const result = await api('/api/rooms/followed', {
       headers: {
         Authorization: `Bearer ${currentSession.access_token}`
       }
     });
+    if (activeAuthUserIdRef.current !== requestUserId) return;
 
     const allRooms = Array.isArray(result.rooms)
       ? result.rooms
