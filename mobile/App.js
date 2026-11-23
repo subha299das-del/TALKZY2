@@ -3034,8 +3034,12 @@ function renderRoomCard(room, showJoin = true) {
       console.log('Stale mic seat cleanup on entry:', seatCleanupError.message);
     }
     if (!isCurrentUserRequest()) return;
-    try { await api(`/api/rooms/${room.id}/presence/ping`, { method: 'POST' }); }
-    catch (presenceError) { console.log('Initial room presence ping:', presenceError.message); }
+    try {
+      await api(`/api/rooms/${room.id}/presence/ping`, { method: 'POST' });
+    } catch (presenceError) {
+      if (isCurrentUserRequest()) Alert.alert('Unable to enter room', presenceError.message || 'Could not establish your room connection. Please try again.');
+      return;
+    }
     if (!isCurrentUserRequest()) return;
     roomChatActiveRoomIdRef.current = room.id;
     ++roomChatLoadVersionRef.current;
