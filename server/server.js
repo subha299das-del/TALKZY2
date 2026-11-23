@@ -1273,21 +1273,26 @@ app.put('/api/rooms/:roomId/music/me', userAuth, async (req, res) => {
     if (!Number.isFinite(volume) || volume < 0 || volume > 1) {
       return res.status(400).json({ error: 'Invalid music volume.' });
     }
-    const payload = {
-      room_id: room.id,
-      user_id: req.talkzyUser.id,
+    const musicState = {
       queue,
       current_index: currentIndex,
       is_playing: Boolean(body.is_playing) && queue.length > 0,
       current_time_seconds: currentTime,
       repeat_mode: ['off', 'one', 'all'].includes(body.repeat_mode) ? body.repeat_mode : 'off',
       shuffle: Boolean(body.shuffle),
-      volume,
-      updated_at: new Date().toISOString()
+      volume
     };
-    const { error } = await supabase.from('talkzy_room_music_state')
-      .upsert(payload, { onConflict: 'room_id,user_id' });
-    if (error) throw error;
+    const { error } = await supabase.rpc('talkzy_update_room_music_atomic', {
+      p_room_id: room.id,
+      p_user_id: req.talkzyUser.id,
+      p_state: musicState
+    });
+    if (error) {
+      if (/NOT_IN_ROOM|USER_KICKED/i.test(error.message || '')) return res.status(403).json({ error: 'Enter the room before sharing music.' });
+      if (/ROOM_CLOSED/i.test(error.message || '')) return res.status(409).json({ error: 'This room is closed.' });
+      if (/INVALID_MUSIC/i.test(error.message || '')) return res.status(400).json({ error: 'Your music settings or playlist are invalid.' });
+      throw error;
+    }
     const streams = await buildRoomMusicState(room.id, req.talkzyUser.id);
     const state = streams.find(stream => stream.user_id === req.talkzyUser.id) || null;
     res.set('Cache-Control', 'no-store').json({ state });
@@ -1301,29 +1306,24 @@ app.delete('/api/rooms/:roomId/music/me', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
-    // A user may leave the room before the component cleanup request arrives.
-    // Deleting is scoped to the authenticated user's own stream below, so it is
-    // safe to allow cleanup after membership/visitor status has already ended.
-    const { data: previous, error: readError } = await supabase.from('talkzy_room_music_state')
-      .select('queue').eq('room_id', room.id).eq('user_id', req.talkzyUser.id).maybeSingle();
-    if (readError) throw readError;
-    const paths = (Array.isArray(previous?.queue) ? previous.queue : [])
-      .map(item => item?.object_path).filter(path => typeof path === 'string');
-    const { error } = await supabase.from('talkzy_room_music_state')
-      .delete().eq('room_id', room.id).eq('user_id', req.talkzyUser.id);
+    const userId = req.talkzyUser.id;
+    const { data, error } = await supabase.rpc('talkzy_delete_room_music_atomic', {
+      p_room_id: room.id, p_user_id: userId
+    });
     if (error) throw error;
+    const paths = (Array.isArray(data?.music_paths) ? data.music_paths : [])
+      .filter(path => typeof path === 'string' && path.startsWith(`${userId}/${room.id}/`) && !path.includes('..'));
     if (paths.length) {
       const { error: storageError } = await supabase.storage.from('talkzy-room-music').remove(paths);
       if (storageError) console.error('Could not remove stopped room music files:', storageError.message);
     }
-    res.json({ stopped: true });
+    res.set('Cache-Control', 'no-store').json({ stopped: true });
   } catch (error) {
     console.error('Could not stop personal room music:', error.message);
-    res.status(500).json({ error: 'Could not stop your room music.' });
+    res.status(500).json({ error: 'Could not stop your music stream.' });
   }
 });
 
-// Shared YouTube room state. Any room participant can view; only owner/admin can control.
 app.get('/api/rooms/:roomId/youtube', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
@@ -1572,84 +1572,59 @@ app.patch('/api/rooms/:roomId/settings', userAuth, async (req, res) => {
       if (value && !/^https:\/\/\S+$/i.test(value)) return res.status(400).json({ error: 'Room DP must be a secure image URL.' });
       patch.room_dp_url = value;
     }
+
     let nextType = room.room_type;
     if (body.roomType !== undefined) {
-      if (!['public','locked'].includes(body.roomType)) return res.status(400).json({ error: 'Room type must be public or locked.' });
+      if (!['public', 'locked'].includes(body.roomType)) return res.status(400).json({ error: 'Room type must be public or locked.' });
       nextType = body.roomType;
     }
+    const password = body.password === undefined ? '' : String(body.password);
+    const writePassword = password.length > 0;
     let passwordHash = null;
-    if (room.room_type === 'locked') {
-      const { data: savedPassword, error: passwordReadError } = await supabase.from('talkzy_room_passwords')
-        .select('password_hash').eq('room_id', room.id).maybeSingle();
-      if (passwordReadError) throw passwordReadError;
-      passwordHash = savedPassword?.password_hash || null;
-    }
-    if (body.password !== undefined && String(body.password).length) {
-      const password = String(body.password);
+    if (writePassword) {
       if (password.length < 4 || password.length > 64) return res.status(400).json({ error: 'Room password must be 4–64 characters.' });
       passwordHash = await makePasswordHash(password);
       nextType = 'locked';
+    } else if (room.room_type === 'locked') {
+      const { data, error } = await supabase.from('talkzy_room_passwords')
+        .select('password_hash').eq('room_id', room.id).maybeSingle();
+      if (error) throw error;
+      passwordHash = data?.password_hash || null;
     }
-    if (nextType === 'locked' && !passwordHash) {
+    if (nextType === 'locked' && !passwordHash && !writePassword) {
       return res.status(400).json({ error: 'Set a room password before switching this room to locked.' });
     }
-    if (body.roomType !== undefined || body.password !== undefined) patch.room_type = nextType;
+    if (body.roomType !== undefined || writePassword) patch.room_type = nextType;
+
     const approval = {};
     for (const [key, column] of [
-      ['touristsOnMic','tourists_on_mic'],
-      ['touristsSendText','tourists_send_text'],
-      ['touristsSendPic','tourists_send_pic']
+      ['touristsOnMic', 'tourists_on_mic'],
+      ['touristsSendText', 'tourists_send_text'],
+      ['touristsSendPic', 'tourists_send_pic']
     ]) {
       if (body[key] !== undefined) {
         if (typeof body[key] !== 'boolean') return res.status(400).json({ error: key + ' must be true or false.' });
         approval[column] = body[key];
       }
     }
-    if ((body.roomType !== undefined || body.password !== undefined) && nextType === 'locked' && passwordHash) {
-      const { error: passwordWriteError } = await supabase.from('talkzy_room_passwords')
-        .upsert({ room_id: room.id, password_hash: passwordHash }, { onConflict: 'room_id' });
-      if (passwordWriteError) throw passwordWriteError;
+
+    const { data, error } = await supabase.rpc('talkzy_update_room_settings_atomic', {
+      p_room_id: room.id,
+      p_user_id: req.talkzyUser.id,
+      p_room_patch: patch,
+      p_approval: approval,
+      p_write_password: writePassword,
+      p_password_hash: writePassword ? passwordHash : null,
+      p_delete_password: nextType === 'public' && (body.roomType !== undefined || body.password !== undefined)
+    });
+    if (error) {
+      if (/42501|Only the original room owner/i.test(error.message || '')) return res.status(403).json({ error: 'Only the room creator can change settings.' });
+      if (/55000|Room is closed/i.test(error.message || '')) return res.status(409).json({ error: 'This room is closed.' });
+      if (/P0002|Room not found/i.test(error.message || '')) return res.status(404).json({ error: 'Room not found.' });
+      if (/Invalid|Unsupported|password/i.test(error.message || '')) return res.status(400).json({ error: error.message });
+      throw error;
     }
-    let updatedRoom = room;
-    if (Object.keys(patch).length) {
-      const { data, error } = await supabase.from('talkzy_rooms').update(patch)
-        .eq('id', room.id).eq('owner_id', req.talkzyUser.id)
-        .select('id, owner_id, room_name, description, room_dp_url, room_type')
-        .single();
-      if (error) throw error;
-      updatedRoom = data;
-    }
-    if ((body.roomType !== undefined || body.password !== undefined) && nextType === 'public') {
-      const { error: passwordDeleteError } = await supabase.from('talkzy_room_passwords')
-        .delete().eq('room_id', room.id);
-      if (passwordDeleteError) throw passwordDeleteError;
-    }
-    let settings = null;
-    if (Object.keys(approval).length) {
-      const { data, error } = await supabase.from('talkzy_room_settings')
-        .upsert({ room_id: room.id, ...approval, updated_at: new Date().toISOString() }, { onConflict: 'room_id' })
-        .select('tourists_on_mic, tourists_send_text, tourists_send_pic, updated_at').single();
-      if (error) throw error;
-      settings = data;
-      if (settings.tourists_on_mic === false) {
-        const { data: visitors, error: visitorError } = await supabase.from('talkzy_room_visitors')
-          .select('user_id').eq('room_id', room.id);
-        if (visitorError) throw visitorError;
-        const visitorIds = (visitors || []).map(visitor => visitor.user_id);
-        if (visitorIds.length) {
-          const { error: seatCleanupError } = await supabase.from('talkzy_room_mic_seats')
-            .delete().eq('room_id', room.id).in('user_id', visitorIds);
-          if (seatCleanupError) throw seatCleanupError;
-        }
-      }
-    } else {
-      const { data, error } = await supabase.from('talkzy_room_settings')
-        .select('tourists_on_mic, tourists_send_text, tourists_send_pic, updated_at')
-        .eq('room_id', room.id).maybeSingle();
-      if (error) throw error;
-      settings = data || { tourists_on_mic: true, tourists_send_text: true, tourists_send_pic: false };
-    }
-    res.set('Cache-Control', 'no-store').json({ room: updatedRoom, settings });
+    res.set('Cache-Control', 'no-store').json({ room: data?.room || room, settings: data?.settings || null });
   } catch (error) {
     console.error('Could not save room settings:', error.message);
     res.status(500).json({ error: 'Could not save room settings.' });
