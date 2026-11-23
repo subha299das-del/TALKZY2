@@ -678,6 +678,24 @@ const [roomPresenceLoading, setRoomPresenceLoading] = useState(false);
 const [showRoomUsers, setShowRoomUsers] = useState(false);
 const micSeatLoadVersionRef = useRef(0);
 const micSeatActionVersionRef = useRef(0);
+const micSeatActionInFlightRef = useRef(0);
+const micSeatActionWaitersRef = useRef([]);
+
+function beginMicSeatAction() {
+  micSeatActionInFlightRef.current += 1;
+}
+
+function endMicSeatAction() {
+  micSeatActionInFlightRef.current = Math.max(0, micSeatActionInFlightRef.current - 1);
+  if (micSeatActionInFlightRef.current === 0) {
+    micSeatActionWaitersRef.current.splice(0).forEach(resolve => resolve());
+  }
+}
+
+function waitForMicSeatActions() {
+  if (micSeatActionInFlightRef.current === 0) return Promise.resolve();
+  return new Promise(resolve => micSeatActionWaitersRef.current.push(resolve));
+}
 const roomLeaveCleanupRef = useRef({});
 const roomExitInProgressRef = useRef({});
 const roomChatLocalCutoffRef = useRef({});
@@ -2198,8 +2216,10 @@ loadFollowedRooms(session);
   async function signOut() {
     try {
       if (selectedRoom?.id) {
-        try { await api(`/api/rooms/${selectedRoom.id}/presence/leave`, { method: 'POST' }); }
-        catch (cleanupError) { console.log('Sign-out room cleanup:', cleanupError.message); }
+        try {
+          await waitForMicSeatActions();
+          await api(`/api/rooms/${selectedRoom.id}/presence/leave`, { method: 'POST' });
+        } catch (cleanupError) { console.log('Sign-out room cleanup:', cleanupError.message); }
       }
       const { error } = await supabase.auth.signOut();
 
@@ -3906,6 +3926,8 @@ function renderRoomInterior() {
 
           // Invalidate any in-flight seat fetch before applying this tap.
           ++micSeatLoadVersionRef.current;
+          if (roomChatActiveRoomIdRef.current !== roomId) return;
+          beginMicSeatAction();
 
           try {
             // Optimistic UI: update the seat immediately.
@@ -3955,6 +3977,8 @@ function renderRoomInterior() {
               'Microphone error',
               error.message || 'Could not change microphone seat.'
             );
+          } finally {
+            endMicSeatAction();
           }
         }}
         style={{
@@ -5135,6 +5159,8 @@ function renderRoomInterior() {
         roomChatActiveRoomIdRef.current === roomId;
 
       // Immediate visual response while the server saves the mute state.
+      if (roomChatActiveRoomIdRef.current !== roomId) return;
+      beginMicSeatAction();
       ++micSeatLoadVersionRef.current;
       setIsMicMuted(nextMuted);
       setMicSeats(current => current.map(item =>
@@ -5174,6 +5200,8 @@ function renderRoomInterior() {
           'Microphone',
           error.message || 'Could not change mute status.'
         );
+      } finally {
+        endMicSeatAction();
       }
     }}
     style={{
@@ -11717,6 +11745,7 @@ if (screen === 'profile' || profileIncomplete) {
         }
 
         try {
+          await waitForMicSeatActions();
           const response = await api(`/api/rooms/${roomId}/presence/leave`, { method: 'POST' });
           const serverCutoff = response?.clearedAt ? new Date(response.clearedAt).getTime() : 0;
           const finalCutoff = Math.max(cutoff, serverCutoff || 0);
