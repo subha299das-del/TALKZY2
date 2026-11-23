@@ -31,10 +31,6 @@ jobs:
         working-directory: mobile
         run: npm install --no-fund
 
-      - name: Apply non-breaking dependency security fixes
-        working-directory: mobile
-        run: npm audit fix --no-fund --no-progress || true
-
       - name: Require no high-severity production vulnerabilities
         working-directory: mobile
         run: npm audit --omit=dev --audit-level=high
