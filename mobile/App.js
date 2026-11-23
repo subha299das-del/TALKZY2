@@ -4536,7 +4536,7 @@ function renderRoomInterior() {
       )}
 
 {/* RIGHT-SIDE ROOM NAVIGATION: Hot Events → Greedy → Game → Treasure → Gift */}
-<View style={{ position: 'absolute', right: 9, bottom: Platform.OS === 'android' ? 92 : 70, zIndex: 55, elevation: 28, alignItems: 'center', gap: 8 }}>
+<View style={{ position: 'absolute', right: 9, bottom: Platform.OS === 'android' ? 92 : 70, zIndex: 55, elevation: 28, alignItems: 'center', gap: 8, flexDirection: 'column-reverse' }}>
   <TouchableOpacity
     accessibilityRole="button"
     accessibilityLabel="Open Hot Events"
@@ -5041,6 +5041,33 @@ function renderRoomInterior() {
     }}
   >
     <Text style={{ fontSize: 19 }}>⊞</Text>
+  </TouchableOpacity>
+
+  {/* GIFT — horizontal chat bar shortcut */}
+  <TouchableOpacity
+    accessibilityRole="button"
+    accessibilityLabel="Open gifts"
+    onPress={() => {
+      setShowRoomTools(false);
+      setShowGreedyPanel(false);
+      setShowRoomGamePanel(false);
+      setShowRocketPanel(false);
+      setShowHotEventsPopup(false);
+      setShowRoomGiftPanel(value => !value);
+    }}
+    style={{
+      width: 38,
+      height: 38,
+      borderRadius: 20,
+      marginLeft: 3,
+      backgroundColor: C.card,
+      borderWidth: 1,
+      borderColor: '#D6B15E',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}
+  >
+    <Text style={{ fontSize: 20 }}>🎁</Text>
   </TouchableOpacity>
 
 </ScrollView>
