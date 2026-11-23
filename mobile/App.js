@@ -4588,7 +4588,11 @@ function renderRoomInterior() {
     style={{ width: 46, height: 46, borderRadius: 16, borderWidth: 1.5, borderColor: '#E0BD70', backgroundColor: '#382052', alignItems: 'center', justifyContent: 'center', shadowColor: '#C49A45', shadowOpacity: 0.4, shadowRadius: 8, elevation: 8 }}
   >
     <View pointerEvents="none" style={{ position: 'absolute', top: 5, left: 5, right: 5, bottom: 5, borderRadius: 12, borderWidth: 1, borderColor: '#8D68B2' }} />
-    <Text style={{ fontSize: 24 }}>💎</Text>
+    <View style={{ width: 29, height: 22, marginTop: 7, borderRadius: 5, borderWidth: 1.5, borderColor: '#F0D18A', backgroundColor: '#4B2B68', alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ position: 'absolute', top: -6, left: -2, width: 30, height: 10, borderRadius: 5, borderWidth: 1.5, borderColor: '#FFE5A3', backgroundColor: '#76509A' }} />
+      <View style={{ position: 'absolute', top: 7, width: 4, height: 8, borderRadius: 2, backgroundColor: '#E8C56F' }} />
+      <View style={{ position: 'absolute', top: 7, width: 8, height: 8, transform: [{ rotate: '45deg' }], backgroundColor: '#B98BFF', borderWidth: 1, borderColor: '#F0D9FF' }} />
+    </View>
   </TouchableOpacity>
 
   <TouchableOpacity
