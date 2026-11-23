@@ -627,6 +627,7 @@ const [roomDpUploading, setRoomDpUploading] = useState(false);
   activeUserIdRef.current = session?.user?.id || null;
   const roomDetailsLoadVersionRef = useRef(0);
   const roomActivityLoadVersionRef = useRef(0);
+  const roomSettingsLoadVersionRef = useRef(0);
   const [worldLuckyBagNotification, setWorldLuckyBagNotification] = useState(null);
 const [worldLuckyBagQueue, setWorldLuckyBagQueue] = useState([]);
  const [isRoomMinimized, setIsRoomMinimized] = useState(false);
@@ -11604,6 +11605,12 @@ if (screen === 'profile' || profileIncomplete) {
     if (!room?.id || room.owner_id !== session?.user?.id) {
       return Alert.alert('Room Settings', 'Only the original creator of this room can open these settings.');
     }
+    const requestVersion = ++roomSettingsLoadVersionRef.current;
+    const requestUserId = session.user.id;
+    const isCurrentRequest = () =>
+      roomSettingsLoadVersionRef.current === requestVersion &&
+      activeUserIdRef.current === requestUserId &&
+      selectedRoomIdRef.current === room.id;
 
     // Open immediately with the room card data so the settings screen never
     // appears blank while the latest settings are being fetched.
@@ -11628,6 +11635,7 @@ if (screen === 'profile' || profileIncomplete) {
 
     try {
       const result = await api(`/api/rooms/${room.id}/settings`);
+      if (!isCurrentRequest()) return;
       const latestRoom = {
         ...initialRoom,
         ...(result.room || {}),
@@ -11644,7 +11652,7 @@ if (screen === 'profile' || profileIncomplete) {
       setRoomSettingDp(latestRoom.room_dp_url || null);
       setRoomSettingsType(latestRoom.room_type || 'public');
     } catch (e) {
-      Alert.alert('Room Settings', e.message || 'Could not load room settings. You can still view the room details already loaded.');
+      if (isCurrentRequest()) Alert.alert('Room Settings', e.message || 'Could not load room settings. You can still view the room details already loaded.');
     }
   }
 
