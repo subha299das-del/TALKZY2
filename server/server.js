@@ -1532,7 +1532,15 @@ app.patch('/api/rooms/:roomId/settings', userAuth, async (req, res) => {
     }
     if (body.roomDpUrl !== undefined) {
       const value = body.roomDpUrl === null ? null : String(body.roomDpUrl).trim();
-      if (value && !/^https:\/\/\S+$/i.test(value)) return res.status(400).json({ error: 'Room DP must be a secure image URL.' });
+      if (value && value.length > 1000) return res.status(400).json({ error: 'Room DP URL is too long.' });
+      if (value) {
+        try {
+          const parsed = new URL(value);
+          if (parsed.protocol !== 'https:') throw new Error('HTTPS required');
+        } catch {
+          return res.status(400).json({ error: 'Room DP must be a valid HTTPS URL.' });
+        }
+      }
       patch.room_dp_url = value;
     }
 
@@ -1545,7 +1553,7 @@ app.patch('/api/rooms/:roomId/settings', userAuth, async (req, res) => {
     const writePassword = password.length > 0;
     let passwordHash = null;
     if (writePassword) {
-      if (password.length < 4 || password.length > 64) return res.status(400).json({ error: 'Room password must be 4–64 characters.' });
+      if (password.trim().length < 4 || password.length > 64) return res.status(400).json({ error: 'Room password must be 4–64 non-whitespace characters.' });
       passwordHash = await makePasswordHash(password);
       nextType = 'locked';
     } else if (room.room_type === 'locked') {
