@@ -1458,6 +1458,7 @@ const [isRoomTourist, setIsRoomTourist] = useState(false);
     setRoomDetailsVisible(false);
     setRoomDetailMembers([]);
     setJoiningRoom(false);
+    setSaving(false);
     setShowJoinPassword(false);
     setJoinPassword('');
     setJoinTargetRoom(null);
@@ -2137,12 +2138,15 @@ if (!gender || !country.trim() || !language.trim() || !bio.trim()) {
       return;
     }
 
+    const userId = session?.user?.id;
+    if (!userId) return Alert.alert('Session expired', 'Please sign in again.');
+    const isCurrentUserRequest = () => activeAuthUserIdRef.current === userId;
+
     try {
       setSaving(true);
 
-      const userId = session.user.id;
-
       const uploadedAvatar = await uploadAvatar(userId);
+      if (!isCurrentUserRequest()) return;
 
       const publicProfileData = {
   display_name: displayName.trim(),
@@ -2164,10 +2168,12 @@ if (!gender || !country.trim() || !language.trim() || !bio.trim()) {
   .single();
 
       if (error) throw error;
+      if (!isCurrentUserRequest()) return;
       const { error: privateProfileError } = await supabase
         .from('talkzy_profile_private')
         .upsert({ user_id: userId, date_of_birth: dateOfBirth }, { onConflict: 'user_id' });
       if (privateProfileError) throw privateProfileError;
+      if (!isCurrentUserRequest()) return;
 
       const completedProfile = { ...data, date_of_birth: dateOfBirth };
       setProfile(completedProfile);
@@ -2187,6 +2193,7 @@ loadFollowedRooms(session);
       );
     
 } catch (error) {
+  if (!isCurrentUserRequest()) return;
   const errorDetails = {
     message: error.message,
     code: error.code,
@@ -2205,7 +2212,7 @@ loadFollowedRooms(session);
     JSON.stringify(errorDetails, null, 2)
   );
 } finally {
-  setSaving(false);
+  if (isCurrentUserRequest()) setSaving(false);
 }
 }
 
