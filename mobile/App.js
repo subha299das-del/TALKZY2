@@ -3584,29 +3584,33 @@ function renderRoomInterior() {
           </View>
         </View>
       </Modal>
-      {/* ROOM TROPHY / COINS */}
+</View>
+        </View>
+      </Modal>
+      {/* ROOM TROPHY / COINS — compact row */}
       <View
         style={{
           flexDirection: 'row',
           alignItems: 'center',
           paddingHorizontal: 14,
-          paddingTop: 4,
+          paddingTop: 2,
           paddingBottom: 0
         }}
       >
-        <Text style={{ fontSize: 18 }}>🏆</Text>
-
+        <Text style={{ fontSize: 13, lineHeight: 15 }}>🏆</Text>
         <Text
           style={{
             color: C.text,
-            fontSize: 14,
+            fontSize: 11,
+            lineHeight: 14,
             fontWeight: 'bold',
-            marginLeft: 6
+            marginLeft: 4
           }}
         >
           0
         </Text>
       </View>
+
 
            {/* MICROPHONE SEATS */}
 <View
