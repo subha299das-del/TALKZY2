@@ -3278,16 +3278,22 @@ function renderRoomInterior() {
         }}
       >
 
-        {/* ROOM DP — black-marble identity with a champagne-gold frame */}
-        <View style={{ width: 64, height: 64, borderRadius: 32, marginRight: 11, padding: 3, borderWidth: 1.5, borderColor: C.gold, backgroundColor: '#17120A', alignItems: 'center', justifyContent: 'center', shadowColor: C.gold, shadowOpacity: 0.24, shadowRadius: 8, elevation: 4 }}>
+        {/* ROOM DP — square identity tile with a champagne-gold frame; tap for room information */}
+        <TouchableOpacity
+          activeOpacity={0.86}
+          onPress={() => openRoomDetails(selectedRoom)}
+          accessibilityRole="button"
+          accessibilityLabel="Open room information"
+          style={{ width: 64, height: 64, borderRadius: 10, marginRight: 11, padding: 3, borderWidth: 1.5, borderColor: C.gold, backgroundColor: '#17120A', alignItems: 'center', justifyContent: 'center', shadowColor: C.gold, shadowOpacity: 0.24, shadowRadius: 8, elevation: 4 }}
+        >
           {selectedRoom.room_dp_url ? (
-            <Image source={{ uri: selectedRoom.room_dp_url }} style={{ width: 54, height: 54, borderRadius: 27, borderWidth: 1, borderColor: '#8F713D' }} />
+            <Image source={{ uri: selectedRoom.room_dp_url }} style={{ width: 54, height: 54, borderRadius: 7, borderWidth: 1, borderColor: '#8F713D' }} />
           ) : (
-            <View style={{ width: 54, height: 54, borderRadius: 27, backgroundColor: '#211A10', alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ width: 54, height: 54, borderRadius: 7, backgroundColor: '#211A10', alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{ fontSize: 25, color: C.gold }}>♬</Text>
             </View>
           )}
-        </View>
+        </TouchableOpacity>
 
         {/* ROOM DETAILS */}
 <View style={{ flex: 1, minWidth: 0, justifyContent: 'center' }}>
