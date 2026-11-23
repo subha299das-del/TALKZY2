@@ -641,25 +641,27 @@ app.delete('/api/rooms/:roomId/messages', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
-    if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
-    if (!(await canManageRoom(room, req.talkzyUser.id))) {
-      return res.status(403).json({ error: 'Only the room owner or an admin can clear room chat.' });
+    const { data, error } = await supabase.rpc('talkzy_clear_room_messages_atomic', {
+      p_room_id: room.id,
+      p_actor_id: req.talkzyUser.id
+    });
+    if (error) {
+      if (/ONLY_ROOM_OWNER_OR_ADMIN|42501/i.test(error.message || '')) {
+        return res.status(403).json({ error: 'Only the room owner or an admin can clear room chat.' });
+      }
+      if (/ROOM_CLOSED|55000/i.test(error.message || '')) return res.status(409).json({ error: 'This room is closed.' });
+      if (/ROOM_NOT_FOUND|P0002/i.test(error.message || '')) return res.status(404).json({ error: 'Room not found.' });
+      throw error;
     }
-
-    const { data: existing, error: readError } = await supabase.from('talkzy_room_messages')
-      .select('id, sender_id, image_url').eq('room_id', room.id);
-    if (readError) throw readError;
-
-    const { error: deleteError } = await supabase.from('talkzy_room_messages')
-      .delete().eq('room_id', room.id);
-    if (deleteError) throw deleteError;
 
     const privateImagePaths = [];
     const legacyPublicImagePaths = [];
-    for (const item of existing || []) {
-      const stored = String(item.image_url || '');
+    for (const item of Array.isArray(data?.images) ? data.images : []) {
+      const stored = String(item?.image_url || '');
+      const senderId = String(item?.sender_id || '');
       if (stored && !/^https:\/\//i.test(stored) &&
-          stored.startsWith(`${item.sender_id}/rooms/${room.id}/messages/`) && !stored.includes('..')) {
+          stored.startsWith(`${senderId}/rooms/${room.id}/messages/`) &&
+          !stored.includes('..')) {
         privateImagePaths.push(stored);
         continue;
       }
@@ -668,7 +670,9 @@ app.delete('/api/rooms/:roomId/messages', userAuth, async (req, res) => {
       if (index >= 0) {
         try {
           const legacyPath = decodeURIComponent(stored.slice(index + publicPrefix.length).split('?')[0]);
-          if (legacyPath.includes(`/rooms/${room.id}/messages/`) && !legacyPath.includes('..')) legacyPublicImagePaths.push(legacyPath);
+          if (legacyPath.includes(`/rooms/${room.id}/messages/`) && !legacyPath.includes('..')) {
+            legacyPublicImagePaths.push(legacyPath);
+          }
         } catch {}
       }
     }
@@ -681,7 +685,10 @@ app.delete('/api/rooms/:roomId/messages', userAuth, async (req, res) => {
       if (storageError) console.error('Could not remove legacy room chat images:', storageError.message);
     }
 
-    res.json({ cleared: true, deletedCount: (existing || []).length });
+    res.set('Cache-Control', 'no-store').json({
+      cleared: true,
+      deletedCount: Number(data?.deleted_count || 0)
+    });
   } catch (error) {
     console.error('Could not clear room chat:', error.message);
     res.status(500).json({ error: 'Could not clear room chat.' });
