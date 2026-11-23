@@ -28,9 +28,13 @@ jobs:
         with:
           node-version: 22
 
-      - name: Resolve and lock mobile dependencies
+      - name: Resolve mobile dependencies
         working-directory: mobile
         run: npm install --no-fund
+
+      - name: Install Expo system UI support
+        working-directory: mobile
+        run: npx expo install expo-system-ui
 
       - name: Require no high-severity production vulnerabilities
         working-directory: mobile
