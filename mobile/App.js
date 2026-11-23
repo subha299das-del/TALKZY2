@@ -3576,11 +3576,8 @@ function renderRoomInterior() {
       </View>
 
            {/* MICROPHONE SEATS */}
-<ScrollView
-  style={{ maxHeight: micCount >= 16 ? 205 : micCount >= 14 ? 245 : 300, flexShrink: 0 }}
-  contentContainerStyle={{ paddingHorizontal: 12, paddingTop: youtubeScreenVisible ? 4 : 8, paddingBottom: 2 }}
-  showsVerticalScrollIndicator={micCount >= 16}
-  nestedScrollEnabled
+<View
+  style={{ flexShrink: 0, paddingHorizontal: 12, paddingTop: youtubeScreenVisible ? 4 : 8, paddingBottom: 2 }}
 >
   {(youtubeScreenVisible
     ? Array.from({ length: Math.ceil((MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().length / 8) }, (_, index) => (MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().slice(index * 8, (index + 1) * 8))
@@ -3589,7 +3586,7 @@ function renderRoomInterior() {
     const isTopCoupleRow = !youtubeScreenVisible && rowIndex === 0 && rowSeats.length === 2;
     const couplePairWidth = micCount >= 17 ? 112 : micCount >= 14 ? 120 : 128;
     return (
-    <View key={rowIndex} style={{ width: isTopCoupleRow ? couplePairWidth : '100%', alignSelf: 'center', flexDirection: 'row', justifyContent: 'center', alignItems: 'stretch', backgroundColor: isTopCoupleRow ? 'transparent' : youtubeScreenVisible ? '#360D14' : 'transparent', borderWidth: isTopCoupleRow ? 0 : youtubeScreenVisible ? 1.5 : 0, borderColor: '#B88743', borderRadius: youtubeScreenVisible ? 10 : 0, paddingHorizontal: youtubeScreenVisible && !isTopCoupleRow ? 2 : 0, paddingTop: youtubeScreenVisible && !isTopCoupleRow ? 2 : 0, paddingBottom: youtubeScreenVisible && !isTopCoupleRow ? 2 : 0, marginBottom: youtubeScreenVisible ? 3 : 7, shadowColor: youtubeScreenVisible && !isTopCoupleRow ? '#D5A64E' : 'transparent', shadowOpacity: youtubeScreenVisible && !isTopCoupleRow ? 0.22 : 0, shadowRadius: youtubeScreenVisible && !isTopCoupleRow ? 7 : 0, elevation: youtubeScreenVisible && !isTopCoupleRow ? 4 : 0 }}>
+    <View key={rowIndex} style={{ width: isTopCoupleRow ? couplePairWidth : '100%', alignSelf: 'center', flexDirection: 'row', justifyContent: 'center', alignItems: 'stretch', backgroundColor: isTopCoupleRow ? 'transparent' : youtubeScreenVisible ? '#360D14' : 'transparent', borderWidth: isTopCoupleRow ? 0 : youtubeScreenVisible ? 1.5 : 0, borderColor: '#B88743', borderRadius: youtubeScreenVisible ? 10 : 0, paddingHorizontal: youtubeScreenVisible && !isTopCoupleRow ? 2 : 0, paddingTop: youtubeScreenVisible && !isTopCoupleRow ? 2 : 0, paddingBottom: youtubeScreenVisible && !isTopCoupleRow ? 2 : 0, marginBottom: youtubeScreenVisible ? 3 : (micCount >= 14 ? 4 : 7), shadowColor: youtubeScreenVisible && !isTopCoupleRow ? '#D5A64E' : 'transparent', shadowOpacity: youtubeScreenVisible && !isTopCoupleRow ? 0.22 : 0, shadowRadius: youtubeScreenVisible && !isTopCoupleRow ? 7 : 0, elevation: youtubeScreenVisible && !isTopCoupleRow ? 4 : 0 }}>
       {rowSeats.map((seat) => {
 
     const occupiedSeat = micSeats.find(
@@ -3682,7 +3679,7 @@ function renderRoomInterior() {
         style={{
           opacity: (isRoomTourist && !touristsOnMic) || (seatIsClosed && !canControlMics) ? 0.4 : 1,
           width: isTopCoupleRow ? '50%' : `${100 / Math.max(...(MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.map(row => row.length))}%`,
-          height: youtubeScreenVisible ? 38 : 88,
+          height: youtubeScreenVisible ? 38 : (micCount >= 17 ? 66 : micCount >= 14 ? 72 : 88),
           alignItems: 'center',
           justifyContent: 'flex-start',
           marginBottom: 0,
@@ -3853,7 +3850,7 @@ function renderRoomInterior() {
     </View>
     );
   })}
-</ScrollView>
+</View>
 
 <Modal visible={showMicControlPopup} transparent animationType="fade" onRequestClose={() => setShowMicControlPopup(false)}>
   <View style={{ flex: 1, backgroundColor: 'rgba(3,5,14,0.78)', justifyContent: 'center', padding: 22 }}>
