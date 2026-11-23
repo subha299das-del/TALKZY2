@@ -100,3 +100,5 @@ jobs:
           path: mobile/android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 14
+
+# Trigger a fresh Android APK build for the current TALKZY feature branch.
