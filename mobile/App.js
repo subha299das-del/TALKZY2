@@ -2603,6 +2603,16 @@ async function toggleFollowRoom(room) {
         await cleanUpStaleVisit();
         return;
       }
+      try {
+        await api(`/api/rooms/${room.id}/presence/ping`, { method: 'POST' });
+      } catch (presenceError) {
+        await cleanUpStaleVisit();
+        throw presenceError;
+      }
+      if (!isCurrentUserRequest()) {
+        await cleanUpStaleVisit();
+        return;
+      }
       setShowJoinPassword(false); setJoinPassword(''); setJoinTargetRoom(null);
       // A room entry never restores a previous microphone seat. Clear any stale
       // seat for this user before loading the room state, so sitting is manual.
@@ -3023,6 +3033,9 @@ function renderRoomCard(room, showJoin = true) {
     try { await api(`/api/rooms/${room.id}/mic-seats`, { method: 'DELETE' }); } catch (seatCleanupError) {
       console.log('Stale mic seat cleanup on entry:', seatCleanupError.message);
     }
+    if (!isCurrentUserRequest()) return;
+    try { await api(`/api/rooms/${room.id}/presence/ping`, { method: 'POST' }); }
+    catch (presenceError) { console.log('Initial room presence ping:', presenceError.message); }
     if (!isCurrentUserRequest()) return;
     roomChatActiveRoomIdRef.current = room.id;
     ++roomChatLoadVersionRef.current;
