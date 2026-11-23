@@ -669,6 +669,8 @@ const micSeatLoadVersionRef = useRef(0);
 const roomLeaveCleanupRef = useRef({});
 const roomExitInProgressRef = useRef({});
 const roomChatLocalCutoffRef = useRef({});
+const roomChatActiveRoomIdRef = useRef(null);
+const roomChatLoadVersionRef = useRef(0);
 const worldLuckyBagSeenRef = useRef(new Set());
  const [showMicCountPicker, setShowMicCountPicker] = useState(false);
  const [micLayout, setMicLayout] = useState('eight');
@@ -2368,9 +2370,9 @@ async function toggleFollowRoom(room) {
     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const announcement = String(room?.announcement || room?.description || '').trim();
     return [
-      { id: `entry-${room.id}-welcome-${session?.user?.id}-${Date.now()}`, system: true, sender: 'TALKZY SYSTEM', text: `Welcome to ${room?.room_name || 'the room'}!`, time },
-      { id: `entry-${room.id}-guidelines-${session?.user?.id}-${Date.now()}`, system: true, sender: 'ROOM GUIDELINES', text: 'Please respect everyone and speak politely. Abusive language, third-party advertising, fake official information and politically sensitive topics are strictly prohibited. Please report such situations.', time },
-      { id: `entry-${room.id}-announcement-${session?.user?.id}-${Date.now()}`, system: true, sender: 'ROOM ANNOUNCEMENT', text: announcement || 'There is no announcement from the room owner.', time }
+      { id: `entry-${room.id}-guidelines-${session?.user?.id}-${Date.now()}`, roomId: room.id, system: true, sender: 'APPLICATION GUIDELINES', text: 'Please respect everyone and speak politely. Abusive language, third-party advertising, fake official information and politically sensitive topics are strictly prohibited. Please report such situations.', time },
+      { id: `entry-${room.id}-announcement-${session?.user?.id}-${Date.now()}`, roomId: room.id, system: true, sender: 'ROOM ANNOUNCEMENT', text: announcement || 'There is no announcement from the room owner.', time },
+      { id: `entry-${room.id}-welcome-${session?.user?.id}-${Date.now()}`, roomId: room.id, system: true, sender: 'TALKZY SYSTEM', text: `Welcome to ${room?.room_name || 'the room'}!`, time }
     ];
   }
 
@@ -2407,6 +2409,10 @@ async function toggleFollowRoom(room) {
       try { await api(`/api/rooms/${room.id}/mic-seats`, { method: 'DELETE' }); } catch (seatCleanupError) {
         console.log('Stale mic seat cleanup on entry:', seatCleanupError.message);
       }
+      roomChatActiveRoomIdRef.current = room.id;
+      ++roomChatLoadVersionRef.current;
+      setShowRoomChatComposer(false);
+      setRoomChatText('');
       setSelectedRoom(room);
       setIsRoomTourist(result.mode === 'tourist');
       setIsRoomMinimized(false); setShowRoomMenu(false);
@@ -2484,27 +2490,41 @@ async function toggleFollowRoom(room) {
   }
 
   async function loadRoomMessages(roomId) {
-    if (!roomId) return;
+    if (!roomId || roomChatActiveRoomIdRef.current !== roomId) return;
+    const requestVersion = ++roomChatLoadVersionRef.current;
+    const isCurrentRoomRequest = () =>
+      roomChatActiveRoomIdRef.current === roomId &&
+      roomChatLoadVersionRef.current === requestVersion;
     try {
-      // Do not race an exit marker write against a room re-entry/history fetch.
       const pendingLeave = roomLeaveCleanupRef.current[roomId];
       if (pendingLeave) await pendingLeave;
+      if (!isCurrentRoomRequest()) return;
       const cutoffKey = `talkzy-room-chat-cutoff:${session?.user?.id || 'unknown'}:${roomId}`;
       const savedCutoff = Number(await AsyncStorage.getItem(cutoffKey)) || 0;
+      if (!isCurrentRoomRequest()) return;
       const localCutoff = Math.max(roomChatLocalCutoffRef.current[roomId] || 0, savedCutoff);
       roomChatLocalCutoffRef.current[roomId] = localCutoff;
       const result = await api(`/api/rooms/${roomId}/messages`);
-      setRoomChatMessages(prev => [...prev.filter(item => item.system), ...(result.messages || []).filter(item => !localCutoff || new Date(item.created_at).getTime() > localCutoff).map(item => ({
-        id: item.id,
-        text: item.message_type === 'image' ? '📷 Photo' : item.message_text,
-        sender: item.sender?.display_name || 'TALKZY User',
-        senderId: item.sender_id,
-        avatar_url: item.sender?.avatar_url || null,
-        time: item.created_at ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
-        message_type: item.message_type,
-        image_url: item.image_url
-      }))]);
-    } catch (error) { console.log('Room chat loading error:', error.message); }
+      if (!isCurrentRoomRequest()) return;
+      const history = (result.messages || [])
+        .filter(item => !localCutoff || new Date(item.created_at).getTime() > localCutoff)
+        .map(item => ({
+          id: item.id, roomId,
+          text: item.message_type === 'image' ? '📷 Photo' : item.message_text,
+          sender: item.sender?.display_name || 'TALKZY User',
+          senderId: item.sender_id,
+          avatar_url: item.sender?.avatar_url || null,
+          time: item.created_at ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+          message_type: item.message_type,
+          image_url: item.image_url
+        }));
+      setRoomChatMessages(prev => [
+        ...prev.filter(item => item.system && item.roomId === roomId),
+        ...history
+      ]);
+    } catch (error) {
+      if (isCurrentRoomRequest()) console.log('Room chat loading error:', error.message);
+    }
   }
 
   // =========================================
@@ -2780,6 +2800,10 @@ function renderRoomCard(room, showJoin = true) {
     try { await api(`/api/rooms/${room.id}/mic-seats`, { method: 'DELETE' }); } catch (seatCleanupError) {
       console.log('Stale mic seat cleanup on entry:', seatCleanupError.message);
     }
+    roomChatActiveRoomIdRef.current = room.id;
+    ++roomChatLoadVersionRef.current;
+    setShowRoomChatComposer(false);
+    setRoomChatText('');
     setSelectedRoom(room);
 setIsRoomTourist(false);
 setIsRoomMinimized(false);
@@ -3192,17 +3216,20 @@ async function sendRoomChatMessage() {
   if (isRoomTourist && !touristsSendText) {
     return Alert.alert('Text messages disabled', 'The room owner does not allow tourists to send text messages.');
   }
+  const roomId = selectedRoom.id;
   try {
-    const result = await api(`/api/rooms/${selectedRoom.id}/messages`, {
+    const result = await api(`/api/rooms/${roomId}/messages`, {
       method: 'POST',
       body: JSON.stringify({ type: 'text', text: message })
     });
     const item = result.message;
-    setRoomChatMessages(prev => [...prev, {
-      id: item.id, text: item.message_text, sender: profile?.display_name || displayName || 'You',
-      senderId: session?.user?.id, time: new Date(item.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }]);
-    setRoomChatText('');
+    if (roomChatActiveRoomIdRef.current === roomId) {
+      setRoomChatMessages(prev => prev.some(existing => existing.id === item.id) ? prev : [...prev, {
+        id: item.id, roomId, text: item.message_text, sender: profile?.display_name || displayName || 'You',
+        senderId: session?.user?.id, time: new Date(item.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }]);
+      setRoomChatText('');
+    }
   } catch (error) {
     Alert.alert('Message not sent', error.message || 'Could not send your message.');
   }
@@ -11407,6 +11434,9 @@ if (screen === 'profile' || profileIncomplete) {
     setMicSeats([]);
     setRoomPresence([]);
     setRoomChatMessages([]);
+    roomChatActiveRoomIdRef.current = null;
+    ++roomChatLoadVersionRef.current;
+    setShowRoomChatComposer(false);
     setSelectedRoom(null);
     ++micSeatLoadVersionRef.current;
     setActiveTab('Room');
