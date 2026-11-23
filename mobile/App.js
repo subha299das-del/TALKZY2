@@ -5115,23 +5115,20 @@ function renderRoomInterior() {
   </Pressable>
 </Modal>
 
-{/* ROOM CHAT SPACE — appears with the Android keyboard; no title or overflow menu */}
-{showRoomChatComposer && (
-<View
-  style={{
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 9999,
-    elevation: 24,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.16)'
+{/* ROOM CHAT COMPOSER — native modal layer stays above the room and follows the keyboard. */}
+<Modal
+  visible={showRoomChatComposer}
+  transparent
+  statusBarTranslucent
+  animationType="none"
+  onRequestClose={() => {
+    Keyboard.dismiss();
+    setShowRoomChatComposer(false);
+    setShowRoomChatActionMenu(false);
   }}
 >
   <KeyboardAvoidingView
-    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.16)' }}
   >
     <View style={{ paddingHorizontal: 14, paddingTop: 8, paddingBottom: Platform.OS === 'android' ? 8 : 12, maxHeight: '58%' }}>
@@ -5161,10 +5158,7 @@ function renderRoomInterior() {
       </View>
     </View>
   </KeyboardAvoidingView>
-</View>
-)}
-
-
+</Modal>
 
 {/* ROOM BOTTOM CONTROLS — horizontally scrollable so every feature stays reachable on narrow phones */}
 <ScrollView
