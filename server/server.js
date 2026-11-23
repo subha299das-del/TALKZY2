@@ -577,18 +577,21 @@ app.post('/api/rooms/:roomId/leave-visit', userAuth, async (req, res) => {
     const room = await requireRoom(req, res);
     if (!room) return;
     const userId = req.talkzyUser.id;
-    await clearUserRoomChat(room.id, userId);
-    const { error: seatError } = await supabase.from('talkzy_room_mic_seats')
-      .delete().eq('room_id', room.id).eq('user_id', userId);
-    if (seatError) throw seatError;
-    const { error } = await supabase.from('talkzy_room_visitors').delete()
-      .eq('room_id', room.id).eq('user_id', userId);
-    if (error) throw error;
-    const { error: presenceError } = await supabase.from('talkzy_room_presence').delete()
-      .eq('room_id', room.id).eq('user_id', userId);
-    if (presenceError) throw presenceError;
-    await removeUserRoomMusic(room.id, userId);
-    res.json({ left: true });
+    const { data, error } = await supabase.rpc('talkzy_room_exit_atomic', {
+      p_room_id: room.id, p_user_id: userId, p_remove_membership: false
+    });
+    if (error) {
+      if (/user_not_in_room/i.test(error.message || '')) return res.status(403).json({ error: 'Your room visit has already expired.' });
+      if (/room_closed/i.test(error.message || '')) return res.status(409).json({ error: 'This room is closed.' });
+      throw error;
+    }
+    const paths = (Array.isArray(data?.music_paths) ? data.music_paths : [])
+      .filter(path => typeof path === 'string' && path.startsWith(`${userId}/${room.id}/`) && !path.includes('..'));
+    if (paths.length) {
+      const { error: storageError } = await supabase.storage.from('talkzy-room-music').remove(paths);
+      if (storageError) console.error('Tourist exit music-file cleanup:', storageError.message);
+    }
+    res.set('Cache-Control', 'no-store').json({ left: true, clearedAt: data?.cleared_at || null });
   } catch (error) {
     console.error('Could not leave tourist visit:', error.message);
     res.status(500).json({ error: 'Could not leave this room.' });
@@ -977,49 +980,32 @@ app.patch('/api/rooms/:roomId/type', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
-
-    if (room.owner_id !== req.talkzyUser.id) {
-      return res.status(403).json({ error: 'Only the room owner can change room privacy.' });
-    }
-
-    if (room.status !== 'active') {
-      return res.status(409).json({ error: 'This room is closed.' });
-    }
-
+    if (room.owner_id !== req.talkzyUser.id) return res.status(403).json({ error: 'Only the room owner can change room privacy.' });
+    if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
     const roomType = String(req.body?.roomType || '');
     const password = String(req.body?.password || '');
-
-    if (!['public', 'locked'].includes(roomType)) {
-      return res.status(400).json({ error: 'Room type must be public or locked.' });
+    if (!['public', 'locked'].includes(roomType)) return res.status(400).json({ error: 'Room type must be public or locked.' });
+    let passwordHash = null;
+    const writePassword = roomType === 'locked';
+    if (writePassword) {
+      if (password.trim().length < 4 || password.length > 64) return res.status(400).json({ error: 'A new locked-room password must be 4 to 64 characters.' });
+      passwordHash = await makePasswordHash(password);
     }
-
-    if (roomType === 'locked' &&
-    (password.trim().length < 4 || password.length > 64)) {
-      return res.status(400).json({
-        error: 'A new locked-room password must be 4 to 64 characters.'
-      });
+    const { data, error } = await supabase.rpc('talkzy_update_room_settings_atomic', {
+      p_room_id: room.id,
+      p_user_id: req.talkzyUser.id,
+      p_room_patch: { room_type: roomType },
+      p_approval: {},
+      p_write_password: writePassword,
+      p_password_hash: passwordHash,
+      p_delete_password: roomType === 'public'
+    });
+    if (error) {
+      if (/42501/i.test(error.message || '')) return res.status(403).json({ error: 'Only the room owner can change room privacy.' });
+      if (/55000/i.test(error.message || '')) return res.status(409).json({ error: 'This room is closed.' });
+      throw error;
     }
-
-    const passwordHash = roomType === 'locked' ? await makePasswordHash(password) : null;
-    if (roomType === 'locked') {
-      const { error: passwordError } = await supabase.from('talkzy_room_passwords')
-        .upsert({ room_id: room.id, password_hash: passwordHash }, { onConflict: 'room_id' });
-      if (passwordError) throw passwordError;
-    }
-
-    const { data, error } = await supabase.from('talkzy_rooms')
-      .update({ room_type: roomType })
-      .eq('id', room.id)
-      .select('id, room_name, description, room_type, status')
-      .single();
-    if (error) throw error;
-
-    if (roomType === 'public') {
-      const { error: deletePasswordError } = await supabase.from('talkzy_room_passwords')
-        .delete().eq('room_id', room.id);
-      if (deletePasswordError) throw deletePasswordError;
-    }
-    res.json({ room: data });
+    res.set('Cache-Control', 'no-store').json({ room: data?.room || null });
   } catch (error) {
     console.error('Could not change room privacy:', error.message);
     res.status(500).json({ error: 'Could not change room privacy.' });
