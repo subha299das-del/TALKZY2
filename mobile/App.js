@@ -3714,7 +3714,7 @@ function renderRoomInterior() {
         style={{
           opacity: (isRoomTourist && !touristsOnMic) || (seatIsClosed && !canControlMics) ? 0.4 : 1,
           width: isTopCoupleRow ? '50%' : `${100 / Math.max(...(MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.map(row => row.length))}%`,
-          height: youtubeScreenVisible ? 38 : (micCount >= 17 ? 69 : micCount >= 14 ? 75 : 91),
+          height: youtubeScreenVisible ? 38 : (micCount >= 17 ? 72 : micCount >= 14 ? 78 : 94),
           alignItems: 'center',
           justifyContent: 'flex-start',
           marginBottom: 0,
@@ -3731,9 +3731,9 @@ function renderRoomInterior() {
       >
         <View
           style={{
-            width: youtubeScreenVisible ? 22 : (micCount >= 17 ? 45 : micCount >= 14 ? 49 : 53),
-            height: youtubeScreenVisible ? 22 : (micCount >= 17 ? 45 : micCount >= 14 ? 49 : 53),
-            borderRadius: youtubeScreenVisible ? 11 : (micCount >= 17 ? 22.5 : micCount >= 14 ? 24.5 : 26.5),
+            width: youtubeScreenVisible ? 22 : (micCount >= 17 ? 48 : micCount >= 14 ? 52 : 56),
+            height: youtubeScreenVisible ? 22 : (micCount >= 17 ? 48 : micCount >= 14 ? 52 : 56),
+            borderRadius: youtubeScreenVisible ? 11 : (micCount >= 17 ? 24 : micCount >= 14 ? 26 : 28),
             borderWidth: 2,
             borderColor: isMySeat ? '#F4D99A' : isOccupied ? '#D8B66D' : '#80643A',
             backgroundColor: '#17120B',
@@ -3755,9 +3755,9 @@ function renderRoomInterior() {
                     : MIC_ON_ICON
                 }
                 style={{
-                  width: youtubeScreenVisible ? 20 : (micCount >= 17 ? 42 : micCount >= 14 ? 46 : 50),
-                  height: youtubeScreenVisible ? 20 : (micCount >= 17 ? 42 : micCount >= 14 ? 46 : 50),
-                  borderRadius: youtubeScreenVisible ? 10 : (micCount >= 17 ? 21 : micCount >= 14 ? 23 : 25),
+                  width: youtubeScreenVisible ? 20 : (micCount >= 17 ? 45 : micCount >= 14 ? 49 : 53),
+                  height: youtubeScreenVisible ? 20 : (micCount >= 17 ? 45 : micCount >= 14 ? 49 : 53),
+                  borderRadius: youtubeScreenVisible ? 10 : (micCount >= 17 ? 22.5 : micCount >= 14 ? 24.5 : 26.5),
                   resizeMode: 'cover'
                 }}
               />
