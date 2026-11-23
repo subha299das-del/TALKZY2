@@ -87,11 +87,12 @@ const C = {
 
 // Room-only Black Marble Luxury palette. The main app theme remains unchanged.
 const ROOM_C = {
-  bg: '#080706', panel: '#14110D', panel2: '#201A12',
-  text: '#F7F0E2', muted: '#B7A98F',
-  accent: '#C6A15B', primary: '#C6A15B', card: '#100E0B',
-  line: '#5A4528', danger: '#B85B52', gold: '#E8C982',
-  teal: '#D9B66B', pink: '#C99A68', glow: 'rgba(215,181,109,0.18)'
+  // Cool blue / cyan room palette inspired by the supplied room-interior reference.
+  bg: '#061522', panel: '#0B2237', panel2: '#12334F',
+  text: '#F0F8FF', muted: '#9CB9CC',
+  accent: '#25A9D6', primary: '#25A9D6', card: '#0A1D30',
+  line: '#24516D', danger: '#E46D83', gold: '#76D8F1',
+  teal: '#4FE0D0', pink: '#9D9BFF', glow: 'rgba(37,169,214,0.22)'
 };
 
 
@@ -3230,14 +3231,17 @@ function renderRoomInterior() {
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, minHeight: 0 }}>
       {!roomThemePreviewUri && (
-        <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#080706', overflow: 'hidden' }}>
-          <View style={{ position: 'absolute', width: '145%', height: 1, top: '13%', left: '-18%', backgroundColor: 'rgba(218,181,105,0.20)', transform: [{ rotate: '-17deg' }] }} />
-          <View style={{ position: 'absolute', width: '118%', height: 1, top: '31%', left: '-8%', backgroundColor: 'rgba(218,181,105,0.12)', transform: [{ rotate: '11deg' }] }} />
-          <View style={{ position: 'absolute', width: '132%', height: 1, top: '57%', left: '-15%', backgroundColor: 'rgba(218,181,105,0.16)', transform: [{ rotate: '-9deg' }] }} />
-          <View style={{ position: 'absolute', width: '110%', height: 1, top: '78%', left: '-4%', backgroundColor: 'rgba(218,181,105,0.11)', transform: [{ rotate: '14deg' }] }} />
-          <View style={{ position: 'absolute', width: 1, height: '68%', top: '8%', left: '23%', backgroundColor: 'rgba(218,181,105,0.08)', transform: [{ rotate: '24deg' }] }} />
-          <View style={{ position: 'absolute', width: 1, height: '74%', top: '22%', right: '19%', backgroundColor: 'rgba(218,181,105,0.10)', transform: [{ rotate: '-21deg' }] }} />
-          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.28)' }} />
+        <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#061522', overflow: 'hidden' }}>
+          {/* Layered ambient lighting creates a full-screen voice lounge rather than a flat black panel. */}
+          <View style={{ position: 'absolute', width: 310, height: 310, borderRadius: 155, top: -145, left: -105, backgroundColor: 'rgba(24,143,190,0.24)' }} />
+          <View style={{ position: 'absolute', width: 260, height: 260, borderRadius: 130, top: '28%', right: -150, backgroundColor: 'rgba(54,91,190,0.20)' }} />
+          <View style={{ position: 'absolute', width: 300, height: 300, borderRadius: 150, bottom: -190, left: '18%', backgroundColor: 'rgba(25,172,177,0.16)' }} />
+          <View style={{ position: 'absolute', width: '145%', height: 1, top: '18%', left: '-18%', backgroundColor: 'rgba(105,218,244,0.20)', transform: [{ rotate: '-17deg' }] }} />
+          <View style={{ position: 'absolute', width: '118%', height: 1, top: '43%', left: '-8%', backgroundColor: 'rgba(105,218,244,0.12)', transform: [{ rotate: '11deg' }] }} />
+          <View style={{ position: 'absolute', width: '132%', height: 1, top: '69%', left: '-15%', backgroundColor: 'rgba(105,218,244,0.15)', transform: [{ rotate: '-9deg' }] }} />
+          <View style={{ position: 'absolute', width: 1, height: '68%', top: '8%', left: '23%', backgroundColor: 'rgba(105,218,244,0.07)', transform: [{ rotate: '24deg' }] }} />
+          <View style={{ position: 'absolute', width: 1, height: '74%', top: '22%', right: '19%', backgroundColor: 'rgba(105,218,244,0.08)', transform: [{ rotate: '-21deg' }] }} />
+          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(1,8,18,0.24)' }} />
         </View>
       )}
       {roomThemePreviewUri && (
@@ -4572,9 +4576,9 @@ function renderRoomInterior() {
       setShowHotEventsPopup(true);
       if (!loadingOfficialEvents) loadOfficialEvents();
     }}
-    style={{ width: 76, height: 38, borderRadius: 9, overflow: 'hidden', borderWidth: 1.3, borderColor: '#E8C56F', backgroundColor: '#341323', alignItems: 'center', justifyContent: 'center', shadowColor: '#D69B4D', shadowOpacity: 0.4, shadowRadius: 7, elevation: 7 }}
+    style={{ width: 76, height: 38, borderRadius: 9, overflow: 'hidden', borderWidth: 1.3, borderColor: '#58CBEA', backgroundColor: '#10334B', alignItems: 'center', justifyContent: 'center', shadowColor: '#D69B4D', shadowOpacity: 0.4, shadowRadius: 7, elevation: 7 }}
   >
-    <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: '#6B1D35', opacity: 0.72 }} />
+    <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: '#155C7D', opacity: 0.72 }} />
     <Text style={{ color: '#FFE6A0', fontSize: 10, fontWeight: '900', letterSpacing: 0.4 }}>🔥 HOT</Text>
     <Text style={{ color: '#FFFFFF', fontSize: 7, fontWeight: '900', letterSpacing: 1 }}>EVENTS</Text>
   </TouchableOpacity>
@@ -4586,7 +4590,7 @@ function renderRoomInterior() {
       setShowRoomGiftPanel(false); setShowRoomTools(false); setShowRoomGamePanel(false);
       setShowRocketPanel(false); setShowHotEventsPopup(false); setShowGreedyPanel(true);
     }}
-    style={{ width: 44, height: 44, borderRadius: 15, borderWidth: 1.4, borderColor: '#C59A55', backgroundColor: '#211331', alignItems: 'center', justifyContent: 'center', shadowColor: '#9B69D6', shadowOpacity: 0.35, shadowRadius: 7, elevation: 7 }}
+    style={{ width: 44, height: 44, borderRadius: 15, borderWidth: 1.4, borderColor: '#69D7F0', backgroundColor: '#112F4C', alignItems: 'center', justifyContent: 'center', shadowColor: '#31BCE3', shadowOpacity: 0.35, shadowRadius: 7, elevation: 7 }}
   >
     <Text style={{ fontSize: 24 }}>🤑</Text>
   </TouchableOpacity>
@@ -4598,7 +4602,7 @@ function renderRoomInterior() {
       setShowRoomGiftPanel(false); setShowRoomTools(false); setShowGreedyPanel(false);
       setShowRocketPanel(false); setShowHotEventsPopup(false); setShowRoomGamePanel(true);
     }}
-    style={{ width: 44, height: 44, borderRadius: 15, borderWidth: 1.4, borderColor: '#65C8D5', backgroundColor: '#142D3B', alignItems: 'center', justifyContent: 'center', shadowColor: '#4AC4D6', shadowOpacity: 0.32, shadowRadius: 7, elevation: 7 }}
+    style={{ width: 44, height: 44, borderRadius: 15, borderWidth: 1.4, borderColor: '#65D8E8', backgroundColor: '#123A50', alignItems: 'center', justifyContent: 'center', shadowColor: '#4AC4D6', shadowOpacity: 0.32, shadowRadius: 7, elevation: 7 }}
   >
     <Text style={{ fontSize: 23 }}>🎮</Text>
   </TouchableOpacity>
@@ -4611,12 +4615,12 @@ function renderRoomInterior() {
       setShowRoomGamePanel(false); setShowRocketPanel(false); setShowHotEventsPopup(false);
       setRoomShortcutCategory('Treasury'); setShowRoomShortcutsPage(true);
     }}
-    style={{ width: 46, height: 46, borderRadius: 16, borderWidth: 1.5, borderColor: '#E0BD70', backgroundColor: '#382052', alignItems: 'center', justifyContent: 'center', shadowColor: '#C49A45', shadowOpacity: 0.4, shadowRadius: 8, elevation: 8 }}
+    style={{ width: 46, height: 46, borderRadius: 16, borderWidth: 1.5, borderColor: '#79D9ED', backgroundColor: '#183B59', alignItems: 'center', justifyContent: 'center', shadowColor: '#C49A45', shadowOpacity: 0.4, shadowRadius: 8, elevation: 8 }}
   >
-    <View pointerEvents="none" style={{ position: 'absolute', top: 5, left: 5, right: 5, bottom: 5, borderRadius: 12, borderWidth: 1, borderColor: '#8D68B2' }} />
-    <View style={{ width: 29, height: 22, marginTop: 7, borderRadius: 5, borderWidth: 1.5, borderColor: '#F0D18A', backgroundColor: '#4B2B68', alignItems: 'center', justifyContent: 'center' }}>
-      <View style={{ position: 'absolute', top: -6, left: -2, width: 30, height: 10, borderRadius: 5, borderWidth: 1.5, borderColor: '#FFE5A3', backgroundColor: '#76509A' }} />
-      <View style={{ position: 'absolute', top: 7, width: 4, height: 8, borderRadius: 2, backgroundColor: '#E8C56F' }} />
+    <View pointerEvents="none" style={{ position: 'absolute', top: 5, left: 5, right: 5, bottom: 5, borderRadius: 12, borderWidth: 1, borderColor: '#4B91B5' }} />
+    <View style={{ width: 29, height: 22, marginTop: 7, borderRadius: 5, borderWidth: 1.5, borderColor: '#9AEAFF', backgroundColor: '#24577A', alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ position: 'absolute', top: -6, left: -2, width: 30, height: 10, borderRadius: 5, borderWidth: 1.5, borderColor: '#C0F4FF', backgroundColor: '#357EA0' }} />
+      <View style={{ position: 'absolute', top: 7, width: 4, height: 8, borderRadius: 2, backgroundColor: '#70DDF2' }} />
       <View style={{ position: 'absolute', top: 7, width: 8, height: 8, transform: [{ rotate: '45deg' }], backgroundColor: '#B98BFF', borderWidth: 1, borderColor: '#F0D9FF' }} />
     </View>
   </TouchableOpacity>
@@ -4624,7 +4628,7 @@ function renderRoomInterior() {
 </View>
 
 <Modal visible={showRoomShortcutsPage && screen === 'roomInterior' && Boolean(selectedRoom)} animationType="slide" transparent onRequestClose={() => setShowRoomShortcutsPage(false)}>
-  <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.62)', justifyContent: 'center', paddingHorizontal: 18 }}>
+  <View style={{ flex: 1, backgroundColor: 'rgba(1,10,20,0.70)', justifyContent: 'center', paddingHorizontal: 18 }}>
     <View style={{ maxHeight: '78%', borderRadius: 24, padding: 18, backgroundColor: '#090711', borderWidth: 1.3, borderColor: '#A77A39' }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 15, borderBottomWidth: 1, borderBottomColor: '#3A2A50', marginBottom: 16 }}>
         <View>
@@ -4792,10 +4796,10 @@ function renderRoomInterior() {
   <View style={{ maxHeight: 118, paddingHorizontal: 12, paddingTop: 7, paddingBottom: 4, borderTopWidth: 1, borderTopColor: C.line }}>
     <ScrollView ref={roomChatScrollRef} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} onContentSizeChange={() => roomChatScrollRef.current?.scrollToEnd({ animated: true })}>
       {roomChatMessages.slice(-30).map(message => (
-        <View key={message.id} style={{ alignSelf: message.system ? 'center' : 'flex-start', maxWidth: '94%', backgroundColor: message.system ? '#33270D' : C.card, borderWidth: message.system ? 1 : 0, borderColor: message.system ? C.gold : 'transparent', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, marginBottom: 5 }}>
-          <Text style={{ color: C.gold, fontSize: 10, fontWeight: '800', marginBottom: 2 }}>{message.sender?.display_name || message.sender || 'TALKZY User'}</Text>
-          {message.image_url ? <Image source={{ uri: message.image_url }} style={{ width: 150, height: 90, borderRadius: 8 }} resizeMode="cover" /> : <Text style={{ color: C.text, fontSize: 13 }}>{message.text || message.message_text}</Text>}
-          <Text style={{ color: C.muted, fontSize: 9, textAlign: 'right', marginTop: 2 }}>{message.time}</Text>
+        <View key={message.id} style={{ alignSelf: message.system ? 'center' : 'flex-start', maxWidth: '94%', backgroundColor: message.system ? 'rgba(15,91,130,0.88)' : 'rgba(7,27,45,0.94)', borderWidth: 1, borderColor: message.system ? '#58CBEA' : '#24516D', borderRadius: message.system ? 14 : 12, paddingHorizontal: 11, paddingVertical: 7, marginBottom: 6 }}>
+          <Text style={{ color: message.system ? '#9CEBFF' : '#79D7EF', fontSize: 10, fontWeight: '900', marginBottom: 3 }}>{message.sender?.display_name || message.sender || 'TALKZY User'}</Text>
+          {message.image_url ? <Image source={{ uri: message.image_url }} style={{ width: 150, height: 90, borderRadius: 8 }} resizeMode="cover" /> : <Text style={{ color: C.text, fontSize: 13, lineHeight: 18 }}>{message.text || message.message_text}</Text>}
+          <Text style={{ color: '#9CB9CC', fontSize: 9, textAlign: 'right', marginTop: 3 }}>{message.time}</Text>
         </View>
       ))}
     </ScrollView>
