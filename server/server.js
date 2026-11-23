@@ -476,108 +476,44 @@ app.post('/api/rooms', userAuth, roomCreateLimiter, async (req, res) => {
   const roomType = String(req.body?.roomType || 'public');
   const password = String(req.body?.password || '');
 
-  if (roomName.length < 3 || roomName.length > 40) {
-    return res.status(400).json({
-      error: 'Room name must be between 3 and 40 characters.'
-    });
-  }
-
-  if (description.length > 200) {
-    return res.status(400).json({
-      error: 'Description cannot exceed 200 characters.'
-    });
-  }
-
-  if (!['public', 'locked'].includes(roomType)) {
-    return res.status(400).json({
-      error: 'Room type must be public or locked.'
-    });
-  }
-
-  if (roomType === 'locked' && !password.trim()) {
-    return res.status(400).json({
-      error: 'A password is required for a locked room.'
-    });
-  }
-
-  if (
-    roomType === 'locked' &&
-    (password.length < 4 || password.length > 64)
-  ) {
-    return res.status(400).json({
-      error: 'Room password must be between 4 and 64 characters.'
-    });
-  }
-
-  if (roomDpUrl.length > 1000) {
-    return res.status(400).json({
-      error: 'Room picture URL is too long.'
-    });
-  }
-
+  if (roomName.length < 3 || roomName.length > 40) return res.status(400).json({ error: 'Room name must be between 3 and 40 characters.' });
+  if (description.length > 200) return res.status(400).json({ error: 'Description cannot exceed 200 characters.' });
+  if (!['public', 'locked'].includes(roomType)) return res.status(400).json({ error: 'Room type must be public or locked.' });
+  if (roomType === 'locked' && !password.trim()) return res.status(400).json({ error: 'A password is required for a locked room.' });
+  if (roomType === 'locked' && (password.length < 4 || password.length > 64)) return res.status(400).json({ error: 'Room password must be between 4 and 64 characters.' });
+  if (roomDpUrl.length > 1000) return res.status(400).json({ error: 'Room picture URL is too long.' });
   if (roomDpUrl) {
     try {
       const parsedUrl = new URL(roomDpUrl);
-
-      if (parsedUrl.protocol !== 'https:') {
-        throw new Error('HTTPS required');
-      }
+      if (parsedUrl.protocol !== 'https:') throw new Error('HTTPS required');
     } catch {
-      return res.status(400).json({
-        error: 'Room picture must be a valid HTTPS URL.'
-      });
+      return res.status(400).json({ error: 'Room picture must be a valid HTTPS URL.' });
     }
   }
 
   try {
-    const passwordHash = roomType === 'locked'
-      ? await makePasswordHash(password)
-      : null;
-
-    const { data, error } = await supabase
-      .from('talkzy_rooms')
-      .insert({
-        owner_id: req.talkzyUser.id,
-        room_name: roomName,
-        description,
-        room_type: roomType,
-        room_dp_url: roomDpUrl || null
-      })
-      .select(
-        'id, room_name, description, room_type, room_dp_url, status, created_at, room_talkzy_id, country_name'
-      )
-      .single();
-
+    const passwordHash = roomType === 'locked' ? await makePasswordHash(password) : null;
+    const { data, error } = await supabase.rpc('talkzy_create_room_atomic', {
+      p_owner_id: req.talkzyUser.id,
+      p_room_name: roomName,
+      p_description: description,
+      p_room_type: roomType,
+      p_room_dp_url: roomDpUrl || null,
+      p_password_hash: passwordHash
+    });
     if (error) {
-      if (error.code === '23505') {
-        return res.status(409).json({
-          error: 'You have already created a room. Each user can create only one room ever.'
-        });
+      if (error.code === '23505' || /one room|unique/i.test(error.message || '')) {
+        return res.status(409).json({ error: 'You have already created a room. Each user can create only one room ever.' });
       }
-
+      if (/Room name|description|room type|password/i.test(error.message || '')) return res.status(400).json({ error: error.message });
       throw error;
     }
-    if (passwordHash) {
-      const { error: passwordError } = await supabase.from('talkzy_room_passwords')
-        .insert({ room_id: data.id, password_hash: passwordHash });
-      if (passwordError) {
-        await supabase.from('talkzy_rooms').delete().eq('id', data.id);
-        throw passwordError;
-      }
-    }
-
-    return res.status(201).json({ room: data });
+    return res.status(201).json({ room: data?.room || null });
   } catch (error) {
     console.error('Room creation failed:', error.message);
-
-    return res.status(500).json({
-      error: 'Could not create room.'
-    });
+    return res.status(500).json({ error: 'Could not create room.' });
   }
 });
-
-
-// Join a public room, or join a locked room with its password.
 
 // ENTER A PUBLIC/LOCKED ROOM AS A VISITOR WITHOUT CREATING MEMBERSHIP
 app.post('/api/rooms/:roomId/visit', userAuth, roomEntryLimiter, async (req, res) => {
@@ -586,24 +522,29 @@ app.post('/api/rooms/:roomId/visit', userAuth, roomEntryLimiter, async (req, res
     if (!room) return;
     if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
     const userId = req.talkzyUser.id;
-    const { data: kicked, error: kickError } = await supabase.from('talkzy_room_kicklist')
-      .select('user_id').eq('room_id', room.id).eq('user_id', userId).maybeSingle();
-    if (kickError) throw kickError;
-    if (kicked) return res.status(403).json({ error: 'You are on this room’s Kick List.' });
-    if (room.owner_id === userId || await isRoomAdmin(room.id, userId) || await isRoomMember(room.id, userId)) {
-      return res.status(200).json({ visited: true, mode: 'member', roomId: room.id });
-    }
-    if (room.room_type === 'locked') {
+    let verifiedPasswordHash = null;
+    const isPrivilegedMember = room.owner_id === userId || await isRoomAdmin(room.id, userId) || await isRoomMember(room.id, userId);
+    if (room.room_type === 'locked' && !isPrivilegedMember) {
       const password = String(req.body?.password || '');
-      const { data, error } = await supabase.from('talkzy_room_passwords').select('password_hash').eq('room_id', room.id).maybeSingle();
+      const { data, error } = await supabase.from('talkzy_room_passwords')
+        .select('password_hash').eq('room_id', room.id).maybeSingle();
       if (error) throw error;
       if (!data || !await checkPassword(password, data.password_hash)) return res.status(403).json({ error: 'Incorrect room password.' });
+      verifiedPasswordHash = data.password_hash;
     }
-    const { error } = await supabase.from('talkzy_room_visitors').upsert({
-      room_id: room.id, user_id: userId, visited_at: new Date().toISOString(), last_seen_at: new Date().toISOString()
-    }, { onConflict: 'room_id,user_id' });
-    if (error) throw error;
-    res.json({ visited: true, mode: 'tourist', roomId: room.id });
+    const { data, error } = await supabase.rpc('talkzy_visit_room_atomic', {
+      p_room_id: room.id,
+      p_user_id: userId,
+      p_verified_password_hash: verifiedPasswordHash
+    });
+    if (error) {
+      if (/user_kicked/i.test(error.message || '')) return res.status(403).json({ error: 'You are on this room’s Kick List.' });
+      if (/locked_room_password_required/i.test(error.message || '')) return res.status(403).json({ error: 'Incorrect room password.' });
+      if (/room_closed/i.test(error.message || '')) return res.status(409).json({ error: 'This room is closed.' });
+      if (/room_not_found/i.test(error.message || '')) return res.status(404).json({ error: 'Room not found.' });
+      throw error;
+    }
+    res.set('Cache-Control', 'no-store').json(data || { visited: true, mode: 'tourist', roomId: room.id });
   } catch (error) {
     console.error('Could not enter room as tourist:', error.message);
     res.status(500).json({ error: 'Could not enter this room as a tourist.' });
@@ -787,52 +728,36 @@ app.post('/api/rooms/:roomId/join', userAuth, roomEntryLimiter, async (req, res)
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
-
-    if (room.status !== 'active') {
-      return res.status(409).json({ error: 'This room is closed.' });
-    }
-
+    if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
     const userId = req.talkzyUser.id;
-    const { data: kicked, error: kickCheckError } = await supabase
-      .from('talkzy_room_kicklist')
-      .select('user_id')
-      .eq('room_id', room.id)
-      .eq('user_id', userId)
-      .maybeSingle();
-    if (kickCheckError) throw kickCheckError;
-    if (kicked) return res.status(403).json({ error: 'You are on this room’s kick list and cannot rejoin.' });
-    const manager = await canManageRoom(room, userId);
-    const alreadyMember = await isRoomMember(room.id, userId);
-
-    if (room.room_type === 'locked' && !manager && !alreadyMember) {
+    let passwordVerified = false;
+    const isPrivilegedMember = room.owner_id === userId || await isRoomAdmin(room.id, userId) || await isRoomMember(room.id, userId);
+    if (room.room_type === 'locked' && !isPrivilegedMember) {
       const password = String(req.body?.password || '');
       const { data, error } = await supabase.from('talkzy_room_passwords')
         .select('password_hash').eq('room_id', room.id).maybeSingle();
       if (error) throw error;
-
-      const valid = Boolean(data) && await checkPassword(password, data.password_hash);
-      if (!valid) {
-        return res.status(403).json({ error: 'Incorrect room password.' });
-      }
+      passwordVerified = Boolean(data) && await checkPassword(password, data.password_hash);
+      if (!passwordVerified) return res.status(403).json({ error: 'Incorrect room password.' });
     }
-
-    const { error } = await supabase
-      .from('talkzy_room_members')
-      .upsert(
-        { room_id: room.id, user_id: userId, role: 'listener' },
-        { onConflict: 'room_id,user_id', ignoreDuplicates: true }
-      );
-
-    if (error) throw error;
-    await supabase.from('talkzy_room_visitors').delete().eq('room_id', room.id).eq('user_id', userId);
-
-    return res.status(200).json({ joined: true, roomId: room.id, mode: 'member' });
+    const { data, error } = await supabase.rpc('talkzy_join_room_atomic', {
+      p_room_id: room.id,
+      p_user_id: userId,
+      p_password_verified: passwordVerified
+    });
+    if (error) {
+      if (/user_kicked/i.test(error.message || '')) return res.status(403).json({ error: 'You are on this room’s kick list and cannot rejoin.' });
+      if (/locked_room_password_required/i.test(error.message || '')) return res.status(403).json({ error: 'Incorrect room password.' });
+      if (/room_closed/i.test(error.message || '')) return res.status(409).json({ error: 'This room is closed.' });
+      if (/room_not_found/i.test(error.message || '')) return res.status(404).json({ error: 'Room not found.' });
+      throw error;
+    }
+    res.set('Cache-Control', 'no-store').json(data || { joined: true, roomId: room.id, mode: 'member' });
   } catch (error) {
     console.error('Could not join room:', error.message);
     res.status(500).json({ error: 'Could not join this room.' });
   }
 });
-
 
 // =========================================
 // GET MY JOINED ROOMS
