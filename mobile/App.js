@@ -2558,9 +2558,9 @@ async function toggleFollowRoom(room) {
     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const announcement = String(room?.announcement || room?.description || '').trim();
     return [
-      { id: `entry-${room.id}-guidelines-${session?.user?.id}-${Date.now()}`, roomId: room.id, system: true, sender: 'APPLICATION GUIDELINES', text: 'Please respect everyone and speak politely. Abusive language, third-party advertising, fake official information and politically sensitive topics are strictly prohibited. Please report such situations.', time },
-      { id: `entry-${room.id}-announcement-${session?.user?.id}-${Date.now()}`, roomId: room.id, system: true, sender: 'ROOM ANNOUNCEMENT', text: announcement || 'There is no announcement from the room owner.', time },
-      { id: `entry-${room.id}-welcome-${session?.user?.id}-${Date.now()}`, roomId: room.id, system: true, sender: 'TALKZY SYSTEM', text: `Welcome to ${room?.room_name || 'the room'}!`, time }
+      { id: `entry-${room.id}-guidelines-${session?.user?.id}-${Date.now()}`, roomId: room.id, system: true, entryType: 'guidelines', sender: '', text: 'Welcome to the TALKZY. Please respect everyone and speak politely. Abusive language, third-party advertising, fake official information and politically sensitive topics are strictly prohibited. Please report such situations.', time },
+      { id: `entry-${room.id}-announcement-${session?.user?.id}-${Date.now()}`, roomId: room.id, system: true, entryType: 'announcement', sender: '', text: announcement || 'There is no announcement from the room owner.', time },
+      { id: `entry-${room.id}-welcome-${session?.user?.id}-${Date.now()}`, roomId: room.id, system: true, entryType: 'welcome', sender: '', text: `Welcome to ${room?.room_name || 'the room'}!`, time }
     ];
   }
 
@@ -3630,7 +3630,7 @@ function renderRoomInterior() {
   >
     <Text
       style={{
-        color: C.gold,
+        color: '#FFFFFF',
         fontSize: 16,
         fontWeight: '900',
         letterSpacing: 0.25,
@@ -4245,13 +4245,17 @@ function renderRoomInterior() {
   return (
   <View style={{ flex: 1, minHeight: chatMinHeight, minWidth: 0, paddingHorizontal: 12, paddingTop: 7, paddingBottom: 4 }}>
     <ScrollView ref={roomChatScrollRef} style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} onContentSizeChange={() => roomChatScrollRef.current?.scrollToEnd({ animated: true })}>
-      {roomChatMessages.slice(-30).map(message => (
-        <View key={message.id} style={{ alignSelf: message.system ? 'center' : 'flex-start', maxWidth: '94%', backgroundColor: message.system ? 'rgba(15,91,130,0.88)' : 'rgba(7,27,45,0.94)', borderWidth: 1, borderColor: message.system ? '#58CBEA' : '#24516D', borderRadius: message.system ? 14 : 12, paddingHorizontal: 11, paddingVertical: 7, marginBottom: 6 }}>
-          <Text style={{ color: message.system ? '#9CEBFF' : '#79D7EF', fontSize: 10, fontWeight: '900', marginBottom: 3 }}>{message.sender?.display_name || message.sender || 'TALKZY User'}</Text>
-          {message.image_url ? <Image source={{ uri: message.image_url }} style={{ width: 150, height: 90, borderRadius: 8 }} resizeMode="cover" /> : <Text style={{ color: C.text, fontSize: 13, lineHeight: 18 }}>{message.text || message.message_text}</Text>}
-          <Text style={{ color: '#9CB9CC', fontSize: 9, textAlign: 'right', marginTop: 3 }}>{message.time}</Text>
-        </View>
-      ))}
+      {roomChatMessages.slice(-30).map(message => {
+        const isPlainEntryNotice = message.system && (message.entryType === 'guidelines' || message.entryType === 'welcome');
+        const hasSenderHeading = Boolean(message.sender?.display_name || message.sender) && !message.entryType;
+        return (
+          <View key={message.id} style={{ alignSelf: message.system ? 'center' : 'flex-start', maxWidth: '94%', backgroundColor: isPlainEntryNotice ? 'transparent' : message.system ? 'rgba(15,91,130,0.88)' : 'rgba(7,27,45,0.94)', borderWidth: isPlainEntryNotice ? 0 : 1, borderColor: message.system ? '#58CBEA' : '#24516D', borderRadius: isPlainEntryNotice ? 0 : message.system ? 14 : 12, paddingHorizontal: isPlainEntryNotice ? 0 : 11, paddingVertical: isPlainEntryNotice ? 1 : 7, marginBottom: 6 }}>
+            {hasSenderHeading ? <Text style={{ color: message.system ? '#9CEBFF' : '#79D7EF', fontSize: 10, fontWeight: '900', marginBottom: 3 }}>{message.sender?.display_name || message.sender || 'TALKZY User'}</Text> : null}
+            {message.image_url ? <Image source={{ uri: message.image_url }} style={{ width: 150, height: 90, borderRadius: 8 }} resizeMode="cover" /> : <Text style={{ color: C.text, fontSize: 13, lineHeight: 18 }}>{message.text || message.message_text}</Text>}
+            <Text style={{ color: '#9CB9CC', fontSize: 9, textAlign: 'right', marginTop: 3 }}>{message.time}</Text>
+          </View>
+        );
+      })}
     </ScrollView>
   </View>
   );
