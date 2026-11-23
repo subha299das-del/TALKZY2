@@ -1,10 +1,9 @@
-
 {
   "name": "talkzy-owner-backend",
   "version": "1.2.0",
   "private": true,
   "engines": {
-    "node": ">=20.19.0 <25"
+    "node": ">=20.19.0 <25.0.0"
   },
   "scripts": {
     "start": "node server.js"

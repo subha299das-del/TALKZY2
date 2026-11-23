@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'mobile/package.json'
+      - 'server/package.json'
   workflow_dispatch:
 
 permissions:
@@ -43,11 +44,23 @@ jobs:
         working-directory: mobile
         run: npx expo-doctor
 
-      - name: Commit the verified lockfile
+      - name: Resolve and lock backend dependencies
+        working-directory: server
+        run: npm install --no-fund
+
+      - name: Require no high-severity backend vulnerabilities
+        working-directory: server
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Check backend JavaScript syntax
+        working-directory: server
+        run: node --check server.js
+
+      - name: Commit the verified lockfiles
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add mobile/package.json mobile/package-lock.json
+          git add mobile/package.json mobile/package-lock.json server/package-lock.json
           if git diff --cached --quiet; then
             echo "No dependency lock changes to commit."
           else
