@@ -3960,16 +3960,17 @@ function renderRoomInterior() {
                 const isCurrentRoomOwner = selectedRoom?.owner_id === session?.user?.id;
                 const myPresence = roomPresence.find(person => person.user_id === session?.user?.id);
                 const isCurrentRoomAdmin = myPresence?.presence_role === 'admin';
+                // Keep the four-square menu in sync with the Room Shortcuts > Quick Access collection.
+                // Visibility follows the same role rules used by the room's owner-only/admin shortcuts.
                 const roomToolItems = [
-                  { icon: '🎵', title: 'Music' },
-                  ...((isCurrentRoomAdmin || isCurrentRoomOwner) ? [{ icon: '▶️', title: 'YouTube' }] : []),
-                  { icon: '✨', title: 'Effect' },
-                  { icon: '🎒', title: 'My Props' },
-                  { icon: '🍀', title: 'Lucky Number' },
-                  { icon: '🎲', title: 'Dice' },
-                  { icon: '🎁', title: 'Lucky Bag' },
-                  ...(isCurrentRoomAdmin || isCurrentRoomOwner ? [{ icon: null, title: 'Clear Chat', customIcon: 'clearChat' }] : []),
-                  ...(isCurrentRoomOwner ? [{ icon: '🎉', title: 'Activity' }, { icon: '🎨', title: 'Theme' }] : [])
+                  { shortcutKey: 'music', title: 'Music' },
+                  ...((isCurrentRoomAdmin || isCurrentRoomOwner) ? [{ shortcutKey: 'youtube', title: 'YouTube' }] : []),
+                  { shortcutKey: 'effects', title: 'Effect' },
+                  { shortcutKey: 'propStore', title: 'My Props' },
+                  { shortcutKey: 'luckyNo', title: 'Lucky Number' },
+                  { shortcutKey: 'dice', title: 'Dice' },
+                  { shortcutKey: 'luckyBag', title: 'Lucky Bag' },
+                  ...(isCurrentRoomOwner ? [{ shortcutKey: 'activity', title: 'Activity' }, { shortcutKey: 'theme', title: 'Theme' }] : [])
                 ];
                 return roomToolItems.map(tool => (
                   <TouchableOpacity
@@ -4049,11 +4050,7 @@ function renderRoomInterior() {
                     }}
                     style={{ width: '33.333%', paddingVertical: 12, alignItems: 'center' }}
                   >
-                    {tool.customIcon === 'clearChat' ? (
-                      <RoomShortcutIcon type="clearChat" size={42} />
-                    ) : (
-                      <Text style={{ fontSize: 25 }}>{tool.icon}</Text>
-                    )}
+                    <RoomShortcutIcon type={tool.shortcutKey} size={48} />
                     <Text style={{ color: C.text, fontSize: 12, marginTop: 5 }}>{tool.title}</Text>
                   </TouchableOpacity>
                 ));
