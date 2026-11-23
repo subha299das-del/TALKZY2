@@ -2979,13 +2979,18 @@ function renderRoomCard(room, showJoin = true) {
       return;
     }
 
+    const requestUserId = session?.user?.id;
+    if (!requestUserId) return;
+    const isCurrentUserRequest = () => activeAuthUserIdRef.current === requestUserId;
     // Finish the previous room's server cleanup before entering again.
     const pendingLeave = roomLeaveCleanupRef.current[room.id];
     if (pendingLeave) await pendingLeave;
+    if (!isCurrentUserRequest()) return;
     // Never carry a previous microphone seat into a new room entry.
     try { await api(`/api/rooms/${room.id}/mic-seats`, { method: 'DELETE' }); } catch (seatCleanupError) {
       console.log('Stale mic seat cleanup on entry:', seatCleanupError.message);
     }
+    if (!isCurrentUserRequest()) return;
     roomChatActiveRoomIdRef.current = room.id;
     ++roomChatLoadVersionRef.current;
     setShowRoomChatComposer(false);
