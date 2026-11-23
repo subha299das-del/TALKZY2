@@ -2458,6 +2458,7 @@ async function toggleFollowRoom(room) {
 
   async function sendRoomImage() {
     if (!selectedRoom?.id) return;
+    const roomId = selectedRoom.id;
     if (isRoomTourist && !touristsSendPic) {
       return Alert.alert('Picture sharing disabled', 'The room owner does not allow tourists to send pictures.');
     }
@@ -2469,21 +2470,23 @@ async function toggleFollowRoom(room) {
       const uri = picked.assets[0].uri;
       const response = await fetch(uri);
       const bytes = await response.blob();
-      const path = `${session.user.id}/rooms/${selectedRoom.id}/messages/${Date.now()}.jpg`;
+      const path = `${session.user.id}/rooms/${roomId}/messages/${Date.now()}.jpg`;
       const { error: uploadError } = await supabase.storage.from('talkzy-rooms').upload(path, bytes, {
         contentType: 'image/jpeg', upsert: false
       });
       if (uploadError) throw uploadError;
       const imageUrl = supabase.storage.from('talkzy-rooms').getPublicUrl(path).data.publicUrl;
-      const result = await api(`/api/rooms/${selectedRoom.id}/messages`, {
+      const result = await api(`/api/rooms/${roomId}/messages`, {
         method: 'POST', body: JSON.stringify({ type: 'image', imageUrl })
       });
       const item = result.message;
-      setRoomChatMessages(prev => [...prev, {
-        id: item.id, text: '📷 Photo', sender: profile?.display_name || displayName || 'You',
-        senderId: session?.user?.id, image_url: imageUrl,
-        time: new Date(item.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }]);
+      if (roomChatActiveRoomIdRef.current === roomId) {
+        setRoomChatMessages(prev => prev.some(existing => existing.id === item.id) ? prev : [...prev, {
+          id: item.id, roomId, text: '📷 Photo', sender: profile?.display_name || displayName || 'You',
+          senderId: session?.user?.id, image_url: imageUrl,
+          time: new Date(item.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }]);
+      }
     } catch (error) {
       Alert.alert('Picture not sent', error.message || 'Could not share this picture.');
     }
