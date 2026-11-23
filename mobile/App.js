@@ -2482,6 +2482,8 @@ async function toggleFollowRoom(room) {
   async function submitRoomJoin(room, password) {
     if (!room || !session?.access_token) return Alert.alert('Error', 'Please sign in again.');
     try {
+      const pendingLeave = roomLeaveCleanupRef.current[room.id];
+      if (pendingLeave) await pendingLeave;
       setJoiningRoom(true);
       await api(`/api/rooms/${room.id}/join`, {
         method: 'POST',
