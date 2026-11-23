@@ -1488,6 +1488,7 @@ const [isRoomTourist, setIsRoomTourist] = useState(false);
     setMyMicSeat(null);
     setIsMicMuted(false);
     setRoomPresence([]);
+    setRoomPresenceLoading(false);
     setIsRoomTourist(false);
     setActiveLuckyBags([]);
     setWalletBalance(0);
