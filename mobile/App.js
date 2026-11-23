@@ -2467,12 +2467,20 @@ async function toggleFollowRoom(room) {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) return Alert.alert('Permission required', 'Allow photo access to share a picture.');
       const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 0.82 });
-      if (picked.canceled || !picked.assets?.[0]?.uri) return;
-      const response = await fetch(picked.assets[0].uri);
+      const asset = picked.assets?.[0];
+      if (picked.canceled || !asset?.uri) return;
+      if (Number(asset.fileSize || 0) > 10 * 1024 * 1024) {
+        return Alert.alert('Image too large', 'Choose a room photo smaller than 10 MB.');
+      }
+      const mimeType = String(asset.mimeType || 'image/jpeg').toLowerCase();
+      const extension = ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/heic': 'heic' })[mimeType];
+      if (!extension) return Alert.alert('Unsupported image', 'Choose a JPEG, PNG, WebP or HEIC image.');
+      const response = await fetch(asset.uri);
       const bytes = await response.blob();
-      uploadedPath = `${session.user.id}/rooms/${roomId}/messages/${Date.now()}.jpg`;
+      if (bytes.size > 10 * 1024 * 1024) return Alert.alert('Image too large', 'Choose a room photo smaller than 10 MB.');
+      uploadedPath = `${session.user.id}/rooms/${roomId}/messages/${Date.now()}.${extension}`;
       const { error: uploadError } = await supabase.storage.from('talkzy-room-chat').upload(uploadedPath, bytes, {
-        contentType: 'image/jpeg', upsert: false
+        contentType: mimeType, upsert: false
       });
       if (uploadError) throw uploadError;
       const result = await api(`/api/rooms/${roomId}/messages`, {
