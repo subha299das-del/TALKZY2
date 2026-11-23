@@ -3834,7 +3834,7 @@ function renderRoomInterior() {
 
           {isOccupied && roomReactions.filter(item => item.userId === occupiedSeat.user_id).slice(-1).map(item => (
             <Animated.View key={item.id} pointerEvents="none" style={{
-              position: 'absolute', top: -30, alignSelf: 'center', zIndex: 30, elevation: 12,
+              position: 'absolute', top: youtubeScreenVisible ? -18 : 2, alignSelf: 'center', zIndex: 30, elevation: 12,
               backgroundColor: 'transparent', borderWidth: 0,
               borderRadius: 0, paddingHorizontal: 0, paddingVertical: 0,
               opacity: item.progress.interpolate({ inputRange: [0, 0.12, 0.82, 1], outputRange: [0, 1, 1, 0] }),
