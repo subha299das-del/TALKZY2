@@ -357,6 +357,15 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
     refreshGenerationRef.current += 1;
     activeRoomIdRef.current = roomId;
     let active = true;
+    queueRef.current = [];
+    indexRef.current = 0;
+    playingRef.current = false;
+    setQueue([]);
+    setCurrentIndex(0);
+    setPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+    setStreams([]);
     setAudioModeAsync({ playsInSilentMode: true, interruptionMode: 'mixWithOthers', shouldPlayInBackground: true }).catch(() => {});
     const refresh = () => { if (active) refreshStreams(); };
     refresh();
@@ -384,12 +393,6 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
       queueRef.current = [];
       indexRef.current = 0;
       playingRef.current = false;
-      setQueue([]);
-      setCurrentIndex(0);
-      setPlaying(false);
-      setCurrentTime(0);
-      setDuration(0);
-      setStreams([]);
       Object.values(remotePlayersRef.current).forEach(entry => {
         entry?.player?.pause();
         entry?.player?.remove();
