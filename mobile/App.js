@@ -3286,7 +3286,8 @@ function isTrustedYouTubeNavigation(value) {
     'youtu.be',
     'www.youtu.be',
     'youtube-nocookie.com',
-    'www.youtube-nocookie.com'
+    'www.youtube-nocookie.com',
+    'consent.youtube.com'
   ].includes(host);
 }
 
@@ -3884,7 +3885,7 @@ function renderRoomInterior() {
               </TouchableOpacity>
             </View>
             <View style={{ flex: 1, marginHorizontal: 9, marginBottom: 8, borderRadius: 9, overflow: 'hidden', backgroundColor: '#FFFFFF' }}>
-              <WebView ref={youtubeBrowseWebViewRef} source={{ uri: youtubeBrowseUrl || ('https://www.youtube.com/results?search_query=' + encodeURIComponent(youtubeBrowseTab === 'Music' ? 'music' : 'video')) }} originWhitelist={['https://www.youtube.com']} javaScriptEnabled domStorageEnabled allowsInlineMediaPlayback
+              <WebView ref={youtubeBrowseWebViewRef} source={{ uri: youtubeBrowseUrl || ('https://www.youtube.com/results?search_query=' + encodeURIComponent(youtubeBrowseTab === 'Music' ? 'music' : 'video')) }} originWhitelist={['*']} setSupportMultipleWindows={false} javaScriptEnabled domStorageEnabled allowsInlineMediaPlayback
                 injectedJavaScriptBeforeContentLoaded={`(function(){if(window.__talkzyPickerInstalled)return;window.__talkzyPickerInstalled=true;function pick(e){var n=e.target;var a=n&&n.closest?n.closest('a[href]'):null;var h=(a&&a.href)||'';var id=(n&&n.closest&&n.closest('[data-video-id]')&&n.closest('[data-video-id]').getAttribute('data-video-id'))||'';var m=h.match(/[?&]v=([A-Za-z0-9_-]{11})/)||h.match(/youtu\\.be\\/([A-Za-z0-9_-]{11})/)||h.match(/\\/shorts\\/([A-Za-z0-9_-]{11})/)||h.match(/\\/embed\\/([A-Za-z0-9_-]{11})/);id=(m&&m[1])||id;if(id&&/^[A-Za-z0-9_-]{11}$/.test(id)){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();if(window.ReactNativeWebView)window.ReactNativeWebView.postMessage('talkzy-select:'+id);}}document.addEventListener('click',pick,true);})();true;`}
                 onMessage={(event) => {
                   const message = String(event.nativeEvent.data || '');
@@ -3899,12 +3900,26 @@ function renderRoomInterior() {
                 onShouldStartLoadWithRequest={(request) => {
                   const url = String(request?.url || '');
                   const id = extractYouTubeVideoId(url);
-                  if (id && /(?:watch|youtu\.be|shorts|\/embed\/)/i.test(url)) {
+                  // Keep video selection inside TALKZY: capture video links instead of
+                  // allowing Android to hand them to the installed YouTube app.
+                  if (id && /(?:watch|youtu\.be|shorts|\/embed\/|\/live\/)/i.test(url)) {
                     setYoutubePickedItem({ video_id: id, title: 'Loading selected video…' });
                     getYoutubeMetadata(id).then(meta => setYoutubePickedItem(meta));
                     return false;
                   }
+                  // The picker is an in-app browser only. Never hand untrusted redirects
+                  // or external links to Android's intent resolver.
                   return isTrustedYouTubeNavigation(url);
+                }}
+                onOpenWindow={(event) => {
+                  const url = String(event?.nativeEvent?.targetUrl || '');
+                  const id = extractYouTubeVideoId(url);
+                  if (id) {
+                    setYoutubePickedItem({ video_id: id, title: 'Loading selected video…' });
+                    getYoutubeMetadata(id).then(meta => setYoutubePickedItem(meta));
+                  } else if (isTrustedYouTubeNavigation(url)) {
+                    setYoutubeBrowseUrl(url);
+                  }
                 }}
                 style={{ flex: 1 }} />
             </View>
