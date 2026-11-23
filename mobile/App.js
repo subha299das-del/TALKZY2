@@ -789,7 +789,9 @@ useEffect(() => {
   const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
     // Room Chat: first Back closes the composer; the next Back opens options.
     if (showRoomChatComposer) {
+      Keyboard.dismiss();
       setShowRoomChatComposer(false);
+      setShowRoomChatActionMenu(false);
       return true;
     }
     if (showRoomShortcutsPage) { setShowRoomShortcutsPage(false); return true; }
@@ -4798,28 +4800,6 @@ function renderRoomInterior() {
     style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.16)' }}
   >
     <View style={{ backgroundColor: C.panel, borderTopLeftRadius: 20, borderTopRightRadius: 20, borderColor: C.line, borderWidth: 1, paddingHorizontal: 12, paddingTop: 10, paddingBottom: Platform.OS === 'android' ? 8 : 12, maxHeight: '58%' }}>
-      {roomChatMessages.length > 0 && (
-        <ScrollView
-          ref={roomChatScrollRef}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          onContentSizeChange={() => roomChatScrollRef.current?.scrollToEnd({ animated: true })}
-          style={{ maxHeight: 230, marginBottom: 9 }}
-          contentContainerStyle={{ paddingHorizontal: 2 }}
-        >
-          {roomChatMessages.slice(-30).map(message => (
-            <View key={message.id} style={{ backgroundColor: C.card, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 7, marginBottom: 6, alignSelf: 'flex-start', maxWidth: '94%' }}>
-              <Text style={{ color: '#8E9AFF', fontSize: 10, fontWeight: 'bold', marginBottom: 2 }}>{message.sender?.display_name || message.sender || 'TALKZY User'}</Text>
-              {message.image_url ? (
-                <Image source={{ uri: message.image_url }} style={{ width: 150, height: 100, borderRadius: 8, marginTop: 2 }} resizeMode="cover" />
-              ) : (
-                <Text style={{ color: C.text, fontSize: 13 }}>{message.text || message.message_text}</Text>
-              )}
-              <Text style={{ color: C.muted, fontSize: 9, textAlign: 'right', marginTop: 3 }}>{message.time}</Text>
-            </View>
-          ))}
-        </ScrollView>
-      )}
       <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: 22, paddingLeft: 12, paddingRight: 5 }}>
         <TextInput
           autoFocus
@@ -4840,10 +4820,18 @@ function renderRoomInterior() {
   </KeyboardAvoidingView>
 </Modal>
 
-{isRoomChatMinimized && !showRoomChatComposer && (
-  <TouchableOpacity onPress={() => { setIsRoomChatMinimized(false); setShowRoomChatComposer(true); }} accessibilityRole="button" accessibilityLabel="Restore minimised room chat" style={{ position: 'absolute', right: 16, bottom: Platform.OS === 'android' ? 92 : 64, zIndex: 30, backgroundColor: C.panel, borderColor: C.line, borderWidth: 1, borderRadius: 22, paddingHorizontal: 15, paddingVertical: 11, elevation: 8 }}>
-    <Text style={{ color: C.text, fontSize: 13, fontWeight: '800' }}>💬 Chat</Text>
-  </TouchableOpacity>
+{roomChatMessages.length > 0 && (
+  <View style={{ maxHeight: 118, paddingHorizontal: 12, paddingTop: 7, paddingBottom: 4, borderTopWidth: 1, borderTopColor: C.line }}>
+    <ScrollView ref={roomChatScrollRef} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} onContentSizeChange={() => roomChatScrollRef.current?.scrollToEnd({ animated: true })}>
+      {roomChatMessages.slice(-30).map(message => (
+        <View key={message.id} style={{ alignSelf: 'flex-start', maxWidth: '94%', backgroundColor: C.card, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, marginBottom: 5 }}>
+          <Text style={{ color: C.gold, fontSize: 10, fontWeight: '800', marginBottom: 2 }}>{message.sender?.display_name || message.sender || 'TALKZY User'}</Text>
+          {message.image_url ? <Image source={{ uri: message.image_url }} style={{ width: 150, height: 90, borderRadius: 8 }} resizeMode="cover" /> : <Text style={{ color: C.text, fontSize: 13 }}>{message.text || message.message_text}</Text>}
+          <Text style={{ color: C.muted, fontSize: 9, textAlign: 'right', marginTop: 2 }}>{message.time}</Text>
+        </View>
+      ))}
+    </ScrollView>
+  </View>
 )}
 
 {/* ROOM BOTTOM CONTROLS — horizontally scrollable so every feature stays reachable on narrow phones */}
