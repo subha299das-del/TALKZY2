@@ -3856,28 +3856,22 @@ function renderRoomInterior() {
           ))}
 
         <Text
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.65}
           style={{
-            color: C.text,
+            color: isOccupied ? (isMySeat ? C.accent : C.text) : C.text,
             fontSize: youtubeScreenVisible ? 7 : 11,
             marginTop: youtubeScreenVisible ? 0 : 5,
-            fontWeight: 'bold'
+            fontWeight: 'bold',
+            width: '100%',
+            textAlign: 'center'
           }}
         >
-          {seat}
+          {isOccupied
+            ? seatDisplayName(isMySeat ? (displayName || profile?.display_name || 'You') : (occupiedSeat.display_name || 'User'), true)
+            : seat}
         </Text>
-        <Text
-            style={{
-              color: isMySeat ? C.accent : C.muted,
-              fontSize: youtubeScreenVisible ? 7 : 9,
-              lineHeight: youtubeScreenVisible ? 8 : 11,
-              marginTop: youtubeScreenVisible ? 0 : 2,
-              width: '100%',
-              textAlign: 'center',
-              flexShrink: 1
-            }}
-          >
-            {isOccupied ? seatDisplayName(isMySeat ? (displayName || profile?.display_name || 'You') : (occupiedSeat.display_name || 'User'), youtubeScreenVisible) : ' '}
-          </Text>
         )}
       </TouchableOpacity>
     );
