@@ -1151,21 +1151,29 @@ async function buildRoomMusicState(roomId, userId) {
   const streams = [];
   for (const row of activeRows) {
     const queue = Array.isArray(row.queue) ? row.queue : [];
+    const originalCurrentPath = queue[Number(row.current_index) || 0]?.object_path || null;
     const signedQueue = [];
     for (const item of queue) {
+      const objectPath = typeof item?.object_path === 'string' ? item.object_path : '';
+      if (!objectPath.startsWith(`${row.user_id}/${roomId}/`) || objectPath.includes('..')) continue;
       const { data: signed, error: signError } = await supabase.storage
-        .from('talkzy-room-music').createSignedUrl(item.object_path, 3600);
-      if (signError) throw signError;
-      signedQueue.push({ title: item.title, object_path: item.object_path, url: signed.signedUrl });
+        .from('talkzy-room-music').createSignedUrl(objectPath, 3600);
+      if (signError || !signed?.signedUrl) {
+        console.error('Skipping unavailable room music object:', signError?.message || objectPath);
+        continue;
+      }
+      signedQueue.push({ title: String(item.title || 'Untitled song').slice(0, 120), object_path: objectPath, url: signed.signedUrl });
     }
+    const currentIndex = signedQueue.findIndex(item => item.object_path === originalCurrentPath);
+    const hasCurrentTrack = currentIndex >= 0;
     streams.push({
       user_id: row.user_id,
       display_name: profileMap.get(row.user_id)?.display_name || 'TALKZY User',
       avatar_url: profileMap.get(row.user_id)?.avatar_url || null,
       queue: signedQueue,
-      current_index: row.current_index,
-      is_playing: row.is_playing,
-      current_time_seconds: row.current_time_seconds,
+      current_index: hasCurrentTrack ? currentIndex : 0,
+      is_playing: Boolean(row.is_playing && hasCurrentTrack && signedQueue.length > 0),
+      current_time_seconds: hasCurrentTrack ? row.current_time_seconds : 0,
       repeat_mode: row.repeat_mode || 'off',
       shuffle: Boolean(row.shuffle),
       volume: Number(row.volume ?? 0.8),
