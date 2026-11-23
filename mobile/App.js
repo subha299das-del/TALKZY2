@@ -5131,7 +5131,7 @@ function renderRoomInterior() {
   }}
 >
   <KeyboardAvoidingView
-    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.16)' }}
   >
     <View style={{ paddingHorizontal: 14, paddingTop: 8, paddingBottom: Platform.OS === 'android' ? 8 : 12, maxHeight: '58%' }}>
