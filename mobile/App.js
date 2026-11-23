@@ -4803,7 +4803,7 @@ function renderRoomInterior() {
 )}
 
 {roomChatMessages.length > 0 && (
-  <View style={{ maxHeight: 118, paddingHorizontal: 12, paddingTop: 7, paddingBottom: 4, borderTopWidth: 1, borderTopColor: C.line }}>
+  <View style={{ maxHeight: 118, paddingHorizontal: 12, paddingTop: 7, paddingBottom: 4 }}>
     <ScrollView ref={roomChatScrollRef} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} onContentSizeChange={() => roomChatScrollRef.current?.scrollToEnd({ animated: true })}>
       {roomChatMessages.slice(-30).map(message => (
         <View key={message.id} style={{ alignSelf: message.system ? 'center' : 'flex-start', maxWidth: '94%', backgroundColor: message.system ? 'rgba(15,91,130,0.88)' : 'rgba(7,27,45,0.94)', borderWidth: 1, borderColor: message.system ? '#58CBEA' : '#24516D', borderRadius: message.system ? 14 : 12, paddingHorizontal: 11, paddingVertical: 7, marginBottom: 6 }}>
@@ -4821,7 +4821,7 @@ function renderRoomInterior() {
   horizontal
   showsHorizontalScrollIndicator={false}
   keyboardShouldPersistTaps="handled"
-  style={{ flexGrow: 0, backgroundColor: 'rgba(4,19,32,0.96)', borderTopWidth: 1, borderTopColor: '#28617B' }}
+  style={{ flexGrow: 0, backgroundColor: 'rgba(4,19,32,0.96)' }}
   contentContainerStyle={{
     flexDirection: 'row',
     alignItems: 'center',
@@ -7503,7 +7503,6 @@ function renderEvents() {
         style={{
           flexDirection: 'row',
           backgroundColor: '#0D1326',
-          borderTopWidth: 1, borderTopColor: '#263252',
           paddingTop: 9,
           paddingBottom: Platform.OS === 'android' ? 28 : 10,
           paddingHorizontal: 7
