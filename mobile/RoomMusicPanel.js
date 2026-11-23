@@ -65,8 +65,10 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
 
   const saveState = async (next = {}) => {
     if (!roomId) return null;
+    const requestRoomId = roomId;
+    const requestGeneration = refreshGenerationRef.current;
     const list = Array.isArray(next.queue) ? next.queue : queueRef.current;
-    const result = await api(`/api/rooms/${roomId}/music/me`, {
+    const result = await api(`/api/rooms/${requestRoomId}/music/me`, {
       method: 'PUT',
       body: JSON.stringify({
         queue: list.map(item => ({ object_path: item.object_path, title: item.title })),
@@ -78,8 +80,10 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
         volume: next.volume ?? volumeRef.current
       })
     });
-    applyState(result.state);
-    lastWriteRef.current = Date.now();
+    if (activeRoomIdRef.current === requestRoomId && refreshGenerationRef.current === requestGeneration) {
+      applyState(result.state);
+      lastWriteRef.current = Date.now();
+    }
     return result.state;
   };
 
@@ -181,6 +185,9 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
     if (!roomId || uploading || !selectedLocalIds.length) return;
     const selected = localAssets.filter(asset => selectedLocalIds.includes(asset.id)); const existing = queueRef.current;
     if (existing.length + selected.length > 20) { Alert.alert('My Music', 'Your playlist can contain up to 20 songs.'); return; }
+    const requestRoomId = roomId;
+    const requestGeneration = refreshGenerationRef.current;
+    const uploadedPaths = [];
     setUploading(true);
     try {
       const additions = [];
@@ -192,7 +199,7 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
         const bytes = await file.bytes();
         if (!bytes?.length) throw new Error('Could not read ' + name + ' from your phone. Please choose another file.');
         if (bytes.byteLength > 20 * 1024 * 1024) throw new Error(name + ' is larger than the 20 MB limit.');
-        const safeName = String(name).replace(/[^A-Za-z0-9._-]/g, '_').slice(-90); const path = userId + '/' + roomId + '/' + Date.now() + '-' + i + '-' + safeName;
+        const safeName = String(name).replace(/[^A-Za-z0-9._-]/g, '_').slice(-90); const path = userId + '/' + requestRoomId + '/' + Date.now() + '-' + i + '-' + safeName;
         let result; let lastUploadError;
         for (let attempt = 0; attempt < 3; attempt += 1) {
           result = await supabase.storage.from('talkzy-room-music').upload(path, bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), { contentType: asset.mimeType || 'audio/mpeg', upsert: true });
@@ -201,6 +208,7 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
           if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 900 * (attempt + 1)));
         }
         if (result?.error) throw new Error('Upload failed after 3 attempts: ' + (lastUploadError.message || 'Network connection failed.'));
+        uploadedPaths.push(path);
         additions.push({ object_path: path, title: String(name).replace(/\.[^.]+$/, '').slice(0, 120) });
       }
       const nextQueue = [...existing, ...additions]; const first = existing.length === 0;
@@ -215,9 +223,16 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
         }
       }
       if (!state) throw new Error('Songs uploaded, but TALKZY could not sync your playlist: ' + (lastSaveError?.message || 'Network error. Please retry when connection is stable.'));
+      if (activeRoomIdRef.current !== requestRoomId || refreshGenerationRef.current !== requestGeneration) {
+        throw new Error('The room changed while your songs were uploading. The incomplete upload will be cleaned up.');
+      }
       if (first && state?.queue?.[0]?.url) { queueRef.current = state.queue; await playAt(0, true); }
       setSelectedLocalIds([]); setMusicPage('library'); setMinimized(false);
     } catch (error) {
+      if (uploadedPaths.length) {
+        try { await supabase.storage.from('talkzy-room-music').remove(uploadedPaths); }
+        catch (cleanupError) { console.log('Could not clean up incomplete room music uploads:', cleanupError.message); }
+      }
       const message = error?.message || 'Could not upload selected songs.';
       const networkLike = /network|fetch|timeout|connection|offline/i.test(message);
       Alert.alert('Music upload', networkLike ? message + '\n\nPlease check your internet connection and try again. Your selected songs are still selected.' : message);
@@ -231,6 +246,7 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
       await api(`/api/rooms/${roomId}/music/me`, { method: 'DELETE' });
     } catch (error) {
       Alert.alert('Music', error.message || 'Could not stop your stream.');
+      return;
     }
     playerRef.current?.pause();
     playerRef.current?.remove();
