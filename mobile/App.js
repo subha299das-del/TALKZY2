@@ -31,33 +31,34 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { WebView } from 'react-native-webview';
-import LottieView from 'lottie-react-native';
 import RoomMusicPanel from './RoomMusicPanel';
 
 WebBrowser.maybeCompleteAuthSession();
 const MIC_ON_ICON = require('./assets/mic_on.png');
-const MIC_REACTION_LOTTIES = {
-  Welcome: require('./assets/mic-reactions/welcome.json'),
-  Thanks: require('./assets/mic-reactions/thanks.json'),
-  Like: require('./assets/mic-reactions/like.json'),
-  Happy: require('./assets/mic-reactions/happy.json'),
-  Gosh: require('./assets/mic-reactions/shocked.json'),
-  Wronged: require('./assets/mic-reactions/sad.json'),
-  Nausea: require('./assets/mic-reactions/nausea.json'),
-  'Left kiss': require('./assets/mic-reactions/kiss.json'),
-  'Right kiss': require('./assets/mic-reactions/kiss.json'),
-  'Money face': require('./assets/mic-reactions/money.json'),
-  Party: require('./assets/mic-reactions/party.json'),
-  Fear: require('./assets/mic-reactions/fear.json'),
-  Silence: require('./assets/mic-reactions/silence.json'),
-  Cry: require('./assets/mic-reactions/cry.json'),
-  Naughty: require('./assets/mic-reactions/naughty.json'),
-  Sweat: require('./assets/mic-reactions/sweat.json'),
-  LOL: require('./assets/mic-reactions/lol.json'),
-  Cool: require('./assets/mic-reactions/cool.json'),
-  Angry: require('./assets/mic-reactions/angry.json')
-};
-const MIC_REACTION_FACE_LABELS = Object.keys(MIC_REACTION_LOTTIES);
+const MIC_REACTION_FACE_LABELS = ["Welcome", "Thanks", "Like", "Happy", "Gosh", "Wronged", "Nausea", "Left kiss", "Right kiss", "Money face", "Party", "Fear", "Silence", "Cry", "Naughty", "Sweat", "LOL", "Cool", "Angry"];
+
+function MicReactionSticker({ emoji, size = 48, direction }) {
+  const motion = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(Animated.sequence([
+      Animated.timing(motion, { toValue: 1, duration: 420, useNativeDriver: true }),
+      Animated.timing(motion, { toValue: 2, duration: 380, useNativeDriver: true }),
+      Animated.timing(motion, { toValue: 3, duration: 420, useNativeDriver: true }),
+      Animated.timing(motion, { toValue: 0, duration: 380, useNativeDriver: true })
+    ]));
+    loop.start();
+    return () => loop.stop();
+  }, [motion]);
+  const scale = motion.interpolate({ inputRange: [0, 1, 2, 3], outputRange: [0.92, 1.16, 0.98, 1.08] });
+  const lift = motion.interpolate({ inputRange: [0, 1, 2, 3], outputRange: [2, -5, 1, -2] });
+  const tilt = motion.interpolate({ inputRange: [0, 1, 2, 3], outputRange: ["-4deg", "5deg", "-3deg", "2deg"] });
+  return (
+    <Animated.View style={{ width: size, height: size, alignItems: "center", justifyContent: "center", transform: [{ translateY: lift }, { scale }, { rotate: tilt }, ...(direction === "left" ? [{ scaleX: -1 }] : [])] }}>
+      <Text style={{ fontSize: size * 0.76, lineHeight: size, textAlign: "center", textShadowColor: "rgba(255,190,70,0.65)", textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 5 }}>{emoji}</Text>
+      <Text style={{ position: "absolute", top: 1, right: 1, fontSize: Math.max(8, size * 0.2), color: "#FFD778", textShadowColor: "#FF9F43", textShadowRadius: 5 }}>✦</Text>
+    </Animated.View>
+  );
+}
 
 const MIC_OFF_ICON = require('./assets/mic_off.png');
 const SUPABASE_URL =
@@ -3843,17 +3844,7 @@ function renderRoomInterior() {
                   ? item.progress.interpolate({ inputRange: [0, 1], outputRange: [-24, 24] })
                   : item.progress.interpolate({ inputRange: [0, 1], outputRange: [0, 0] }) }]
             }}>
-              {MIC_REACTION_LOTTIES[item.label] ? (
-                <LottieView
-                  source={MIC_REACTION_LOTTIES[item.label]}
-                  autoPlay
-                  loop
-                  style={{ width: 58, height: 58, transform: item.direction === 'left' ? [{ scaleX: -1 }] : [] }}
-                  resizeMode="contain"
-                />
-              ) : (
-                <Animated.Text style={{ fontSize: 30, transform: [{ scale: item.progress.interpolate({ inputRange: [0,0.12,0.24,0.38,0.55,0.78,1], outputRange: [0.25,1.35,0.88,1.18,1,1.08,0.72] }) }, { rotate: item.progress.interpolate({ inputRange: [0,0.2,0.42,0.68,1], outputRange: ['-18deg','14deg','-9deg','5deg','0deg'] }) }, ...(item.direction === 'left' ? [{ scaleX: -1 }] : [])] }}>{item.emoji}</Animated.Text>
-              )}
+              <MicReactionSticker emoji={item.emoji} size={58} direction={item.direction} />
             </Animated.View>
           ))}
 
@@ -4745,7 +4736,7 @@ function renderRoomInterior() {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
         {[["Welcome","👋"],["Happy","😊"],["Thanks","🙏"],["Gosh","😲"],["Wronged","😞"],["Nausea","🤢"],["Left kiss","😘","left"],["Right kiss","😘","right"],["Money face","🤑"],["Party","🥳"],["Fear","😨"],["Silence","🤫"],["Like","👍"],["Cry","😭"],["Naughty","😜"],["Sweat","😓"],["LOL","😂"],["Cool","😎"],["Angry","😡"]].map(([label, emoji, direction]) => (
           <TouchableOpacity key={label} onPress={() => sendRoomReaction({ label, emoji, direction })} style={{ width: '19%', minHeight: 62, alignItems: 'center', justifyContent: 'center', marginBottom: 7, backgroundColor: C.card, borderRadius: 12, borderWidth: 1, borderColor: C.line }}>
-            <LottieView source={MIC_REACTION_LOTTIES[label]} autoPlay loop style={{ width: 42, height: 42, transform: direction === 'left' ? [{ scaleX: -1 }] : [] }} resizeMode="contain" />
+            <MicReactionSticker emoji={emoji} size={42} direction={direction} />
             <Text numberOfLines={1} style={{ color: C.muted, fontSize: 8, marginTop: 3 }}>{label}</Text>
           </TouchableOpacity>
         ))}
