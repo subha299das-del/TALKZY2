@@ -47,6 +47,8 @@ test('private room and chat APIs reject requests without a user session', async 
     '/api/rooms/test-room/messages',
     '/api/rooms/test-room/presence',
     '/api/rooms/test-room/music',
+    '/api/rooms/test-room/music/me',
+    '/api/rooms/test-room/youtube',
     '/api/rooms/test-room/mic-seats'
   ];
 
@@ -58,12 +60,20 @@ test('private room and chat APIs reject requests without a user session', async 
 });
 
 test('room mutations reject unauthenticated requests before processing data', async () => {
-  const response = await request('/api/rooms/test-room/messages', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ message: 'test message' })
-  });
-  assert.equal(response.status, 401);
+  const requests = [
+    ['/api/rooms/test-room/messages', 'POST', { message: 'test message' }],
+    ['/api/rooms/test-room/music/me', 'PUT', { queue: [] }],
+    ['/api/rooms/test-room/youtube', 'PUT', { video_id: null, queue: [] }]
+  ];
+
+  for (const [path, method, body] of requests) {
+    const response = await request(path, {
+      method,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    assert.equal(response.status, 401, `${method} ${path} must authenticate before mutation`);
+  }
 });
 
 test('owner dashboard login rejects incorrect credentials', async () => {
