@@ -4164,21 +4164,43 @@ function renderRoomInterior() {
       </View>
       <TouchableOpacity onPress={() => {
         setShowMicControlPopup(false);
+        const actionRoomId = selectedRoom?.id;
+        const actionUserId = session?.user?.id;
+        if (!actionRoomId || !actionUserId) return;
+        const actionVersion = ++micSeatActionVersionRef.current;
+        const isCurrentAction = () =>
+          actionVersion === micSeatActionVersionRef.current &&
+          activeAuthUserIdRef.current === actionUserId &&
+          roomChatActiveRoomIdRef.current === actionRoomId;
         const occupied = micSeats.find(item => item.seat_number === micControlSeat);
         if (micControls.find(x => x.seat_number === micControlSeat)?.seat_closed) { Alert.alert('Seat closed', 'Open the seat first before taking it.'); return; }
-        if (occupied && occupied.user_id !== session?.user?.id) { Alert.alert('Seat occupied', 'This mic is already occupied. Takeover is not enabled.'); return; }
+        if (occupied && occupied.user_id !== actionUserId) { Alert.alert('Seat occupied', 'This mic is already occupied. Takeover is not enabled.'); return; }
         (async () => { try {
-          if (occupied?.user_id === session?.user?.id) await api(`/api/rooms/${selectedRoom.id}/mic-seats`, { method: 'DELETE' });
-          else await api(`/api/rooms/${selectedRoom.id}/mic-seats/${micControlSeat}`, { method: 'POST' });
-          await loadRoomMicSeats(selectedRoom.id);
-        } catch (e) { Alert.alert('Mic error', e.message); } })();
+          if (!isCurrentAction()) return;
+          if (occupied?.user_id === actionUserId) await api(`/api/rooms/${actionRoomId}/mic-seats`, { method: 'DELETE' });
+          else await api(`/api/rooms/${actionRoomId}/mic-seats/${micControlSeat}`, { method: 'POST' });
+          if (isCurrentAction()) await loadRoomMicSeats(actionRoomId);
+        } catch (e) { if (isCurrentAction()) Alert.alert('Mic error', e.message); } })();
       }} style={{ flexDirection: 'row', alignItems: 'center', padding: 13, borderRadius: 15, backgroundColor: '#211A10', borderWidth: 1, borderColor: '#B99755', marginBottom: 9 }}>
         <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: '#342818', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}><Text style={{ fontSize: 23, color: '#E8C982' }}>♬</Text></View>
         <View style={{ flex: 1 }}><Text style={{ color: '#F5F6FF', fontWeight: '900', fontSize: 14 }}>Take the mic</Text><Text style={{ color: '#D9C18F', fontSize: 11, marginTop: 2 }}>Join this seat or leave it if it's yours</Text></View>
       </TouchableOpacity>
       <TouchableOpacity onPress={async () => {
+        const actionRoomId = selectedRoom?.id;
+        const actionUserId = session?.user?.id;
+        if (!actionRoomId || !actionUserId) return;
+        const actionVersion = ++micSeatActionVersionRef.current;
+        const isCurrentAction = () =>
+          actionVersion === micSeatActionVersionRef.current &&
+          activeAuthUserIdRef.current === actionUserId &&
+          roomChatActiveRoomIdRef.current === actionRoomId;
         const closed = !!micControls.find(x => x.seat_number === micControlSeat)?.seat_closed; const action = closed ? 'open_seat' : 'close_seat';
-        try { await api(`/api/rooms/${selectedRoom.id}/mic-seats/${micControlSeat}/control`, { method: 'PATCH', body: JSON.stringify({ action }) }); await loadRoomMicSeats(selectedRoom.id); setShowMicControlPopup(false); } catch (e) { Alert.alert('Control failed', e.message); }
+        try {
+          await api(`/api/rooms/${actionRoomId}/mic-seats/${micControlSeat}/control`, { method: 'PATCH', body: JSON.stringify({ action }) });
+          if (!isCurrentAction()) return;
+          await loadRoomMicSeats(actionRoomId);
+          if (isCurrentAction()) setShowMicControlPopup(false);
+        } catch (e) { if (isCurrentAction()) Alert.alert('Control failed', e.message); }
       }} style={{ flexDirection: 'row', alignItems: 'center', padding: 13, borderRadius: 15, backgroundColor: '#211A10', borderWidth: 1, borderColor: '#A9874A', marginBottom: 9 }}>
         <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: '#342818', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
           <View style={{ width: 24, height: 18, borderWidth: 2, borderColor: '#E8C982', borderRadius: 4 }}><View style={{ position: 'absolute', width: 30, height: 3, backgroundColor: '#B85B52', top: 7, left: -4, transform: [{ rotate: '42deg' }] }} /></View>
@@ -4187,8 +4209,21 @@ function renderRoomInterior() {
         <Text style={{ color: '#E8C982', fontSize: 18 }}>{micControls.find(x => x.seat_number === micControlSeat)?.seat_closed ? '↗' : '⛔'}</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={async () => {
+        const actionRoomId = selectedRoom?.id;
+        const actionUserId = session?.user?.id;
+        if (!actionRoomId || !actionUserId) return;
+        const actionVersion = ++micSeatActionVersionRef.current;
+        const isCurrentAction = () =>
+          actionVersion === micSeatActionVersionRef.current &&
+          activeAuthUserIdRef.current === actionUserId &&
+          roomChatActiveRoomIdRef.current === actionRoomId;
         const closed = !!micControls.find(x => x.seat_number === micControlSeat)?.mic_closed; const action = closed ? 'open_mic' : 'close_mic';
-        try { await api(`/api/rooms/${selectedRoom.id}/mic-seats/${micControlSeat}/control`, { method: 'PATCH', body: JSON.stringify({ action }) }); await loadRoomMicSeats(selectedRoom.id); setShowMicControlPopup(false); } catch (e) { Alert.alert('Control failed', e.message); }
+        try {
+          await api(`/api/rooms/${actionRoomId}/mic-seats/${micControlSeat}/control`, { method: 'PATCH', body: JSON.stringify({ action }) });
+          if (!isCurrentAction()) return;
+          await loadRoomMicSeats(actionRoomId);
+          if (isCurrentAction()) setShowMicControlPopup(false);
+        } catch (e) { if (isCurrentAction()) Alert.alert('Control failed', e.message); }
       }} style={{ flexDirection: 'row', alignItems: 'center', padding: 13, borderRadius: 15, backgroundColor: '#142B3B', borderWidth: 1, borderColor: '#43DCC5', marginBottom: 9 }}>
         <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: '#1A4051', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}><Text style={{ color: '#43DCC5', fontSize: 24, fontWeight: '900' }}>♩</Text><View style={{ position: 'absolute', width: 28, height: 2, backgroundColor: '#FF6685', transform: [{ rotate: '45deg' }] }} /></View>
         <View style={{ flex: 1 }}><Text style={{ color: '#F5F6FF', fontWeight: '900', fontSize: 14 }}>{micControls.find(x => x.seat_number === micControlSeat)?.mic_closed ? 'Open mic' : 'Close mic'}</Text><Text style={{ color: '#A6E8F1', fontSize: 11, marginTop: 2 }}>{micControls.find(x => x.seat_number === micControlSeat)?.mic_closed ? 'Allow the seated user to unmute' : 'Force mute this seat, even for owner'}</Text></View>
