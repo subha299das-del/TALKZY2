@@ -4356,11 +4356,11 @@ function renderRoomInterior() {
             right: showRoomGiftPanel ? 10 : 12,
             bottom: 86,
             maxHeight: showRoomTools ? '48%' : '58%',
-            backgroundColor: showRoomGiftPanel ? '#10121D' : C.card,
+            backgroundColor: showRoomGiftPanel ? '#101114' : C.card,
             borderRadius: showRoomGiftPanel ? 22 : 14,
             padding: showRoomGiftPanel ? 16 : 14,
             borderWidth: 1,
-            borderColor: showRoomGiftPanel ? '#34364B' : C.line,
+            borderColor: showRoomGiftPanel ? '#34343B' : C.line,
             zIndex: 30,
             elevation: 18
           }}
