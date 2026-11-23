@@ -700,7 +700,7 @@ app.delete('/api/rooms/:roomId/messages', userAuth, async (req, res) => {
     }
 
     const { data: existing, error: readError } = await supabase.from('talkzy_room_messages')
-      .select('id, image_url').eq('room_id', room.id);
+      .select('id, sender_id, image_url').eq('room_id', room.id);
     if (readError) throw readError;
 
     const { error: deleteError } = await supabase.from('talkzy_room_messages')
