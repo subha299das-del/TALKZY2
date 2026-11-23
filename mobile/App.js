@@ -627,14 +627,24 @@ const [worldLuckyBagQueue, setWorldLuckyBagQueue] = useState([]);
  const [showMicChatPopup, setShowMicChatPopup] = useState(false);
  const [showRoomChatComposer, setShowRoomChatComposer] = useState(false);
  const roomChatInputRef = useRef(null);
+ const roomChatKeyboardShownRef = useRef(false);
  useEffect(() => {
+   const keyboardShown = Keyboard.addListener('keyboardDidShow', () => {
+     roomChatKeyboardShownRef.current = true;
+   });
    const keyboardHidden = Keyboard.addListener('keyboardDidHide', () => {
-     if (showRoomChatComposer) {
+     // Android can emit keyboardDidHide while the Modal is mounting.
+     // Ignore that initial event; only close after this composer actually showed the keyboard.
+     if (showRoomChatComposer && roomChatKeyboardShownRef.current) {
+       roomChatKeyboardShownRef.current = false;
        setShowRoomChatComposer(false);
        setShowRoomChatActionMenu(false);
      }
    });
-   return () => keyboardHidden.remove();
+   return () => {
+     keyboardShown.remove();
+     keyboardHidden.remove();
+   };
  }, [showRoomChatComposer]);
  const [showRoomChatActionMenu, setShowRoomChatActionMenu] = useState(false);
  const [isRoomChatMinimized, setIsRoomChatMinimized] = useState(false);
@@ -4742,9 +4752,9 @@ function renderRoomInterior() {
   animationType="fade"
   statusBarTranslucent
   onShow={() => {
-    // Android can mount a Modal before autoFocus reaches its TextInput.
-    // Focus after the Modal is shown so one tap opens the composer and keyboard together.
-    roomChatInputRef.current?.focus();
+    // Wait for the Android Modal window and TextInput to finish mounting before focusing.
+    // The first tap therefore opens the composer and requests the keyboard in one action.
+    setTimeout(() => roomChatInputRef.current?.focus(), Platform.OS === 'android' ? 120 : 0);
   }}
   onRequestClose={() => {
     Keyboard.dismiss();
@@ -4760,6 +4770,7 @@ function renderRoomInterior() {
       <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 26, paddingLeft: 17, paddingRight: 7, minHeight: 50, borderWidth: 1, borderColor: '#E5E7EB' }}>
         <TextInput
           ref={roomChatInputRef}
+          autoFocus
           value={roomChatText}
           onChangeText={setRoomChatText}
           placeholder={isRoomTourist && !touristsSendText ? 'Tourist chat disabled' : 'Write a message...'}
@@ -4805,7 +4816,7 @@ function renderRoomInterior() {
   {/* CHAT ENTRY — one slot: message bar off-mic, compact chat icon on-mic. Both open the same focused composer. */}
   {!isOnMic ? (
     <TouchableOpacity
-      onPress={() => { setIsRoomChatMinimized(false); setShowRoomChatActionMenu(false); setShowRoomChatComposer(true); }}
+      onPress={() => { roomChatKeyboardShownRef.current = false; setIsRoomChatMinimized(false); setShowRoomChatActionMenu(false); setShowRoomChatComposer(true); }}
       activeOpacity={0.85}
       accessibilityRole="button"
       accessibilityLabel="Open room chat composer"
@@ -4816,7 +4827,7 @@ function renderRoomInterior() {
     </TouchableOpacity>
   ) : (
     <TouchableOpacity
-      onPress={() => { setIsRoomChatMinimized(false); setShowRoomChatActionMenu(false); setShowRoomChatComposer(true); }}
+      onPress={() => { roomChatKeyboardShownRef.current = false; setIsRoomChatMinimized(false); setShowRoomChatActionMenu(false); setShowRoomChatComposer(true); }}
       activeOpacity={0.85}
       accessibilityRole="button"
       accessibilityLabel="Open room chat composer"
