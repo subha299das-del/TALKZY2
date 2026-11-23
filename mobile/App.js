@@ -5096,11 +5096,14 @@ function renderRoomInterior() {
     }}
     style={{ width: 50, height: 50, borderRadius: 17, borderWidth: 1.7, borderColor: '#A1F0FF', backgroundColor: '#12415E', alignItems: 'center', justifyContent: 'center', shadowColor: '#43D6F2', shadowOpacity: 0.55, shadowRadius: 10, elevation: 10 }}
   >
-    <View pointerEvents="none" style={{ position: 'absolute', top: 5, left: 5, right: 5, bottom: 5, borderRadius: 12, borderWidth: 1, borderColor: '#4B91B5' }} />
-    <View style={{ width: 29, height: 22, marginTop: 7, borderRadius: 5, borderWidth: 1.5, borderColor: '#9AEAFF', backgroundColor: '#24577A', alignItems: 'center', justifyContent: 'center' }}>
-      <View style={{ position: 'absolute', top: -6, left: -2, width: 30, height: 10, borderRadius: 5, borderWidth: 1.5, borderColor: '#C0F4FF', backgroundColor: '#357EA0' }} />
-      <View style={{ position: 'absolute', top: 7, width: 4, height: 8, borderRadius: 2, backgroundColor: '#70DDF2' }} />
-      <View style={{ position: 'absolute', top: 7, width: 8, height: 8, transform: [{ rotate: '45deg' }], backgroundColor: '#B98BFF', borderWidth: 1, borderColor: '#F0D9FF' }} />
+    <View pointerEvents="none" style={{ position:'absolute',top:5,left:5,right:5,bottom:5,borderRadius:12,borderWidth:1,borderColor:'#5BAA79' }} />
+    <View style={{ width:34,height:38,alignItems:'center',justifyContent:'flex-end' }}>
+      <View style={{ position:'absolute',top:0,width:13,height:15,borderTopLeftRadius:10,borderTopRightRadius:10,backgroundColor:'#E9F0E9',borderWidth:1,borderColor:'#FFFFFF' }} />
+      <View style={{ position:'absolute',top:11,width:17,height:23,borderRadius:7,backgroundColor:'#D5DCE0',borderWidth:1,borderColor:'#FFFFFF' }} />
+      <View style={{ position:'absolute',top:17,width:17,height:4,backgroundColor:'#65D58A' }} />
+      <View style={{ position:'absolute',bottom:0,left:2,width:8,height:13,backgroundColor:'#8DA69A',transform:[{skewY:'-25deg'}],borderBottomLeftRadius:5 }} />
+      <View style={{ position:'absolute',bottom:0,right:2,width:8,height:13,backgroundColor:'#8DA69A',transform:[{skewY:'25deg'}],borderBottomRightRadius:5 }} />
+      <View style={{ position:'absolute',bottom:-3,width:6,height:8,backgroundColor:'#65D58A',borderRadius:4 }} />
     </View>
   </TouchableOpacity>
 
