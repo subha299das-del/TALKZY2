@@ -696,22 +696,27 @@ const worldLuckyBagSeenRef = useRef(new Set());
 
  
 async function loadRoomMicSeats(roomId) {
-  if (!roomId) return;
+  const requestUserId = activeAuthUserIdRef.current;
+  if (!roomId || roomChatActiveRoomIdRef.current !== roomId || !requestUserId) return;
 
   const requestVersion = ++micSeatLoadVersionRef.current;
+  const isCurrentRequest = () =>
+    requestVersion === micSeatLoadVersionRef.current &&
+    roomChatActiveRoomIdRef.current === roomId &&
+    activeAuthUserIdRef.current === requestUserId;
 
   try {
     const result = await api(`/api/rooms/${roomId}/mic-seats`);
 
-    // Ignore stale requests that finish after a newer seat update/load.
-    if (requestVersion !== micSeatLoadVersionRef.current) return;
+    // Ignore responses from an exited room, an old account, or an older seat request.
+    if (!isCurrentRequest()) return;
 
     setMicCount(result.micCount || 8);
     setMicLayout(result.micLayout || 'eight');
     setMicSeats(result.seats || []);
     setMicControls(result.micControls || []);
 
-    const myUserId = session?.user?.id;
+    const myUserId = requestUserId;
 
     const mySeat = (result.seats || []).find(
       seat => seat.user_id === myUserId
@@ -727,7 +732,7 @@ async function loadRoomMicSeats(roomId) {
       setIsMicMuted(false);
     }
   } catch (error) {
-    if (requestVersion === micSeatLoadVersionRef.current) {
+    if (isCurrentRequest()) {
       console.log(
         'Microphone seats loading error:',
         error.message
