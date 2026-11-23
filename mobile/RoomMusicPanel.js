@@ -198,6 +198,7 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
     const requestRoomId = roomId;
     const requestGeneration = refreshGenerationRef.current;
     const uploadedPaths = [];
+    let playlistSaved = false;
     setUploading(true);
     try {
       const additions = [];
@@ -233,13 +234,14 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
         }
       }
       if (!state) throw new Error('Songs uploaded, but TALKZY could not sync your playlist: ' + (lastSaveError?.message || 'Network error. Please retry when connection is stable.'));
+      playlistSaved = true;
       if (activeRoomIdRef.current !== requestRoomId || refreshGenerationRef.current !== requestGeneration) {
         throw new Error('The room changed while your songs were uploading. The incomplete upload will be cleaned up.');
       }
       if (first && state?.queue?.[0]?.url) { queueRef.current = state.queue; await playAt(0, true); }
       setSelectedLocalIds([]); setMusicPage('library'); setMinimized(false);
     } catch (error) {
-      if (uploadedPaths.length) {
+      if (uploadedPaths.length && !playlistSaved) {
         try { await supabase.storage.from('talkzy-room-music').remove(uploadedPaths); }
         catch (cleanupError) { console.log('Could not clean up incomplete room music uploads:', cleanupError.message); }
       }
