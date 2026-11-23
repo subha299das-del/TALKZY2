@@ -4564,8 +4564,8 @@ function renderRoomInterior() {
         </TouchableOpacity>
       )}
 
-{/* RIGHT-SIDE ROOM NAVIGATION: Hot Events → Greedy → Game → Treasure */}
-<View style={{ position: 'absolute', right: 9, bottom: Platform.OS === 'android' ? 92 : 70, zIndex: 55, elevation: 28, alignItems: 'center', gap: 8, flexDirection: 'column' }}>
+{/* RIGHT-SIDE ROOM NAVIGATION: stays behind all room popups */}
+<View style={{ position: 'absolute', right: 9, bottom: Platform.OS === 'android' ? 92 : 70, zIndex: 20, elevation: 8, alignItems: 'center', gap: 8, flexDirection: 'column' }}>
   <TouchableOpacity
     accessibilityRole="button"
     accessibilityLabel="Open Hot Events"
