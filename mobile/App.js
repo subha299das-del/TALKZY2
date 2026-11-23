@@ -626,6 +626,7 @@ const [worldLuckyBagQueue, setWorldLuckyBagQueue] = useState([]);
  const [showMicEmojiPicker, setShowMicEmojiPicker] = useState(false);
  const [showMicChatPopup, setShowMicChatPopup] = useState(false);
  const [showRoomChatComposer, setShowRoomChatComposer] = useState(false);
+ const roomChatInputRef = useRef(null);
  useEffect(() => {
    const keyboardHidden = Keyboard.addListener('keyboardDidHide', () => {
      if (showRoomChatComposer) {
@@ -4740,6 +4741,11 @@ function renderRoomInterior() {
   transparent
   animationType="fade"
   statusBarTranslucent
+  onShow={() => {
+    // Android can mount a Modal before autoFocus reaches its TextInput.
+    // Focus after the Modal is shown so one tap opens the composer and keyboard together.
+    roomChatInputRef.current?.focus();
+  }}
   onRequestClose={() => {
     Keyboard.dismiss();
     setShowRoomChatComposer(false);
@@ -4753,7 +4759,7 @@ function renderRoomInterior() {
     <View style={{ paddingHorizontal: 14, paddingTop: 8, paddingBottom: Platform.OS === 'android' ? 8 : 12, maxHeight: '58%' }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 26, paddingLeft: 17, paddingRight: 7, minHeight: 50, borderWidth: 1, borderColor: '#E5E7EB' }}>
         <TextInput
-          autoFocus
+          ref={roomChatInputRef}
           value={roomChatText}
           onChangeText={setRoomChatText}
           placeholder={isRoomTourist && !touristsSendText ? 'Tourist chat disabled' : 'Write a message...'}
