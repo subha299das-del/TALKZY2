@@ -5117,9 +5117,9 @@ function renderRoomInterior() {
   statusBarTranslucent
   animationType="none"
   onShow={() => {
-    // Android Modal content is not focusable until its native window is shown.
-    // Focus after onShow so the keyboard opens on the first Chat Bar/icon tap.
-    setTimeout(() => roomChatInputRef.current?.focus(), Platform.OS === 'android' ? 300 : 0);
+    // The native Modal is now visible and focusable. Request keyboard focus
+    // immediately instead of adding an artificial delay on Android.
+    roomChatInputRef.current?.focus();
   }}
   onRequestClose={() => {
     Keyboard.dismiss();
