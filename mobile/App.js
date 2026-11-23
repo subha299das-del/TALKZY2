@@ -1004,7 +1004,7 @@ async function sendRoomReaction(reaction) {
 useEffect(() => {
   if (!selectedRoom?.id || !session?.user?.id) return;
   const roomId = selectedRoom.id;
-  const channel = supabase.channel(`room-arrivals-${roomId}`);
+  const channel = supabase.channel(`room-arrivals-${roomId}`, { config: { broadcast: { self: true } } });
   channel.on('broadcast', { event: 'room_arrival' }, ({ payload }) => {
     if (!payload?.arrivalId || !payload?.displayName) return;
     setRoomChatMessages(prev => prev.some(item => item.id === payload.arrivalId) ? prev : [...prev, {
@@ -4935,7 +4935,7 @@ function renderRoomInterior() {
   <View style={{ maxHeight: 118, paddingHorizontal: 12, paddingTop: 7, paddingBottom: 4, borderTopWidth: 1, borderTopColor: C.line }}>
     <ScrollView ref={roomChatScrollRef} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} onContentSizeChange={() => roomChatScrollRef.current?.scrollToEnd({ animated: true })}>
       {roomChatMessages.slice(-30).map(message => (
-        <View key={message.id} style={{ alignSelf: 'flex-start', maxWidth: '94%', backgroundColor: C.card, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, marginBottom: 5 }}>
+        <View key={message.id} style={{ alignSelf: message.system ? 'center' : 'flex-start', maxWidth: '94%', backgroundColor: message.system ? '#33270D' : C.card, borderWidth: message.system ? 1 : 0, borderColor: message.system ? C.gold : 'transparent', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, marginBottom: 5 }}>
           <Text style={{ color: C.gold, fontSize: 10, fontWeight: '800', marginBottom: 2 }}>{message.sender?.display_name || message.sender || 'TALKZY User'}</Text>
           {message.image_url ? <Image source={{ uri: message.image_url }} style={{ width: 150, height: 90, borderRadius: 8 }} resizeMode="cover" /> : <Text style={{ color: C.text, fontSize: 13 }}>{message.text || message.message_text}</Text>}
           <Text style={{ color: C.muted, fontSize: 9, textAlign: 'right', marginTop: 2 }}>{message.time}</Text>
