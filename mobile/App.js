@@ -2460,37 +2460,40 @@ async function toggleFollowRoom(room) {
     if (!selectedRoom?.id) return;
     const roomId = selectedRoom.id;
     if (isRoomTourist && !touristsSendPic) {
-      return Alert.alert('Picture sharing disabled', 'The room owner does not allow tourists to send pictures.');
+      return Alert.alert('Picture sharing disabled', 'The room owner does not allow tourists to share pictures.');
     }
+    let uploadedPath = null;
     try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) return Alert.alert('Permission required', 'Allow photo access to share a picture.');
-      const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, quality: 0.82 });
+      const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 0.82 });
       if (picked.canceled || !picked.assets?.[0]?.uri) return;
-      const uri = picked.assets[0].uri;
-      const response = await fetch(uri);
+      const response = await fetch(picked.assets[0].uri);
       const bytes = await response.blob();
-      const path = `${session.user.id}/rooms/${roomId}/messages/${Date.now()}.jpg`;
-      const { error: uploadError } = await supabase.storage.from('talkzy-rooms').upload(path, bytes, {
+      uploadedPath = `${session.user.id}/rooms/${roomId}/messages/${Date.now()}.jpg`;
+      const { error: uploadError } = await supabase.storage.from('talkzy-room-chat').upload(uploadedPath, bytes, {
         contentType: 'image/jpeg', upsert: false
       });
       if (uploadError) throw uploadError;
-      const imageUrl = supabase.storage.from('talkzy-rooms').getPublicUrl(path).data.publicUrl;
       const result = await api(`/api/rooms/${roomId}/messages`, {
-        method: 'POST', body: JSON.stringify({ type: 'image', imageUrl })
+        method: 'POST', body: JSON.stringify({ type: 'image', imagePath: uploadedPath })
       });
       const item = result.message;
       if (roomChatActiveRoomIdRef.current === roomId) {
         setRoomChatMessages(prev => prev.some(existing => existing.id === item.id) ? prev : [...prev, {
           id: item.id, roomId, text: '📷 Photo', sender: profile?.display_name || displayName || 'You',
-          senderId: session?.user?.id, image_url: imageUrl,
+          senderId: session?.user?.id, message_type: 'image', image_url: item.image_url || null,
           time: new Date(item.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }]);
       }
     } catch (error) {
+      if (uploadedPath) {
+        try { await supabase.storage.from('talkzy-room-chat').remove([uploadedPath]); } catch {}
+      }
       Alert.alert('Picture not sent', error.message || 'Could not share this picture.');
     }
   }
+
 
   async function loadRoomMessages(roomId) {
     if (!roomId || roomChatActiveRoomIdRef.current !== roomId) return;
