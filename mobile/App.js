@@ -4019,6 +4019,7 @@ function renderRoomInterior() {
                   { shortcutKey: 'luckyNo', title: 'Lucky Number' },
                   { shortcutKey: 'dice', title: 'Dice' },
                   { shortcutKey: 'luckyBag', title: 'Lucky Bag' },
+                  ...((isCurrentRoomAdmin || isCurrentRoomOwner) ? [{ shortcutKey: 'clearChat', title: 'Clear Chat' }] : []),
                   ...(isCurrentRoomOwner ? [{ shortcutKey: 'activity', title: 'Activity' }, { shortcutKey: 'theme', title: 'Theme' }] : [])
                 ];
                 return roomToolItems.map(tool => (
