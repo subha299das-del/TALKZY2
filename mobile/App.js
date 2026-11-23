@@ -3584,9 +3584,6 @@ function renderRoomInterior() {
           </View>
         </View>
       </Modal>
-</View>
-        </View>
-      </Modal>
       {/* ROOM TROPHY / COINS — compact row */}
       <View
         style={{
