@@ -1411,6 +1411,9 @@ const [showRoomGiftQuantityOptions, setShowRoomGiftQuantityOptions] = useState(f
 const [showGreedyPanel, setShowGreedyPanel] = useState(false);
 const [showRoomGamePanel, setShowRoomGamePanel] = useState(false);
 const [showRocketPanel, setShowRocketPanel] = useState(false);
+const [treasureLevel, setTreasureLevel] = useState(1);
+const [treasureLaunching, setTreasureLaunching] = useState(false);
+const treasureLaunchMotion = useRef(new Animated.Value(0)).current;
 const [showRoomShortcutsPage, setShowRoomShortcutsPage] = useState(false);
 const [roomShortcutCategory, setRoomShortcutCategory] = useState('Treasury');
 const [roomChatText, setRoomChatText] = useState('');
@@ -4571,79 +4574,71 @@ function renderRoomInterior() {
 
 
       {showRocketPanel && screen === 'roomInterior' && selectedRoom && (
-        <View style={{
-          position: 'absolute',
-          left: 12,
-          right: 12,
-          top: 58,
-          bottom: 82,
-          backgroundColor: '#100D1B',
-          borderRadius: 22,
-          padding: 15,
-          borderWidth: 1.4,
-          borderColor: '#A77A39',
-          zIndex: 46,
-          elevation: 28
-        }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <View>
-              <Text style={{ color: '#F5E6C5', fontSize: 18, fontWeight: '900', letterSpacing: 1 }}>TALKZY TREASURE</Text>
-              <Text style={{ color: '#B9A8CF', fontSize: 10, marginTop: 3 }}>ROOM-WIDE ROCKET MILESTONES</Text>
-            </View>
-            <TouchableOpacity onPress={() => setShowRocketPanel(false)} accessibilityRole="button" accessibilityLabel="Close Treasure" style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: '#241A32', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: '#F4E8D2', fontSize: 23, fontWeight: '700' }}>×</Text>
-            </TouchableOpacity>
+        <View style={{ position:'absolute', left:12, right:12, top:58, bottom:82, backgroundColor:'#100D1B', borderRadius:22, padding:15, borderWidth:1.4, borderColor:'#A77A39', zIndex:46, elevation:28 }}>
+          <View style={{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+            <View><Text style={{ color:'#F5E6C5', fontSize:18, fontWeight:'900', letterSpacing:1 }}>TALKZY TREASURE</Text><Text style={{ color:'#B9A8CF', fontSize:10, marginTop:3 }}>FIVE ROCKET MILESTONES</Text></View>
+            <TouchableOpacity onPress={()=>setShowRocketPanel(false)} accessibilityRole="button" accessibilityLabel="Close Treasure" style={{ width:36,height:36,borderRadius:12,backgroundColor:'#241A32',alignItems:'center',justifyContent:'center' }}><Text style={{ color:'#F4E8D2',fontSize:23,fontWeight:'700' }}>×</Text></TouchableOpacity>
           </View>
-
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+          <View style={{ flexDirection:'row', justifyContent:'space-between', marginBottom:12 }}>
             {[
-              { level: 1, color: '#65D58A', name: 'GREEN' },
-              { level: 2, color: '#B78BFF', name: 'PURPLE' },
-              { level: 3, color: '#F06B70', name: 'RED' },
-              { level: 4, color: '#69B9F0', name: 'BLUE' },
-              { level: 5, color: '#E7C16C', name: 'GOLD' }
-            ].map(item => (
-              <View key={item.level} style={{ flex: 1, alignItems: 'center', paddingVertical: 8, marginHorizontal: 2, borderRadius: 10, backgroundColor: item.level === 1 ? 'rgba(101,213,138,0.16)' : '#1B1725', borderWidth: 1, borderColor: item.level === 1 ? item.color : '#393044' }}>
-                <Text style={{ color: item.color, fontSize: 12, fontWeight: '900' }}>LV.{item.level}</Text>
-                <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: item.color, marginTop: 5 }} />
-              </View>
+              {level:1,color:'#65D58A',name:'GREEN'},
+              {level:2,color:'#B78BFF',name:'PURPLE'},
+              {level:3,color:'#F06B70',name:'RED'},
+              {level:4,color:'#69B9F0',name:'BLUE'},
+              {level:5,color:'#E7C16C',name:'GOLD'}
+            ].map(item=>(
+              <TouchableOpacity key={item.level} onPress={()=>{ if(!treasureLaunching) setTreasureLevel(item.level); }} style={{ flex:1,alignItems:'center',paddingVertical:8,marginHorizontal:2,borderRadius:10,backgroundColor:treasureLevel===item.level?'rgba(255,255,255,0.10)':'#1B1725',borderWidth:1.5,borderColor:treasureLevel===item.level?item.color:'#393044' }}>
+                <Text style={{ color:item.color,fontSize:12,fontWeight:'900' }}>LV.{item.level}</Text><Text style={{ color:'#9B91AA',fontSize:8,marginTop:3 }}>{item.name}</Text>
+              </TouchableOpacity>
             ))}
           </View>
-
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8 }}>
-            <View style={{ minHeight: 205, borderRadius: 18, backgroundColor: '#171326', borderWidth: 1, borderColor: '#51406A', alignItems: 'center', justifyContent: 'center', padding: 14, overflow: 'hidden' }}>
-              <View style={{ position: 'absolute', width: 150, height: 150, borderRadius: 75, backgroundColor: 'rgba(101,213,138,0.09)' }} />
-              <Text style={{ color: '#65D58A', fontSize: 11, fontWeight: '900', letterSpacing: 2 }}>CURRENT ROCKET · LEVEL 1</Text>
-              <Text style={{ fontSize: 82, marginTop: 4, textShadowColor: '#65D58A', textShadowRadius: 18 }}>🚀</Text>
-              <Text style={{ color: '#E9F8EC', fontSize: 15, fontWeight: '900', marginTop: 3 }}>EMERALD IGNITION</Text>
-              <Text style={{ color: '#B7AFC6', fontSize: 10, marginTop: 5, textAlign: 'center' }}>The room's first rocket milestone</Text>
-            </View>
-
-            <View style={{ marginTop: 12, borderRadius: 14, padding: 13, backgroundColor: '#1B1725', borderWidth: 1, borderColor: '#393044' }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ color: '#F0DDAF', fontSize: 12, fontWeight: '900' }}>ROOM GIFT PROGRESS</Text>
-                <Text style={{ color: '#AFA3C0', fontSize: 10 }}>LEVEL 1</Text>
-              </View>
-              <View style={{ height: 9, borderRadius: 5, backgroundColor: '#332B40', marginTop: 10, overflow: 'hidden' }}>
-                <View style={{ width: '0%', height: 9, borderRadius: 5, backgroundColor: '#65D58A' }} />
-              </View>
-              <Text style={{ color: '#B9AFC8', fontSize: 10, marginTop: 8, lineHeight: 15 }}>Progress and the Gold target will appear here when the room Treasure rules are connected.</Text>
-            </View>
-
-            <View style={{ marginTop: 12, borderRadius: 14, padding: 13, backgroundColor: '#1B1725', borderWidth: 1, borderColor: '#393044' }}>
-              <Text style={{ color: '#F0DDAF', fontSize: 12, fontWeight: '900', marginBottom: 9 }}>ROCKET REWARDS</Text>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <View style={{ flex: 1, marginRight: 6, padding: 10, borderRadius: 10, backgroundColor: '#2A2034' }}>
-                  <Text style={{ color: '#E8C77C', fontSize: 11, fontWeight: '900' }}>TOP 3 SENDERS</Text>
-                  <Text style={{ color: '#B9AFC8', fontSize: 9, marginTop: 4 }}>Highest contribution rewards</Text>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom:8 }}>
+            <View style={{ minHeight:250,borderRadius:18,backgroundColor:'#171326',borderWidth:1,borderColor:'#51406A',alignItems:'center',justifyContent:'center',padding:14,overflow:'hidden' }}>
+              <View style={{ position:'absolute',width:170,height:170,borderRadius:85,backgroundColor:treasureLevel===1?'rgba(101,213,138,0.10)':treasureLevel===2?'rgba(183,139,255,0.12)':treasureLevel===3?'rgba(240,107,112,0.12)':treasureLevel===4?'rgba(105,185,240,0.12)':'rgba(231,193,108,0.14)' }} />
+              <Text style={{ color:treasureLevel===1?'#65D58A':treasureLevel===2?'#B78BFF':treasureLevel===3?'#F06B70':treasureLevel===4?'#69B9F0':'#E7C16C',fontSize:11,fontWeight:'900',letterSpacing:2 }}>CURRENT ROCKET · LEVEL {treasureLevel}</Text>
+              <Animated.View style={{ width:210,height:190,alignItems:'center',justifyContent:'center',transform:[{translateY:treasureLaunchMotion.interpolate({inputRange:[0,1],outputRange:[0,-260]})}],opacity:treasureLaunchMotion.interpolate({inputRange:[0,0.72,1],outputRange:[1,1,0]}) }}>
+                <View style={{ position:'absolute',bottom:8,width:treasureLevel===5?178:treasureLevel===4?72:treasureLevel===3?146:treasureLevel===2?132:150,height:treasureLevel===5?105:treasureLevel===4?160:treasureLevel===3?115:treasureLevel===2?130:138,flexDirection:'row',alignItems:'flex-end',justifyContent:'center' }}>
+                  {(treasureLevel===5?[-1,0,1]:treasureLevel===4?[0]:treasureLevel===3?[-1,0,1]:[-1,0,1]).map((v,i)=>(
+                    <View key={i} style={{ width:treasureLevel===5?42:treasureLevel===4?44:treasureLevel===3?34:treasureLevel===2?37:40,height:treasureLevel===5?90:treasureLevel===4?150:treasureLevel===3?105:treasureLevel===2?120:128,marginHorizontal:treasureLevel===4?0:2,backgroundColor:i===1?'#D8DCE2':'#AEB7C2',borderColor:'#F5F7FA',borderWidth:1,borderTopLeftRadius:16,borderTopRightRadius:16,borderBottomLeftRadius:5,borderBottomRightRadius:5,alignItems:'center',justifyContent:'flex-end' }}>
+                      <View style={{ position:'absolute',top:treasureLevel===5?30:36,width:'100%',height:8,backgroundColor:treasureLevel===1?'#65D58A':treasureLevel===2?'#B78BFF':treasureLevel===3?'#F06B70':treasureLevel===4?'#69B9F0':'#D8B45D' }} />
+                      <View style={{ width:10,height:10,borderRadius:5,backgroundColor:'#263448',marginBottom:14 }} />
+                      <View style={{ width:'65%',height:15,backgroundColor:'#596575',borderTopLeftRadius:4,borderTopRightRadius:4 }} />
+                    </View>
+                  ))}
                 </View>
-                <View style={{ flex: 1, marginLeft: 6, padding: 10, borderRadius: 10, backgroundColor: '#2A2034' }}>
-                  <Text style={{ color: '#E8C77C', fontSize: 11, fontWeight: '900' }}>40 REWARD PLACES</Text>
-                  <Text style={{ color: '#B9AFC8', fontSize: 9, marginTop: 4 }}>Additional eligible participants</Text>
+                {treasureLevel===5 && <View style={{ position:'absolute',bottom:26,width:190,height:62,borderBottomWidth:8,borderBottomColor:'#D9DDE4',borderLeftWidth:17,borderLeftColor:'#D9DDE4',borderRightWidth:17,borderRightColor:'#D9DDE4',backgroundColor:'transparent' }} />}
+                <View style={{ position:'absolute',top:8,width:treasureLevel===4?32:treasureLevel===5?38:treasureLevel===3?31:treasureLevel===2?38:42,height:treasureLevel===4?50:treasureLevel===5?58:treasureLevel===3?48:treasureLevel===2?58:62,backgroundColor:'#E7EAF0',borderTopLeftRadius:24,borderTopRightRadius:24,borderBottomLeftRadius:8,borderBottomRightRadius:8,borderWidth:1,borderColor:'#FFFFFF',alignItems:'center',justifyContent:'center' }}>
+                  <View style={{ width:14,height:14,borderRadius:7,backgroundColor:treasureLevel===1?'#65D58A':treasureLevel===2?'#B78BFF':treasureLevel===3?'#F06B70':treasureLevel===4?'#69B9F0':'#D8B45D' }} />
                 </View>
-              </View>
-              <Text style={{ color: '#8F849F', fontSize: 9, marginTop: 8, lineHeight: 14 }}>Reward amounts, eligibility and whether the top 3 are included in the 40 remain to be configured.</Text>
+                <Animated.View style={{ position:'absolute',bottom:-5,width:treasureLevel>=3?48:34,height:treasureLaunchMotion.interpolate({inputRange:[0,1],outputRange:[24,75]}),backgroundColor:treasureLevel===1?'#65D58A':treasureLevel===2?'#B78BFF':treasureLevel===3?'#F06B70':treasureLevel===4?'#69B9F0':'#E7C16C',borderRadius:25,opacity:treasureLaunchMotion.interpolate({inputRange:[0,0.15,1],outputRange:[0.35,1,0.05]}) }} />
+              </Animated.View>
+              <Text style={{ color:'#F3E9D5',fontSize:14,fontWeight:'900',marginTop:5 }}> {['','EMERALD IGNITION','PURPLE BOOSTER','CRIMSON CLUSTER','SAPPHIRE SHUTTLE','ROYAL ORBITER'][treasureLevel]} </Text>
+              <Text style={{ color:'#B7AFC6',fontSize:10,marginTop:5,textAlign:'center' }}>Rocket design follows your five-level reference order</Text>
             </View>
+            <View style={{ marginTop:12,borderRadius:14,padding:13,backgroundColor:'#1B1725',borderWidth:1,borderColor:'#393044' }}>
+              <Text style={{ color:'#F0DDAF',fontSize:12,fontWeight:'900' }}>ROOM TREASURE PROGRESSION</Text>
+              <Text style={{ color:'#B9AFC8',fontSize:10,marginTop:6,lineHeight:15 }}>Gold targets and live contribution tracking are intentionally not connected in this update.</Text>
+            </View>
+            <View style={{ marginTop:12,borderRadius:14,padding:13,backgroundColor:'#1B1725',borderWidth:1,borderColor:'#393044' }}>
+              <Text style={{ color:'#F0DDAF',fontSize:12,fontWeight:'900',marginBottom:9 }}>ROCKET REWARDS</Text>
+              <View style={{ flexDirection:'row',justifyContent:'space-between' }}>
+                <View style={{ flex:1,marginRight:6,padding:10,borderRadius:10,backgroundColor:'#2A2034' }}><Text style={{ color:'#E8C77C',fontSize:11,fontWeight:'900' }}>TOP 3 SENDERS</Text><Text style={{ color:'#B9AFC8',fontSize:9,marginTop:4 }}>Highest contribution rewards</Text></View>
+                <View style={{ flex:1,marginLeft:6,padding:10,borderRadius:10,backgroundColor:'#2A2034' }}><Text style={{ color:'#E8C77C',fontSize:11,fontWeight:'900' }}>40 REWARD PLACES</Text><Text style={{ color:'#B9AFC8',fontSize:9,marginTop:4 }}>Additional eligible participants</Text></View>
+              </View>
+              <Text style={{ color:'#8F849F',fontSize:9,marginTop:8,lineHeight:14 }}>Reward distribution will be connected separately.</Text>
+            </View>
+            <TouchableOpacity disabled={treasureLaunching} onPress={()=>{
+              if(treasureLaunching) return;
+              setTreasureLaunching(true);
+              treasureLaunchMotion.setValue(0);
+              Animated.timing(treasureLaunchMotion,{toValue:1,duration:1700,useNativeDriver:true}).start(({finished})=>{
+                if(finished){ setTreasureLevel(v=>v>=5?1:v+1); }
+                treasureLaunchMotion.setValue(0);
+                setTreasureLaunching(false);
+              });
+            }} style={{ marginTop:12,backgroundColor:treasureLaunching?'#594B67':'#C69B4A',borderRadius:13,paddingVertical:13,alignItems:'center' }}>
+              <Text style={{ color:'#17111E',fontSize:12,fontWeight:'900',letterSpacing:1 }}>{treasureLaunching?'ROCKET LAUNCHING…':'PREVIEW ROCKET LAUNCH'}</Text>
+            </TouchableOpacity>
           </ScrollView>
         </View>
       )}
