@@ -2048,6 +2048,12 @@ if (
     });
 
     if (error) {
+      if (/NOT_IN_ROOM|USER_KICKED/i.test(error.message || '')) {
+        return res.status(403).json({ error: 'Your live room connection has expired. Please re-enter the room and try again.' });
+      }
+      if (error.message.includes('TOURIST_MIC_DISABLED')) {
+        return res.status(403).json({ error: 'The room owner has disabled tourist microphone access.' });
+      }
       if (error.message.includes('SEAT_TAKEN')) {
         return res.status(409).json({ error: 'This microphone is already occupied.' });
       }
@@ -2157,6 +2163,9 @@ app.patch('/api/rooms/:roomId/mic-seats/mute', userAuth, async (req, res) => {
       p_is_muted: isMuted
     });
     if (error) {
+      if (/NOT_IN_ROOM|USER_KICKED/i.test(error.message || '')) {
+        return res.status(403).json({ error: 'Your live room connection has expired. Please re-enter the room and try again.' });
+      }
       if (error.message.includes('NOT_ON_MIC')) return res.status(404).json({ error: 'You are not occupying a microphone seat.' });
       if (error.message.includes('MIC_CLOSED')) return res.status(403).json({ error: 'This microphone is closed by the room owner or admin.' });
       if (error.message.includes('ROOM_CLOSED')) return res.status(409).json({ error: 'This room is closed.' });
