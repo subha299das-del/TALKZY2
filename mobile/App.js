@@ -4765,9 +4765,15 @@ function renderRoomInterior() {
           blurOnSubmit={false}
           style={{ color: '#17212B', fontSize: 14, padding: 0, flex: 1, height: 48 }}
         />
-        <TouchableOpacity onPress={sendRoomImage} disabled={isRoomTourist && !touristsSendPic} style={{ width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', opacity: isRoomTourist && !touristsSendPic ? 0.35 : 1 }} accessibilityRole="button" accessibilityLabel="Attach image">
-          <Text style={{ fontSize: 21, color: '#53616D' }}>▧</Text>
-        </TouchableOpacity>
+        {roomChatText.trim().length > 0 ? (
+          <TouchableOpacity onPress={sendRoomChatMessage} disabled={isRoomTourist && !touristsSendText} style={{ width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', opacity: isRoomTourist && !touristsSendText ? 0.4 : 1 }} accessibilityRole="button" accessibilityLabel="Send message">
+            <Text style={{ fontSize: 22, color: '#168DB5', fontWeight: '900' }}>➤</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity onPress={sendRoomImage} disabled={isRoomTourist && !touristsSendPic} style={{ width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', opacity: isRoomTourist && !touristsSendPic ? 0.35 : 1 }} accessibilityRole="button" accessibilityLabel="Attach image">
+            <Text style={{ fontSize: 21, color: '#53616D' }}>▧</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   </KeyboardAvoidingView>
