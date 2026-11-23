@@ -4564,8 +4564,8 @@ function renderRoomInterior() {
         </TouchableOpacity>
       )}
 
-{/* RIGHT-SIDE ROOM NAVIGATION: Hot Events → Greedy → Game → Treasure → Gift */}
-<View style={{ position: 'absolute', right: 9, bottom: Platform.OS === 'android' ? 92 : 70, zIndex: 55, elevation: 28, alignItems: 'center', gap: 8, flexDirection: 'column-reverse' }}>
+{/* RIGHT-SIDE ROOM NAVIGATION: Hot Events → Greedy → Game → Treasure */}
+<View style={{ position: 'absolute', right: 9, bottom: Platform.OS === 'android' ? 92 : 70, zIndex: 55, elevation: 28, alignItems: 'center', gap: 8, flexDirection: 'column' }}>
   <TouchableOpacity
     accessibilityRole="button"
     accessibilityLabel="Open Hot Events"
@@ -4624,14 +4624,6 @@ function renderRoomInterior() {
     </View>
   </TouchableOpacity>
 
-  <TouchableOpacity
-    accessibilityRole="button"
-    accessibilityLabel="Open gifts"
-    onPress={() => { setShowRoomTools(false); setShowGreedyPanel(false); setShowRoomGamePanel(false); setShowRocketPanel(false); setShowHotEventsPopup(false); setShowRoomGiftPanel(value => !value); }}
-    style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.card, borderWidth: 1, borderColor: '#D6B15E', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 6, elevation: 7 }}
-  >
-    <Text style={{ fontSize: 21 }}>🎁</Text>
-  </TouchableOpacity>
 </View>
 
 <Modal visible={showRoomShortcutsPage && screen === 'roomInterior' && Boolean(selectedRoom)} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setShowRoomShortcutsPage(false)}>
