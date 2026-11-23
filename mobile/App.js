@@ -3968,7 +3968,7 @@ function renderRoomInterior() {
                   { icon: '🍀', title: 'Lucky Number' },
                   { icon: '🎲', title: 'Dice' },
                   { icon: '🎁', title: 'Lucky Bag' },
-                  ...(isCurrentRoomAdmin || isCurrentRoomOwner ? [{ icon: '🗑️', title: 'Clear Chat' }] : []),
+                  ...(isCurrentRoomAdmin || isCurrentRoomOwner ? [{ icon: null, title: 'Clear Chat', customIcon: 'clearChat' }] : []),
                   ...(isCurrentRoomOwner ? [{ icon: '🎉', title: 'Activity' }, { icon: '🎨', title: 'Theme' }] : [])
                 ];
                 return roomToolItems.map(tool => (
@@ -4049,7 +4049,11 @@ function renderRoomInterior() {
                     }}
                     style={{ width: '33.333%', paddingVertical: 12, alignItems: 'center' }}
                   >
-                    <Text style={{ fontSize: 25 }}>{tool.icon}</Text>
+                    {tool.customIcon === 'clearChat' ? (
+                      <RoomShortcutIcon type="clearChat" size={42} />
+                    ) : (
+                      <Text style={{ fontSize: 25 }}>{tool.icon}</Text>
+                    )}
                     <Text style={{ color: C.text, fontSize: 12, marginTop: 5 }}>{tool.title}</Text>
                   </TouchableOpacity>
                 ));
