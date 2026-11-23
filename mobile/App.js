@@ -677,6 +677,7 @@ const [roomPresence, setRoomPresence] = useState([]);
 const [roomPresenceLoading, setRoomPresenceLoading] = useState(false);
 const [showRoomUsers, setShowRoomUsers] = useState(false);
 const micSeatLoadVersionRef = useRef(0);
+const micSeatActionVersionRef = useRef(0);
 const roomLeaveCleanupRef = useRef({});
 const roomExitInProgressRef = useRef({});
 const roomChatLocalCutoffRef = useRef({});
@@ -1469,6 +1470,7 @@ const [isRoomTourist, setIsRoomTourist] = useState(false);
     roomChatActiveRoomIdRef.current = null;
     ++roomChatLoadVersionRef.current;
     ++micSeatLoadVersionRef.current;
+    ++micSeatActionVersionRef.current;
     setMicSeats([]);
     setMicControls([]);
     setMicCount(8);
@@ -2583,6 +2585,7 @@ async function toggleFollowRoom(room) {
       }
       roomChatActiveRoomIdRef.current = room.id;
       ++roomChatLoadVersionRef.current;
+      ++micSeatActionVersionRef.current;
       setShowRoomChatComposer(false);
       setRoomChatText('');
       setSelectedRoom(room);
@@ -2993,6 +2996,7 @@ function renderRoomCard(room, showJoin = true) {
     if (!isCurrentUserRequest()) return;
     roomChatActiveRoomIdRef.current = room.id;
     ++roomChatLoadVersionRef.current;
+    ++micSeatActionVersionRef.current;
     setShowRoomChatComposer(false);
     setRoomChatText('');
     setSelectedRoom(room);
@@ -3884,6 +3888,11 @@ function renderRoomInterior() {
           const roomId = selectedRoom.id;
           const userId = session?.user?.id;
           const previousSeats = micSeats;
+          const actionVersion = ++micSeatActionVersionRef.current;
+          const isCurrentRoomAction = () =>
+            actionVersion === micSeatActionVersionRef.current &&
+            activeAuthUserIdRef.current === userId &&
+            roomChatActiveRoomIdRef.current === roomId;
 
           // Invalidate any in-flight seat fetch before applying this tap.
           ++micSeatLoadVersionRef.current;
@@ -3928,10 +3937,11 @@ function renderRoomInterior() {
             );
             // Realtime sync updates other participants. Avoid an extra GET here.
           } catch (error) {
+            if (!isCurrentRoomAction()) return;
             // Restore authoritative server state if the action fails.
             setMicSeats(previousSeats);
             await loadRoomMicSeats(roomId);
-            Alert.alert(
+            if (isCurrentRoomAction()) Alert.alert(
               'Microphone error',
               error.message || 'Could not change microphone seat.'
             );
@@ -5073,6 +5083,11 @@ function renderRoomInterior() {
       const previousMuted = isMicMuted;
       const roomId = selectedRoom.id;
       const userId = session?.user?.id;
+      const actionVersion = ++micSeatActionVersionRef.current;
+      const isCurrentRoomAction = () =>
+        actionVersion === micSeatActionVersionRef.current &&
+        activeAuthUserIdRef.current === userId &&
+        roomChatActiveRoomIdRef.current === roomId;
 
       // Immediate visual response while the server saves the mute state.
       ++micSeatLoadVersionRef.current;
@@ -5092,6 +5107,7 @@ function renderRoomInterior() {
           }
         );
 
+        if (!isCurrentRoomAction()) return;
         if (result?.seat) {
           setMicSeats(current => current.map(item =>
             item.user_id === userId
@@ -5101,6 +5117,7 @@ function renderRoomInterior() {
           setIsMicMuted(!!result.seat.is_muted);
         }
       } catch (error) {
+        if (!isCurrentRoomAction()) return;
         setIsMicMuted(previousMuted);
         setMicSeats(current => current.map(item =>
           item.user_id === userId
@@ -5108,7 +5125,7 @@ function renderRoomInterior() {
             : item
         ));
         await loadRoomMicSeats(roomId);
-        Alert.alert(
+        if (isCurrentRoomAction()) Alert.alert(
           'Microphone',
           error.message || 'Could not change mute status.'
         );
@@ -11634,6 +11651,7 @@ if (screen === 'profile' || profileIncomplete) {
     setRoomChatMessages([]);
     roomChatActiveRoomIdRef.current = null;
     ++roomChatLoadVersionRef.current;
+    ++micSeatActionVersionRef.current;
     setShowRoomChatComposer(false);
     setSelectedRoom(null);
     ++micSeatLoadVersionRef.current;
