@@ -4774,18 +4774,21 @@ function renderRoomInterior() {
 
 {roomEntryNoticeVisible && (
   <Modal visible transparent animationType="fade" onRequestClose={() => setRoomEntryNoticeVisible(false)}>
-    <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.78)', justifyContent: 'center', padding: 22 }}>
-      <View style={{ backgroundColor: C.card, borderColor: C.gold, borderWidth: 1, borderRadius: 18, padding: 18, maxHeight: '82%' }}>
-        <Text style={{ color: C.gold, fontSize: 19, fontWeight: '900', textAlign: 'center', marginBottom: 14 }}>Welcome to {selectedRoom?.room_name || 'TALKZY'}</Text>
+    <View style={{ flex: 1, backgroundColor: 'rgba(1,10,20,0.82)', justifyContent: 'center', padding: 18 }}>
+      <View style={{ backgroundColor: '#071B2D', borderColor: '#3CBCE2', borderWidth: 1.2, borderRadius: 20, padding: 16, maxHeight: '84%' }}>
+        <Text style={{ color: '#DDF8FF', fontSize: 19, fontWeight: '900', textAlign: 'center', marginBottom: 14 }}>Welcome to {selectedRoom?.room_name || 'TALKZY'}</Text>
         <ScrollView showsVerticalScrollIndicator={false}>
-          <Text style={{ color: C.text, fontSize: 15, fontWeight: '900', marginBottom: 7 }}>1. Room Guidelines</Text>
-          <Text style={{ color: C.text, fontSize: 13, lineHeight: 20, marginBottom: 16 }}>Welcome to TALKZY! Please respect each other and talk politely. Abusive language, third-party advertising, fake official information and politically sensitive topics are strictly prohibited. Please report such situations.</Text>
-          <View style={{ height: 1, backgroundColor: C.line, marginBottom: 14 }} />
-          <Text style={{ color: C.text, fontSize: 15, fontWeight: '900', marginBottom: 7 }}>2. Room Announcement</Text>
-          <Text style={{ color: C.text, fontSize: 13, lineHeight: 20 }}>{roomEntryAnnouncement || 'There is no announcement from the room owner.'}</Text>
+          <View style={{ backgroundColor: 'rgba(18,111,151,0.32)', borderColor: '#4CC9EA', borderWidth: 1, borderRadius: 14, padding: 13, marginBottom: 11 }}>
+            <Text style={{ color: '#8DEAFF', fontSize: 14, fontWeight: '900', marginBottom: 7 }}>1. ROOM GUIDELINES</Text>
+            <Text style={{ color: '#F0F8FF', fontSize: 13, lineHeight: 20 }}>Welcome to TALKZY! Please respect each other and talk politely. Abusive language, third-party advertising, fake official information and politically sensitive topics are strictly prohibited. Please report such situations.</Text>
+          </View>
+          <View style={{ backgroundColor: 'rgba(37,91,168,0.34)', borderColor: '#638FE8', borderWidth: 1, borderRadius: 14, padding: 13 }}>
+            <Text style={{ color: '#AFC8FF', fontSize: 14, fontWeight: '900', marginBottom: 7 }}>2. ROOM ANNOUNCEMENT</Text>
+            <Text style={{ color: '#F0F5FF', fontSize: 13, lineHeight: 20 }}>{roomEntryAnnouncement || 'There is no announcement from the room owner.'}</Text>
+          </View>
         </ScrollView>
-        <TouchableOpacity onPress={() => setRoomEntryNoticeVisible(false)} style={{ backgroundColor: C.gold, borderRadius: 12, paddingVertical: 12, marginTop: 17, alignItems: 'center' }}>
-          <Text style={{ color: '#17120A', fontWeight: '900', fontSize: 14 }}>I Understand — Enter Room</Text>
+        <TouchableOpacity onPress={() => setRoomEntryNoticeVisible(false)} style={{ backgroundColor: '#43C7E8', borderRadius: 12, paddingVertical: 12, marginTop: 15, alignItems: 'center' }}>
+          <Text style={{ color: '#052033', fontWeight: '900', fontSize: 14 }}>I Understand — Enter Room</Text>
         </TouchableOpacity>
       </View>
     </View>
