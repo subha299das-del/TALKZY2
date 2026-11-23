@@ -112,14 +112,23 @@ const supabase = createClient(
 
 
 async function api(path, options = {}) {
-  const { data: sessionData, error: sessionError } =
-    await supabase.auth.getSession();
+  // Many authenticated actions already pass the current session token.
+  // Avoid an additional Supabase session lookup when that header is present.
+  const suppliedAuthorization =
+    options.headers?.Authorization || options.headers?.authorization;
+  let accessToken = null;
 
-  if (sessionError) {
-    throw new Error('Could not verify your login session.');
+  if (!suppliedAuthorization) {
+    const { data: sessionData, error: sessionError } =
+      await supabase.auth.getSession();
+
+    if (sessionError) {
+      throw new Error('Could not verify your login session.');
+    }
+
+    accessToken = sessionData?.session?.access_token;
   }
 
-  const accessToken = sessionData?.session?.access_token;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20000);
 
