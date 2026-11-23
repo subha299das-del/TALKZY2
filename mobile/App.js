@@ -1248,7 +1248,6 @@ const [roomKeyboardLift, setRoomKeyboardLift] = useState(0);
 const [roomChatImagePreview, setRoomChatImagePreview] = useState(null);
 const [roomChatImageSending, setRoomChatImageSending] = useState(false);
  const [roomChatMessages, setRoomChatMessages] = useState([]);
- const [roomEntrySystemMessages, setRoomEntrySystemMessages] = useState([]);
  const roomArrivalPendingRef = useRef(null);
  const roomChatScrollRef = useRef(null);
 
@@ -1416,7 +1415,6 @@ const [isRoomTourist, setIsRoomTourist] = useState(false);
   roomArrivalPendingRef.current = null;
   setSelectedRoom(null);
   setRoomChatMessages([]);
-  setRoomEntrySystemMessages([]);
   setRoomPresence([]);
   setRoomPresenceLoading(false);
   setMicSeats([]);
@@ -2589,14 +2587,14 @@ async function toggleFollowRoom(room) {
       setIsRoomTourist(result.mode === 'tourist');
       setIsRoomMinimized(false); setShowRoomMenu(false);
       setMicCount(8); setMicSeats([]); setIsOnMic(false); setMyMicSeat(null); setIsMicMuted(false);
-      setRoomChatMessages([]);
       const entrantName = profile?.display_name || displayName || 'TALKZY User';
-      setRoomEntrySystemMessages([
-        { id: 'entry-guidelines', text: 'Welcome to TALKZY! Please respect eachother and talk politely. Abusing third party advertising, fake official information and political sensitive topics are strictly prohibited. Please report if you find this situation.', system: true },
-        ...(room.description || room.announcement ? [{ id: 'entry-announcement', text: room.description || room.announcement, system: true }] : [])
-      ]);
+      const entryTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const localEntryMessages = [
+        { id: `entry-guidelines-${Date.now()}`, text: 'Welcome to TALKZY! Please respect eachother and talk politely. Abusing third party advertising, fake official information and political sensitive topics are strictly prohibited. Please report if you find this situation.', sender: 'TALKZY SYSTEM', system: true, entryType: 'guidelines', localOnly: true, time: entryTime },
+        ...(room.description || room.announcement ? [{ id: `entry-announcement-${Date.now()}`, text: room.description || room.announcement, sender: 'TALKZY SYSTEM', system: true, entryType: 'announcement', localOnly: true, time: entryTime }] : [])
+      ];
       const arrivalPayload = { roomId: room.id, userId: session?.user?.id, userName: entrantName, noticeId: `${session?.user?.id || 'user'}-${Date.now()}` };
-      setRoomChatMessages([{ id: `arrival-self-${arrivalPayload.noticeId}`, text: `Welcome ${entrantName} to the room!`, sender: 'TALKZY SYSTEM', system: true, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
+      setRoomChatMessages([...localEntryMessages, { id: `arrival-self-${arrivalPayload.noticeId}`, text: `Welcome ${entrantName} to the room!`, sender: 'TALKZY SYSTEM', system: true, time: entryTime }]);
       roomArrivalPendingRef.current = { roomId: room.id, payload: arrivalPayload };
       setScreen('roomInterior');
       loadRoomMicSeats(room.id);
@@ -2750,11 +2748,14 @@ async function toggleFollowRoom(room) {
       try { await api(`/api/rooms/${room.id}/mic-seats`, { method: 'DELETE' }); } catch (e) { console.log('Game entry stale-seat cleanup:', e.message); }
       setSelectedRoom(room); setIsRoomTourist(false); setIsRoomMinimized(false); setShowRoomMenu(false);
       setShowRoomGamePicker(false); setMicSeats([]); setMicCount(8); setIsOnMic(false); setMyMicSeat(null); setIsMicMuted(false);
-      setRoomChatMessages([]);
-      setRoomEntrySystemMessages([{ id: 'entry-guidelines', text: 'Welcome to TALKZY! Please respect eachother and talk politely. Abusing third party advertising, fake official information and political sensitive topics are strictly prohibited. Please report if you find this situation.', system: true }, ...(room.description || room.announcement ? [{ id: 'entry-announcement', text: room.description || room.announcement, system: true }] : [])]);
       const entrantName = profile?.display_name || displayName || 'TALKZY User';
+      const entryTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const localEntryMessages = [
+        { id: `entry-guidelines-${Date.now()}`, text: 'Welcome to TALKZY! Please respect eachother and talk politely. Abusing third party advertising, fake official information and political sensitive topics are strictly prohibited. Please report if you find this situation.', sender: 'TALKZY SYSTEM', system: true, entryType: 'guidelines', localOnly: true, time: entryTime },
+        ...(room.description || room.announcement ? [{ id: `entry-announcement-${Date.now()}`, text: room.description || room.announcement, sender: 'TALKZY SYSTEM', system: true, entryType: 'announcement', localOnly: true, time: entryTime }] : [])
+      ];
       const arrivalPayload = { roomId: room.id, userId: session.user.id, userName: entrantName, noticeId: `${session.user.id}-${Date.now()}` };
-      setRoomChatMessages([{ id: `arrival-self-${arrivalPayload.noticeId}`, text: `Welcome ${entrantName} to the room!`, sender: 'TALKZY SYSTEM', system: true, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
+      setRoomChatMessages([...localEntryMessages, { id: `arrival-self-${arrivalPayload.noticeId}`, text: `Welcome ${entrantName} to the room!`, sender: 'TALKZY SYSTEM', system: true, time: entryTime }]);
       roomArrivalPendingRef.current = { roomId: room.id, payload: arrivalPayload };
       setScreen('roomInterior');
 
@@ -3123,15 +3124,15 @@ setIsOnMic(false);
 setMyMicSeat(null);
 setIsMicMuted(false);
 
-// Reset the chat UI before fetching; never clear a completed fetch afterward.
-setRoomChatMessages([]);
+// Keep entry notices in this user's local chat state; they are never broadcast or saved as room chat.
 const entrantName = profile?.display_name || displayName || 'TALKZY User';
-setRoomEntrySystemMessages([
-  { id: 'entry-guidelines', text: 'Welcome to TALKZY! Please respect eachother and talk politely. Abusing third party advertising, fake official information and political sensitive topics are strictly prohibited. Please report if you find this situation.', system: true },
-  ...(room.description || room.announcement ? [{ id: 'entry-announcement', text: room.description || room.announcement, system: true }] : [])
-]);
+const entryTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+const localEntryMessages = [
+  { id: `entry-guidelines-${Date.now()}`, text: 'Welcome to TALKZY! Please respect eachother and talk politely. Abusing third party advertising, fake official information and political sensitive topics are strictly prohibited. Please report if you find this situation.', sender: 'TALKZY SYSTEM', system: true, entryType: 'guidelines', localOnly: true, time: entryTime },
+  ...(room.description || room.announcement ? [{ id: `entry-announcement-${Date.now()}`, text: room.description || room.announcement, sender: 'TALKZY SYSTEM', system: true, entryType: 'announcement', localOnly: true, time: entryTime }] : [])
+];
 const arrivalPayload = { roomId: room.id, userId: session?.user?.id, userName: entrantName, noticeId: `${session?.user?.id || 'user'}-${Date.now()}` };
-setRoomChatMessages([{ id: `arrival-self-${arrivalPayload.noticeId}`, text: `Welcome ${entrantName} to the room!`, sender: 'TALKZY SYSTEM', system: true, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
+setRoomChatMessages([...localEntryMessages, { id: `arrival-self-${arrivalPayload.noticeId}`, text: `Welcome ${entrantName} to the room!`, sender: 'TALKZY SYSTEM', system: true, time: entryTime }]);
 roomArrivalPendingRef.current = { roomId: room.id, payload: arrivalPayload };
 // Load this room's microphone data and room chat
 loadRoomMicSeats(room.id);
@@ -4336,7 +4337,7 @@ function renderRoomInterior() {
 
                     
             {/* ROOM CHAT SECTION: inline composer never overlays or replaces the mic-seat layout */}
-{(roomEntrySystemMessages.length > 0 || roomChatMessages.length > 0 || showRoomChatComposer) && (
+{(roomChatMessages.length > 0 || showRoomChatComposer) && (
   <View style={{ marginTop: 6, marginBottom: 5 }}>
   <ScrollView
  ref={roomChatScrollRef}
@@ -4352,12 +4353,6 @@ onContentSizeChange={() =>
       paddingHorizontal: 12
     }}
   >
-    {roomEntrySystemMessages.map(message => (
-      <View key={message.id} style={{ alignSelf: 'center', maxWidth: '94%', backgroundColor: '#21183A', borderWidth: 1, borderColor: '#6D55A8', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9, marginBottom: 7 }}>
-        <Text style={{ color: '#C9B7FF', fontSize: 9, fontWeight: '900', letterSpacing: 1, marginBottom: 4, textAlign: 'center' }}>TALKZY SYSTEM · WELCOME</Text>
-        <Text style={{ color: '#F0EAFE', fontSize: 12, lineHeight: 18, textAlign: 'center' }}>{message.text}</Text>
-      </View>
-    ))}
     {(showRoomChatComposer ? roomChatMessages.slice(-3) : roomChatMessages).map((message) => (
       <View
         key={message.id}
@@ -4381,7 +4376,7 @@ onContentSizeChange={() =>
             marginBottom: 3
           }}
         >
-          {message.system ? 'TALKZY SYSTEM' : (message.sender?.display_name || message.sender || 'TALKZY User')}
+          {message.entryType === 'guidelines' ? 'OFFICIAL ROOM GUIDELINES' : message.entryType === 'announcement' ? 'ROOM ANNOUNCEMENT' : message.system ? 'TALKZY SYSTEM' : (message.sender?.display_name || message.sender || 'TALKZY User')}
         </Text>
 
         {message.image_url ? (
@@ -11599,8 +11594,7 @@ if (screen === 'profile' || profileIncomplete) {
     setMicSeats([]);
     setRoomPresence([]);
     setRoomChatMessages([]);
-    setRoomEntrySystemMessages([]);
-    ++roomMessagesLoadVersionRef.current;
+      ++roomMessagesLoadVersionRef.current;
     ++roomSettingsLoadRequestVersionRef.current;
     roomArrivalPendingRef.current = null;
     setSelectedRoom(null);
