@@ -672,9 +672,18 @@ app.get('/api/rooms/:roomId/messages', userAuth, async (req, res) => {
       : { data: [], error: null };
     if (profileError) throw profileError;
     const latestMessagesChronological = (data || []).slice().reverse();
-    res.set('Cache-Control', 'no-store').json({ messages: latestMessagesChronological.map(m => ({
-      ...m, sender: (profiles || []).find(p => p.id === m.sender_id) || null
-    })) });
+    const messages = await Promise.all(latestMessagesChronological.map(async m => {
+      let imageUrl = m.image_url;
+      if (m.message_type === 'image' && imageUrl && !/^https:\/\//i.test(imageUrl)) {
+        const { data: signed, error: signError } = await supabase.storage.from('talkzy-room-chat').createSignedUrl(imageUrl, 3600);
+        if (signError) {
+          console.error('Could not sign room chat image:', signError.message);
+          imageUrl = null;
+        } else imageUrl = signed?.signedUrl || null;
+      }
+      return { ...m, image_url: imageUrl, sender: (profiles || []).find(p => p.id === m.sender_id) || null };
+    }));
+    res.set('Cache-Control', 'no-store').json({ messages });
   } catch (error) {
     console.error('Could not load room messages:', error.message);
     res.status(500).json({ error: 'Could not load room messages.' });
@@ -698,17 +707,31 @@ app.delete('/api/rooms/:roomId/messages', userAuth, async (req, res) => {
       .delete().eq('room_id', room.id);
     if (deleteError) throw deleteError;
 
-    const publicPrefix = '/storage/v1/object/public/talkzy-rooms/';
-    const imagePaths = (existing || []).map(item => {
-      const url = String(item.image_url || '');
-      const index = url.indexOf(publicPrefix);
-      if (index < 0) return null;
-      try { return decodeURIComponent(url.slice(index + publicPrefix.length).split('?')[0]); }
-      catch { return null; }
-    }).filter(Boolean);
-    if (imagePaths.length) {
-      const { error: storageError } = await supabase.storage.from('talkzy-rooms').remove(imagePaths);
-      if (storageError) console.error('Could not remove cleared room chat images:', storageError.message);
+    const privateImagePaths = [];
+    const legacyPublicImagePaths = [];
+    for (const item of existing || []) {
+      const stored = String(item.image_url || '');
+      if (stored && !/^https:\/\//i.test(stored) &&
+          stored.startsWith(`${item.sender_id}/rooms/${room.id}/messages/`) && !stored.includes('..')) {
+        privateImagePaths.push(stored);
+        continue;
+      }
+      const publicPrefix = '/storage/v1/object/public/talkzy-rooms/';
+      const index = stored.indexOf(publicPrefix);
+      if (index >= 0) {
+        try {
+          const legacyPath = decodeURIComponent(stored.slice(index + publicPrefix.length).split('?')[0]);
+          if (legacyPath.includes(`/rooms/${room.id}/messages/`) && !legacyPath.includes('..')) legacyPublicImagePaths.push(legacyPath);
+        } catch {}
+      }
+    }
+    if (privateImagePaths.length) {
+      const { error: storageError } = await supabase.storage.from('talkzy-room-chat').remove(privateImagePaths);
+      if (storageError) console.error('Could not remove private room chat images:', storageError.message);
+    }
+    if (legacyPublicImagePaths.length) {
+      const { error: storageError } = await supabase.storage.from('talkzy-rooms').remove(legacyPublicImagePaths);
+      if (storageError) console.error('Could not remove legacy room chat images:', storageError.message);
     }
 
     res.json({ cleared: true, deletedCount: (existing || []).length });
@@ -724,22 +747,33 @@ app.post('/api/rooms/:roomId/messages', userAuth, roomMessageLimiter, async (req
     if (!room) return;
     if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
     const userId = req.talkzyUser.id;
-    const member = room.owner_id === userId || await isRoomAdmin(room.id, userId) || await isRoomMember(room.id, userId);
-    const tourist = !member && await isRoomVisitor(room.id, userId);
-    if (!member && !tourist) return res.status(403).json({ error: 'Enter the room first.' });
-    const type = req.body?.type === 'image' ? 'image' : 'text';
-    const permissions = tourist ? await getRoomTouristPermissions(room.id) : null;
-    if (tourist && type === 'text' && !permissions.tourists_send_text) return res.status(403).json({ error: 'The room owner has disabled text messages for tourists.' });
-    if (tourist && type === 'image' && !permissions.tourists_send_pic) return res.status(403).json({ error: 'The room owner has disabled picture sharing for tourists.' });
+    const type = req.body?.type;
+    if (!['text', 'image'].includes(type)) return res.status(400).json({ error: 'Message type must be text or image.' });
     const messageText = type === 'text' ? String(req.body?.text || '').trim() : '';
-    const imageUrl = type === 'image' ? String(req.body?.imageUrl || '').trim() : null;
+    const imagePath = type === 'image' ? String(req.body?.imagePath || '').trim() : null;
     if (type === 'text' && (!messageText || messageText.length > 1000)) return res.status(400).json({ error: 'Text must be 1–1000 characters.' });
-    if (type === 'image' && !/^https:\/\/\S+$/i.test(imageUrl || '')) return res.status(400).json({ error: 'A secure image URL is required.' });
-    const { data, error } = await supabase.from('talkzy_room_messages').insert({
-      room_id: room.id, sender_id: userId, message_type: type, message_text: messageText, image_url: imageUrl
-    }).select('id, sender_id, message_type, message_text, image_url, created_at').single();
-    if (error) throw error;
-    res.status(201).json({ message: data });
+    if (type === 'image' && (!imagePath || !imagePath.startsWith(`${userId}/rooms/${room.id}/messages/`) || imagePath.includes('..') || imagePath.length > 500)) {
+      return res.status(400).json({ error: 'A valid private room image path is required.' });
+    }
+    const { data, error } = await supabase.rpc('talkzy_send_room_message_atomic', {
+      p_room_id: room.id, p_user_id: userId, p_message_type: type,
+      p_message_text: messageText, p_image_path: imagePath
+    });
+    if (error) {
+      if (/NOT_IN_ROOM/.test(error.message || '')) return res.status(403).json({ error: 'Enter the room first.' });
+      if (/TOURIST_TEXT_DISABLED/.test(error.message || '')) return res.status(403).json({ error: 'The room owner has disabled text messages for tourists.' });
+      if (/TOURIST_IMAGE_DISABLED/.test(error.message || '')) return res.status(403).json({ error: 'The room owner has disabled picture sharing for tourists.' });
+      if (/ROOM_CLOSED/.test(error.message || '')) return res.status(409).json({ error: 'This room is closed.' });
+      if (/INVALID_MESSAGE|INVALID_IMAGE_PATH/.test(error.message || '')) return res.status(400).json({ error: 'The message content or image path is invalid.' });
+      throw error;
+    }
+    let message = data;
+    if (type === 'image' && data?.image_url) {
+      const { data: signed, error: signError } = await supabase.storage.from('talkzy-room-chat').createSignedUrl(data.image_url, 3600);
+      if (!signError) message = { ...data, image_url: signed?.signedUrl || null };
+      else console.error('Could not sign newly sent room chat image:', signError.message);
+    }
+    res.status(201).json({ message });
   } catch (error) {
     console.error('Could not send room message:', error.message);
     res.status(500).json({ error: 'Could not send room message.' });
