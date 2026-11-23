@@ -3,7 +3,7 @@ name: Build TALKZY Android APK
 on:
   workflow_dispatch:
   push:
-    branches: [main, feature/talkzy-room-features]
+    branches: [main]
     paths:
       - 'mobile/**'
       - '.github/workflows/build-talkzy-apk.yml'
@@ -18,6 +18,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Validate required Supabase app secrets
         env:
@@ -51,7 +53,7 @@ jobs:
 
       - name: Install JavaScript dependencies
         working-directory: mobile
-        run: npm install --no-fund
+        run: npm ci --no-fund
 
       - name: Check Expo dependency compatibility
         working-directory: mobile
@@ -61,9 +63,8 @@ jobs:
         working-directory: mobile
         run: npx expo-doctor
 
-      - name: Audit JavaScript dependencies (report only)
+      - name: Require no high-severity production dependency vulnerabilities
         working-directory: mobile
-        continue-on-error: true
         run: npm audit --omit=dev --audit-level=high
 
       - name: Set Android versionCode from workflow run
