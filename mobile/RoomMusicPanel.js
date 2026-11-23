@@ -42,6 +42,9 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
   const lastWriteRef = useRef(0);
   const syncBusyRef = useRef(false);
   const endHandlerRef = useRef(null);
+  const activeRoomIdRef = useRef(roomId);
+  const refreshGenerationRef = useRef(0);
+  activeRoomIdRef.current = roomId;
 
   const applyState = state => {
     if (!state) return;
@@ -245,9 +248,15 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
 
   const refreshStreams = async () => {
     if (!roomId || syncBusyRef.current) return;
+    const requestRoomId = roomId;
+    const requestGeneration = refreshGenerationRef.current;
+    const isCurrentRequest = () =>
+      activeRoomIdRef.current === requestRoomId &&
+      refreshGenerationRef.current === requestGeneration;
     syncBusyRef.current = true;
     try {
-      const result = await api(`/api/rooms/${roomId}/music`);
+      const result = await api(`/api/rooms/${requestRoomId}/music`);
+      if (!isCurrentRequest()) return;
       const list = Array.isArray(result.streams) ? result.streams : [];
       setStreams(list);
 
@@ -275,17 +284,33 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
             (mine.is_playing && mine.updated_at ? Math.max(0, (Date.now() - new Date(mine.updated_at).getTime()) / 1000) : 0);
           if (isNewOwnPlayer || Math.abs(Number(ownPlayer.currentTime || 0) - ownExpected) > 3) {
             try { await ownPlayer.seekTo(ownExpected); } catch {}
+            if (!isCurrentRequest()) return;
           }
+          if (!isCurrentRequest()) return;
           ownPlayer.volume = Math.min(1, Math.max(0, Number(mine.volume ?? 0.8)));
           if (mine.is_playing && !ownPlayer.playing) ownPlayer.play();
           if (!mine.is_playing && ownPlayer.playing) ownPlayer.pause();
           setCurrentTime(ownExpected);
           setDuration(Number(ownPlayer.duration || 0));
         }
+      } else {
+        playerRef.current?.pause();
+        playerRef.current?.remove();
+        playerRef.current = null;
+        localPathRef.current = null;
+        queueRef.current = [];
+        indexRef.current = 0;
+        playingRef.current = false;
+        setQueue([]);
+        setCurrentIndex(0);
+        setPlaying(false);
+        setCurrentTime(0);
+        setDuration(0);
       }
 
       const keep = new Set();
       for (const stream of list) {
+        if (!isCurrentRequest()) return;
         if (stream.user_id === userId) continue;
         const item = stream.queue?.[stream.current_index];
         if (!item?.url) continue;
@@ -303,10 +328,13 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
         if (stream.is_playing) {
           if (Math.abs(Number(remote.currentTime || 0) - expected) > 3) {
             try { await remote.seekTo(expected); } catch {}
+            if (!isCurrentRequest()) return;
           }
+          if (!isCurrentRequest()) return;
           if (!remote.playing) remote.play();
         } else if (remote.playing) remote.pause();
       }
+      if (!isCurrentRequest()) return;
       Object.keys(remotePlayersRef.current).forEach(id => {
         if (!keep.has(id)) {
           const entry = remotePlayersRef.current[id];
@@ -326,6 +354,8 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
 
   useEffect(() => {
     if (!roomId) return undefined;
+    refreshGenerationRef.current += 1;
+    activeRoomIdRef.current = roomId;
     let active = true;
     setAudioModeAsync({ playsInSilentMode: true, interruptionMode: 'mixWithOthers', shouldPlayInBackground: true }).catch(() => {});
     const refresh = () => { if (active) refreshStreams(); };
@@ -343,12 +373,23 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
     }, 1000);
     return () => {
       active = false;
+      refreshGenerationRef.current += 1;
       clearInterval(poll);
       clearInterval(progress);
       api(`/api/rooms/${roomId}/music/me`, { method: 'DELETE' }).catch(() => {});
       playerRef.current?.pause();
       playerRef.current?.remove();
       playerRef.current = null;
+      localPathRef.current = null;
+      queueRef.current = [];
+      indexRef.current = 0;
+      playingRef.current = false;
+      setQueue([]);
+      setCurrentIndex(0);
+      setPlaying(false);
+      setCurrentTime(0);
+      setDuration(0);
+      setStreams([]);
       Object.values(remotePlayersRef.current).forEach(entry => {
         entry?.player?.pause();
         entry?.player?.remove();
