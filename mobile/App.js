@@ -658,11 +658,6 @@ const [worldLuckyBagQueue, setWorldLuckyBagQueue] = useState([]);
      keyboardHidden.remove();
    };
  }, [showRoomChatComposer]);
- useEffect(() => {
-   if (!showRoomChatComposer) return undefined;
-   const focusTimer = setTimeout(() => roomChatInputRef.current?.focus(), Platform.OS === 'android' ? 250 : 0);
-   return () => clearTimeout(focusTimer);
- }, [showRoomChatComposer]);
  const [showRoomChatActionMenu, setShowRoomChatActionMenu] = useState(false);
  const [isRoomChatMinimized, setIsRoomChatMinimized] = useState(false);
  const [roomReactions, setRoomReactions] = useState([]);
@@ -5121,6 +5116,11 @@ function renderRoomInterior() {
   transparent
   statusBarTranslucent
   animationType="none"
+  onShow={() => {
+    // Android Modal content is not focusable until its native window is shown.
+    // Focus after onShow so the keyboard opens on the first Chat Bar/icon tap.
+    setTimeout(() => roomChatInputRef.current?.focus(), Platform.OS === 'android' ? 300 : 0);
+  }}
   onRequestClose={() => {
     Keyboard.dismiss();
     setShowRoomChatComposer(false);
@@ -5135,7 +5135,8 @@ function renderRoomInterior() {
       <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 26, paddingLeft: 17, paddingRight: 7, minHeight: 50, borderWidth: 1, borderColor: '#E5E7EB' }}>
         <TextInput
           ref={roomChatInputRef}
-          autoFocus={Platform.OS === 'android'}
+          autoFocus={false}
+          showSoftInputOnFocus
           value={roomChatText}
           onChangeText={setRoomChatText}
           placeholder={isRoomTourist && !touristsSendText ? 'Tourist chat disabled' : 'Write a message...'}
