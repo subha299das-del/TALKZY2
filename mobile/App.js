@@ -751,6 +751,7 @@ async function loadRoomPresence(roomId, showLoader = false) {
 // WORLD LUCKY BAG BROADCAST RECEIVER (sender integration will publish on this channel)
 useEffect(() => {
   if (!session?.user?.id) return;
+  const notificationUserId = session.user.id;
   const channel = supabase.channel('talkzy-world-lucky-bag-notifications')
     .on('broadcast', { event: 'world_lucky_bag' }, ({ payload }) => {
       const bagId = String(payload?.id || '');
@@ -763,13 +764,18 @@ useEffect(() => {
             .eq('id', bagId).maybeSingle();
           if (error || !bag || bag.scope !== 'world' || bag.status !== 'active' ||
               new Date(bag.expires_at).getTime() <= Date.now() ||
-              bag.sender_id === session.user.id ||
-              (payload.roomId && payload.roomId !== bag.room_id)) {
+              bag.sender_id === notificationUserId ||
+              (payload.roomId && payload.roomId !== bag.room_id) ||
+              activeAuthUserIdRef.current !== notificationUserId) {
             worldLuckyBagSeenRef.current.delete(bagId);
             return;
           }
           const { data: sender } = await supabase.from('talkzy_profiles')
             .select('display_name').eq('id', bag.sender_id).maybeSingle();
+          if (activeAuthUserIdRef.current !== notificationUserId) {
+            worldLuckyBagSeenRef.current.delete(bagId);
+            return;
+          }
           const cachedRoom = [rooms, joinedRooms, followedRooms, myRooms]
             .flat().find(item => item?.id === bag.room_id) || null;
           const roomFromPayload = payload.room?.id === bag.room_id ? payload.room : null;
