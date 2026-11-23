@@ -622,6 +622,7 @@ const [memberSearch, setMemberSearch] = useState('');
 
   const [roomType, setRoomType] = useState('public');
   const [roomPassword, setRoomPassword] = useState('');
+  const [showCreateRoomPasswordPopup, setShowCreateRoomPasswordPopup] = useState(false);
 
   const [showCreateRoom, setShowCreateRoom] = useState(false);
   const [roomDpUri, setRoomDpUri] = useState(null);
@@ -2969,31 +2970,33 @@ function renderCreateRoom() {
         onChangeText={setRoomDescription}
         placeholder="Write your room announcement"
       />
-               <SectionTitle>Room type</SectionTitle>
-
-      <View style={{ flexDirection: 'row' }}>
-        <Chip
-          title="Public"
-          active={roomType === 'public'}
-          onPress={() => setRoomType('public')}
-        />
-
-        <Chip
-          title="Locked"
-          active={roomType === 'locked'}
-          onPress={() => setRoomType('locked')}
-        />
-      </View>
-
-      {roomType === 'locked' && (
-        <Field
-          label="Room password"
-          value={roomPassword}
-          onChangeText={setRoomPassword}
-          placeholder="Create a password"
-          secureTextEntry
-        />
-      )}
+      <TouchableOpacity
+        activeOpacity={0.82}
+        onPress={() => setShowCreateRoomPasswordPopup(true)}
+        style={{
+          minHeight: 52,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingHorizontal: 14,
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: '#41445A',
+          backgroundColor: '#171827',
+          marginTop: 2,
+          marginBottom: 8
+        }}
+      >
+        <View>
+          <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '800' }}>Room password</Text>
+          <Text style={{ color: '#A6A8B8', fontSize: 11, marginTop: 3 }}>
+            {roomType === 'locked' ? 'Password protected' : 'Public room'}
+          </Text>
+        </View>
+        <Text style={{ color: roomType === 'locked' ? '#F5C76B' : '#A6A8B8', fontSize: 12, fontWeight: '900' }}>
+          {roomType === 'locked' ? 'LOCKED  ›' : 'UNLOCKED  ›'}
+        </Text>
+      </TouchableOpacity>
 
       <Button
         title={
@@ -11639,6 +11642,64 @@ if (screen === 'profile' || profileIncomplete) {
                    
 
       <Modal
+  visible={showCreateRoomPasswordPopup}
+  transparent
+  animationType="fade"
+  onRequestClose={() => setShowCreateRoomPasswordPopup(false)}
+>
+  <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.78)', justifyContent: 'center', padding: 22 }}>
+    <View style={{ backgroundColor: C.panel, padding: 20, borderRadius: 18, borderWidth: 1, borderColor: C.gold }}>
+      <Text style={{ color: C.text, fontSize: 20, fontWeight: '900', textAlign: 'center', marginBottom: 18 }}>
+        Room password
+      </Text>
+      <TextInput
+        value={roomPassword}
+        onChangeText={setRoomPassword}
+        placeholder="Enter room password"
+        placeholderTextColor={C.muted}
+        secureTextEntry
+        autoCapitalize="none"
+        autoCorrect={false}
+        style={{ color: C.text, backgroundColor: C.bg, borderWidth: 1, borderColor: C.line, borderRadius: 12, padding: 14, marginBottom: 18 }}
+      />
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => {
+            setRoomType('public');
+            setRoomPassword('');
+            setShowCreateRoomPasswordPopup(false);
+          }}
+          style={{ flex: 1, minHeight: 46, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line }}
+        >
+          <Text style={{ color: C.text, fontSize: 13, fontWeight: '900' }}>Unlock</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => {
+            const trimmedPassword = roomPassword.trim();
+            if (!trimmedPassword) {
+              Alert.alert('Password required', 'Enter a password before locking the room.');
+              return;
+            }
+            if (trimmedPassword.length < 4 || trimmedPassword.length > 64) {
+              Alert.alert('Invalid password', 'Room password must be between 4 and 64 characters.');
+              return;
+            }
+            setRoomPassword(trimmedPassword);
+            setRoomType('locked');
+            setShowCreateRoomPasswordPopup(false);
+          }}
+          style={{ flex: 1, minHeight: 46, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: C.accent, borderWidth: 1, borderColor: C.gold }}
+        >
+          <Text style={{ color: '#17120A', fontSize: 13, fontWeight: '900' }}>Lock</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </View>
+</Modal>
+
+<Modal
   visible={showJoinPassword}
   transparent
   animationType="fade"
