@@ -1000,6 +1000,32 @@ async function sendRoomReaction(reaction) {
   setShowMicEmojiPicker(false);
 }
 
+// ROOM ARRIVAL NOTICES: broadcast a system welcome to everyone in the room.
+useEffect(() => {
+  if (!selectedRoom?.id || !session?.user?.id) return;
+  const roomId = selectedRoom.id;
+  const channel = supabase.channel(`room-arrivals-${roomId}`);
+  channel.on('broadcast', { event: 'room_arrival' }, ({ payload }) => {
+    if (!payload?.arrivalId || !payload?.displayName) return;
+    setRoomChatMessages(prev => prev.some(item => item.id === payload.arrivalId) ? prev : [...prev, {
+      id: payload.arrivalId,
+      system: true,
+      sender: 'TALKZY SYSTEM',
+      text: `Welcome ${payload.displayName} to the room!`,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }]);
+  });
+  channel.subscribe(status => {
+    if (status === 'SUBSCRIBED') {
+      channel.send({ type: 'broadcast', event: 'room_arrival', payload: {
+        arrivalId: `${roomId}-${session.user.id}-${Date.now()}`,
+        displayName: profile?.display_name || displayName || 'A member'
+      }}).catch(error => console.log('Room arrival broadcast error:', error?.message || error));
+    }
+  });
+  return () => { supabase.removeChannel(channel); };
+}, [selectedRoom?.id]);
+
 // ROOM CHAT REALTIME UPDATES
 useEffect(() => {
   if (!selectedRoom?.id) return;
@@ -1317,6 +1343,8 @@ const [showRoomShortcutsPage, setShowRoomShortcutsPage] = useState(false);
 const [roomShortcutCategory, setRoomShortcutCategory] = useState('Treasury');
 const [roomChatText, setRoomChatText] = useState('');
  const [roomChatMessages, setRoomChatMessages] = useState([]);
+ const [roomEntryNoticeVisible, setRoomEntryNoticeVisible] = useState(false);
+ const [roomEntryAnnouncement, setRoomEntryAnnouncement] = useState('');
  const roomChatScrollRef = useRef(null);
   const [showJoinPassword, setShowJoinPassword] = useState(false);
 const [joinPassword, setJoinPassword] = useState('');
@@ -2378,6 +2406,8 @@ async function toggleFollowRoom(room) {
         console.log('Stale mic seat cleanup on entry:', seatCleanupError.message);
       }
       setSelectedRoom(room);
+      setRoomEntryAnnouncement(String(room.announcement || room.description || '').trim());
+      setRoomEntryNoticeVisible(true);
       setIsRoomTourist(result.mode === 'tourist');
       setIsRoomMinimized(false); setShowRoomMenu(false);
       setMicCount(8); setMicSeats([]); setIsOnMic(false); setMyMicSeat(null); setIsMicMuted(false);
@@ -2464,7 +2494,7 @@ async function toggleFollowRoom(room) {
       const localCutoff = Math.max(roomChatLocalCutoffRef.current[roomId] || 0, savedCutoff);
       roomChatLocalCutoffRef.current[roomId] = localCutoff;
       const result = await api(`/api/rooms/${roomId}/messages`);
-      setRoomChatMessages((result.messages || []).filter(item => !localCutoff || new Date(item.created_at).getTime() > localCutoff).map(item => ({
+      setRoomChatMessages(prev => [...prev.filter(item => item.system), ...(result.messages || []).filter(item => !localCutoff || new Date(item.created_at).getTime() > localCutoff).map(item => ({
         id: item.id,
         text: item.message_type === 'image' ? '📷 Photo' : item.message_text,
         sender: item.sender?.display_name || 'TALKZY User',
@@ -2473,7 +2503,7 @@ async function toggleFollowRoom(room) {
         time: item.created_at ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
         message_type: item.message_type,
         image_url: item.image_url
-      })));
+      }))]);
     } catch (error) { console.log('Room chat loading error:', error.message); }
   }
 
@@ -2751,6 +2781,8 @@ function renderRoomCard(room, showJoin = true) {
       console.log('Stale mic seat cleanup on entry:', seatCleanupError.message);
     }
     setSelectedRoom(room);
+setRoomEntryAnnouncement(String(room.announcement || room.description || '').trim());
+setRoomEntryNoticeVisible(true);
 setIsRoomTourist(false);
 setIsRoomMinimized(false);
 
@@ -4878,6 +4910,26 @@ function renderRoomInterior() {
     </View>
   </KeyboardAvoidingView>
 </Modal>
+
+{roomEntryNoticeVisible && (
+  <Modal visible transparent animationType="fade" onRequestClose={() => setRoomEntryNoticeVisible(false)}>
+    <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.78)', justifyContent: 'center', padding: 22 }}>
+      <View style={{ backgroundColor: C.card, borderColor: C.gold, borderWidth: 1, borderRadius: 18, padding: 18, maxHeight: '82%' }}>
+        <Text style={{ color: C.gold, fontSize: 19, fontWeight: '900', textAlign: 'center', marginBottom: 14 }}>Welcome to {selectedRoom?.room_name || 'TALKZY'}</Text>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <Text style={{ color: C.text, fontSize: 15, fontWeight: '900', marginBottom: 7 }}>1. Room Guidelines</Text>
+          <Text style={{ color: C.text, fontSize: 13, lineHeight: 20, marginBottom: 16 }}>Welcome to TALKZY! Please respect each other and talk politely. Abusive language, third-party advertising, fake official information and politically sensitive topics are strictly prohibited. Please report such situations.</Text>
+          <View style={{ height: 1, backgroundColor: C.line, marginBottom: 14 }} />
+          <Text style={{ color: C.text, fontSize: 15, fontWeight: '900', marginBottom: 7 }}>2. Room Announcement</Text>
+          <Text style={{ color: C.text, fontSize: 13, lineHeight: 20 }}>{roomEntryAnnouncement || 'There is no announcement from the room owner.'}</Text>
+        </ScrollView>
+        <TouchableOpacity onPress={() => setRoomEntryNoticeVisible(false)} style={{ backgroundColor: C.gold, borderRadius: 12, paddingVertical: 12, marginTop: 17, alignItems: 'center' }}>
+          <Text style={{ color: '#17120A', fontWeight: '900', fontSize: 14 }}>I Understand — Enter Room</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </Modal>
+)}
 
 {roomChatMessages.length > 0 && (
   <View style={{ maxHeight: 118, paddingHorizontal: 12, paddingTop: 7, paddingBottom: 4, borderTopWidth: 1, borderTopColor: C.line }}>
