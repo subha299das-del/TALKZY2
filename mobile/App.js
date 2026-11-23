@@ -617,6 +617,14 @@ const [memberSearch, setMemberSearch] = useState('');
 const [roomDpUploading, setRoomDpUploading] = useState(false);
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
+  const selectedRoomIdRef = useRef(null);
+  selectedRoomIdRef.current = selectedRoom?.id || null;
+  const roomDetailsIdRef = useRef(null);
+  roomDetailsIdRef.current = roomDetails?.id || null;
+  const activeUserIdRef = useRef(null);
+  activeUserIdRef.current = session?.user?.id || null;
+  const roomDetailsLoadVersionRef = useRef(0);
+  const roomActivityLoadVersionRef = useRef(0);
   const [worldLuckyBagNotification, setWorldLuckyBagNotification] = useState(null);
 const [worldLuckyBagQueue, setWorldLuckyBagQueue] = useState([]);
  const [isRoomMinimized, setIsRoomMinimized] = useState(false);
@@ -1178,28 +1186,33 @@ async function loadLuckyBagHistory() {
 }
 
 async function refreshActiveLuckyBags() {
-  if (!session?.user?.id || !selectedRoom?.id) { setActiveLuckyBags([]); return; }
+  const roomId = selectedRoom?.id;
+  const userId = session?.user?.id;
+  if (!userId || !roomId) { setActiveLuckyBags([]); return; }
+  const isCurrentRequest = () => selectedRoomIdRef.current === roomId && activeUserIdRef.current === userId;
   try {
     const nowIso = new Date().toISOString();
     const { data: bags, error } = await supabase.from('talkzy_lucky_bags')
       .select('id,sender_id,room_id,scope,total_coins,remaining_coins,remaining_bags,expires_at,created_at')
       .eq('status','active').gt('expires_at',nowIso)
-      .or('room_id.eq.' + selectedRoom.id + ',scope.eq.world')
+      .or('room_id.eq.' + roomId + ',scope.eq.world')
       .order('created_at',{ascending:false}).limit(20);
     if (error) throw error;
+    if (!isCurrentRequest()) return;
     const list = bags || [];
     if (!list.length) { setActiveLuckyBags([]); return; }
     const senderIds = [...new Set(list.map(b => b.sender_id))];
     const bagIds = list.map(b => b.id);
     const [{ data: profiles }, { data: claims }] = await Promise.all([
       supabase.from('talkzy_profiles').select('id,display_name').in('id',senderIds),
-      supabase.from('talkzy_lucky_bag_claims').select('bag_id').eq('claimer_id',session.user.id).in('bag_id',bagIds)
+      supabase.from('talkzy_lucky_bag_claims').select('bag_id').eq('claimer_id',userId).in('bag_id',bagIds)
     ]);
+    if (!isCurrentRequest()) return;
     const nameMap = new Map((profiles || []).map(p => [p.id,p.display_name]));
     const claimed = new Set((claims || []).map(x => x.bag_id));
     setActiveLuckyBags(list.map(b => ({...b,senderName:nameMap.get(b.sender_id) || 'TALKZY User',alreadyClaimed:claimed.has(b.id)})));
   } catch (error) {
-    console.log('Lucky Bag refresh:',error.message);
+    if (isCurrentRequest()) console.log('Lucky Bag refresh:',error.message);
   }
 }
 
@@ -2117,22 +2130,28 @@ loadFollowedRooms(session);
 // =========================================
 
 async function openRoomDetails(room) {
+  const requestVersion = ++roomDetailsLoadVersionRef.current;
   setRoomDetails(room);
   setRoomDetailsTab('Information');
   setMemberSearch('');
   setRoomDetailMembers([]);
   setRoomDetailsVisible(true);
   if (isRoomTourist || !session?.access_token || !room?.id) return;
+  const userId = session.user.id;
   setLoadingRoomDetailMembers(true);
   try {
     const result = await api(`/api/rooms/${room.id}/members`, {
       headers: { Authorization: `Bearer ${session.access_token}` }
     });
+    if (roomDetailsLoadVersionRef.current !== requestVersion ||
+        roomDetailsIdRef.current !== room.id || activeUserIdRef.current !== userId) return;
     setRoomDetailMembers(Array.isArray(result.members) ? result.members : []);
   } catch (error) {
-    Alert.alert('Room Members', error.message || 'Could not load room members.');
+    if (roomDetailsLoadVersionRef.current === requestVersion && roomDetailsIdRef.current === room.id) {
+      Alert.alert('Room Members', error.message || 'Could not load room members.');
+    }
   } finally {
-    setLoadingRoomDetailMembers(false);
+    if (roomDetailsLoadVersionRef.current === requestVersion) setLoadingRoomDetailMembers(false);
   }
 }
  
@@ -11648,9 +11667,18 @@ if (screen === 'profile' || profileIncomplete) {
 
   async function loadRoomActivities(roomId) {
     if (!roomId) return;
+    const requestVersion = ++roomActivityLoadVersionRef.current;
+    const isCurrentRequest = () =>
+      roomActivityLoadVersionRef.current === requestVersion &&
+      (roomDetailsIdRef.current === roomId || selectedRoomIdRef.current === roomId);
     setLoadingRoomActivities(true);
-    try { const result = await api(`/api/rooms/${roomId}/activities`); setRoomActivities(result.activities || []); }
-    catch (e) { setRoomActivities([]); console.log('Room activities:', e.message); }
-    finally { setLoadingRoomActivities(false); }
+    try {
+      const result = await api(`/api/rooms/${roomId}/activities`);
+      if (isCurrentRequest()) setRoomActivities(result.activities || []);
+    } catch (e) {
+      if (isCurrentRequest()) { setRoomActivities([]); console.log('Room activities:', e.message); }
+    } finally {
+      if (roomActivityLoadVersionRef.current === requestVersion) setLoadingRoomActivities(false);
+    }
   }
 }
