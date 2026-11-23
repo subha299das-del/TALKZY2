@@ -3611,7 +3611,7 @@ function renderRoomInterior() {
 
            {/* MICROPHONE SEATS */}
 <View
-  style={{ flexShrink: 0, paddingHorizontal: 12, paddingTop: youtubeScreenVisible ? 4 : 8, paddingBottom: 2 }}
+  style={{ flexShrink: 0, paddingHorizontal: 12, paddingTop: youtubeScreenVisible ? 3 : 4, paddingBottom: 2 }}
 >
   {(youtubeScreenVisible
     ? Array.from({ length: Math.ceil((MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().length / 8) }, (_, index) => (MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().slice(index * 8, (index + 1) * 8))
@@ -3623,7 +3623,7 @@ function renderRoomInterior() {
     // Give each couple seat the same column width as a regular seat below.
     const couplePairWidth = `${200 / maxSeatsPerRow}%`;
     return (
-    <View key={rowIndex} style={{ width: isTopCoupleRow ? couplePairWidth : '100%', alignSelf: 'center', flexDirection: 'row', justifyContent: 'center', alignItems: 'stretch', backgroundColor: isTopCoupleRow ? 'transparent' : youtubeScreenVisible ? '#360D14' : 'transparent', borderWidth: isTopCoupleRow ? 0 : youtubeScreenVisible ? 1.5 : 0, borderColor: '#B88743', borderRadius: youtubeScreenVisible ? 10 : 0, paddingHorizontal: youtubeScreenVisible && !isTopCoupleRow ? 2 : 0, paddingTop: youtubeScreenVisible && !isTopCoupleRow ? 2 : 0, paddingBottom: youtubeScreenVisible && !isTopCoupleRow ? 2 : 0, marginBottom: youtubeScreenVisible ? 3 : (micCount >= 14 ? 4 : 7), shadowColor: youtubeScreenVisible && !isTopCoupleRow ? '#D5A64E' : 'transparent', shadowOpacity: youtubeScreenVisible && !isTopCoupleRow ? 0.22 : 0, shadowRadius: youtubeScreenVisible && !isTopCoupleRow ? 7 : 0, elevation: youtubeScreenVisible && !isTopCoupleRow ? 4 : 0 }}>
+    <View key={rowIndex} style={{ width: isTopCoupleRow ? couplePairWidth : '100%', alignSelf: 'center', flexDirection: 'row', justifyContent: 'center', alignItems: 'stretch', backgroundColor: isTopCoupleRow ? 'transparent' : youtubeScreenVisible ? '#360D14' : 'transparent', borderWidth: isTopCoupleRow ? 0 : youtubeScreenVisible ? 1.5 : 0, borderColor: '#B88743', borderRadius: youtubeScreenVisible ? 10 : 0, paddingHorizontal: youtubeScreenVisible && !isTopCoupleRow ? 2 : 0, paddingTop: 0, paddingBottom: youtubeScreenVisible && !isTopCoupleRow ? 2 : 0, marginBottom: youtubeScreenVisible ? 3 : (micCount >= 14 ? 4 : 7), shadowColor: youtubeScreenVisible && !isTopCoupleRow ? '#D5A64E' : 'transparent', shadowOpacity: youtubeScreenVisible && !isTopCoupleRow ? 0.22 : 0, shadowRadius: youtubeScreenVisible && !isTopCoupleRow ? 7 : 0, elevation: youtubeScreenVisible && !isTopCoupleRow ? 4 : 0 }}>
       {rowSeats.map((seat) => {
 
     const occupiedSeat = micSeats.find(
@@ -3733,9 +3733,9 @@ function renderRoomInterior() {
       >
         <View
           style={{
-            width: youtubeScreenVisible ? 22 : (micCount >= 17 ? 48 : micCount >= 14 ? 52 : 56),
-            height: youtubeScreenVisible ? 22 : (micCount >= 17 ? 48 : micCount >= 14 ? 52 : 56),
-            borderRadius: youtubeScreenVisible ? 11 : (micCount >= 17 ? 24 : micCount >= 14 ? 26 : 28),
+            width: youtubeScreenVisible ? 22 : (micCount >= 17 ? 52 : micCount >= 14 ? 56 : 60),
+            height: youtubeScreenVisible ? 22 : (micCount >= 17 ? 52 : micCount >= 14 ? 56 : 60),
+            borderRadius: youtubeScreenVisible ? 11 : (micCount >= 17 ? 26 : micCount >= 14 ? 28 : 30),
             borderWidth: 2,
             borderColor: isMySeat ? '#F4D99A' : isOccupied ? '#D8B66D' : '#80643A',
             backgroundColor: '#17120B',
@@ -3757,9 +3757,9 @@ function renderRoomInterior() {
                     : MIC_ON_ICON
                 }
                 style={{
-                  width: youtubeScreenVisible ? 20 : (micCount >= 17 ? 45 : micCount >= 14 ? 49 : 53),
-                  height: youtubeScreenVisible ? 20 : (micCount >= 17 ? 45 : micCount >= 14 ? 49 : 53),
-                  borderRadius: youtubeScreenVisible ? 10 : (micCount >= 17 ? 22.5 : micCount >= 14 ? 24.5 : 26.5),
+                  width: youtubeScreenVisible ? 20 : (micCount >= 17 ? 49 : micCount >= 14 ? 53 : 57),
+                  height: youtubeScreenVisible ? 20 : (micCount >= 17 ? 49 : micCount >= 14 ? 53 : 57),
+                  borderRadius: youtubeScreenVisible ? 10 : (micCount >= 17 ? 24.5 : micCount >= 14 ? 26.5 : 28.5),
                   resizeMode: 'cover'
                 }}
               />
