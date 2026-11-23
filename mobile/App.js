@@ -3258,6 +3258,24 @@ setScreen('roomInterior');
 // ROOM: ROOM INTERIOR
 // =========================================
 
+function isTrustedYouTubeNavigation(value) {
+  const raw = String(value || '').trim();
+  if (raw === 'about:blank') return true;
+  const match = raw.match(/^https:\/\/([^/:?#]+)(?::\d+)?(?:[/?#]|$)/i);
+  if (!match) return false;
+  const host = match[1].toLowerCase();
+  return [
+    'youtube.com',
+    'www.youtube.com',
+    'm.youtube.com',
+    'music.youtube.com',
+    'youtu.be',
+    'www.youtu.be',
+    'youtube-nocookie.com',
+    'www.youtube-nocookie.com'
+  ].includes(host);
+}
+
 function extractYouTubeVideoId(value) {
   const raw = String(value || '').trim();
   if (/^[A-Za-z0-9_-]{11}$/.test(raw)) return raw;
@@ -3745,7 +3763,8 @@ function renderRoomInterior() {
             </TouchableOpacity>
           )}
           {youtubeState.video_id ? (
-            <WebView key={youtubeState.video_id} ref={youtubeWebViewRef} source={{ html: YOUTUBE_PLAYER_HTML }} originWhitelist={['*']} javaScriptEnabled domStorageEnabled allowsInlineMediaPlayback mediaPlaybackRequiresUserAction={false}
+            <WebView key={youtubeState.video_id} ref={youtubeWebViewRef} source={{ html: YOUTUBE_PLAYER_HTML }} originWhitelist={['https://www.youtube.com', 'https://www.youtube-nocookie.com', 'about:blank']} javaScriptEnabled domStorageEnabled allowsInlineMediaPlayback mediaPlaybackRequiresUserAction={false}
+              onShouldStartLoadWithRequest={(request) => isTrustedYouTubeNavigation(request?.url)}
               onMessage={(event) => {
                 const message = String(event.nativeEvent.data || '');
                 if (message === 'ready' && youtubeState.video_id) {
@@ -3851,7 +3870,7 @@ function renderRoomInterior() {
               </TouchableOpacity>
             </View>
             <View style={{ flex: 1, marginHorizontal: 9, marginBottom: 8, borderRadius: 9, overflow: 'hidden', backgroundColor: '#FFFFFF' }}>
-              <WebView ref={youtubeBrowseWebViewRef} source={{ uri: youtubeBrowseUrl || ('https://www.youtube.com/results?search_query=' + encodeURIComponent(youtubeBrowseTab === 'Music' ? 'music' : 'video')) }} javaScriptEnabled domStorageEnabled allowsInlineMediaPlayback
+              <WebView ref={youtubeBrowseWebViewRef} source={{ uri: youtubeBrowseUrl || ('https://www.youtube.com/results?search_query=' + encodeURIComponent(youtubeBrowseTab === 'Music' ? 'music' : 'video')) }} originWhitelist={['https://www.youtube.com']} javaScriptEnabled domStorageEnabled allowsInlineMediaPlayback
                 injectedJavaScriptBeforeContentLoaded={`(function(){if(window.__talkzyPickerInstalled)return;window.__talkzyPickerInstalled=true;function pick(e){var n=e.target;var a=n&&n.closest?n.closest('a[href]'):null;var h=(a&&a.href)||'';var id=(n&&n.closest&&n.closest('[data-video-id]')&&n.closest('[data-video-id]').getAttribute('data-video-id'))||'';var m=h.match(/[?&]v=([A-Za-z0-9_-]{11})/)||h.match(/youtu\\.be\\/([A-Za-z0-9_-]{11})/)||h.match(/\\/shorts\\/([A-Za-z0-9_-]{11})/)||h.match(/\\/embed\\/([A-Za-z0-9_-]{11})/);id=(m&&m[1])||id;if(id&&/^[A-Za-z0-9_-]{11}$/.test(id)){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();if(window.ReactNativeWebView)window.ReactNativeWebView.postMessage('talkzy-select:'+id);}}document.addEventListener('click',pick,true);})();true;`}
                 onMessage={(event) => {
                   const message = String(event.nativeEvent.data || '');
@@ -3871,7 +3890,7 @@ function renderRoomInterior() {
                     getYoutubeMetadata(id).then(meta => setYoutubePickedItem(meta));
                     return false;
                   }
-                  return true;
+                  return isTrustedYouTubeNavigation(url);
                 }}
                 style={{ flex: 1 }} />
             </View>
