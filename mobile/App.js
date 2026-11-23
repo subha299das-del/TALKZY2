@@ -2488,38 +2488,65 @@ async function toggleFollowRoom(room) {
 
   async function submitRoomJoin(room, password) {
     if (!room || !session?.access_token) return Alert.alert('Error', 'Please sign in again.');
+    const requestUserId = session.user.id;
+    const isCurrentUserRequest = () => activeAuthUserIdRef.current === requestUserId;
     try {
       const pendingLeave = roomLeaveCleanupRef.current[room.id];
       if (pendingLeave) await pendingLeave;
+      if (!isCurrentUserRequest()) return;
       setJoiningRoom(true);
       await api(`/api/rooms/${room.id}/join`, {
         method: 'POST',
         body: JSON.stringify({ password })
       });
+      if (!isCurrentUserRequest()) return;
       await loadJoinedRooms();
+      if (!isCurrentUserRequest()) return;
       setIsRoomTourist(false);
       setShowJoinPassword(false); setJoinPassword(''); setJoinTargetRoom(null);
       Alert.alert('Success', `You have joined ${room.room_name} as a member.`);
     } catch (error) {
-      Alert.alert('Unable to join', error.message || 'Could not join this room.');
-    } finally { setJoiningRoom(false); }
+      if (isCurrentUserRequest()) Alert.alert('Unable to join', error.message || 'Could not join this room.');
+    } finally { if (isCurrentUserRequest()) setJoiningRoom(false); }
   }
 
   async function submitRoomVisit(room, password) {
     if (!room || !session?.access_token) return Alert.alert('Error', 'Please sign in again.');
+    const requestUserId = session.user.id;
+    const requestAccessToken = session.access_token;
+    const isCurrentUserRequest = () => activeAuthUserIdRef.current === requestUserId;
+    const cleanUpStaleVisit = async () => {
+      try {
+        await api(`/api/rooms/${room.id}/leave-visit`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${requestAccessToken}` }
+        });
+      } catch (cleanupError) {
+        console.log('Stale tourist visit cleanup:', cleanupError.message);
+      }
+    };
     try {
       const pendingLeave = roomLeaveCleanupRef.current[room.id];
       if (pendingLeave) await pendingLeave;
+      if (!isCurrentUserRequest()) return;
       setJoiningRoom(true);
       const result = await api(`/api/rooms/${room.id}/visit`, {
         method: 'POST',
         body: JSON.stringify({ password })
       });
+      if (!isCurrentUserRequest()) {
+        await cleanUpStaleVisit();
+        return;
+      }
       setShowJoinPassword(false); setJoinPassword(''); setJoinTargetRoom(null);
       // A room entry never restores a previous microphone seat. Clear any stale
       // seat for this user before loading the room state, so sitting is manual.
       try { await api(`/api/rooms/${room.id}/mic-seats`, { method: 'DELETE' }); } catch (seatCleanupError) {
         console.log('Stale mic seat cleanup on entry:', seatCleanupError.message);
+      }
+      if (!isCurrentUserRequest()) {
+        await cleanUpStaleVisit();
+        return;
       }
       roomChatActiveRoomIdRef.current = room.id;
       ++roomChatLoadVersionRef.current;
@@ -2534,8 +2561,8 @@ async function toggleFollowRoom(room) {
       loadRoomMicSeats(room.id);
       loadRoomMessages(room.id);
     } catch (error) {
-      Alert.alert('Unable to visit', error.message || 'Could not enter this room as a tourist.');
-    } finally { setJoiningRoom(false); }
+      if (isCurrentUserRequest()) Alert.alert('Unable to visit', error.message || 'Could not enter this room as a tourist.');
+    } finally { if (isCurrentUserRequest()) setJoiningRoom(false); }
   }
 
   async function openWorldLuckyBagRoom(notification) {
