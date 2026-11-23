@@ -614,14 +614,17 @@ app.post('/api/rooms/:roomId/visit/ping', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
-    if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
-    const { data, error } = await supabase.from('talkzy_room_visitors')
-      .update({ last_seen_at: new Date().toISOString() })
-      .eq('room_id', room.id).eq('user_id', req.talkzyUser.id)
-      .select('room_id').maybeSingle();
-    if (error) throw error;
-    if (!data) return res.status(403).json({ error: 'Your tourist visit has expired. Re-enter the room.' });
-    res.json({ active: true });
+    const { data, error } = await supabase.rpc('talkzy_room_visitor_ping_atomic', {
+      p_room_id: room.id,
+      p_user_id: req.talkzyUser.id
+    });
+    if (error) {
+      if (/VISIT_EXPIRED|USER_KICKED|42501/i.test(error.message || '')) return res.status(403).json({ error: 'Your tourist visit has expired. Re-enter the room.' });
+      if (/ROOM_CLOSED/i.test(error.message || '')) return res.status(409).json({ error: 'This room is closed.' });
+      if (/ROOM_NOT_FOUND/i.test(error.message || '')) return res.status(404).json({ error: 'Room not found.' });
+      throw error;
+    }
+    res.set('Cache-Control', 'no-store').json(data || { active: true });
   } catch (error) {
     console.error('Could not refresh tourist visit:', error.message);
     res.status(500).json({ error: 'Could not refresh your room visit.' });
@@ -1317,27 +1320,17 @@ app.post('/api/rooms/:roomId/presence/ping', userAuth, async (req, res) => {
   try {
     const room = await requireRoom(req, res);
     if (!room) return;
-    if (room.status !== 'active') return res.status(409).json({ error: 'This room is closed.' });
-    const userId = req.talkzyUser.id;
-    const owner = room.owner_id === userId;
-    const admin = !owner && await isRoomAdmin(room.id, userId);
-    const member = !owner && !admin && await isRoomMember(room.id, userId);
-    const tourist = !owner && !admin && !member && await isRoomVisitor(room.id, userId);
-    if (!owner && !admin && !member && !tourist) {
-      return res.status(403).json({ error: 'Enter the room to appear in its live user list.' });
+    const { data, error } = await supabase.rpc('talkzy_room_presence_ping_atomic', {
+      p_room_id: room.id,
+      p_user_id: req.talkzyUser.id
+    });
+    if (error) {
+      if (/NOT_IN_ROOM/i.test(error.message || '')) return res.status(403).json({ error: 'Enter the room to appear in its live user list.' });
+      if (/ROOM_CLOSED/i.test(error.message || '')) return res.status(409).json({ error: 'This room is closed.' });
+      if (/ROOM_NOT_FOUND/i.test(error.message || '')) return res.status(404).json({ error: 'Room not found.' });
+      throw error;
     }
-    const presenceRole = owner ? 'owner' : admin ? 'admin' : tourist ? 'tourist' : 'member';
-    const now = new Date().toISOString();
-    const { error } = await supabase.from('talkzy_room_presence').upsert({
-      room_id: room.id, user_id: userId, presence_role: presenceRole, last_seen_at: now
-    }, { onConflict: 'room_id,user_id' });
-    if (error) throw error;
-    if (tourist) {
-      const { error: visitorError } = await supabase.from('talkzy_room_visitors')
-        .update({ last_seen_at: now }).eq('room_id', room.id).eq('user_id', userId);
-      if (visitorError) throw visitorError;
-    }
-    res.json({ active: true, role: presenceRole });
+    res.set('Cache-Control', 'no-store').json(data || { active: true });
   } catch (error) {
     console.error('Could not update room presence:', error.message);
     res.status(500).json({ error: 'Could not update room presence.' });
@@ -1612,31 +1605,24 @@ app.post('/api/rooms/:roomId/presence/leave', userAuth, async (req, res) => {
     const room = await requireRoom(req, res);
     if (!room) return;
     const userId = req.talkzyUser.id;
-
-    // Write the personal chat cutoff FIRST. Even if presence/mic cleanup fails,
-    // this user's old messages stay hidden. Shared messages are never deleted.
-    const { data: clearMarker, error: clearMarkerError } = await supabase.from('talkzy_room_chat_clears')
-      .upsert({ room_id: room.id, user_id: userId, cleared_at: new Date().toISOString() },
-        { onConflict: 'room_id,user_id' })
-      .select('cleared_at').single();
-    if (clearMarkerError) throw clearMarkerError;
-
-    // One exit endpoint cleans up both member and tourist room state.
-    // Membership itself is intentionally preserved for ordinary members.
-    const { error: seatError } = await supabase.from('talkzy_room_mic_seats')
-      .delete().eq('room_id', room.id).eq('user_id', userId);
-    if (seatError) throw seatError;
-
-    const { error: visitorError } = await supabase.from('talkzy_room_visitors')
-      .delete().eq('room_id', room.id).eq('user_id', userId);
-    if (visitorError) throw visitorError;
-
-    const { error: presenceError } = await supabase.from('talkzy_room_presence')
-      .delete().eq('room_id', room.id).eq('user_id', userId);
-    if (presenceError) throw presenceError;
-    await removeUserRoomMusic(room.id, userId);
-
-    res.set('Cache-Control', 'no-store').json({ left: true, clearedAt: clearMarker.cleared_at });
+    const { data, error } = await supabase.rpc('talkzy_room_exit_atomic', {
+      p_room_id: room.id,
+      p_user_id: userId,
+      p_remove_membership: false
+    });
+    if (error) {
+      if (/user_not_in_room/i.test(error.message || '')) return res.status(403).json({ error: 'You are no longer in this room.' });
+      if (/room_closed/i.test(error.message || '')) return res.status(409).json({ error: 'This room is closed.' });
+      if (/room_not_found/i.test(error.message || '')) return res.status(404).json({ error: 'Room not found.' });
+      throw error;
+    }
+    const musicPaths = (Array.isArray(data?.music_paths) ? data.music_paths : [])
+      .filter(path => typeof path === 'string' && path.startsWith(`${userId}/${room.id}/`) && !path.includes('..'));
+    if (musicPaths.length) {
+      const { error: storageError } = await supabase.storage.from('talkzy-room-music').remove(musicPaths);
+      if (storageError) console.error('Room exit music-file cleanup:', storageError.message);
+    }
+    res.set('Cache-Control', 'no-store').json({ left: true, clearedAt: data?.cleared_at || null });
   } catch (error) {
     console.error('Could not complete room exit cleanup:', error.message);
     res.status(500).json({ error: 'Could not complete room exit cleanup.' });
