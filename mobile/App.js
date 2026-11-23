@@ -1001,32 +1001,6 @@ async function sendRoomReaction(reaction) {
   setShowMicEmojiPicker(false);
 }
 
-// ROOM ARRIVAL NOTICES: broadcast a system welcome to everyone in the room.
-useEffect(() => {
-  if (!selectedRoom?.id || !session?.user?.id) return;
-  const roomId = selectedRoom.id;
-  const channel = supabase.channel(`room-arrivals-${roomId}`, { config: { broadcast: { self: true } } });
-  channel.on('broadcast', { event: 'room_arrival' }, ({ payload }) => {
-    if (!payload?.arrivalId || !payload?.displayName) return;
-    setRoomChatMessages(prev => prev.some(item => item.id === payload.arrivalId) ? prev : [...prev, {
-      id: payload.arrivalId,
-      system: true,
-      sender: 'TALKZY SYSTEM',
-      text: `Welcome ${payload.displayName} to the room!`,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }]);
-  });
-  channel.subscribe(status => {
-    if (status === 'SUBSCRIBED') {
-      channel.send({ type: 'broadcast', event: 'room_arrival', payload: {
-        arrivalId: `${roomId}-${session.user.id}-${Date.now()}`,
-        displayName: profile?.display_name || displayName || 'A member'
-      }}).catch(error => console.log('Room arrival broadcast error:', error?.message || error));
-    }
-  });
-  return () => { supabase.removeChannel(channel); };
-}, [selectedRoom?.id]);
-
 // ROOM CHAT REALTIME UPDATES
 useEffect(() => {
   if (!selectedRoom?.id) return;
@@ -1344,8 +1318,6 @@ const [showRoomShortcutsPage, setShowRoomShortcutsPage] = useState(false);
 const [roomShortcutCategory, setRoomShortcutCategory] = useState('Treasury');
 const [roomChatText, setRoomChatText] = useState('');
  const [roomChatMessages, setRoomChatMessages] = useState([]);
- const [roomEntryNoticeVisible, setRoomEntryNoticeVisible] = useState(false);
- const [roomEntryAnnouncement, setRoomEntryAnnouncement] = useState('');
  const roomChatScrollRef = useRef(null);
   const [showJoinPassword, setShowJoinPassword] = useState(false);
 const [joinPassword, setJoinPassword] = useState('');
@@ -2373,6 +2345,18 @@ async function toggleFollowRoom(room) {
     );
   }
 
+  // Entry notices are local system chat items for this joining user only.
+  // They are not written to the shared room-message table or broadcast to members.
+  function createRoomEntryNotices(room) {
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const announcement = String(room?.announcement || room?.description || '').trim();
+    return [
+      { id: `entry-${room.id}-welcome-${session?.user?.id}-${Date.now()}`, system: true, sender: 'TALKZY SYSTEM', text: `Welcome to ${room?.room_name || 'the room'}!`, time },
+      { id: `entry-${room.id}-guidelines-${session?.user?.id}-${Date.now()}`, system: true, sender: 'ROOM GUIDELINES', text: 'Please respect everyone and speak politely. Abusive language, third-party advertising, fake official information and politically sensitive topics are strictly prohibited. Please report such situations.', time },
+      { id: `entry-${room.id}-announcement-${session?.user?.id}-${Date.now()}`, system: true, sender: 'ROOM ANNOUNCEMENT', text: announcement || 'There is no announcement from the room owner.', time }
+    ];
+  }
+
   async function submitRoomJoin(room, password) {
     if (!room || !session?.access_token) return Alert.alert('Error', 'Please sign in again.');
     try {
@@ -2407,12 +2391,10 @@ async function toggleFollowRoom(room) {
         console.log('Stale mic seat cleanup on entry:', seatCleanupError.message);
       }
       setSelectedRoom(room);
-      setRoomEntryAnnouncement(String(room.announcement || room.description || '').trim());
-      setRoomEntryNoticeVisible(true);
       setIsRoomTourist(result.mode === 'tourist');
       setIsRoomMinimized(false); setShowRoomMenu(false);
       setMicCount(8); setMicSeats([]); setIsOnMic(false); setMyMicSeat(null); setIsMicMuted(false);
-      setRoomChatMessages([]);
+      setRoomChatMessages(createRoomEntryNotices(room));
       setScreen('roomInterior');
       loadRoomMicSeats(room.id);
       loadRoomMessages(room.id);
@@ -2782,8 +2764,6 @@ function renderRoomCard(room, showJoin = true) {
       console.log('Stale mic seat cleanup on entry:', seatCleanupError.message);
     }
     setSelectedRoom(room);
-setRoomEntryAnnouncement(String(room.announcement || room.description || '').trim());
-setRoomEntryNoticeVisible(true);
 setIsRoomTourist(false);
 setIsRoomMinimized(false);
 
@@ -2794,8 +2774,8 @@ setIsOnMic(false);
 setMyMicSeat(null);
 setIsMicMuted(false);
 
-// Reset the chat UI before fetching; never clear a completed fetch afterward.
-setRoomChatMessages([]);
+// Seed this user's chat with private, local room-entry notices before loading history.
+setRoomChatMessages(createRoomEntryNotices(room));
 // Load this room's microphone data and room chat
 loadRoomMicSeats(room.id);
 loadRoomMessages(room.id);
@@ -4778,29 +4758,6 @@ function renderRoomInterior() {
     </View>
   </KeyboardAvoidingView>
 </Modal>
-
-{roomEntryNoticeVisible && (
-  <Modal visible transparent animationType="fade" onRequestClose={() => setRoomEntryNoticeVisible(false)}>
-    <View style={{ flex: 1, backgroundColor: 'rgba(1,10,20,0.82)', justifyContent: 'center', padding: 18 }}>
-      <View style={{ backgroundColor: '#071B2D', borderColor: '#3CBCE2', borderWidth: 1.2, borderRadius: 20, padding: 16, maxHeight: '84%' }}>
-        <Text style={{ color: '#DDF8FF', fontSize: 19, fontWeight: '900', textAlign: 'center', marginBottom: 14 }}>Welcome to {selectedRoom?.room_name || 'TALKZY'}</Text>
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <View style={{ backgroundColor: 'rgba(18,111,151,0.32)', borderColor: '#4CC9EA', borderWidth: 1, borderRadius: 14, padding: 13, marginBottom: 11 }}>
-            <Text style={{ color: '#8DEAFF', fontSize: 14, fontWeight: '900', marginBottom: 7 }}>1. ROOM GUIDELINES</Text>
-            <Text style={{ color: '#F0F8FF', fontSize: 13, lineHeight: 20 }}>Welcome to TALKZY! Please respect each other and talk politely. Abusive language, third-party advertising, fake official information and politically sensitive topics are strictly prohibited. Please report such situations.</Text>
-          </View>
-          <View style={{ backgroundColor: 'rgba(37,91,168,0.34)', borderColor: '#638FE8', borderWidth: 1, borderRadius: 14, padding: 13 }}>
-            <Text style={{ color: '#AFC8FF', fontSize: 14, fontWeight: '900', marginBottom: 7 }}>2. ROOM ANNOUNCEMENT</Text>
-            <Text style={{ color: '#F0F5FF', fontSize: 13, lineHeight: 20 }}>{roomEntryAnnouncement || 'There is no announcement from the room owner.'}</Text>
-          </View>
-        </ScrollView>
-        <TouchableOpacity onPress={() => setRoomEntryNoticeVisible(false)} style={{ backgroundColor: '#43C7E8', borderRadius: 12, paddingVertical: 12, marginTop: 15, alignItems: 'center' }}>
-          <Text style={{ color: '#052033', fontWeight: '900', fontSize: 14 }}>I Understand — Enter Room</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  </Modal>
-)}
 
 {roomChatMessages.length > 0 && (
   <View style={{ maxHeight: 118, paddingHorizontal: 12, paddingTop: 7, paddingBottom: 4 }}>
