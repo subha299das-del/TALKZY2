@@ -4348,25 +4348,34 @@ function renderRoomInterior() {
         <View
           style={{
             position: 'absolute',
-            left: 12,
-            right: 12,
+            left: showRoomGiftPanel ? 10 : 12,
+            right: showRoomGiftPanel ? 10 : 12,
             bottom: 86,
             maxHeight: showRoomTools ? '48%' : '58%',
-            backgroundColor: C.card,
-            borderRadius: 14,
-            padding: 14,
+            backgroundColor: showRoomGiftPanel ? '#10121D' : C.card,
+            borderRadius: showRoomGiftPanel ? 22 : 14,
+            padding: showRoomGiftPanel ? 16 : 14,
             borderWidth: 1,
-            borderColor: C.line,
+            borderColor: showRoomGiftPanel ? '#34364B' : C.line,
             zIndex: 30,
             elevation: 18
           }}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <Text style={{ color: C.text, fontSize: 15, fontWeight: 'bold' }}>
-              {showRoomGiftPanel ? 'Send a Gift 🎁' : 'Room Tools'}
-            </Text>
-            <TouchableOpacity onPress={() => { setShowRoomGiftPanel(false); setShowRoomTools(false); }} style={{ paddingHorizontal: 6, paddingVertical: 2 }}>
-              <Text style={{ color: C.muted, fontSize: 20 }}>✕</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: showRoomGiftPanel ? 14 : 10 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: showRoomGiftPanel ? '#F7F5FF' : C.text, fontSize: showRoomGiftPanel ? 18 : 15, fontWeight: '900', letterSpacing: showRoomGiftPanel ? 0.5 : 0 }}>
+                {showRoomGiftPanel ? 'SEND A GIFT' : 'Room Tools'}
+              </Text>
+              {showRoomGiftPanel ? <Text style={{ color: '#9295AD', fontSize: 10, marginTop: 3, letterSpacing: 1 }}>MAKE SOMEONE'S MOMENT SPECIAL</Text> : null}
+            </View>
+            {showRoomGiftPanel ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#242237', borderWidth: 1, borderColor: '#51466D', borderRadius: 18, paddingHorizontal: 10, paddingVertical: 7, marginRight: 10 }}>
+                <Text style={{ fontSize: 13, marginRight: 5 }}>🪙</Text>
+                <Text style={{ color: '#F4D78C', fontSize: 12, fontWeight: '900' }}>{Number(walletBalance || 0).toLocaleString()}</Text>
+              </View>
+            ) : null}
+            <TouchableOpacity onPress={() => { setShowRoomGiftPanel(false); setShowRoomTools(false); }} accessibilityRole="button" accessibilityLabel="Close popup" style={{ width: 30, height: 30, borderRadius: 10, backgroundColor: showRoomGiftPanel ? '#252638' : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: showRoomGiftPanel ? '#C6C5D5' : C.muted, fontSize: 19 }}>✕</Text>
             </TouchableOpacity>
           </View>
           <ScrollView
@@ -4377,25 +4386,39 @@ function renderRoomInterior() {
             keyboardShouldPersistTaps="handled"
           >
             {showRoomGiftPanel ? (
-              [
-                { icon: '🌹', name: 'Rose' },
-                { icon: '❤️', name: 'Heart' },
-                { icon: '💎', name: 'Diamond' },
-                { icon: '🎂', name: 'Cake' },
-                { icon: '🎸', name: 'Guitar' },
-                { icon: '👑', name: 'Crown' },
-                { icon: '🚗', name: 'Car' },
-                { icon: '🎁', name: 'Gift Box' }
-              ].map(gift => (
-                <TouchableOpacity
-                  key={gift.name}
-                  onPress={() => Alert.alert(gift.name, `${gift.name} gifting will be available soon.`)}
-                  style={{ width: '25%', alignItems: 'center', paddingVertical: 12 }}
-                >
-                  <Text style={{ fontSize: 27 }}>{gift.icon}</Text>
-                  <Text style={{ color: C.text, fontSize: 11, marginTop: 5 }}>{gift.name}</Text>
-                </TouchableOpacity>
-              ))
+              <View style={{ width: '100%' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <Text style={{ color: '#D8D7E7', fontSize: 11, fontWeight: '900', letterSpacing: 1 }}>POPULAR GIFTS</Text>
+                  <Text style={{ color: '#85879F', fontSize: 10 }}>Choose a gift</Text>
+                </View>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+                  {[
+                    { icon: '🌹', name: 'Rose', glow: '#492B45' },
+                    { icon: '❤️', name: 'Heart', glow: '#482A3A' },
+                    { icon: '💎', name: 'Diamond', glow: '#253D55' },
+                    { icon: '🎂', name: 'Cake', glow: '#49364A' },
+                    { icon: '🎸', name: 'Guitar', glow: '#493A2A' },
+                    { icon: '👑', name: 'Crown', glow: '#4A3D25' },
+                    { icon: '🚗', name: 'Car', glow: '#293B4E' },
+                    { icon: '🎁', name: 'Gift Box', glow: '#3F2D50' }
+                  ].map(gift => (
+                    <TouchableOpacity
+                      key={gift.name}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Select ${gift.name} gift`}
+                      onPress={() => Alert.alert(gift.name, `${gift.name} gifting will be available soon.`)}
+                      activeOpacity={0.78}
+                      style={{ width: '23.5%', minHeight: 88, marginBottom: 9, borderRadius: 15, backgroundColor: '#1B1D2B', borderWidth: 1, borderColor: '#303247', alignItems: 'center', justifyContent: 'center', paddingVertical: 9 }}
+                    >
+                      <View style={{ width: 45, height: 45, borderRadius: 14, backgroundColor: gift.glow, alignItems: 'center', justifyContent: 'center', marginBottom: 6 }}>
+                        <Text style={{ fontSize: 26 }}>{gift.icon}</Text>
+                      </View>
+                      <Text numberOfLines={1} style={{ color: '#E9E8F2', fontSize: 10, fontWeight: '700' }}>{gift.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <Text style={{ color: '#777A93', fontSize: 9, textAlign: 'center', marginTop: 1 }}>More gifts and sending options will appear here</Text>
+              </View>
             ) : (
               (() => {
                 const isCurrentRoomOwner = selectedRoom?.owner_id === session?.user?.id;
