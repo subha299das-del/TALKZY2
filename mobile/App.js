@@ -4576,11 +4576,11 @@ function renderRoomInterior() {
       setShowHotEventsPopup(true);
       if (!loadingOfficialEvents) loadOfficialEvents();
     }}
-    style={{ width: 76, height: 38, borderRadius: 9, overflow: 'hidden', borderWidth: 1.3, borderColor: '#58CBEA', backgroundColor: '#10334B', alignItems: 'center', justifyContent: 'center', shadowColor: '#D69B4D', shadowOpacity: 0.4, shadowRadius: 7, elevation: 7 }}
+    style={{ width: 48, height: 48, borderRadius: 16, overflow: 'hidden', borderWidth: 1.5, borderColor: '#83E9FF', backgroundColor: '#0D3550', alignItems: 'center', justifyContent: 'center', shadowColor: '#35C9EF', shadowOpacity: 0.52, shadowRadius: 9, elevation: 9 }}
   >
     <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: '#155C7D', opacity: 0.72 }} />
-    <Text style={{ color: '#FFE6A0', fontSize: 10, fontWeight: '900', letterSpacing: 0.4 }}>🔥 HOT</Text>
-    <Text style={{ color: '#FFFFFF', fontSize: 7, fontWeight: '900', letterSpacing: 1 }}>EVENTS</Text>
+    <Text style={{ fontSize: 22 }}>🔥</Text>
+    <Text style={{ color: '#B9F4FF', fontSize: 7, fontWeight: '900', letterSpacing: 0.7 }}>HOT</Text>
   </TouchableOpacity>
 
   <TouchableOpacity
@@ -4590,9 +4590,9 @@ function renderRoomInterior() {
       setShowRoomGiftPanel(false); setShowRoomTools(false); setShowRoomGamePanel(false);
       setShowRocketPanel(false); setShowHotEventsPopup(false); setShowGreedyPanel(true);
     }}
-    style={{ width: 44, height: 44, borderRadius: 15, borderWidth: 1.4, borderColor: '#69D7F0', backgroundColor: '#112F4C', alignItems: 'center', justifyContent: 'center', shadowColor: '#31BCE3', shadowOpacity: 0.35, shadowRadius: 7, elevation: 7 }}
+    style={{ width: 48, height: 48, borderRadius: 16, borderWidth: 1.5, borderColor: '#72DDF5', backgroundColor: '#0C2B43', alignItems: 'center', justifyContent: 'center', shadowColor: '#31BCE3', shadowOpacity: 0.48, shadowRadius: 9, elevation: 9 }}
   >
-    <Text style={{ fontSize: 24 }}>🤑</Text>
+    <Text style={{ fontSize: 24 }}>💰</Text>
   </TouchableOpacity>
 
   <TouchableOpacity
@@ -4602,7 +4602,7 @@ function renderRoomInterior() {
       setShowRoomGiftPanel(false); setShowRoomTools(false); setShowGreedyPanel(false);
       setShowRocketPanel(false); setShowHotEventsPopup(false); setShowRoomGamePanel(true);
     }}
-    style={{ width: 44, height: 44, borderRadius: 15, borderWidth: 1.4, borderColor: '#65D8E8', backgroundColor: '#123A50', alignItems: 'center', justifyContent: 'center', shadowColor: '#4AC4D6', shadowOpacity: 0.32, shadowRadius: 7, elevation: 7 }}
+    style={{ width: 48, height: 48, borderRadius: 16, borderWidth: 1.5, borderColor: '#72DDF5', backgroundColor: '#0C3048', alignItems: 'center', justifyContent: 'center', shadowColor: '#4AC4D6', shadowOpacity: 0.48, shadowRadius: 9, elevation: 9 }}
   >
     <Text style={{ fontSize: 23 }}>🎮</Text>
   </TouchableOpacity>
@@ -4615,7 +4615,7 @@ function renderRoomInterior() {
       setShowRoomGamePanel(false); setShowRocketPanel(false); setShowHotEventsPopup(false);
       setRoomShortcutCategory('Treasury'); setShowRoomShortcutsPage(true);
     }}
-    style={{ width: 46, height: 46, borderRadius: 16, borderWidth: 1.5, borderColor: '#79D9ED', backgroundColor: '#183B59', alignItems: 'center', justifyContent: 'center', shadowColor: '#C49A45', shadowOpacity: 0.4, shadowRadius: 8, elevation: 8 }}
+    style={{ width: 50, height: 50, borderRadius: 17, borderWidth: 1.7, borderColor: '#A1F0FF', backgroundColor: '#12415E', alignItems: 'center', justifyContent: 'center', shadowColor: '#43D6F2', shadowOpacity: 0.55, shadowRadius: 10, elevation: 10 }}
   >
     <View pointerEvents="none" style={{ position: 'absolute', top: 5, left: 5, right: 5, bottom: 5, borderRadius: 12, borderWidth: 1, borderColor: '#4B91B5' }} />
     <View style={{ width: 29, height: 22, marginTop: 7, borderRadius: 5, borderWidth: 1.5, borderColor: '#9AEAFF', backgroundColor: '#24577A', alignItems: 'center', justifyContent: 'center' }}>
@@ -4814,19 +4814,19 @@ function renderRoomInterior() {
   horizontal
   showsHorizontalScrollIndicator={false}
   keyboardShouldPersistTaps="handled"
-  style={{ flexGrow: 0, borderTopWidth: 1, borderTopColor: C.line }}
+  style={{ flexGrow: 0, backgroundColor: 'rgba(4,19,32,0.96)', borderTopWidth: 1, borderTopColor: '#28617B' }}
   contentContainerStyle={{
     flexDirection: 'row',
     alignItems: 'center',
     minWidth: '100%',
-    paddingHorizontal: 10,
-    paddingTop: 12,
+    paddingHorizontal: 12,
+    paddingTop: 9,
     paddingBottom: Platform.OS === 'android' ? 40 : 12,
-    columnGap: 8
+    columnGap: 9
   }}
 >
   {/* CHAT — composer stays hidden until this control is tapped */}
-<TouchableOpacity onPress={() => { setIsRoomChatMinimized(false); setShowRoomChatActionMenu(false); setShowRoomChatComposer(true); }} style={{ width: 42, height: 38, alignItems: 'center', justifyContent: 'center', marginRight: 5 }} accessibilityRole="button" accessibilityLabel="Open room chat">
+<TouchableOpacity onPress={() => { setIsRoomChatMinimized(false); setShowRoomChatActionMenu(false); setShowRoomChatComposer(true); }} style={{ width: 44, height: 44, borderRadius: 15, backgroundColor: '#0B2B43', borderWidth: 1.2, borderColor: '#3D9BB8', alignItems: 'center', justifyContent: 'center', marginRight: 2, shadowColor: '#2CB8DF', shadowOpacity: 0.24, shadowRadius: 5, elevation: 4 }} accessibilityRole="button" accessibilityLabel="Open room chat">
   <Text style={{ fontSize: 21 }}>💬</Text>
 </TouchableOpacity>
 
@@ -4880,12 +4880,18 @@ function renderRoomInterior() {
       }
     }}
     style={{
-      width: 38,
-      height: 38,
-      borderRadius: 20,
-      backgroundColor: isMicMuted ? '#555555' : '#D94B4B',
+      width: 44,
+      height: 44,
+      borderRadius: 15,
+      backgroundColor: isMicMuted ? '#24465A' : '#8A3048',
+      borderWidth: 1.2,
+      borderColor: isMicMuted ? '#69CBE6' : '#F18AA2',
       alignItems: 'center',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      shadowColor: '#2CB8DF',
+      shadowOpacity: 0.2,
+      shadowRadius: 5,
+      elevation: 4
     }}
   >
     <Image
@@ -4901,7 +4907,7 @@ function renderRoomInterior() {
 
   {/* MIC EMOJI REACTIONS — visible only while seated on mic */}
 {isOnMic && (
-  <TouchableOpacity onPress={() => setShowMicEmojiPicker(true)} style={{ width: 38, height: 38, borderRadius: 20, backgroundColor: showMicEmojiPicker ? C.primary : C.card, alignItems: 'center', justifyContent: 'center', marginRight: 3 }}>
+  <TouchableOpacity onPress={() => setShowMicEmojiPicker(true)} style={{ width: 44, height: 44, borderRadius: 15, backgroundColor: showMicEmojiPicker ? '#145C79' : '#0B2B43', borderWidth: 1.2, borderColor: '#3D9BB8', alignItems: 'center', justifyContent: 'center', marginRight: 2, shadowColor: '#2CB8DF', shadowOpacity: 0.24, shadowRadius: 5, elevation: 4 }}>
     <Text style={{ fontSize: 21 }}>😊</Text>
   </TouchableOpacity>
 )}
@@ -4910,12 +4916,18 @@ function renderRoomInterior() {
   <TouchableOpacity
     onPress={() => setIsRoomSpeakerOn(!isRoomSpeakerOn)}
     style={{
-      width: 38,
-      height: 38,
-      borderRadius: 20,
-      backgroundColor: C.card,
+      width: 44,
+      height: 44,
+      borderRadius: 15,
+      backgroundColor: '#0B2B43',
+      borderWidth: 1.2,
+      borderColor: '#3D9BB8',
       alignItems: 'center',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      shadowColor: '#2CB8DF',
+      shadowOpacity: 0.24,
+      shadowRadius: 5,
+      elevation: 4
     }}
   >
     <Text style={{ fontSize: 19 }}>
@@ -4927,12 +4939,18 @@ function renderRoomInterior() {
   <TouchableOpacity
     onPress={() => setShowRoomMessageMenu(true)}
     style={{
-      width: 38,
-      height: 38,
-      borderRadius: 20,
-      backgroundColor: C.card,
+      width: 44,
+      height: 44,
+      borderRadius: 15,
+      backgroundColor: '#0B2B43',
+      borderWidth: 1.2,
+      borderColor: '#3D9BB8',
       alignItems: 'center',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      shadowColor: '#2CB8DF',
+      shadowOpacity: 0.24,
+      shadowRadius: 5,
+      elevation: 4
     }}
   >
     <Text style={{ fontSize: 19 }}>🔔</Text>
@@ -4945,12 +4963,18 @@ function renderRoomInterior() {
       setShowRoomGiftPanel(false);
     }}
     style={{
-      width: 38,
-      height: 38,
-      borderRadius: 20,
-      backgroundColor: C.card,
+      width: 44,
+      height: 44,
+      borderRadius: 15,
+      backgroundColor: '#0B2B43',
+      borderWidth: 1.2,
+      borderColor: '#3D9BB8',
       alignItems: 'center',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      shadowColor: '#2CB8DF',
+      shadowOpacity: 0.24,
+      shadowRadius: 5,
+      elevation: 4
     }}
   >
     <Text style={{ fontSize: 19 }}>⊞</Text>
@@ -4969,15 +4993,19 @@ function renderRoomInterior() {
       setShowRoomGiftPanel(value => !value);
     }}
     style={{
-      width: 38,
-      height: 38,
-      borderRadius: 20,
-      marginLeft: 3,
-      backgroundColor: C.card,
-      borderWidth: 1,
-      borderColor: '#D6B15E',
+      width: 44,
+      height: 44,
+      borderRadius: 15,
+      marginLeft: 2,
+      backgroundColor: '#0B2B43',
+      borderWidth: 1.2,
+      borderColor: '#75DDF2',
       alignItems: 'center',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      shadowColor: '#2CB8DF',
+      shadowOpacity: 0.28,
+      shadowRadius: 5,
+      elevation: 4
     }}
   >
     <Text style={{ fontSize: 20 }}>🎁</Text>
