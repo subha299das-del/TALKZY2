@@ -1140,6 +1140,38 @@ app.post('/api/rooms/:roomId/presence/ping', userAuth, async (req, res) => {
 });
 
 // Personal room music streams. Each participant owns and controls only their own stream.
+const roomMusicSignedUrlCache = new Map();
+const ROOM_MUSIC_SIGNED_URL_TTL_MS = 50 * 60 * 1000;
+
+async function getRoomMusicSignedUrl(objectPath) {
+  const now = Date.now();
+  const cached = roomMusicSignedUrlCache.get(objectPath);
+  if (cached && cached.expiresAt > now + 60_000) return cached.url;
+
+  const { data, error } = await supabase.storage
+    .from('talkzy-room-music').createSignedUrl(objectPath, 3600);
+  if (error || !data?.signedUrl) {
+    if (error) throw error;
+    throw new Error('Could not sign room music file.');
+  }
+
+  // Keep the in-memory cache shorter than the storage URL lifetime so clients
+  // never receive URLs close to expiration during normal room polling.
+  roomMusicSignedUrlCache.set(objectPath, {
+    url: data.signedUrl,
+    expiresAt: now + ROOM_MUSIC_SIGNED_URL_TTL_MS
+  });
+
+  if (roomMusicSignedUrlCache.size > 1000) {
+    for (const [key, entry] of roomMusicSignedUrlCache) {
+      if (entry.expiresAt <= now || roomMusicSignedUrlCache.size > 900) {
+        roomMusicSignedUrlCache.delete(key);
+      }
+    }
+  }
+  return data.signedUrl;
+}
+
 async function buildRoomMusicState(roomId, userId) {
   const { data: rows, error } = await supabase.from('talkzy_room_music_state')
     .select('room_id, user_id, queue, current_index, is_playing, current_time_seconds, repeat_mode, shuffle, volume, updated_at')
@@ -1158,28 +1190,36 @@ async function buildRoomMusicState(roomId, userId) {
   const streams = [];
   for (const row of activeRows) {
     const queue = Array.isArray(row.queue) ? row.queue : [];
-    const originalCurrentPath = queue[Number(row.current_index) || 0]?.object_path || null;
-    const signedQueue = [];
-    for (const item of queue) {
-      const objectPath = typeof item?.object_path === 'string' ? item.object_path : '';
-      if (!objectPath.startsWith(`${row.user_id}/${roomId}/`) || objectPath.includes('..')) continue;
-      const { data: signed, error: signError } = await supabase.storage
-        .from('talkzy-room-music').createSignedUrl(objectPath, 3600);
-      if (signError || !signed?.signedUrl) {
-        console.error('Skipping unavailable room music object:', signError?.message || objectPath);
-        continue;
+    const requestedIndex = Number(row.current_index) || 0;
+    const safeQueue = queue.map(item => ({
+      title: String(item?.title || 'Untitled song').slice(0, 120),
+      object_path: typeof item?.object_path === 'string' ? item.object_path : '',
+      url: null
+    }));
+    const currentItem = safeQueue[requestedIndex];
+    const currentPath = currentItem?.object_path || '';
+    const validCurrentPath = Boolean(
+      currentItem &&
+      currentPath.startsWith(`${row.user_id}/${roomId}/`) &&
+      !currentPath.includes('..') &&
+      currentPath.length <= 500
+    );
+    let hasCurrentTrack = false;
+    if (validCurrentPath) {
+      try {
+        currentItem.url = await getRoomMusicSignedUrl(currentPath);
+        hasCurrentTrack = true;
+      } catch (signError) {
+        console.error('Could not sign current room music object:', signError.message || currentPath);
       }
-      signedQueue.push({ title: String(item.title || 'Untitled song').slice(0, 120), object_path: objectPath, url: signed.signedUrl });
     }
-    const currentIndex = signedQueue.findIndex(item => item.object_path === originalCurrentPath);
-    const hasCurrentTrack = currentIndex >= 0;
     streams.push({
       user_id: row.user_id,
       display_name: profileMap.get(row.user_id)?.display_name || 'TALKZY User',
       avatar_url: profileMap.get(row.user_id)?.avatar_url || null,
-      queue: signedQueue,
-      current_index: hasCurrentTrack ? currentIndex : 0,
-      is_playing: Boolean(row.is_playing && hasCurrentTrack && signedQueue.length > 0),
+      queue: safeQueue,
+      current_index: hasCurrentTrack ? requestedIndex : 0,
+      is_playing: Boolean(row.is_playing && hasCurrentTrack),
       current_time_seconds: hasCurrentTrack ? row.current_time_seconds : 0,
       repeat_mode: row.repeat_mode || 'off',
       shuffle: Boolean(row.shuffle),
