@@ -3865,6 +3865,27 @@ function renderRoomInterior() {
   })}
 </View>
 
+{/* CHAT AREA — anchored immediately below the final microphone row. */}
+{(() => {
+  // More microphone rows consume more vertical space, so the chat feed
+  // progressively gives up height. Flex fills every remaining pixel.
+  const boundedMicCount = Math.max(7, Math.min(17, Number(micCount) || 8));
+  const chatMinHeight = Math.max(38, Math.round(170 - ((boundedMicCount - 7) * 13.2)));
+  return (
+  <View style={{ flex: 1, minHeight: chatMinHeight, minWidth: 0, paddingHorizontal: 12, paddingTop: 7, paddingBottom: 4 }}>
+    <ScrollView ref={roomChatScrollRef} style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} onContentSizeChange={() => roomChatScrollRef.current?.scrollToEnd({ animated: true })}>
+      {roomChatMessages.slice(-30).map(message => (
+        <View key={message.id} style={{ alignSelf: message.system ? 'center' : 'flex-start', maxWidth: '94%', backgroundColor: message.system ? 'rgba(15,91,130,0.88)' : 'rgba(7,27,45,0.94)', borderWidth: 1, borderColor: message.system ? '#58CBEA' : '#24516D', borderRadius: message.system ? 14 : 12, paddingHorizontal: 11, paddingVertical: 7, marginBottom: 6 }}>
+          <Text style={{ color: message.system ? '#9CEBFF' : '#79D7EF', fontSize: 10, fontWeight: '900', marginBottom: 3 }}>{message.sender?.display_name || message.sender || 'TALKZY User'}</Text>
+          {message.image_url ? <Image source={{ uri: message.image_url }} style={{ width: 150, height: 90, borderRadius: 8 }} resizeMode="cover" /> : <Text style={{ color: C.text, fontSize: 13, lineHeight: 18 }}>{message.text || message.message_text}</Text>}
+          <Text style={{ color: '#9CB9CC', fontSize: 9, textAlign: 'right', marginTop: 3 }}>{message.time}</Text>
+        </View>
+      ))}
+    </ScrollView>
+  </View>
+  );
+})()}
+
 <Modal visible={showMicControlPopup} transparent animationType="fade" onRequestClose={() => setShowMicControlPopup(false)}>
   <View style={{ flex: 1, backgroundColor: 'rgba(3,5,14,0.78)', justifyContent: 'center', padding: 22 }}>
     <View style={{ backgroundColor: '#14110D', borderRadius: 24, borderWidth: 1, borderColor: '#A9874A', padding: 18, shadowColor: '#D8B66D', shadowOpacity: 0.4, shadowRadius: 18, elevation: 14 }}>
@@ -4757,25 +4778,7 @@ function renderRoomInterior() {
   </KeyboardAvoidingView>
 </Modal>
 
-{(() => {
-  // More microphone rows consume more vertical space, so the chat feed
-  // progressively gives up height. Flex fills every remaining pixel.
-  const boundedMicCount = Math.max(7, Math.min(17, Number(micCount) || 8));
-  const chatMinHeight = Math.max(38, Math.round(170 - ((boundedMicCount - 7) * 13.2)));
-  return (
-  <View style={{ flex: 1, minHeight: chatMinHeight, minWidth: 0, paddingHorizontal: 12, paddingTop: 7, paddingBottom: 4 }}>
-    <ScrollView ref={roomChatScrollRef} style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} onContentSizeChange={() => roomChatScrollRef.current?.scrollToEnd({ animated: true })}>
-      {roomChatMessages.slice(-30).map(message => (
-        <View key={message.id} style={{ alignSelf: message.system ? 'center' : 'flex-start', maxWidth: '94%', backgroundColor: message.system ? 'rgba(15,91,130,0.88)' : 'rgba(7,27,45,0.94)', borderWidth: 1, borderColor: message.system ? '#58CBEA' : '#24516D', borderRadius: message.system ? 14 : 12, paddingHorizontal: 11, paddingVertical: 7, marginBottom: 6 }}>
-          <Text style={{ color: message.system ? '#9CEBFF' : '#79D7EF', fontSize: 10, fontWeight: '900', marginBottom: 3 }}>{message.sender?.display_name || message.sender || 'TALKZY User'}</Text>
-          {message.image_url ? <Image source={{ uri: message.image_url }} style={{ width: 150, height: 90, borderRadius: 8 }} resizeMode="cover" /> : <Text style={{ color: C.text, fontSize: 13, lineHeight: 18 }}>{message.text || message.message_text}</Text>}
-          <Text style={{ color: '#9CB9CC', fontSize: 9, textAlign: 'right', marginTop: 3 }}>{message.time}</Text>
-        </View>
-      ))}
-    </ScrollView>
-  </View>
-  );
-})()}
+
 
 {/* ROOM BOTTOM CONTROLS — horizontally scrollable so every feature stays reachable on narrow phones */}
 <ScrollView
