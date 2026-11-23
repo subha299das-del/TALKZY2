@@ -1459,6 +1459,7 @@ const [isRoomTourist, setIsRoomTourist] = useState(false);
     setRoomDetailMembers([]);
     setJoiningRoom(false);
     setSaving(false);
+    setRoomDpUploading(false);
     setShowJoinPassword(false);
     setJoinPassword('');
     setJoinTargetRoom(null);
@@ -2793,6 +2794,10 @@ async function createRoom() {
     return;
   }
 
+  const requestUserId = session.user.id;
+  const requestAccessToken = session.access_token;
+  const isCurrentUserRequest = () => activeAuthUserIdRef.current === requestUserId;
+
   try {
     setSaving(true);
 
@@ -2816,6 +2821,7 @@ async function createRoom() {
         });
 
       if (uploadError) throw uploadError;
+      if (!isCurrentUserRequest()) return;
 
       const { data: publicData } = supabase.storage
         .from('talkzy-rooms')
@@ -2838,10 +2844,13 @@ password: roomType === 'locked' ? roomPassword : null,
         roomDpUrl
       })
     });
+    if (!isCurrentUserRequest()) return;
 
     // Refresh room lists
     await loadPublicRooms();
+    if (!isCurrentUserRequest()) return;
     await loadMyRooms();
+    if (!isCurrentUserRequest()) return;
 
     // Clear creation form
     setRoomName('');
@@ -2862,13 +2871,15 @@ password: roomType === 'locked' ? roomPassword : null,
     );
 
   } catch (error) {
-    Alert.alert(
+    if (isCurrentUserRequest()) Alert.alert(
       'Room creation failed',
       error.message || 'Something went wrong.'
     );
   } finally {
-    setRoomDpUploading(false);
-    setSaving(false);
+    if (isCurrentUserRequest()) {
+      setRoomDpUploading(false);
+      setSaving(false);
+    }
   }
 }
   
