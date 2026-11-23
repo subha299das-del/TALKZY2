@@ -660,7 +660,7 @@ const [worldLuckyBagQueue, setWorldLuckyBagQueue] = useState([]);
  }, [showRoomChatComposer]);
  useEffect(() => {
    if (!showRoomChatComposer) return undefined;
-   const focusTimer = setTimeout(() => roomChatInputRef.current?.focus(), Platform.OS === 'android' ? 80 : 0);
+   const focusTimer = setTimeout(() => roomChatInputRef.current?.focus(), Platform.OS === 'android' ? 250 : 0);
    return () => clearTimeout(focusTimer);
  }, [showRoomChatComposer]);
  const [showRoomChatActionMenu, setShowRoomChatActionMenu] = useState(false);
@@ -5112,6 +5112,7 @@ function renderRoomInterior() {
       <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 26, paddingLeft: 17, paddingRight: 7, minHeight: 50, borderWidth: 1, borderColor: '#E5E7EB' }}>
         <TextInput
           ref={roomChatInputRef}
+          autoFocus={Platform.OS === 'android'}
           value={roomChatText}
           onChangeText={setRoomChatText}
           placeholder={isRoomTourist && !touristsSendText ? 'Tourist chat disabled' : 'Write a message...'}
