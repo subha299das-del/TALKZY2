@@ -29,5 +29,9 @@
   },
   "engines": {
     "node": ">=22 <23"
+  },
+  "overrides": {
+    "image-size": "^2.1.0",
+    "postcss": "^8.5.23"
   }
 }
