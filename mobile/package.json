@@ -32,7 +32,7 @@
     "node": ">=22 <23"
   },
   "overrides": {
-    "image-size": "^2.1.0",
+    "image-size": "npm:image-size-next@1.2.2",
     "postcss": "^8.5.23"
   }
 }
