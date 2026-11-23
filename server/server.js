@@ -2228,15 +2228,7 @@ if (
   });
 }
 
-    // Preserve the user's mute state when moving from one mic to another.
-    const { data: previousSeat } = await supabase
-      .from('talkzy_room_mic_seats')
-      .select('is_muted')
-      .eq('room_id', room.id)
-      .eq('user_id', userId)
-      .maybeSingle();
-    const preservedMute = !!previousSeat?.is_muted;
-
+    // The RPC atomically checks the seat, moves the user, and preserves mute state.
     const { data, error } = await supabase.rpc('talkzy_take_mic_seat', {
       p_room_id: room.id,
       p_seat_number: seatNumber,
@@ -2247,32 +2239,19 @@ if (
       if (error.message.includes('SEAT_TAKEN')) {
         return res.status(409).json({ error: 'This microphone is already occupied.' });
       }
-
+      if (error.message.includes('SEAT_CLOSED')) {
+        return res.status(403).json({ error: 'This microphone seat is closed by the room owner or admin.' });
+      }
       if (error.message.includes('INVALID_SEAT')) {
         return res.status(400).json({ error: 'Invalid microphone seat.' });
       }
-
+      if (error.message.includes('ROOM_NOT_FOUND')) {
+        return res.status(409).json({ error: 'This room is no longer active.' });
+      }
       throw error;
     }
 
-    const { data: currentControl } = await supabase
-      .from('talkzy_room_mic_controls')
-      .select('mic_closed')
-      .eq('room_id', room.id)
-      .eq('seat_number', seatNumber)
-      .maybeSingle();
-    await supabase.from('talkzy_room_mic_seats')
-      .update({
-        is_muted: currentControl?.mic_closed ? true : preservedMute,
-        updated_at: new Date().toISOString()
-      })
-      .eq('room_id', room.id)
-      .eq('user_id', userId);
-
-    res.set('Cache-Control', 'no-store').json({
-      success: true,
-      seat: data
-    });
+    res.set('Cache-Control', 'no-store').json({ success: true, seat: data });
   } catch (error) {
     console.error('Could not take microphone seat:', error.message);
     res.status(500).json({ error: 'Could not take microphone seat.' });
@@ -2320,32 +2299,17 @@ app.patch('/api/rooms/:roomId/mic-seats/:seatNumber/control', userAuth, async (r
     if (!['close_seat', 'open_seat', 'close_mic', 'open_mic'].includes(action)) {
       return res.status(400).json({ error: 'Invalid microphone control action.' });
     }
-    const updates = {
-      room_id: room.id,
-      seat_number: seatNumber,
-      updated_by: userId,
-      updated_at: new Date().toISOString()
-    };
-    if (action === 'close_seat') updates.seat_closed = true;
-    if (action === 'open_seat') updates.seat_closed = false;
-    if (action === 'close_mic') updates.mic_closed = true;
-    if (action === 'open_mic') updates.mic_closed = false;
-
-    const { data, error } = await supabase
-      .from('talkzy_room_mic_controls')
-      .upsert(updates, { onConflict: 'room_id,seat_number' })
-      .select()
-      .single();
-    if (error) throw error;
-
-    if (action === 'close_seat') {
-      const { error: removeSeatError } = await supabase.from('talkzy_room_mic_seats').delete()
-        .eq('room_id', room.id).eq('seat_number', seatNumber);
-      if (removeSeatError) throw removeSeatError;
-    } else if (action === 'close_mic') {
-      const { error: forceMuteError } = await supabase.from('talkzy_room_mic_seats').update({ is_muted: true, updated_at: new Date().toISOString() })
-        .eq('room_id', room.id).eq('seat_number', seatNumber);
-      if (forceMuteError) throw forceMuteError;
+    const { data, error } = await supabase.rpc('talkzy_control_mic_seat_atomic', {
+      p_room_id: room.id,
+      p_actor_id: userId,
+      p_seat_number: seatNumber,
+      p_action: action
+    });
+    if (error) {
+      if (error.message.includes('FORBIDDEN')) return res.status(403).json({ error: 'Only the room owner or room admin can control microphone seats.' });
+      if (error.message.includes('INVALID_SEAT')) return res.status(400).json({ error: 'Invalid microphone seat.' });
+      if (error.message.includes('ROOM_CLOSED') || error.message.includes('ROOM_NOT_FOUND')) return res.status(409).json({ error: 'This room is closed.' });
+      throw error;
     }
     res.set('Cache-Control', 'no-store').json({ success: true, control: data });
   } catch (error) {
@@ -2375,41 +2339,20 @@ app.patch('/api/rooms/:roomId/mic-seats/mute', userAuth, async (req, res) => {
       return res.status(400).json({ error: 'Mute status must be true or false.' });
     }
 
-    const { data: occupiedSeat } = await supabase
-      .from('talkzy_room_mic_seats')
-      .select('seat_number')
-      .eq('room_id', room.id)
-      .eq('user_id', userId)
-      .maybeSingle();
-    if (!occupiedSeat) return res.status(404).json({ error: 'You are not occupying a microphone seat.' });
-    const { data: micControl } = await supabase
-      .from('talkzy_room_mic_controls')
-      .select('mic_closed')
-      .eq('room_id', room.id)
-      .eq('seat_number', occupiedSeat.seat_number)
-      .maybeSingle();
-    if (micControl?.mic_closed && !isMuted) {
-      return res.status(403).json({ error: 'This microphone is closed by the room owner or admin.' });
+    const { data, error } = await supabase.rpc('talkzy_set_mic_mute_atomic', {
+      p_room_id: room.id,
+      p_user_id: userId,
+      p_is_muted: isMuted
+    });
+    if (error) {
+      if (error.message.includes('NOT_ON_MIC')) return res.status(404).json({ error: 'You are not occupying a microphone seat.' });
+      if (error.message.includes('MIC_CLOSED')) return res.status(403).json({ error: 'This microphone is closed by the room owner or admin.' });
+      if (error.message.includes('ROOM_CLOSED')) return res.status(409).json({ error: 'This room is closed.' });
+      if (error.message.includes('INVALID_MUTE_STATE')) return res.status(400).json({ error: 'Mute status must be true or false.' });
+      throw error;
     }
 
-    const { data, error } = await supabase
-      .from('talkzy_room_mic_seats')
-      .update({
-        is_muted: isMuted,
-        updated_at: new Date().toISOString()
-      })
-      .eq('room_id', room.id)
-      .eq('user_id', userId)
-      .select()
-      .maybeSingle();
-
-    if (error) throw error;
-
-    if (!data) {
-      return res.status(404).json({ error: 'You are not occupying a microphone seat.' });
-    }
-
-    res.json({ success: true, seat: data });
+    res.set('Cache-Control', 'no-store').json({ success: true, seat: data });
   } catch (error) {
     console.error('Could not update microphone mute status:', error.message);
     res.status(500).json({ error: 'Could not update microphone mute status.' });
