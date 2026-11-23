@@ -4623,113 +4623,19 @@ function renderRoomInterior() {
 
 </View>
 
-<Modal visible={showRoomShortcutsPage && screen === 'roomInterior' && Boolean(selectedRoom)} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setShowRoomShortcutsPage(false)}>
-  <SafeAreaView style={{ flex: 1, backgroundColor: '#090711' }}>
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 12, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#3A2A50' }}>
-      <View>
-        <Text style={{ color: '#F6EEDB', fontSize: 21, fontWeight: '900', letterSpacing: 0.5 }}>ROOM SHORTCUTS</Text>
-        <Text style={{ color: '#A99BB9', fontSize: 10, marginTop: 3, letterSpacing: 1.1 }}>YOUR ROOM • QUICK ACCESS</Text>
+<Modal visible={showRoomShortcutsPage && screen === 'roomInterior' && Boolean(selectedRoom)} animationType="slide" transparent onRequestClose={() => setShowRoomShortcutsPage(false)}>
+  <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.62)', justifyContent: 'center', paddingHorizontal: 18 }}>
+    <View style={{ maxHeight: '78%', borderRadius: 24, padding: 18, backgroundColor: '#090711', borderWidth: 1.3, borderColor: '#A77A39' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 15, borderBottomWidth: 1, borderBottomColor: '#3A2A50', marginBottom: 16 }}>
+        <View>
+          <Text style={{ color: '#F6EEDB', fontSize: 20, fontWeight: '900', letterSpacing: 0.7 }}>TREASURY</Text>
+          <Text style={{ color: '#A99BB9', fontSize: 10, marginTop: 3, letterSpacing: 1 }}>YOUR TALKZY COINS & REWARDS</Text>
+        </View>
+        <TouchableOpacity onPress={() => setShowRoomShortcutsPage(false)} accessibilityRole="button" accessibilityLabel="Close Treasury" style={{ width: 38, height: 38, borderRadius: 13, backgroundColor: '#21182D', borderWidth: 1, borderColor: '#59456D', alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ color: '#F4E8D2', fontSize: 23, fontWeight: '700' }}>×</Text>
+        </TouchableOpacity>
       </View>
-      <TouchableOpacity onPress={() => setShowRoomShortcutsPage(false)} accessibilityRole="button" accessibilityLabel="Close shortcuts" style={{ width: 38, height: 38, borderRadius: 13, backgroundColor: '#21182D', borderWidth: 1, borderColor: '#59456D', alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ color: '#F4E8D2', fontSize: 23, fontWeight: '700' }}>×</Text>
-      </TouchableOpacity>
-    </View>
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 14, paddingVertical: 14, gap: 9, alignItems: 'center' }}>
-      {['Quick Access', 'Treasury', 'Games', 'Greedy', 'Hot Event'].map((category) => {
-        const active = roomShortcutCategory === category;
-        return <TouchableOpacity key={category} onPress={() => setRoomShortcutCategory(category)} style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 15, backgroundColor: active ? '#35204E' : '#17131F', borderWidth: 1, borderColor: active ? '#D7B35F' : '#393044' }}>
-          <Text style={{ color: active ? '#F4D98E' : '#B8AFC2', fontSize: 12, fontWeight: '900' }}>{category}</Text>
-        </TouchableOpacity>;
-      })}
-    </ScrollView>
-    <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}>
-      {roomShortcutCategory === 'Quick Access' && <>
-        <View style={{ paddingTop: 4, paddingBottom: 16 }}>
-          <Text style={{ color: '#E8C982', fontSize: 16, fontWeight: '900', letterSpacing: 1 }}>ROOM QUICK ACCESS</Text>
-          <Text style={{ color: '#B7A98F', fontSize: 10, marginTop: 4 }}>Premium shortcuts • Black marble and gold collection</Text>
-        </View>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 13 }}>
-          {[
-            { key: 'music', label: 'MUSIC', subtitle: 'Listen together' },
-            { key: 'youtube', label: 'YOUTUBE', subtitle: 'Watch together' },
-            { key: 'effects', label: 'EFFECTS', subtitle: 'Voice effects' },
-            { key: 'propStore', label: 'PROP STORE', subtitle: 'Room props' },
-            { key: 'dice', label: 'DICE', subtitle: 'Play dice games' },
-            { key: 'luckyNo', label: 'LUCKY NO', subtitle: 'Lucky 777' },
-            { key: 'luckyBag', label: 'LUCKY BAG', subtitle: 'Mystery rewards' },
-            { key: 'activity', label: 'ACTIVITY', subtitle: 'Room activities' },
-            { key: 'theme', label: 'THEME', subtitle: 'Customize your room' },
-          ].map((item) => (
-            <TouchableOpacity key={item.key} activeOpacity={0.82}
-              onPress={() => {
-                setShowRoomShortcutsPage(false);
-                if (item.key === 'music') {
-                  setShowMusicPanel(true);
-                } else if (item.key === 'youtube') {
-                  const canBrowseYoutube = selectedRoom?.owner_id === session?.user?.id || roomPresence.some(person => person.user_id === session?.user?.id && person.presence_role === 'admin');
-                  youtubePanelDismissedRef.current = false;
-                  setShowYoutubePanel(canBrowseYoutube || Boolean(youtubeState.video_id));
-                  if (canBrowseYoutube) {
-                    setYoutubeBrowseTab('Music');
-                    setYoutubeBrowseUrl('https://www.youtube.com/results?search_query=music');
-                    setYoutubePickedItem(null);
-                    setShowYoutubePicker(true);
-                  }
-                  loadYoutubeState(true);
-                } else if (item.key === 'dice' || item.key === 'luckyNo') {
-                  const gameTitle = item.key === 'dice' ? 'Dice' : 'Lucky Number';
-                  if (!isOnMic || myMicSeat == null) {
-                    Alert.alert('Sit on a mic first!', 'Please sit on a microphone before playing.');
-                  } else if (isRoomTourist && !touristsSendText) {
-                    Alert.alert('Game unavailable', 'The room owner does not allow tourists to send text messages.');
-                  } else {
-                    setMicGame({
-                      roomId: selectedRoom.id,
-                      seat: myMicSeat,
-                      kind: gameTitle,
-                      phase: 'spinning',
-                      value: gameTitle === 'Lucky Number' ? '000' : '1'
-                    });
-                  }
-                } else if (item.key === 'luckyBag') {
-                  setLuckyBagTab('Room');
-                  setLuckyBagCoins(500);
-                  setLuckyBagQuantity(1);
-                  setLuckyBagHistoryView(false);
-                  setShowLuckyBagPopup(true);
-                } else if (item.key === 'activity') {
-                  if (selectedRoom?.owner_id !== session?.user?.id) {
-                    Alert.alert('Activity', 'Only the original creator of this room can access Room Activity.');
-                    return;
-                  }
-                  setRoomDetails(selectedRoom);
-                  setRoomDetailsTab('Activity');
-                  setRoomDetailsVisible(true);
-                  loadRoomActivities(selectedRoom.id);
-                } else if (item.key === 'theme') {
-                  if (selectedRoom?.owner_id !== session?.user?.id) {
-                    Alert.alert('Room Themes', 'Only the original creator of this room can manage its theme.');
-                    return;
-                  }
-                  setRoomThemePage('catalog');
-                  setShowRoomThemeMenu(true);
-                } else if (item.key === 'effects') {
-                  Alert.alert('Voice Effects', 'Voice effects are not available in this build yet.');
-                } else if (item.key === 'propStore') {
-                  Alert.alert('Prop Store', 'The Prop Store is not available in this build yet.');
-                }
-              }}
-              style={{ width: '31.5%', minHeight: 126, borderRadius: 17, paddingVertical: 12, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center', backgroundColor: '#15110C', borderWidth: 1, borderColor: '#72582E', shadowColor: '#D5AD60', shadowOpacity: 0.13, shadowRadius: 7, elevation: 3 }}>
-              <View style={{ width: 66, height: 66, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: '#21190F', borderWidth: 1, borderColor: '#B58B45', marginBottom: 8 }}>
-                <RoomShortcutIcon type={item.key} size={54} />
-              </View>
-              <Text style={{ color: '#F1D69A', fontSize: 9, fontWeight: '900', letterSpacing: 0.55, textAlign: 'center' }}>{item.label}</Text>
-              <Text style={{ color: '#A99A80', fontSize: 8, marginTop: 3, textAlign: 'center' }}>{item.subtitle}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </>}
-      {roomShortcutCategory === 'Treasury' && <>
+      <ScrollView contentContainerStyle={{ paddingBottom: 8 }}>
         <View style={{ borderRadius: 22, padding: 18, backgroundColor: '#211331', borderWidth: 1, borderColor: '#A77A39', marginBottom: 16 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <View style={{ width: 76, height: 76, borderRadius: 20, backgroundColor: '#382052', borderWidth: 2, borderColor: '#E0BD70', alignItems: 'center', justifyContent: 'center', marginRight: 15, shadowColor: '#C49A45', shadowOpacity: 0.35, shadowRadius: 10, elevation: 8 }}>
@@ -4751,47 +4657,9 @@ function renderRoomInterior() {
             <Text style={{ fontSize: 31 }}>📜</Text><Text style={{ color: '#F0D28B', fontSize: 12, fontWeight: '900', marginTop: 8 }}>TREASURY HISTORY</Text><Text style={{ color: '#AFA0BE', fontSize: 9, marginTop: 4 }}>View reward records</Text>
           </TouchableOpacity>
         </View>
-      </>}
-      {roomShortcutCategory === 'Games' && <>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14 }}>
-          <View style={{ width: 76, height: 76, borderRadius: 21, backgroundColor: '#142D3B', borderWidth: 2, borderColor: '#65C8D5', alignItems: 'center', justifyContent: 'center', marginRight: 14, shadowColor: '#4AC4D6', shadowOpacity: 0.35, shadowRadius: 10, elevation: 8 }}>
-            <View style={{ position: 'absolute', top: 7, left: 7, right: 7, bottom: 7, borderRadius: 15, borderWidth: 1, borderColor: '#347D91' }} />
-            <Text style={{ fontSize: 39 }}>🎮</Text>
-          </View>
-          <View style={{ flex: 1 }}><Text style={{ color: '#8EE6F0', fontSize: 17, fontWeight: '900' }}>CRYSTAL CONTROLLER</Text><Text style={{ color: '#A9B8C4', fontSize: 11, marginTop: 4 }}>Choose a room game</Text></View>
-        </View>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 11 }}>
-          {['Ludo', 'Carrom', 'Quiz', 'Lucky Wheel', 'Fruit Game', 'Cards', 'Dice', 'More Games'].map((game, index) => <TouchableOpacity key={game} onPress={() => { setShowRoomShortcutsPage(false); setShowGreedyPanel(false); setShowRocketPanel(false); setShowRoomGamePanel(true); }} style={{ width: '47%', flexGrow: 1, minHeight: 94, borderRadius: 16, padding: 12, backgroundColor: '#111E2A', borderWidth: 1, borderColor: '#28596B', alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontSize: 27 }}>{['🎯','🔴','🧠','🎡','🍉','🃏','🎲','🕹️'][index]}</Text><Text style={{ color: '#D5F4F6', fontSize: 11, fontWeight: '900', marginTop: 7 }}>{game.toUpperCase()}</Text>
-          </TouchableOpacity>)}
-        </View>
-      </>}
-      {roomShortcutCategory === 'Greedy' && <>
-        <View style={{ alignItems: 'center', paddingVertical: 18, marginBottom: 14, borderRadius: 22, backgroundColor: '#211331', borderWidth: 1, borderColor: '#8056B1' }}>
-          <View style={{ width: 92, height: 92, borderRadius: 24, backgroundColor: '#42235F', borderWidth: 2, borderColor: '#D3AE6A', alignItems: 'center', justifyContent: 'center', shadowColor: '#9B69D6', shadowOpacity: 0.4, shadowRadius: 12, elevation: 9 }}>
-            <Text style={{ fontSize: 47 }}>🎰</Text>
-          </View>
-          <Text style={{ color: '#E4C5FF', fontSize: 17, fontWeight: '900', marginTop: 12 }}>JEWEL ARCADE</Text>
-          <Text style={{ color: '#B5A3C8', fontSize: 10, marginTop: 4 }}>Greedy • Premium game corner</Text>
-        </View>
-        <TouchableOpacity onPress={() => { setShowRoomShortcutsPage(false); setShowRoomGamePanel(false); setShowRocketPanel(false); setShowGreedyPanel(true); }} style={{ minHeight: 112, borderRadius: 18, backgroundColor: '#21172D', borderWidth: 1, borderColor: '#8056B1', alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontSize: 33 }}>💎</Text><Text style={{ color: '#E4C5FF', fontSize: 13, fontWeight: '900', marginTop: 8 }}>OPEN GREEDY</Text><Text style={{ color: '#B5A3C8', fontSize: 10, marginTop: 4 }}>Enter the Jewel Arcade</Text>
-        </TouchableOpacity>
-      </>}
-      {roomShortcutCategory === 'Hot Event' && <>
-        <View style={{ alignItems: 'center', paddingVertical: 18, marginBottom: 14, borderRadius: 22, backgroundColor: '#24152B', borderWidth: 1, borderColor: '#B78A48' }}>
-          <View style={{ width: 92, height: 92, borderRadius: 24, backgroundColor: '#492B36', borderWidth: 2, borderColor: '#E2C174', alignItems: 'center', justifyContent: 'center', shadowColor: '#D69B4D', shadowOpacity: 0.38, shadowRadius: 12, elevation: 9 }}>
-            <Text style={{ fontSize: 47 }}>🏆</Text>
-          </View>
-          <Text style={{ color: '#F1D38E', fontSize: 17, fontWeight: '900', marginTop: 12 }}>HOT EVENT</Text>
-          <Text style={{ color: '#C7AFAF', fontSize: 10, marginTop: 4 }}>Event icon artwork can be customized later</Text>
-        </View>
-        <TouchableOpacity onPress={() => { setShowRoomShortcutsPage(false); setActiveTab('Room'); setShowHotEventsPopup(true); if (!loadingOfficialEvents) loadOfficialEvents(); }} style={{ minHeight: 112, borderRadius: 18, backgroundColor: '#21172D', borderWidth: 1, borderColor: '#B78A48', alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontSize: 33 }}>🔥</Text><Text style={{ color: '#F1D38E', fontSize: 13, fontWeight: '900', marginTop: 8 }}>VIEW HOT EVENTS</Text><Text style={{ color: '#C7AFAF', fontSize: 10, marginTop: 4 }}>Discover current room events</Text>
-        </TouchableOpacity>
-      </>}
-    </ScrollView>
-  </SafeAreaView>
+      </ScrollView>
+    </View>
+  </View>
 </Modal>
 
       <Modal
