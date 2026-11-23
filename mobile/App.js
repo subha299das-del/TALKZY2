@@ -3959,7 +3959,12 @@ function renderRoomInterior() {
   contentContainerStyle={{ paddingHorizontal: 12, paddingTop: youtubeScreenVisible ? 4 : 8, paddingBottom: 2 }}
   showsVerticalScrollIndicator={false}
   nestedScrollEnabled
-  scrollEnabled={micCount < 14 || youtubeScreenVisible}
+  scrollEnabled={youtubeScreenVisible}
+  // Keep the microphone area stationary in 14/17-seat layouts. When the
+  // room's parent scroll view receives a vertical drag over the seats, claim
+  // that gesture here instead of allowing the entire seat block to drift.
+  onMoveShouldSetResponderCapture={() => micCount >= 14 && !youtubeScreenVisible}
+  onResponderTerminationRequest={() => false}
 >
   {(youtubeScreenVisible
     ? Array.from({ length: Math.ceil((MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().length / 8) }, (_, index) => (MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().slice(index * 8, (index + 1) * 8))
