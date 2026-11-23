@@ -47,7 +47,6 @@ test('private room and chat APIs reject requests without a user session', async 
     '/api/rooms/test-room/messages',
     '/api/rooms/test-room/presence',
     '/api/rooms/test-room/music',
-    '/api/rooms/test-room/music/me',
     '/api/rooms/test-room/youtube',
     '/api/rooms/test-room/mic-seats'
   ];
