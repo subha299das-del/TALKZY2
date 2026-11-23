@@ -4535,12 +4535,70 @@ function renderRoomInterior() {
         </TouchableOpacity>
       )}
 
-{/* ROOM SHORTCUT LAUNCHER + GIFT */}
-<View style={{ position: 'absolute', right: 10, bottom: Platform.OS === 'android' ? 92 : 70, zIndex: 55, elevation: 28, alignItems: 'center', gap: 10 }}>
-  <TouchableOpacity accessibilityRole="button" accessibilityLabel="Open room shortcuts" onPress={() => { setRoomShortcutCategory('Treasury'); setShowRoomShortcutsPage(true); }} style={{ width: 48, height: 48, borderRadius: 17, backgroundColor: '#24163D', borderWidth: 1.5, borderColor: '#D6B15E', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.38, shadowRadius: 7, shadowOffset: { width: 0, height: 3 }, elevation: 8 }}>
-    <Text style={{ fontSize: 23 }}>✧</Text><Text style={{ color: '#EBD18A', fontSize: 7, fontWeight: '900', letterSpacing: 0.8 }}>SHORTCUTS</Text>
+{/* RIGHT-SIDE ROOM NAVIGATION: Hot Events → Greedy → Game → Treasure → Gift */}
+<View style={{ position: 'absolute', right: 9, bottom: Platform.OS === 'android' ? 92 : 70, zIndex: 55, elevation: 28, alignItems: 'center', gap: 8 }}>
+  <TouchableOpacity
+    accessibilityRole="button"
+    accessibilityLabel="Open Hot Events"
+    onPress={() => {
+      setShowRoomGiftPanel(false); setShowRoomTools(false); setShowGreedyPanel(false);
+      setShowRoomGamePanel(false); setShowRocketPanel(false);
+      setShowHotEventsPopup(true);
+      if (!loadingOfficialEvents) loadOfficialEvents();
+    }}
+    style={{ width: 76, height: 38, borderRadius: 9, overflow: 'hidden', borderWidth: 1.3, borderColor: '#E8C56F', backgroundColor: '#341323', alignItems: 'center', justifyContent: 'center', shadowColor: '#D69B4D', shadowOpacity: 0.4, shadowRadius: 7, elevation: 7 }}
+  >
+    <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: '#6B1D35', opacity: 0.72 }} />
+    <Text style={{ color: '#FFE6A0', fontSize: 10, fontWeight: '900', letterSpacing: 0.4 }}>🔥 HOT</Text>
+    <Text style={{ color: '#FFFFFF', fontSize: 7, fontWeight: '900', letterSpacing: 1 }}>EVENTS</Text>
   </TouchableOpacity>
-  <TouchableOpacity onPress={() => { setShowRoomGiftPanel(value => !value); setShowRoomTools(false); setShowGreedyPanel(false); setShowRoomGamePanel(false); setShowRocketPanel(false); }} style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: C.card, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 20 }}>🎁</Text></TouchableOpacity>
+
+  <TouchableOpacity
+    accessibilityRole="button"
+    accessibilityLabel="Open Greedy"
+    onPress={() => {
+      setShowRoomGiftPanel(false); setShowRoomTools(false); setShowRoomGamePanel(false);
+      setShowRocketPanel(false); setShowHotEventsPopup(false); setShowGreedyPanel(true);
+    }}
+    style={{ width: 44, height: 44, borderRadius: 15, borderWidth: 1.4, borderColor: '#C59A55', backgroundColor: '#211331', alignItems: 'center', justifyContent: 'center', shadowColor: '#9B69D6', shadowOpacity: 0.35, shadowRadius: 7, elevation: 7 }}
+  >
+    <Text style={{ fontSize: 24 }}>🤑</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    accessibilityRole="button"
+    accessibilityLabel="Open room games"
+    onPress={() => {
+      setShowRoomGiftPanel(false); setShowRoomTools(false); setShowGreedyPanel(false);
+      setShowRocketPanel(false); setShowHotEventsPopup(false); setShowRoomGamePanel(true);
+    }}
+    style={{ width: 44, height: 44, borderRadius: 15, borderWidth: 1.4, borderColor: '#65C8D5', backgroundColor: '#142D3B', alignItems: 'center', justifyContent: 'center', shadowColor: '#4AC4D6', shadowOpacity: 0.32, shadowRadius: 7, elevation: 7 }}
+  >
+    <Text style={{ fontSize: 23 }}>🎮</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    accessibilityRole="button"
+    accessibilityLabel="Open Treasure"
+    onPress={() => {
+      setShowRoomGiftPanel(false); setShowRoomTools(false); setShowGreedyPanel(false);
+      setShowRoomGamePanel(false); setShowRocketPanel(false); setShowHotEventsPopup(false);
+      setRoomShortcutCategory('Treasury'); setShowRoomShortcutsPage(true);
+    }}
+    style={{ width: 46, height: 46, borderRadius: 16, borderWidth: 1.5, borderColor: '#E0BD70', backgroundColor: '#382052', alignItems: 'center', justifyContent: 'center', shadowColor: '#C49A45', shadowOpacity: 0.4, shadowRadius: 8, elevation: 8 }}
+  >
+    <View pointerEvents="none" style={{ position: 'absolute', top: 5, left: 5, right: 5, bottom: 5, borderRadius: 12, borderWidth: 1, borderColor: '#8D68B2' }} />
+    <Text style={{ fontSize: 24 }}>💎</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    accessibilityRole="button"
+    accessibilityLabel="Open gifts"
+    onPress={() => { setShowRoomTools(false); setShowGreedyPanel(false); setShowRoomGamePanel(false); setShowRocketPanel(false); setShowHotEventsPopup(false); setShowRoomGiftPanel(value => !value); }}
+    style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.card, borderWidth: 1, borderColor: '#D6B15E', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 6, elevation: 7 }}
+  >
+    <Text style={{ fontSize: 21 }}>🎁</Text>
+  </TouchableOpacity>
 </View>
 
 <Modal visible={showRoomShortcutsPage && screen === 'roomInterior' && Boolean(selectedRoom)} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setShowRoomShortcutsPage(false)}>
