@@ -4396,9 +4396,11 @@ function renderRoomInterior() {
                   ))}
                 </View>
                 {roomGiftCategory === 'Bag' ? (
+                  // Bag is reserved exclusively for gifts earned from verified events and milestones.
+                  // Gifts sent by other users must never be added to this inventory.
                   <View style={{ minHeight: 150, alignItems: 'center', justifyContent: 'center' }}>
                     <Text style={{ fontSize: 34, marginBottom: 7 }}>🎒</Text>
-                    <Text style={{ color: '#A7A7B0', fontSize: 11 }}>Your received gifts will appear here</Text>
+                    <Text style={{ color: '#A7A7B0', fontSize: 11 }}>Event and milestone rewards will appear here</Text>
                   </View>
                 ) : (
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
