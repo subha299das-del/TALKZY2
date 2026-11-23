@@ -960,7 +960,7 @@ app.post('/api/rooms/:roomId/close', ownerAuth, async (req, res) => {
       throw error;
     }
     const musicPaths = (Array.isArray(data?.music_paths) ? data.music_paths : [])
-      .filter(path => typeof path === 'string' && path.startsWith(roomId) === false && !path.includes('..'));
+      .filter(path => typeof path === 'string' && path.includes(`/${roomId}/`) && !path.includes('..'));
     if (musicPaths.length) {
       const { error: storageError } = await supabase.storage.from('talkzy-room-music').remove(musicPaths);
       if (storageError) console.error('Room closure music-file cleanup:', storageError.message);
