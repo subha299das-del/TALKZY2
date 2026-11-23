@@ -1638,6 +1638,7 @@ async function loadUserProfile(currentSession) {
       loadFollowedRooms(currentSession);
 
     } catch (error) {
+      if (profileLoadRef.current?.promise !== loadPromise || activeAuthUserIdRef.current !== userId) return;
       console.log('Profile loading error:', error.message);
 
       Alert.alert(
@@ -2324,8 +2325,10 @@ async function loadMyRooms(currentSession = session) {
     }
   } catch (error) {
     // Cached room cards remain visible if the backend is asleep/offline.
-    if (!hasCachedData) setRoomCreationEligibilityLoaded(false);
-    console.log('My rooms:', error.message);
+    if (isCurrentUserRequest()) {
+      if (!hasCachedData) setRoomCreationEligibilityLoaded(false);
+      console.log('My rooms:', error.message);
+    }
   }
 }
    // ADD THE NEW FUNCTION HERE
