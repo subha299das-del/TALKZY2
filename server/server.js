@@ -2187,7 +2187,11 @@ app.use((error, req, res, next) => {
   res.status(500).json({ error: 'An unexpected server error occurred.' });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`TALKZY owner backend listening on port ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`TALKZY owner backend listening on port ${PORT}`);
+  });
+}
+
+module.exports = app;
 
