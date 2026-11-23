@@ -4204,14 +4204,21 @@ function renderRoomInterior() {
                       }
                       setShowRoomTools(false);
                       if (tool.title === 'Clear Chat') {
+                        const clearRoomId = selectedRoom?.id;
+                        if (!clearRoomId) return;
                         Alert.alert('Clear Room Chat', 'Are you sure you want to clear all chat messages?', [
                           { text: 'Cancel', style: 'cancel' },
                           { text: 'Clear', style: 'destructive', onPress: async () => {
                             try {
-                              await api(`/api/rooms/${selectedRoom.id}/messages`, { method: 'DELETE' });
-                              setRoomChatMessages([]);
+                              await api(`/api/rooms/${clearRoomId}/messages`, { method: 'DELETE' });
+                              if (roomChatActiveRoomIdRef.current === clearRoomId) {
+                                setRoomChatMessages([]);
+                                await loadRoomMessages(clearRoomId);
+                              }
                             } catch (error) {
-                              Alert.alert('Clear Chat', error.message || 'Could not clear room chat.');
+                              if (roomChatActiveRoomIdRef.current === clearRoomId) {
+                                Alert.alert('Clear Chat', error.message || 'Could not clear room chat.');
+                              }
                             }
                           } }
                         ]);
