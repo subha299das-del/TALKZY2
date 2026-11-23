@@ -90,7 +90,14 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
   const playAt = async (index, restart = true) => {
     const item = queueRef.current[index];
     if (!item?.url) return;
+    const requestRoomId = roomId;
+    const requestGeneration = refreshGenerationRef.current;
+    const isCurrentRequest = () =>
+      activeRoomIdRef.current === requestRoomId &&
+      refreshGenerationRef.current === requestGeneration;
     try {
+      await setAudioModeAsync({ playsInSilentMode: true, interruptionMode: 'mixWithOthers', shouldPlayInBackground: true });
+      if (!isCurrentRequest()) return;
       const player = playerRef.current || createAudioPlayer(null, { updateInterval: 500 });
       if (!playerRef.current) {
         playerRef.current = player;
@@ -98,14 +105,17 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
           if (status?.didJustFinish) endHandlerRef.current?.();
         });
       }
-      await setAudioModeAsync({ playsInSilentMode: true, interruptionMode: 'mixWithOthers', shouldPlayInBackground: true });
       if (localPathRef.current !== item.object_path) {
         player.replace(item.url);
         localPathRef.current = item.object_path;
       }
-      if (restart) await player.seekTo(0);
+      if (restart) {
+        await player.seekTo(0);
+        if (!isCurrentRequest()) return;
+      }
       player.volume = volumeRef.current;
       player.play();
+      if (!isCurrentRequest()) { player.pause(); return; }
       indexRef.current = index;
       playingRef.current = true;
       setCurrentIndex(index);
@@ -113,7 +123,7 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
       setCurrentTime(restart ? 0 : Number(player.currentTime || 0));
       await saveState({ current_index: index, is_playing: true, current_time_seconds: restart ? 0 : Number(player.currentTime || 0) });
     } catch (error) {
-      Alert.alert('Music player', error.message || 'Could not start this song.');
+      if (isCurrentRequest()) Alert.alert('Music player', error.message || 'Could not start this song.');
     }
   };
 
@@ -242,12 +252,17 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
   const chooseFiles = () => openMyMusic();
 
   const stopMyStream = async () => {
+    const requestRoomId = roomId;
+    const requestGeneration = refreshGenerationRef.current;
     try {
-      await api(`/api/rooms/${roomId}/music/me`, { method: 'DELETE' });
+      await api(`/api/rooms/${requestRoomId}/music/me`, { method: 'DELETE' });
     } catch (error) {
-      Alert.alert('Music', error.message || 'Could not stop your stream.');
+      if (activeRoomIdRef.current === requestRoomId && refreshGenerationRef.current === requestGeneration) {
+        Alert.alert('Music', error.message || 'Could not stop your stream.');
+      }
       return;
     }
+    if (activeRoomIdRef.current !== requestRoomId || refreshGenerationRef.current !== requestGeneration) return;
     playerRef.current?.pause();
     playerRef.current?.remove();
     playerRef.current = null;
@@ -258,6 +273,12 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
     setQueue([]);
     setCurrentIndex(0);
     setPlaying(false);
+    setRepeatMode('off');
+    repeatRef.current = 'off';
+    setShuffle(false);
+    shuffleRef.current = false;
+    setVolume(0.8);
+    volumeRef.current = 0.8;
     setCurrentTime(0);
     setDuration(0);
   };
@@ -320,6 +341,12 @@ export default function RoomMusicPanel({ visible, roomId, userId, api, supabase,
         setQueue([]);
         setCurrentIndex(0);
         setPlaying(false);
+        setRepeatMode('off');
+        repeatRef.current = 'off';
+        setShuffle(false);
+        shuffleRef.current = false;
+        setVolume(0.8);
+        volumeRef.current = 0.8;
         setCurrentTime(0);
         setDuration(0);
       }
