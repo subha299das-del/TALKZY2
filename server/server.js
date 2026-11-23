@@ -1190,36 +1190,32 @@ async function buildRoomMusicState(roomId, userId) {
   const streams = [];
   for (const row of activeRows) {
     const queue = Array.isArray(row.queue) ? row.queue : [];
-    const requestedIndex = Number(row.current_index) || 0;
-    const safeQueue = queue.map(item => ({
-      title: String(item?.title || 'Untitled song').slice(0, 120),
-      object_path: typeof item?.object_path === 'string' ? item.object_path : '',
-      url: null
-    }));
-    const currentItem = safeQueue[requestedIndex];
-    const currentPath = currentItem?.object_path || '';
-    const validCurrentPath = Boolean(
-      currentItem &&
-      currentPath.startsWith(`${row.user_id}/${roomId}/`) &&
-      !currentPath.includes('..') &&
-      currentPath.length <= 500
-    );
-    let hasCurrentTrack = false;
-    if (validCurrentPath) {
+    const originalCurrentPath = queue[Number(row.current_index) || 0]?.object_path || null;
+    const signedQueue = [];
+    for (const item of queue) {
+      const objectPath = typeof item?.object_path === 'string' ? item.object_path : '';
+      if (!objectPath.startsWith(`${row.user_id}/${roomId}/`) ||
+          objectPath.includes('..') || objectPath.length > 500) continue;
       try {
-        currentItem.url = await getRoomMusicSignedUrl(currentPath);
-        hasCurrentTrack = true;
+        const signedUrl = await getRoomMusicSignedUrl(objectPath);
+        signedQueue.push({
+          title: String(item.title || 'Untitled song').slice(0, 120),
+          object_path: objectPath,
+          url: signedUrl
+        });
       } catch (signError) {
-        console.error('Could not sign current room music object:', signError.message || currentPath);
+        console.error('Skipping unavailable room music object:', signError.message || objectPath);
       }
     }
+    const currentIndex = signedQueue.findIndex(item => item.object_path === originalCurrentPath);
+    const hasCurrentTrack = currentIndex >= 0;
     streams.push({
       user_id: row.user_id,
       display_name: profileMap.get(row.user_id)?.display_name || 'TALKZY User',
       avatar_url: profileMap.get(row.user_id)?.avatar_url || null,
-      queue: safeQueue,
-      current_index: hasCurrentTrack ? requestedIndex : 0,
-      is_playing: Boolean(row.is_playing && hasCurrentTrack),
+      queue: signedQueue,
+      current_index: hasCurrentTrack ? currentIndex : 0,
+      is_playing: Boolean(row.is_playing && hasCurrentTrack && signedQueue.length > 0),
       current_time_seconds: hasCurrentTrack ? row.current_time_seconds : 0,
       repeat_mode: row.repeat_mode || 'off',
       shuffle: Boolean(row.shuffle),
