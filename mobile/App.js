@@ -742,15 +742,19 @@ async function loadRoomMicSeats(roomId) {
 }
 
 async function loadRoomPresence(roomId, showLoader = false) {
-  if (!roomId) return;
+  const requestUserId = activeAuthUserIdRef.current;
+  if (!roomId || selectedRoomIdRef.current !== roomId || !requestUserId) return;
+  const isCurrentRequest = () =>
+    selectedRoomIdRef.current === roomId &&
+    activeAuthUserIdRef.current === requestUserId;
   if (showLoader) setRoomPresenceLoading(true);
   try {
     const result = await api(`/api/rooms/${roomId}/presence`);
-    if (selectedRoom?.id === roomId) setRoomPresence(Array.isArray(result.users) ? result.users : []);
+    if (isCurrentRequest()) setRoomPresence(Array.isArray(result.users) ? result.users : []);
   } catch (error) {
-    console.log('Room presence loading error:', error.message);
+    if (isCurrentRequest()) console.log('Room presence loading error:', error.message);
   } finally {
-    if (showLoader) setRoomPresenceLoading(false);
+    if (showLoader && isCurrentRequest()) setRoomPresenceLoading(false);
   }
 }
 
