@@ -1138,10 +1138,11 @@ const [claimingLuckyBagId, setClaimingLuckyBagId] = useState(null);
 const luckyBagPulse = useRef(new Animated.Value(1)).current;
 useEffect(() => { const pulse = Animated.loop(Animated.sequence([Animated.timing(luckyBagPulse, { toValue: 1.06, duration: 850, useNativeDriver: true }), Animated.timing(luckyBagPulse, { toValue: 1, duration: 850, useNativeDriver: true })])); pulse.start(); return () => pulse.stop(); }, [luckyBagPulse]);
 async function loadLuckyBagHistory() {
-  if (!session?.user?.id) return;
+  const uid = session?.user?.id;
+  if (!uid) return;
+  const isCurrentUserRequest = () => activeAuthUserIdRef.current === uid;
   setLuckyBagHistoryLoading(true);
   try {
-    const uid=session.user.id;
     const [{data:ledger,error:ledgerError},{data:sent,error:sentError},{data:claims,error:claimsError}] = await Promise.all([
       supabase.from('talkzy_coin_ledger').select('id,amount,balance_after,event_type,reference_id,note,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(100),
       supabase.from('talkzy_lucky_bags').select('id,sender_id,room_id,scope,total_coins,remaining_coins,remaining_bags,status,created_at,expires_at').eq('sender_id',uid).order('created_at',{ascending:false}).limit(50),
@@ -1150,12 +1151,14 @@ async function loadLuckyBagHistory() {
     if(ledgerError) throw ledgerError;
     if(sentError) throw sentError;
     if(claimsError) throw claimsError;
+    if (!isCurrentUserRequest()) return;
     const sentBagIds=(sent||[]).map(x=>x.id);
     let sentClaims=[];
     if(sentBagIds.length) {
       const {data,error}=await supabase.from('talkzy_lucky_bag_claims').select('bag_id,claimer_id,reward_coins,claimed_at').in('bag_id',sentBagIds).order('claimed_at',{ascending:false});
       if(error) throw error;
       sentClaims=data||[];
+      if (!isCurrentUserRequest()) return;
     }
     const bagIds=[...new Set([...(sent||[]).map(x=>x.id),...(claims||[]).map(x=>x.bag_id)])];
     let bagDetails=[];
@@ -1163,6 +1166,7 @@ async function loadLuckyBagHistory() {
       const {data,error}=await supabase.from('talkzy_lucky_bags').select('id,sender_id,room_id,scope,total_coins,status,created_at').in('id',bagIds);
       if(error) throw error;
       bagDetails=data||[];
+      if (!isCurrentUserRequest()) return;
     }
     const profileIds=[...new Set([...bagDetails.map(x=>x.sender_id),...sentClaims.map(x=>x.claimer_id)])];
     let names={};
@@ -1170,6 +1174,7 @@ async function loadLuckyBagHistory() {
       const {data,error}=await supabase.from('talkzy_profiles').select('id,display_name').in('id',profileIds);
       if(error) throw error;
       names=Object.fromEntries((data||[]).map(p=>[p.id,p.display_name||'TALKZY User']));
+      if (!isCurrentUserRequest()) return;
     }
     const recipientNamesByBag={};
     sentClaims.forEach(claim => {
@@ -1178,13 +1183,14 @@ async function loadLuckyBagHistory() {
     const bagMap=Object.fromEntries(bagDetails.map(b=>[b.id,{...b,recipientNames:recipientNamesByBag[b.id]||[]} ]));
     const events=[
       ...(ledger||[]).map(x=>({key:'ledger-'+x.id,type:x.event_type,amount:x.amount,created_at:x.created_at,note:x.note,reference_id:x.reference_id,balance_after:x.balance_after,bag:bagMap[x.reference_id],senderName:names[bagMap[x.reference_id]?.sender_id]||'TALKZY User'})),
-      
     ];
     events.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
-    setLuckyBagHistoryItems(events.slice(0,100));
+    if (isCurrentUserRequest()) setLuckyBagHistoryItems(events.slice(0,100));
   } catch(error) {
-    Alert.alert('History unavailable',error?.message||'Please try again.');
-  } finally { setLuckyBagHistoryLoading(false); }
+    if (isCurrentUserRequest()) Alert.alert('History unavailable',error?.message||'Please try again.');
+  } finally {
+    if (isCurrentUserRequest()) setLuckyBagHistoryLoading(false);
+  }
 }
 
 async function refreshActiveLuckyBags() {
@@ -1221,10 +1227,14 @@ async function refreshActiveLuckyBags() {
 async function claimLuckyBag(bag) {
   if (!bag?.id || claimingLuckyBagId) return;
   if (bag.alreadyClaimed) return Alert.alert('Lucky Bag', 'You already opened this bag.');
+  const requestUserId = activeAuthUserIdRef.current;
+  if (!requestUserId) return;
+  const isCurrentUserRequest = () => activeAuthUserIdRef.current === requestUserId;
   setClaimingLuckyBagId(bag.id);
   try {
     const {data,error}=await supabase.rpc('talkzy_lucky_bag_claim',{p_bag_id:bag.id});
     if(error) throw error;
+    if (!isCurrentUserRequest()) return;
     if(data?.expired) {
       Alert.alert('Lucky Bag expired','Unclaimed coins are being refunded to the sender.');
     } else {
@@ -1233,10 +1243,12 @@ async function claimLuckyBag(bag) {
     }
     await refreshActiveLuckyBags();
   } catch(error) {
-    Alert.alert('Could not open Lucky Bag',error?.message || 'Please try again.');
-    await refreshActiveLuckyBags();
+    if (isCurrentUserRequest()) {
+      Alert.alert('Could not open Lucky Bag',error?.message || 'Please try again.');
+      await refreshActiveLuckyBags();
+    }
   } finally {
-    setClaimingLuckyBagId(null);
+    if (isCurrentUserRequest()) setClaimingLuckyBagId(null);
   }
 }
 
@@ -1276,18 +1288,23 @@ async function sendLuckyBag() {
   }
   const total = amount * quantity;
   if (total > walletBalance) return Alert.alert('Insufficient coins', 'Your balance is ' + walletBalance.toLocaleString() + ' coins. You need ' + total.toLocaleString() + ' coins.');
+  const requestUserId = session.user.id;
+  const requestRoom = selectedRoom;
+  const requestScope = luckyBagTab.toLowerCase();
+  const isCurrentUserRequest = () => activeAuthUserIdRef.current === requestUserId;
   setLuckyBagSending(true);
   try {
     const { data, error } = await supabase.rpc('talkzy_lucky_bag_send', {
-      p_room_id: selectedRoom.id,
-      p_scope: luckyBagTab.toLowerCase(),
+      p_room_id: requestRoom.id,
+      p_scope: requestScope,
       p_coin_amount_per_bag: amount,
       p_bag_count: quantity
     });
     if (error) throw error;
+    if (!isCurrentUserRequest()) return;
     setWalletBalance(Number(data?.balance ?? walletBalance - total));
     setShowLuckyBagPopup(false);
-    if (luckyBagTab === 'World') {
+    if (requestScope === 'world') {
       const tickerChannel = supabase.channel('talkzy-world-lucky-bag-notifications');
       tickerChannel.subscribe(status => {
         if (status === 'SUBSCRIBED') {
@@ -1295,20 +1312,22 @@ async function sendLuckyBag() {
             id: data?.bag_id,
             senderName: profile?.display_name || 'TALKZY User',
             coinAmount: total,
-            roomNumber: selectedRoom.room_talkzy_id || selectedRoom.room_name || 'Room',
-            roomId: selectedRoom.id,
-            room: selectedRoom
+            roomNumber: requestRoom.room_talkzy_id || requestRoom.room_name || 'Room',
+            roomId: requestRoom.id,
+            room: requestRoom
           }}).finally(() => supabase.removeChannel(tickerChannel));
         }
       });
     }
     Alert.alert('Lucky Bag sent! 🎉', total.toLocaleString() + ' coins deducted. Unclaimed coins will be refunded after 3 minutes.');
   } catch (error) {
-    Alert.alert('Could not send Lucky Bag', error?.message || 'Please try again.');
-    const { data } = await supabase.from('talkzy_wallets').select('balance').eq('user_id', session.user.id).maybeSingle();
-    if (data) setWalletBalance(Number(data.balance || 0));
+    if (isCurrentUserRequest()) {
+      Alert.alert('Could not send Lucky Bag', error?.message || 'Please try again.');
+      const { data } = await supabase.from('talkzy_wallets').select('balance').eq('user_id', requestUserId).maybeSingle();
+      if (isCurrentUserRequest() && data) setWalletBalance(Number(data.balance || 0));
+    }
   } finally {
-    setLuckyBagSending(false);
+    if (isCurrentUserRequest()) setLuckyBagSending(false);
   }
 }
 
@@ -1422,6 +1441,9 @@ const [isRoomTourist, setIsRoomTourist] = useState(false);
     setActiveLuckyBags([]);
     setWalletBalance(0);
     setLuckyBagHistoryItems([]);
+    setLuckyBagHistoryLoading(false);
+    setLuckyBagSending(false);
+    setClaimingLuckyBagId(null);
     setWorldLuckyBagNotification(null);
     setWorldLuckyBagQueue([]);
     setScreen('login');
