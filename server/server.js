@@ -2182,8 +2182,17 @@ app.patch('/api/rooms/:roomId/mic-seats/mute', userAuth, async (req, res) => {
       
 // Handle unexpected errors.
 app.use((error, req, res, next) => {
-  console.error('Unexpected server error:', error.message);
   if (res.headersSent) return next(error);
+
+  // Treat malformed client JSON as a request error, not an internal server failure.
+  if (error instanceof SyntaxError && error.status === 400 && Object.prototype.hasOwnProperty.call(error, 'body')) {
+    return res.status(400).json({ error: 'Request body must contain valid JSON.' });
+  }
+  if (error?.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'Request body is too large.' });
+  }
+
+  console.error('Unexpected server error:', error.message);
   res.status(500).json({ error: 'An unexpected server error occurred.' });
 });
 
