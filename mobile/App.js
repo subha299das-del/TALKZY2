@@ -3511,6 +3511,15 @@ function renderRoomInterior() {
   }
 
   const roomIsLocked = selectedRoom.room_type === 'locked';
+  // Reserve a fixed vertical footprint for the microphone seats. The chat feed
+  // below absorbs the remaining room height, so 14/17-mic rows never drift.
+  const configuredMicRows = (MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows;
+  const visibleMicRows = youtubeScreenVisible
+    ? Array.from({ length: Math.ceil(configuredMicRows.flat().length / 8) }, (_, index) => configuredMicRows.flat().slice(index * 8, (index + 1) * 8)).filter(row => row.length > 0)
+    : configuredMicRows.filter(row => row.length > 0);
+  const micSeatRowHeight = youtubeScreenVisible ? 38 : (micCount >= 17 ? 72 : micCount >= 14 ? 78 : 94);
+  const micSeatRowGap = youtubeScreenVisible ? 3 : (micCount >= 14 ? 4 : 7);
+  const micSeatAreaHeight = 6 + visibleMicRows.length * (micSeatRowHeight + micSeatRowGap);
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, minHeight: 0 }}>
@@ -3904,19 +3913,16 @@ function renderRoomInterior() {
 
            {/* MICROPHONE SEATS */}
 <View
-  style={{ flexShrink: 0, paddingHorizontal: 12, paddingTop: youtubeScreenVisible ? 3 : 4, paddingBottom: 2 }}
+  style={{ height: micSeatAreaHeight, flexGrow: 0, flexShrink: 0, alignSelf: 'stretch', paddingHorizontal: 12, paddingTop: youtubeScreenVisible ? 3 : 4, paddingBottom: 2 }}
 >
-  {(youtubeScreenVisible
-    ? Array.from({ length: Math.ceil((MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().length / 8) }, (_, index) => (MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.flat().slice(index * 8, (index + 1) * 8))
-    : (MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows
-  ).filter(rowSeats => rowSeats.length > 0).map((rowSeats, rowIndex) => {
-    const layoutRows = (MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows;
+  {visibleMicRows.map((rowSeats, rowIndex) => {
+    const layoutRows = configuredMicRows;
     const maxSeatsPerRow = Math.max(...layoutRows.map(row => row.length));
     const isTopCoupleRow = !youtubeScreenVisible && rowIndex === 0 && rowSeats.length === 2;
     // Give each couple seat the same column width as a regular seat below.
     const couplePairWidth = `${200 / maxSeatsPerRow}%`;
     return (
-    <View key={rowIndex} style={{ width: isTopCoupleRow ? couplePairWidth : '100%', alignSelf: 'center', flexDirection: 'row', justifyContent: 'center', alignItems: 'stretch', backgroundColor: isTopCoupleRow ? 'transparent' : youtubeScreenVisible ? '#360D14' : 'transparent', borderWidth: isTopCoupleRow ? 0 : youtubeScreenVisible ? 1.5 : 0, borderColor: '#B88743', borderRadius: youtubeScreenVisible ? 10 : 0, paddingHorizontal: youtubeScreenVisible && !isTopCoupleRow ? 2 : 0, paddingTop: youtubeScreenVisible && !isTopCoupleRow ? 2 : 0, paddingBottom: youtubeScreenVisible && !isTopCoupleRow ? 2 : 0, marginBottom: youtubeScreenVisible ? 3 : (micCount >= 14 ? 4 : 7), shadowColor: youtubeScreenVisible && !isTopCoupleRow ? '#D5A64E' : 'transparent', shadowOpacity: youtubeScreenVisible && !isTopCoupleRow ? 0.22 : 0, shadowRadius: youtubeScreenVisible && !isTopCoupleRow ? 7 : 0, elevation: youtubeScreenVisible && !isTopCoupleRow ? 4 : 0 }}>
+    <View key={rowIndex} style={{ width: isTopCoupleRow ? couplePairWidth : '100%', flexShrink: 0, alignSelf: 'center', flexDirection: 'row', justifyContent: 'center', alignItems: 'stretch', backgroundColor: isTopCoupleRow ? 'transparent' : youtubeScreenVisible ? '#360D14' : 'transparent', borderWidth: isTopCoupleRow ? 0 : youtubeScreenVisible ? 1.5 : 0, borderColor: '#B88743', borderRadius: youtubeScreenVisible ? 10 : 0, paddingHorizontal: youtubeScreenVisible && !isTopCoupleRow ? 2 : 0, paddingTop: youtubeScreenVisible && !isTopCoupleRow ? 2 : 0, paddingBottom: youtubeScreenVisible && !isTopCoupleRow ? 2 : 0, marginBottom: micSeatRowGap, shadowColor: youtubeScreenVisible && !isTopCoupleRow ? '#D5A64E' : 'transparent', shadowOpacity: youtubeScreenVisible && !isTopCoupleRow ? 0.22 : 0, shadowRadius: youtubeScreenVisible && !isTopCoupleRow ? 7 : 0, elevation: youtubeScreenVisible && !isTopCoupleRow ? 4 : 0 }}>
       {rowSeats.map((seat) => {
 
     const occupiedSeat = micSeats.find(
@@ -4019,7 +4025,8 @@ function renderRoomInterior() {
         style={{
           opacity: (isRoomTourist && !touristsOnMic) || (seatIsClosed && !canControlMics) ? 0.4 : 1,
           width: isTopCoupleRow ? '50%' : `${100 / Math.max(...(MIC_LAYOUTS[micLayout] || MIC_LAYOUTS.eight).rows.map(row => row.length))}%`,
-          height: youtubeScreenVisible ? 38 : (micCount >= 17 ? 72 : micCount >= 14 ? 78 : 94),
+          height: micSeatRowHeight,
+          flexShrink: 0,
           alignItems: 'center',
           justifyContent: 'flex-start',
           marginBottom: 0,
