@@ -3881,6 +3881,33 @@ function renderRoomInterior() {
     </View>
     );
   })}
+  {musicMinimized && screen === 'roomInterior' && selectedRoom && !showRoomTools && !showRoomGiftPanel && !showRoomThemeMenu && !showYoutubePanel && (
+    <View style={{ width: '100%', alignItems: 'flex-end', paddingRight: 2, paddingTop: 2, paddingBottom: 4 }}>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel="Restore minimized music"
+        onPress={() => { setMusicMinimized(false); setShowMusicPanel(true); }}
+        style={{
+          width: 48,
+          height: 48,
+          borderRadius: 17,
+          backgroundColor: C.accent,
+          borderWidth: 2,
+          borderColor: '#B9A5FF',
+          alignItems: 'center',
+          justifyContent: 'center',
+          shadowColor: '#000',
+          shadowOpacity: 0.3,
+          shadowRadius: 7,
+          shadowOffset: { width: 0, height: 3 },
+          elevation: 8
+        }}
+      >
+        <Text style={{ color: '#FFFFFF', fontSize: 22, fontWeight: '900', lineHeight: 24 }}>♫</Text>
+        <Text style={{ color: '#FFFFFF', fontSize: 7, fontWeight: '900', letterSpacing: 0.7 }}>MUSIC</Text>
+      </TouchableOpacity>
+    </View>
+  )}
 </View>
 
 {/* CHAT AREA — anchored immediately below the final microphone row. */}
@@ -4555,33 +4582,7 @@ function renderRoomInterior() {
         </Modal>
       )}
 
-      {musicMinimized && screen === 'roomInterior' && selectedRoom && !showRoomTools && !showRoomGiftPanel && !showRoomThemeMenu && !showYoutubePanel && (
-        <TouchableOpacity
-          onPress={() => { setMusicMinimized(false); setShowMusicPanel(true); }}
-          style={{
-            position: 'absolute',
-            right: 12,
-            bottom: Platform.OS === 'android' ? 94 : 70,
-            width: 54,
-            height: 54,
-            borderRadius: 27,
-            backgroundColor: C.accent,
-            borderWidth: 2,
-            borderColor: '#B9A5FF',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 38,
-            elevation: 22,
-            shadowColor: '#000',
-            shadowOpacity: 0.3,
-            shadowRadius: 7,
-            shadowOffset: { width: 0, height: 3 }
-          }}
-        >
-          <Text style={{ color: '#FFFFFF', fontSize: 24, fontWeight: '900', lineHeight: 27 }}>♫</Text>
-          <Text style={{ color: '#FFFFFF', fontSize: 7, fontWeight: '900', letterSpacing: 0.7 }}>MUSIC</Text>
-        </TouchableOpacity>
-      )}
+      {/* Minimized music is rendered in the mic section, directly below its final right-side seat. */}
 
 {/* RIGHT-SIDE ROOM NAVIGATION: stays behind all room popups */}
 <View style={{ position: 'absolute', right: 9, bottom: Platform.OS === 'android' ? 92 : 70, zIndex: 20, elevation: 8, alignItems: 'center', gap: 8, flexDirection: 'column' }}>
