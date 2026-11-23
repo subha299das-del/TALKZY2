@@ -4575,43 +4575,76 @@ function renderRoomInterior() {
           position: 'absolute',
           left: 12,
           right: 12,
-          bottom: 86,
-          backgroundColor: 'rgba(17, 15, 34, 0.98)',
-          borderRadius: 18,
-          padding: 16,
-          borderWidth: 1,
-          borderColor: '#B56B45',
-          zIndex: 45,
-          elevation: 27
+          top: 58,
+          bottom: 82,
+          backgroundColor: '#100D1B',
+          borderRadius: 22,
+          padding: 15,
+          borderWidth: 1.4,
+          borderColor: '#A77A39',
+          zIndex: 46,
+          elevation: 28
         }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={{ fontSize: 21, marginRight: 8 }}>🚀</Text>
-              <Text style={{ color: C.text, fontSize: 16, fontWeight: '900' }}>Rocket</Text>
+            <View>
+              <Text style={{ color: '#F5E6C5', fontSize: 18, fontWeight: '900', letterSpacing: 1 }}>TALKZY TREASURE</Text>
+              <Text style={{ color: '#B9A8CF', fontSize: 10, marginTop: 3 }}>ROOM-WIDE ROCKET MILESTONES</Text>
             </View>
-            <TouchableOpacity onPress={() => setShowRocketPanel(false)} style={{ paddingHorizontal: 7, paddingVertical: 3 }}>
-              <Text style={{ color: C.muted, fontSize: 20 }}>✕</Text>
+            <TouchableOpacity onPress={() => setShowRocketPanel(false)} accessibilityRole="button" accessibilityLabel="Close Treasure" style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: '#241A32', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: '#F4E8D2', fontSize: 23, fontWeight: '700' }}>×</Text>
             </TouchableOpacity>
           </View>
-          <View style={{
-            minHeight: 126,
-            borderRadius: 14,
-            borderWidth: 1,
-            borderColor: '#754B43',
-            backgroundColor: 'rgba(181, 107, 69, 0.12)',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 18
-          }}>
-            <Text style={{ fontSize: 35, marginBottom: 9 }}>🚀</Text>
-            <Text style={{ color: C.text, fontSize: 14, fontWeight: '800', textAlign: 'center' }}>Rocket section is ready</Text>
-            <Text style={{ color: C.muted, fontSize: 11, textAlign: 'center', marginTop: 7, lineHeight: 17 }}>
-              Rocket features and interactions will be added after their details are finalized.
-            </Text>
+
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+            {[
+              { level: 1, color: '#65D58A', name: 'GREEN' },
+              { level: 2, color: '#B78BFF', name: 'PURPLE' },
+              { level: 3, color: '#F06B70', name: 'RED' },
+              { level: 4, color: '#69B9F0', name: 'BLUE' },
+              { level: 5, color: '#E7C16C', name: 'GOLD' }
+            ].map(item => (
+              <View key={item.level} style={{ flex: 1, alignItems: 'center', paddingVertical: 8, marginHorizontal: 2, borderRadius: 10, backgroundColor: item.level === 1 ? 'rgba(101,213,138,0.16)' : '#1B1725', borderWidth: 1, borderColor: item.level === 1 ? item.color : '#393044' }}>
+                <Text style={{ color: item.color, fontSize: 12, fontWeight: '900' }}>LV.{item.level}</Text>
+                <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: item.color, marginTop: 5 }} />
+              </View>
+            ))}
           </View>
-          <Text style={{ color: '#E6A17B', fontSize: 10, textAlign: 'center', marginTop: 10 }}>
-            Rocket · Features not active yet
-          </Text>
+
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8 }}>
+            <View style={{ minHeight: 205, borderRadius: 18, backgroundColor: '#171326', borderWidth: 1, borderColor: '#51406A', alignItems: 'center', justifyContent: 'center', padding: 14, overflow: 'hidden' }}>
+              <View style={{ position: 'absolute', width: 150, height: 150, borderRadius: 75, backgroundColor: 'rgba(101,213,138,0.09)' }} />
+              <Text style={{ color: '#65D58A', fontSize: 11, fontWeight: '900', letterSpacing: 2 }}>CURRENT ROCKET · LEVEL 1</Text>
+              <Text style={{ fontSize: 82, marginTop: 4, textShadowColor: '#65D58A', textShadowRadius: 18 }}>🚀</Text>
+              <Text style={{ color: '#E9F8EC', fontSize: 15, fontWeight: '900', marginTop: 3 }}>EMERALD IGNITION</Text>
+              <Text style={{ color: '#B7AFC6', fontSize: 10, marginTop: 5, textAlign: 'center' }}>The room's first rocket milestone</Text>
+            </View>
+
+            <View style={{ marginTop: 12, borderRadius: 14, padding: 13, backgroundColor: '#1B1725', borderWidth: 1, borderColor: '#393044' }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={{ color: '#F0DDAF', fontSize: 12, fontWeight: '900' }}>ROOM GIFT PROGRESS</Text>
+                <Text style={{ color: '#AFA3C0', fontSize: 10 }}>LEVEL 1</Text>
+              </View>
+              <View style={{ height: 9, borderRadius: 5, backgroundColor: '#332B40', marginTop: 10, overflow: 'hidden' }}>
+                <View style={{ width: '0%', height: 9, borderRadius: 5, backgroundColor: '#65D58A' }} />
+              </View>
+              <Text style={{ color: '#B9AFC8', fontSize: 10, marginTop: 8, lineHeight: 15 }}>Progress and the Gold target will appear here when the room Treasure rules are connected.</Text>
+            </View>
+
+            <View style={{ marginTop: 12, borderRadius: 14, padding: 13, backgroundColor: '#1B1725', borderWidth: 1, borderColor: '#393044' }}>
+              <Text style={{ color: '#F0DDAF', fontSize: 12, fontWeight: '900', marginBottom: 9 }}>ROCKET REWARDS</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <View style={{ flex: 1, marginRight: 6, padding: 10, borderRadius: 10, backgroundColor: '#2A2034' }}>
+                  <Text style={{ color: '#E8C77C', fontSize: 11, fontWeight: '900' }}>TOP 3 SENDERS</Text>
+                  <Text style={{ color: '#B9AFC8', fontSize: 9, marginTop: 4 }}>Highest contribution rewards</Text>
+                </View>
+                <View style={{ flex: 1, marginLeft: 6, padding: 10, borderRadius: 10, backgroundColor: '#2A2034' }}>
+                  <Text style={{ color: '#E8C77C', fontSize: 11, fontWeight: '900' }}>40 REWARD PLACES</Text>
+                  <Text style={{ color: '#B9AFC8', fontSize: 9, marginTop: 4 }}>Additional eligible participants</Text>
+                </View>
+              </View>
+              <Text style={{ color: '#8F849F', fontSize: 9, marginTop: 8, lineHeight: 14 }}>Reward amounts, eligibility and whether the top 3 are included in the 40 remain to be configured.</Text>
+            </View>
+          </ScrollView>
         </View>
       )}
 
@@ -5064,7 +5097,7 @@ function renderRoomInterior() {
     onPress={() => {
       setShowRoomGiftPanel(false); setShowRoomTools(false); setShowGreedyPanel(false);
       setShowRoomGamePanel(false); setShowRocketPanel(false); setShowHotEventsPopup(false);
-      setRoomShortcutCategory('Treasury'); setShowRoomShortcutsPage(true);
+      setShowRocketPanel(true);
     }}
     style={{ width: 50, height: 50, borderRadius: 17, borderWidth: 1.7, borderColor: '#A1F0FF', backgroundColor: '#12415E', alignItems: 'center', justifyContent: 'center', shadowColor: '#43D6F2', shadowOpacity: 0.55, shadowRadius: 10, elevation: 10 }}
   >
