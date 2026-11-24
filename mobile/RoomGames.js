@@ -226,6 +226,8 @@ function jackarooMove(s,ownerId,marble,steps,king=false){
   else if(pl.id===ownerId)return false;
  }
  if(next>=52){
+  const safeTokens=arr.filter((v,mi)=>mi!==marble&&v>=52&&v<=55);
+  if(safeTokens.length){const required=Array.from({length:safeTokens.length},(_,i)=>55-i);if(!required.every(v=>safeTokens.includes(v))||next!==55-safeTokens.length)return false;}
   for(let mi=0;mi<4;mi++){if(mi!==marble){const op=s.marbles[ownerId][mi];if(op>=52&&op<=next)return false;}}
  }else{
   const dest=jackarooGlobal(ownerIndex,next);
