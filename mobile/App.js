@@ -2690,12 +2690,11 @@ async function toggleFollowRoom(room) {
   // Entry notices are local system chat items for this joining user only.
   // They are not written to the shared room-message table or broadcast to members.
   function createRoomEntryNotices(room) {
-    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const announcement = String(room?.announcement || room?.description || '').trim();
     return [
-      { id: `entry-${room.id}-guidelines-${session?.user?.id}-${Date.now()}`, roomId: room.id, system: true, entryType: 'guidelines', sender: '', text: 'Welcome to the TALKZY. Please respect everyone and speak politely. Abusive language, third-party advertising, fake official information and politically sensitive topics are strictly prohibited. Please report such situations.', time },
-      { id: `entry-${room.id}-announcement-${session?.user?.id}-${Date.now()}`, roomId: room.id, system: true, entryType: 'announcement', sender: '', text: announcement || 'There is no announcement from the room owner.', time },
-      { id: `entry-${room.id}-welcome-${session?.user?.id}-${Date.now()}`, roomId: room.id, system: true, entryType: 'welcome', sender: '', text: `Welcome to ${room?.room_name || 'the room'}!`, time }
+      { id: `entry-${room.id}-guidelines-${session?.user?.id}-${Date.now()}`, roomId: room.id, system: true, entryType: 'guidelines', sender: '', text: 'Welcome to the TALKZY. Please respect everyone and speak politely. Abusive language, third-party advertising, fake official information and politically sensitive topics are strictly prohibited. Please report such situations.' },
+      { id: `entry-${room.id}-announcement-${session?.user?.id}-${Date.now()}`, roomId: room.id, system: true, entryType: 'announcement', sender: '', text: announcement || 'There is no announcement from the room owner.' },
+      { id: `entry-${room.id}-welcome-${session?.user?.id}-${Date.now()}`, roomId: room.id, system: true, entryType: 'welcome', sender: '', text: `Welcome to ${room?.room_name || 'the room'}!` }
     ];
   }
 
@@ -2853,8 +2852,7 @@ async function toggleFollowRoom(room) {
       if (roomChatActiveRoomIdRef.current === roomId) {
         setRoomChatMessages(prev => prev.some(existing => existing.id === item.id) ? prev : [...prev, {
           id: item.id, roomId, text: '📷 Photo', sender: profile?.display_name || displayName || 'You',
-          senderId: session?.user?.id, message_type: 'image', image_url: item.image_url || null,
-          time: new Date(item.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          senderId: session?.user?.id, message_type: 'image', image_url: item.image_url || null
         }]);
       }
     } catch (error) {
@@ -2891,7 +2889,6 @@ async function toggleFollowRoom(room) {
           sender: item.sender?.display_name || 'TALKZY User',
           senderId: item.sender_id,
           avatar_url: item.sender?.avatar_url || null,
-          time: item.created_at ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
           message_type: item.message_type,
           image_url: item.image_url
         }));
@@ -3647,7 +3644,7 @@ async function sendRoomChatMessage() {
     if (roomChatActiveRoomIdRef.current === roomId) {
       setRoomChatMessages(prev => prev.some(existing => existing.id === item.id) ? prev : [...prev, {
         id: item.id, roomId, text: item.message_text, sender: profile?.display_name || displayName || 'You',
-        senderId: session?.user?.id, time: new Date(item.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        senderId: session?.user?.id
       }]);
       setRoomChatText('');
     }
@@ -4402,7 +4399,6 @@ function renderRoomInterior() {
           <View key={message.id} style={{ alignSelf: message.system ? 'center' : 'flex-start', maxWidth: '94%', backgroundColor: isPlainEntryNotice ? 'transparent' : message.system ? 'rgba(15,91,130,0.88)' : 'rgba(7,27,45,0.94)', borderWidth: isPlainEntryNotice ? 0 : 1, borderColor: message.system ? '#58CBEA' : '#24516D', borderRadius: isPlainEntryNotice ? 0 : message.system ? 14 : 12, paddingHorizontal: isPlainEntryNotice ? 0 : 11, paddingVertical: isPlainEntryNotice ? 1 : 7, marginBottom: 6 }}>
             {hasSenderHeading ? <Text style={{ color: message.system ? '#9CEBFF' : '#79D7EF', fontSize: 11, fontWeight: '900', marginBottom: 3 }}>{message.sender?.display_name || message.sender || 'TALKZY User'}</Text> : null}
             {message.image_url ? <Image source={{ uri: message.image_url }} style={{ width: 150, height: 90, borderRadius: 8 }} resizeMode="cover" /> : <Text style={{ color: C.text, fontSize: 11, lineHeight: 15, fontWeight: message.entryType === 'guidelines' ? '900' : '400' }}>{message.text || message.message_text}</Text>}
-            <Text style={{ color: '#9CB9CC', fontSize: 11, textAlign: 'right', marginTop: 3 }}>{message.time}</Text>
           </View>
         );
       })}
