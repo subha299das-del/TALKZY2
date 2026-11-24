@@ -380,7 +380,7 @@ function applyMove(src,actor,action){
   const board=carromShoot(oldBoard,s.turn,Number(action.angle)||0,Math.max(4,Math.min(28,Number(action.power)||14)),s.mode);
   const newly=board.coins.filter(x=>x.pocketed&&!oldBoard.coins.find(o=>o.id===x.id)?.pocketed);
   const ownNew=newly.filter(x=>x.color===ownColor),oppNew=newly.filter(x=>x.color===oppColor),queenShot=newly.some(x=>x.color==='queen');
-  const beforeOwn=Number(oldBoard.pocketed?.[ownColor]||0),strikerFoul=!!board.strikerPocketed||!!board.offBoard;
+  const beforeOwn=Number(oldBoard.pocketed?.[ownColor]||0),hadDueAtStart=Number(s.due?.[team]||0)>0,strikerFoul=!!board.strikerPocketed||!!board.offBoard;
   s.shot++;s.boardShots++;
   const putQueenBack=()=>{const q=board.coins.find(x=>x.color==='queen');if(q){q.pocketed=false;q.x=500;q.y=500;q.vx=0;q.vy=0;}board.queenCoveredBy=null;s.queenCoveredBy=null;};
   const putCoinBack=coin=>{if(!coin)return false;const target=board.coins.find(x=>x.id===coin.id);if(!target)return false;target.pocketed=false;target.x=500;target.y=500;target.vx=0;target.vy=0;return true;};
@@ -409,12 +409,12 @@ function applyMove(src,actor,action){
   board.pocketed={white:0,black:0};board.coins.forEach(x=>{if(x.pocketed&&(x.color==='white'||x.color==='black'))board.pocketed[x.color]++;});
   const ownNewStill=ownNew.filter(x=>board.coins.find(q=>q.id===x.id)?.pocketed).length;
   let invalidQueen=false,missedCover=false;
-  if(queenShot&&beforeOwn===0&&ownNew.length===0){putQueenBack();invalidQueen=true;s.status='Queen cannot be pocketed before your first coin. Turn passes.';}
+  if(queenShot&&(hadDueAtStart||(beforeOwn===0&&ownNew.length===0))){putQueenBack();invalidQueen=true;s.status='Queen cannot be pocketed before your first coin. Turn passes.';}
   else if(queenShot){
    if((beforeOwn>0&&ownNewStill>0)||(beforeOwn===0&&ownNewStill>=2)){s.queenCoveredBy=team;s.queenPending=null;board.queenCoveredBy=team;}
    else{s.queenPending={team,playerId:id};}
   }else if(s.queenPending?.team===team){
-   if(ownNewStill>0){s.queenCoveredBy=team;s.queenPending=null;board.queenCoveredBy=team;}
+   if(!hadDueAtStart&&ownNewStill>0){s.queenCoveredBy=team;s.queenPending=null;board.queenCoveredBy=team;}
    else{putQueenBack();s.queenPending=null;missedCover=true;}
   }
   s.carromBoard=board;
