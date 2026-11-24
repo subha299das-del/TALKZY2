@@ -1,27 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, View, Text, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
-
-const GAMES = [
-  { name:'Ludo', art:'ludo', min:2, max:4, bet:true, timed:true, rules:'Roll a six to enter a token, then race all four tokens home.' },
-  { name:'Carrom', art:'carrom', min:2, max:4, bet:true, timed:true, rules:'Choose singles or doubles, then take alternating striker shots.' },
-  { name:'Playcards – Breez', art:'breez', min:2, max:4, bet:true, timed:true, rules:'Play a card matching the lead suit; highest card in that suit wins the trick.' },
-  { name:'UNO', art:'uno', min:4, max:4, bet:true, timed:true, rules:'Match colour or number, draw when you cannot play, and empty your hand to win.' },
-  { name:'Monster Crush', art:'monster', min:2, max:4, bet:true, timed:true, rules:'Take turns clearing matching gem groups; the largest group scores more points.' },
-  { name:'Truth and Dare', art:'truth', min:2, max:Infinity, bet:false, timed:false, rules:'Players take turns choosing Truth or Dare and completing the prompt.' },
-  { name:'Snakes and Ladders', art:'snake', min:2, max:4, bet:true, timed:true, rules:'Roll and climb ladders; snakes send you back. First to square 100 wins.' },
-  { name:'Jackaroo', art:'jackaroo', min:2, max:4, bet:true, timed:true, rules:'Use cards to bring marbles out and move them around the track to home.' },
-  { name:'Brainstorm', art:'brain', min:2, max:Infinity, bet:false, timed:false, rules:'Take turns answering the round category without repeating an answer.' },
-  { name:'29', art:'twentynine', min:4, max:4, bet:true, timed:true, rules:'Four-player partnership trick-taking; bid, choose trump and win card points.' }
-];
-const BETS = [0]; // Paid betting stays disabled until wallet escrow and payout are implemented.
-const GOLD = '#E8C477';
-const panel = '#171222';
-const text = '#F5E9CF';
-const muted = '#B6A68A';
-const btn = { backgroundColor:'#30213B', borderColor:'#A77D45', borderWidth:1, padding:11, borderRadius:12, alignItems:'center', justifyContent:'center' };
-const label = { color:text, fontWeight:'900' };
-const rand = n => Math.floor(Math.random()*n);
-
 function RoyalGameArtwork({ art }) {
   const gold = '#E8C477';
   const pale = '#F6E7C4';
