@@ -857,6 +857,16 @@ useEffect(() => {
 // invoke its main Close action.
 useEffect(() => {
   const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+    // Room Tools must consume the first Android Back press. A second press
+    // can then reach the room Minimize / Exit menu below.
+    if (showRoomTools) {
+      setShowRoomTools(false);
+      return true;
+    }
+    if (showSpecialEffectSettings) {
+      setShowSpecialEffectSettings(false);
+      return true;
+    }
     // Room Chat: first Back closes the composer; the next Back opens options.
     if (showRoomChatComposer) {
       Keyboard.dismiss();
@@ -876,7 +886,6 @@ useEffect(() => {
     if (showGreedyPanel) { setShowGreedyPanel(false); return true; }
     if (showRoomGamePanel) { setShowRoomGamePanel(false); return true; }
     if (showRocketPanel) { setShowRocketPanel(false); return true; }
-    if (showRoomTools) { setShowRoomTools(false); return true; }
     if (showRoomThemeMenu) { setShowRoomThemeMenu(false); return true; }
     if (showLuckyBagPopup) { setShowLuckyBagPopup(false); return true; }
     if (showHotEventsPopup) { setShowHotEventsPopup(false); return true; }
