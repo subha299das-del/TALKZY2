@@ -120,7 +120,7 @@ function initialGame(name,players,mode=2){
  ids.forEach(id=>s.score[id]=0);
  if(name==='Ludo') {s.tokens={};players.forEach(p=>s.tokens[p.id]=[-1,-1,-1,-1]);s.consecutiveSix=0;s.finishOrder=[];s.safe=[0,8,13,21,26,34,39,47];}
  if(name==='Snakes and Ladders'){s.positions={};ids.forEach(id=>s.positions[id]=0);s.ladders={1:38,4:14,9:31,21:42,28:84,36:44,51:67,71:91,80:100};s.snakes={16:6,47:26,49:11,56:53,62:19,64:60,87:24,93:73,95:75,98:78};s.phase='start_roll';s.startingRolls={};s.tiedStartPlayers=[...ids];}
- if(name==='Carrom'){s.mode=mode;s.carromBoard=createCarromBoard();s.turn=rand(players.length);s.colours={};s.teamColours=[];s.teamColours[s.turn%2]='white';s.teamColours[1-s.turn%2]='black';s.players.forEach((pl,i)=>{s.colours[pl.id]=s.teamColours[i%2];});s.queenPending=null;s.queenCoveredBy=null;s.due=[0,0];s.breakAttempts=0;s.breakDone=false;s.shot=0;s.boardShots=0;s.fouls={};s.boardNumber=1;s.boardComplete=false;s.matchPoints=[0,0];s.score={};ids.forEach(id=>s.score[id]=0);s.boardsPlayed=0;}
+ if(name==='Carrom'){s.mode=mode;s.carromBoard=createCarromBoard();s.turn=rand(players.length);s.boardBreaker=s.turn;s.colours={};s.teamColours=[];s.teamColours[s.turn%2]='white';s.teamColours[1-s.turn%2]='black';s.players.forEach((pl,i)=>{s.colours[pl.id]=s.teamColours[i%2];});s.queenPending=null;s.queenCoveredBy=null;s.due=[0,0];s.breakAttempts=0;s.breakDone=false;s.shot=0;s.boardShots=0;s.fouls={};s.boardNumber=1;s.boardComplete=false;s.matchPoints=[0,0];s.score={};ids.forEach(id=>s.score[id]=0);s.boardsPlayed=0;}
  if(name==='UNO'){s.deck=[];let cardNo=0;colors.forEach(color=>{s.deck.push({id:'UNO-'+(cardNo++),rank:0,color,suit:'*'});for(let n=1;n<=9;n++)for(let copy=0;copy<2;copy++)s.deck.push({id:'UNO-'+(cardNo++),rank:n,color,suit:'*'});for(const rank of ['Skip','Reverse','+2'])for(let copy=0;copy<2;copy++)s.deck.push({id:'UNO-'+(cardNo++),rank,color,suit:'*'});});for(let copy=0;copy<4;copy++){s.deck.push({id:'UNO-'+(cardNo++),rank:'Wild',color:'wild',suit:'*'});s.deck.push({id:'UNO-'+(cardNo++),rank:'+4',color:'wild',suit:'*'});}for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}const dealerDraws=players.map(p=>s.deck.pop()),dealerScores=dealerDraws.map(card=>typeof card.rank==='number'?card.rank:0);s.dealer=dealerScores.indexOf(Math.max(...dealerScores));s.deck.push(...dealerDraws);for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}s.turn=(s.dealer+1)%players.length;s.hands={};players.forEach(p=>s.hands[p.id]=s.deck.splice(0,7));let first=s.deck.shift();while(first?.rank==='+4'){s.deck.push(first);for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}first=s.deck.shift();}s.discard=[first];if(first?.rank==='Reverse')s.turn=s.dealer;s.direction=first?.rank==='Reverse'?-1:1;s.activeColor=first?.color||'red';s.pendingOpeningWild=first?.rank==='Wild';s.drawnCard=null;s.pendingUno=null;s.pendingChallenge=null;s.unoCalled={};s.matchPoints={};s.roundPoints=0;ids.forEach(id=>s.matchPoints[id]=0);if(first?.rank==='+2'){unoDraw(s,players[s.turn].id,2);advance(s);}else if(first?.rank==='Skip')advance(s);}
  if(name==='Playcards – Breez'){s.deck=makeDeck(['A','K','Q','J','10','9','8','7','6','5','4','3','2']);for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}s.hands={};players.forEach(p=>s.hands[p.id]=s.deck.splice(0,13));s.dealer=rand(4);s.turn=s.dealer;s.boardNumber=1;s.phase='auction';s.bids=[];s.lastBid=null;s.lastBidder=null;s.passCount=0;s.multiplier=1;s.contract=null;s.trump=null;s.tricks=[];s.currentTrick=[];s.trickLeader=0;s.declarer=null;s.dummy=null;s.dummyRevealed=false;s.contractTricks=0;s.vulnerable=false;s.teamScore=[0,0];s.vulnerableTeams=[false,false];}
  if(name==='29'){s.deck=makeDeck(['J','9','A','10','K','Q','8','7']);for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}s.hands={};players.forEach(p=>s.hands[p.id]=s.deck.splice(0,4));s.dealer=rand(4);s.firstTurn=(s.dealer+3)%4;s.turn=s.firstTurn;s.bids=[];s.bidCount=0;s.highBid=0;s.contract=null;s.trump=null;s.trumpHidden=true;s.trumpRevealed=false;s.tricks=[];s.currentTrick=[];s.trickLeader=0;s.teamPoints=[0,0];s.matchScore=[0,0];s.phase='bidding';s.lastTrickTeam=null;}
@@ -147,14 +147,14 @@ function unoCardPoints(c){return typeof c.rank==='number'?c.rank:['Skip','Revers
 function createCarromBoard(){
  const coins=[{id:'Q',color:'queen',x:500,y:500,vx:0,vy:0,pocketed:false}];
  let n=0;
- for(let i=0;i<6;i++){const a=(Math.PI*2*i)/6;coins.push({id:'C'+(n++),color:i%2?'black':'white',x:500+Math.cos(a)*43,y:500+Math.sin(a)*43,vx:0,vy:0,pocketed:false});}
- for(let i=0;i<12;i++){const a=(Math.PI*2*i)/12;coins.push({id:'C'+(n++),color:i%2?'white':'black',x:500+Math.cos(a)*91,y:500+Math.sin(a)*91,vx:0,vy:0,pocketed:false});}
+ for(let i=0;i<6;i++){const a=(Math.PI*2*i)/6;coins.push({id:'C'+(n++),color:i%2?'black':'white',x:500+Math.cos(a)*36,y:500+Math.sin(a)*36,vx:0,vy:0,pocketed:false});}
+ for(let i=0;i<12;i++){const a=(Math.PI*2*i)/12+Math.PI/12;coins.push({id:'C'+(n++),color:i%2?'white':'black',x:500+Math.cos(a)*72,y:500+Math.sin(a)*72,vx:0,vy:0,pocketed:false});}
  return {coins,striker:{x:500,y:900,vx:0,vy:0,pocketed:false},pocketed:{white:0,black:0},queenCoveredBy:null,offBoard:false};
 }
 function carromShoot(board,playerIndex,angle,power,mode=4){
  const b=clone(board),starts=mode===2?[{x:500,y:900},{x:500,y:100}]:[{x:500,y:900},{x:100,y:500},{x:500,y:100},{x:900,y:500}],start=starts[playerIndex%mode],baseAngle=mode===2?(playerIndex%2===0?270:90):[270,0,90,180][playerIndex%4],shotAngle=baseAngle+angle;
  b.striker={...start,vx:Math.cos(shotAngle*Math.PI/180)*power,vy:Math.sin(shotAngle*Math.PI/180)*power,pocketed:false};
- const pieces=[...b.coins.filter(x=>!x.pocketed),b.striker],r=18,sr=21,friction=.986;
+ const pieces=[...b.coins.filter(x=>!x.pocketed),b.striker],r=20,sr=22,friction=.986;
  let moving=true,steps=0;
  while(moving&&steps++<260){
   moving=false;
@@ -407,9 +407,9 @@ function applyMove(src,actor,action){
   const returnPriorOwnCoins=count=>{let returned=0;while(returned<count){const prior=board.coins.find(x=>x.color===ownColor&&x.pocketed&&!ownNew.some(n=>n.id===x.id));if(!prior||!putCoinBack(prior))break;returned++;}return returned;};
   if(!s.breakDone&&!board.touchedCoin){
    s.carromBoard=board;
-   if(board.strikerPocketed){s.breakDone=true;s.status='Unmade break with striker pocketed: turn passes without a due.';advance(s);return s;}
+   if(board.strikerPocketed){s.breakDone=true;s.boardBreaker=(s.turn+1)%s.players.length;s.status='Unmade break with striker pocketed: turn passes without a due.';advance(s);return s;}
    if(s.breakAttempts<2){s.breakAttempts++;s.status='Break not made. Retry '+(s.breakAttempts+1)+' of 3.';return s;}
-   s.breakDone=true;s.status='Break not made after three attempts. Break passes to the opponent.';advance(s);return s;
+   s.breakDone=true;s.boardBreaker=(s.turn+1)%s.players.length;s.status='Break not made after three attempts. Break passes to the opponent.';advance(s);return s;
   }
   s.breakDone=true;s.breakAttempts=0;
   let dueCount=Number(s.due?.[team]||0);
@@ -468,7 +468,7 @@ function applyMove(src,actor,action){
  }
  if(s.name==='Carrom'&&action.type==='carrom_next_board'){
   if(!s.boardComplete||s.winner)return s;
-  const next=initialGame('Carrom',s.players,s.mode);next.boardNumber=s.boardNumber+1;next.boardsPlayed=s.boardsPlayed;next.matchPoints=[...s.matchPoints];next.score={};next.players.forEach((pl,i)=>next.score[pl.id]=next.matchPoints[i%2]);next.turn=(s.turn+1)%s.players.length;next.teamColours=[];next.teamColours[next.turn%2]='white';next.teamColours[1-next.turn%2]='black';next.players.forEach((pl,i)=>{next.colours[pl.id]=next.teamColours[i%2];});next.status='Board '+next.boardNumber+' started.';return next;
+  const next=initialGame('Carrom',s.players,s.mode);next.boardNumber=s.boardNumber+1;next.boardsPlayed=s.boardsPlayed;next.matchPoints=[...s.matchPoints];next.score={};next.players.forEach((pl,i)=>next.score[pl.id]=next.matchPoints[i%2]);next.turn=(s.boardBreaker+1)%s.players.length;next.boardBreaker=next.turn;next.teamColours=[];next.teamColours[next.turn%2]='white';next.teamColours[1-next.turn%2]='black';next.players.forEach((pl,i)=>{next.colours[pl.id]=next.teamColours[i%2];});next.status='Board '+next.boardNumber+' started.';return next;
  }
  if(s.name==='Monster Crush'&&action.type==='monster_shot'){
   const cell=s.board.flat().find(x=>x.id===action.cell&&x.alive);if(!cell||s.ammo<=0)return s;
