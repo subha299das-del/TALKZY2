@@ -323,7 +323,7 @@ function gameResults(s){
   ids.forEach(id=>{scoreById[id]=Number(s.score?.[id]||0);});detail='Points';
  }
  const winner=s.winner;
- const rows=s.players.map((p,i)=>({id:p.id,name:p.name||'Player',score:scoreById[p.id]||0,seat:i}));
+ const winningSeat=s.players.findIndex(p=>p.id===winner),winningTeam=['Carrom','Playcards – Breez','Jackaroo'].includes(s.name)&&winningSeat>=0?winningSeat%2:null;const rows=s.players.map((p,i)=>({id:p.id,name:p.name||'Player',score:scoreById[p.id]||0,seat:i,isWinner:winningSeat>=0&&(winningTeam!==null?i%2===winningTeam:p.id===winner)}));
  rows.sort((a,b)=>{
   if(a.id===winner&&b.id!==winner)return -1;
   if(b.id===winner&&a.id!==winner)return 1;
@@ -859,13 +859,13 @@ export default function RoomGames({visible,onClose,onGameAvailable,roomId,creato
    <Text style={{color:GOLD,fontSize:20,textAlign:'center',fontWeight:'900'}}>♛ GAME RESULTS</Text>
    <Text style={{color:muted,textAlign:'center',fontSize:11,marginTop:4,marginBottom:12}}>{state?.name||selected?.name} · Final rankings</Text>
    <ScrollView style={{maxHeight:390}} showsVerticalScrollIndicator>
-    {gameResults(state).map(row=><View key={row.id} style={{flexDirection:'row',alignItems:'center',backgroundColor:row.id===state?.winner?'#3B2C22':'#251B31',borderColor:row.id===state?.winner?GOLD:'#51415B',borderWidth:1,borderRadius:12,paddingVertical:11,paddingHorizontal:12,marginBottom:8}}>
+    {gameResults(state).map(row=><View key={row.id} style={{flexDirection:'row',alignItems:'center',backgroundColor:row.isWinner||row.id===state?.winner?'#3B2C22':'#251B31',borderColor:row.isWinner||row.id===state?.winner?GOLD:'#51415B',borderWidth:1,borderRadius:12,paddingVertical:11,paddingHorizontal:12,marginBottom:8}}>
      <View style={{width:38,height:38,borderRadius:19,backgroundColor:row.rank===1?'#76572B':'#382B43',borderWidth:1,borderColor:row.rank===1?GOLD:'#66536F',alignItems:'center',justifyContent:'center',marginRight:11}}>
       <Text style={{color:row.rank===1?GOLD:ink,fontWeight:'900',fontSize:15}}>#{row.rank}</Text>
      </View>
      <View style={{flex:1}}>
       <Text numberOfLines={1} style={{color:ink,fontWeight:'900',fontSize:13}}>{row.name}{row.id===userId?' (You)':''}</Text>
-      {row.id===state?.winner&&<Text style={{color:GOLD,fontSize:10,fontWeight:'900',marginTop:2}}>WINNER</Text>}
+      {(row.isWinner||row.id===state?.winner)&&<Text style={{color:GOLD,fontSize:10,fontWeight:'900',marginTop:2}}>{['Carrom','Playcards – Breez','Jackaroo'].includes(state?.name)?'WINNING TEAM':'WINNER'}</Text>}
      </View>
      <View style={{alignItems:'flex-end',marginLeft:8}}>
       <Text style={{color:GOLD,fontWeight:'900',fontSize:17}}>{row.score}</Text>
