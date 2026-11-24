@@ -116,7 +116,7 @@ function initialGame(name,players,mode=2){
  ids.forEach(id=>s.score[id]=0);
  if(name==='Ludo') {s.tokens={};players.forEach(p=>s.tokens[p.id]=[-1,-1,-1,-1]);s.consecutiveSix=0;s.safe=[0,8,13,21,26,34,39,47];}
  if(name==='Snakes and Ladders'){s.positions={};ids.forEach(id=>s.positions[id]=0);s.ladders={1:38,4:14,9:31,21:42,28:84,36:44,51:67,71:91,80:100};s.snakes={16:6,47:26,49:11,56:53,62:19,64:60,87:24,93:73,95:75,98:78};s.phase='start_roll';s.startingRolls={};s.tiedStartPlayers=[...ids];}
- if(name==='Carrom'){s.mode=mode;s.carromBoard=createCarromBoard();s.colours={};s.teamColours=['white','black'];s.players.forEach((pl,i)=>{s.colours[pl.id]=s.teamColours[i%2];});s.queenPending=null;s.queenCoveredBy=null;s.due=[0,0];s.breakAttempts=0;s.breakDone=false;s.shot=0;s.boardShots=0;s.fouls={};s.boardNumber=1;s.boardComplete=false;s.matchPoints=[0,0];s.score={};ids.forEach(id=>s.score[id]=0);s.boardsPlayed=0;}
+ if(name==='Carrom'){s.mode=mode;s.carromBoard=createCarromBoard();s.turn=rand(players.length);s.colours={};s.teamColours=[];s.teamColours[s.turn%2]='white';s.teamColours[1-s.turn%2]='black';s.players.forEach((pl,i)=>{s.colours[pl.id]=s.teamColours[i%2];});s.queenPending=null;s.queenCoveredBy=null;s.due=[0,0];s.breakAttempts=0;s.breakDone=false;s.shot=0;s.boardShots=0;s.fouls={};s.boardNumber=1;s.boardComplete=false;s.matchPoints=[0,0];s.score={};ids.forEach(id=>s.score[id]=0);s.boardsPlayed=0;}
  if(name==='UNO'){s.deck=[];let cardNo=0;colors.forEach(color=>{s.deck.push({id:'UNO-'+(cardNo++),rank:0,color,suit:'*'});for(let n=1;n<=9;n++)for(let copy=0;copy<2;copy++)s.deck.push({id:'UNO-'+(cardNo++),rank:n,color,suit:'*'});for(const rank of ['Skip','Reverse','+2'])for(let copy=0;copy<2;copy++)s.deck.push({id:'UNO-'+(cardNo++),rank,color,suit:'*'});});for(let copy=0;copy<4;copy++){s.deck.push({id:'UNO-'+(cardNo++),rank:'Wild',color:'wild',suit:'*'});s.deck.push({id:'UNO-'+(cardNo++),rank:'+4',color:'wild',suit:'*'});}for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}const dealerDraws=players.map(p=>s.deck.pop()),dealerScores=dealerDraws.map(card=>typeof card.rank==='number'?card.rank:0);s.dealer=dealerScores.indexOf(Math.max(...dealerScores));s.deck.push(...dealerDraws);for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}s.turn=(s.dealer+1)%players.length;s.hands={};players.forEach(p=>s.hands[p.id]=s.deck.splice(0,7));let first=s.deck.shift();while(first?.rank==='+4'){s.deck.push(first);for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}first=s.deck.shift();}s.discard=[first];if(first?.rank==='Reverse')s.turn=s.dealer;s.direction=first?.rank==='Reverse'?-1:1;s.activeColor=first?.color||'red';s.pendingOpeningWild=first?.rank==='Wild';s.drawnCard=null;s.pendingUno=null;s.pendingChallenge=null;s.unoCalled={};s.matchPoints={};s.roundPoints=0;ids.forEach(id=>s.matchPoints[id]=0);if(first?.rank==='+2'){unoDraw(s,players[s.turn].id,2);advance(s);}else if(first?.rank==='Skip')advance(s);}
  if(name==='Playcards – Breez'){s.deck=makeDeck(['A','K','Q','J','10','9','8','7','6','5','4','3','2']);for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}s.hands={};players.forEach(p=>s.hands[p.id]=s.deck.splice(0,13));s.dealer=rand(4);s.turn=s.dealer;s.boardNumber=1;s.phase='auction';s.bids=[];s.lastBid=null;s.lastBidder=null;s.passCount=0;s.multiplier=1;s.contract=null;s.trump=null;s.tricks=[];s.currentTrick=[];s.trickLeader=0;s.declarer=null;s.dummy=null;s.dummyRevealed=false;s.contractTricks=0;s.vulnerable=false;s.teamScore=[0,0];s.vulnerableTeams=[false,false];}
  if(name==='29'){s.deck=makeDeck(['J','9','A','10','K','Q','8','7']);for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}s.hands={};players.forEach(p=>s.hands[p.id]=s.deck.splice(0,4));s.dealer=rand(4);s.firstTurn=(s.dealer+3)%4;s.turn=s.firstTurn;s.bids=[];s.bidCount=0;s.highBid=0;s.contract=null;s.trump=null;s.trumpHidden=true;s.trumpRevealed=false;s.tricks=[];s.currentTrick=[];s.trickLeader=0;s.teamPoints=[0,0];s.matchScore=[0,0];s.phase='bidding';s.lastTrickTeam=null;}
@@ -381,17 +381,19 @@ function applyMove(src,actor,action){
   const board=carromShoot(oldBoard,s.turn,Number(action.angle)||0,Math.max(4,Math.min(28,Number(action.power)||14)),s.mode);
   const newly=board.coins.filter(x=>x.pocketed&&!oldBoard.coins.find(o=>o.id===x.id)?.pocketed);
   const ownNew=newly.filter(x=>x.color===ownColor),oppNew=newly.filter(x=>x.color===oppColor),queenShot=newly.some(x=>x.color==='queen');
-  const beforeOwn=Number(oldBoard.pocketed?.[ownColor]||0),hadDueAtStart=Number(s.due?.[team]||0)>0,strikerFoul=!!board.strikerPocketed||!!board.offBoard;
+  const beforeOwn=Number(oldBoard.pocketed?.[ownColor]||0),hadDueAtStart=Number(s.due?.[team]||0)>0,hadPendingQueen=!!s.queenPending;
+  const strikerFoul=!!board.strikerPocketed||!!board.offBoard;
   s.shot++;s.boardShots++;
+  const dueSpots=Array.from({length:16},(_,i)=>{const radius=i<8?98:72,angle=(Math.PI*2*(i%8))/8;return [500+Math.cos(angle)*radius,500+Math.sin(angle)*radius];});
   const putQueenBack=()=>{const q=board.coins.find(x=>x.color==='queen');if(q){q.pocketed=false;q.x=500;q.y=500;q.vx=0;q.vy=0;}board.queenCoveredBy=null;s.queenCoveredBy=null;};
-  const putCoinBack=coin=>{if(!coin)return false;const target=board.coins.find(x=>x.id===coin.id);if(!target)return false;target.pocketed=false;target.x=500;target.y=500;target.vx=0;target.vy=0;return true;};
-  const returnOneOwnCoin=()=>{
-   const fresh=ownNew.find(x=>board.coins.find(q=>q.id===x.id)?.pocketed);
-   if(fresh&&putCoinBack(fresh))return true;
-   const prior=board.coins.find(x=>x.color===ownColor&&x.pocketed);
-   if(prior&&putCoinBack(prior))return true;
-   return false;
+  const putCoinBack=coin=>{
+   if(!coin)return false;const target=board.coins.find(x=>x.id===coin.id);if(!target)return false;
+   const spot=dueSpots.find(([x,y])=>Math.hypot(x-500,y-500)>35&&board.coins.every(other=>other.id===target.id||other.pocketed||Math.hypot(other.x-x,other.y-y)>38));
+   if(!spot)return false;
+   target.pocketed=false;target.x=spot[0];target.y=spot[1];target.vx=0;target.vy=0;return true;
   };
+  const returnNewOwnCoins=()=>{let count=0;for(const coin of ownNew){const current=board.coins.find(x=>x.id===coin.id);if(current?.pocketed&&putCoinBack(coin))count++;}return count;};
+  const returnPriorOwnCoins=count=>{let returned=0;while(returned<count){const prior=board.coins.find(x=>x.color===ownColor&&x.pocketed&&!ownNew.some(n=>n.id===x.id));if(!prior||!putCoinBack(prior))break;returned++;}return returned;};
   if(!s.breakDone&&!board.touchedCoin){
    s.carromBoard=board;
    if(board.strikerPocketed){s.breakDone=true;s.status='Unmade break with striker pocketed: turn passes without a due.';advance(s);return s;}
@@ -400,49 +402,58 @@ function applyMove(src,actor,action){
   }
   s.breakDone=true;s.breakAttempts=0;
   let dueCount=Number(s.due?.[team]||0);
-  if(ownNew.length>0&&dueCount>0){if(returnOneOwnCoin())dueCount--;}
-  if(strikerFoul||oppNew.length>0){
-   if(strikerFoul)s.fouls[id]=(s.fouls[id]||0)+1;
-   dueCount++;
-   if(returnOneOwnCoin())dueCount--;
+  if(strikerFoul){
+   const returnedNew=returnNewOwnCoins();dueCount+=1;dueCount-=returnPriorOwnCoins(dueCount);s.due[team]=Math.max(0,dueCount);
+  }else{
+   for(const coin of ownNew){if(dueCount<=0)break;if(putCoinBack(coin))dueCount--;}
+   s.due[team]=Math.max(0,dueCount);
   }
-  s.due[team]=Math.max(0,dueCount);
   board.pocketed={white:0,black:0};board.coins.forEach(x=>{if(x.pocketed&&(x.color==='white'||x.color==='black'))board.pocketed[x.color]++;});
   const ownNewStill=ownNew.filter(x=>board.coins.find(q=>q.id===x.id)?.pocketed).length;
-  let invalidQueen=false,missedCover=false;
-  if(queenShot&&(hadDueAtStart||(beforeOwn===0&&ownNew.length===0))){putQueenBack();invalidQueen=true;s.status='Queen cannot be pocketed before your first coin. Turn passes.';}
-  else if(queenShot){
-   if((beforeOwn>0&&ownNewStill>0)||(beforeOwn===0&&ownNewStill>=2)){s.queenCoveredBy=team;s.queenPending=null;board.queenCoveredBy=team;}
+  let invalidQueen=false,missedCover=false,coverThisShot=false,queenReturnedByStriker=false;
+  if(strikerFoul){
+   if(queenShot){putQueenBack();s.queenPending=null;queenReturnedByStriker=true;if(hadDueAtStart)invalidQueen=true;}
+   else if(hadPendingQueen){
+    if(!hadDueAtStart&&ownNew.length>0){s.queenPending={team,playerId:id};}
+    else{putQueenBack();s.queenPending=null;missedCover=true;}
+   }
+  }else if(queenShot){
+   if(hadDueAtStart||(beforeOwn===0&&ownNewStill===0)){putQueenBack();s.queenPending=null;invalidQueen=true;}
+   else if((beforeOwn>0&&ownNewStill>0)||(beforeOwn===0&&ownNewStill>=2)){s.queenCoveredBy=team;s.queenPending=null;board.queenCoveredBy=team;coverThisShot=true;}
    else{s.queenPending={team,playerId:id};}
-  }else if(s.queenPending?.team===team){
-   if(!hadDueAtStart&&ownNewStill>0){s.queenCoveredBy=team;s.queenPending=null;board.queenCoveredBy=team;}
+  }else if(hadPendingQueen){
+   if(!hadDueAtStart&&ownNewStill>0){s.queenCoveredBy=team;s.queenPending=null;board.queenCoveredBy=team;coverThisShot=true;}
    else{putQueenBack();s.queenPending=null;missedCover=true;}
   }
   s.carromBoard=board;
   const ownCount=board.pocketed[ownColor]||0,oppCount=board.pocketed[oppColor]||0;
   let boardWinner=null,boardPoints=0;
-  if(s.queenCoveredBy===team&&oppCount>=9){
-   boardWinner=1-team;boardPoints=Math.max(0,9-ownCount)+(s.matchPoints[boardWinner]<22?3:1);
+  if(coverThisShot&&oppCount>=9){
+   if(ownCount>=9){boardWinner=team;boardPoints=s.matchPoints[team]>=22?1:3;}
+   else{boardWinner=1-team;boardPoints=Math.max(0,9-ownCount)+(s.matchPoints[1-team]<22?3:0);}
   }else if(ownCount>=9){
    if(s.queenCoveredBy===team){boardWinner=team;boardPoints=Math.max(0,9-oppCount)+(s.matchPoints[team]<22?3:0);}
-   else{boardWinner=1-team;boardPoints=s.matchPoints[boardWinner]<22?3:1;}
+   else{boardWinner=1-team;boardPoints=s.matchPoints[1-team]<22?3:1;}
   }
   if(boardWinner!==null){
-   s.matchPoints[boardWinner]+=boardPoints;s.boardsPlayed++;s.boardComplete=true;s.boardWinnerTeam=boardWinner;s.boardPoints=boardPoints;
+   s.matchPoints[boardWinner]+=boardPoints;s.boardsPlayed++;s.boardComplete=true;s.boardWinnerTeam=boardWinner;s.boardPoints=boardPoints;s.due=[0,0];
    s.players.forEach((pl,i)=>{s.score[pl.id]=s.matchPoints[i%2];});
    s.status='Board complete. Team '+(boardWinner+1)+' scores '+boardPoints+' points.';
-   if(s.matchPoints[boardWinner]>=25||s.boardsPlayed>=8){
+   if(s.matchPoints[boardWinner]>=25||(s.boardsPlayed>=8&&s.matchPoints[0]!==s.matchPoints[1])){
     const winnerTeam=s.matchPoints[0]===s.matchPoints[1]?boardWinner:s.matchPoints[0]>s.matchPoints[1]?0:1;
     s.winner=s.players.find((pl,i)=>i%2===winnerTeam)?.id;s.matchWinner=winnerTeam;s.status='Carrom match complete. Final score '+s.matchPoints.join(' – ')+'.';
-   }
+   }else if(s.boardsPlayed>=8)s.status='Scores tied after eight boards. An extra board is required.';
    return s;
   }
   if(invalidQueen||missedCover){advance(s);return s;}
-  if(strikerFoul&&oppNew.length>0){s.status='Striker due and opponent coin pocketed. Turn passes.';advance(s);return s;}
-  if(oppNew.length>0&&!ownNew.length){s.status='Opponent coin pocketed. It stays pocketed; due applied and turn passes.';advance(s);return s;}
-  if(ownNew.length>0||queenShot){s.status=queenShot&&!s.queenCoveredBy?'Queen pocketed. Cover it on the immediate next stroke.':'Own coin pocketed. Shoot again.';return s;}
-  if(strikerFoul){s.status='Striker pocketed. Due applied; turn passes.';advance(s);return s;}
-  s.status='No own coin pocketed. Turn passes.';advance(s);return s;
+  if(strikerFoul){
+   if(queenReturnedByStriker&&!hadDueAtStart){s.status='Queen and striker returned; due applied. Turn continues.';return s;}
+   if(ownNew.length>0){s.status='Striker pocketed with own coin(s): due applied; turn continues.';return s;}
+   s.status='Striker pocketed. Due applied; turn passes.';advance(s);return s;
+  }
+  if(ownNew.length>0){s.status='Own coin pocketed. Shoot again.';return s;}
+  if(queenShot&&s.queenPending){s.status='Queen pocketed. Cover it on the immediate next stroke.';return s;}
+  s.status=oppNew.length>0?'Opponent coin pocketed; turn passes.':'No own coin pocketed. Turn passes.';advance(s);return s;
  }
  if(s.name==='Carrom'&&action.type==='carrom_next_board'){
   if(!s.boardComplete||s.winner)return s;
