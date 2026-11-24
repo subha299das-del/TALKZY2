@@ -275,7 +275,7 @@ function publicGameSnapshot(source,viewerId=null){
   const hands=s.hands||{},counts={};Object.keys(hands).forEach(id=>counts[id]=hands[id]?.length||0);
   s.handCounts=counts;s.hands={};if(viewerId&&hands[viewerId])s.hands[viewerId]=hands[viewerId];if(s.name==='Playcards – Breez'&&s.dummyRevealed&&hands[s.dummy])s.hands[s.dummy]=hands[s.dummy];
   s.deck=[];
-  if(s.pendingChallenge&&s.pendingChallenge.hadMatchingColor!==undefined)delete s.pendingChallenge.hadMatchingColor;
+  if(s.pendingChallenge){if(viewerId!==s.pendingChallenge.target)delete s.pendingChallenge.challengeHand;if(s.pendingChallenge.hadMatchingColor!==undefined)delete s.pendingChallenge.hadMatchingColor;}
  }
  if(s.name==='29'&&s.trumpHidden&&s.contract?.player!==viewerId)s.trump=null;
  return s;
@@ -764,7 +764,7 @@ export default function RoomGames({visible,onClose,onGameAvailable,roomId,creato
  }
  if(state.name==='UNO'){
   if(state.pendingOpeningWild)return <><Text style={{color:ink}}>Opening Wild: choose the starting colour.</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{colors.map(color=><Btn key={'open'+color} title={color.toUpperCase()} onPress={()=>act({type:'uno_opening_color',color})}/>)}</View></>;
-  if(state.pendingChallenge)return <><Text style={{color:GOLD}}>Wild Draw Four challenge</Text><Text style={{color:ink}}>The previous player played a Wild Draw Four. Accept the penalty or challenge the play.</Text><Btn title="ACCEPT +4" onPress={()=>act({type:'uno_accept'})}/><Btn title="CHALLENGE +4" onPress={()=>act({type:'uno_challenge'})}/></>;
+  if(state.pendingChallenge)return <><Text style={{color:GOLD}}>Wild Draw Four challenge</Text><Text style={{color:ink}}>The previous player played a Wild Draw Four. Their remaining hand is shown for your challenge decision.</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{(state.pendingChallenge.challengeHand||[]).map(card=><Tile key={card.id}>{String(card.rank)} {card.color}</Tile>)}</View><Btn title="ACCEPT +4" onPress={()=>act({type:'uno_accept'})}/><Btn title="CHALLENGE +4" onPress={()=>act({type:'uno_challenge'})}/></>;
   return <><Text style={{color:ink}}>Top: {String(state.discard.at(-1)?.rank)} · Colour: {state.activeColor}</Text><Text style={{color:GOLD}}>Match points: {state.matchPoints?.[userId]||0}/500</Text>{state.pendingUno&&state.turn===state.players.findIndex(p=>p.id===userId)&&<Btn title="CATCH MISSED UNO (+2)" onPress={()=>act({type:'uno_catch'})}/>}<Text style={{color:ink}}>Choose wild colour before playing:</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{colors.map(color=><Btn key={color} small title={color.toUpperCase()} onPress={()=>setUnoColor(color)}/>)}</View><Text style={{color:muted}}>Selected: {unoColor}</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{currentHand.map(card=><Tile key={card.id} onPress={()=>{act({type:'uno_play',cardId:card.id,wildColor:unoColor,uno:currentHand.length===2&&unoCallSelected});setUnoCallSelected(false);}} disabled={state.drawnCard&&state.drawnCard!==card.id}>{String(card.rank)} {card.color==='wild'?'★':card.color}</Tile>)}</View>{state.drawnCard&&<Btn title="PASS AFTER DRAW" onPress={()=>act({type:'uno_pass_drawn'})}/>}<Btn title="DRAW ONE" onPress={()=>act({type:'uno_draw'})} disabled={!!state.drawnCard}/>{currentHand.length===2&&<Btn title={unoCallSelected?'UNO CALL: ON':'UNO CALL: OFF'} onPress={()=>setUnoCallSelected(v=>!v)}/>}</>;
  }
 
