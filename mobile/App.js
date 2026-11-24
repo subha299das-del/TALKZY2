@@ -11988,7 +11988,7 @@ if (screen === 'profile' || profileIncomplete) {
               <View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                   <Text style={{ color: C.text, fontWeight: '900', fontSize: 16 }}>Room Activities</Text>
-                  {roomDetails?.owner_id === session?.user?.id && <TouchableOpacity onPress={() => setShowRoomActivityComposer(true)}><Text style={{ color: C.accent, fontWeight: '900' }}>＋ Create</Text></TouchableOpacity>}
+
                   <TouchableOpacity onPress={() => loadRoomActivities(roomDetails?.id)}><Text style={{ color: C.accent, fontWeight: '800' }}>Refresh</Text></TouchableOpacity>
                 </View>
                 {loadingRoomActivities ? <ActivityIndicator color={C.accent} /> :
