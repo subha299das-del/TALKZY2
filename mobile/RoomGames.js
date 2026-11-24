@@ -363,6 +363,8 @@ export default function RoomGames({visible,onClose,roomId,creatorName='Host',use
   const requiredPlayers = selected?.name==='Carrom' ? carromMode : selected?.min || 2;
   const currentName = players[turn % Math.max(players.length,1)]?.name || 'Player';
   const channelRef=useRef(null);
+  const stageRef=useRef(stage);stageRef.current=stage;
+  const starterRef=useRef(isAuthorisedStarter);starterRef.current=isAuthorisedStarter;
   const lobbyIdRef=useRef(null);
   const isHostRef=useRef(false);
   const applyingRemoteRef=useRef(false);
@@ -410,8 +412,12 @@ export default function RoomGames({visible,onClose,roomId,creatorName='Host',use
     channelRef.current=channel;
     channel.on('broadcast',{event:'game_event'},({payload})=>{
       if(!payload||payload.roomId!==roomId||payload.userId===userId)return;
-      if(payload.type==='request_state'&&isHostRef.current&&lobbyIdRef.current){
-        sendGameEvent('lobby_state',{lobbyId:lobbyIdRef.current,...snapshotRef.current,hostId:userId});
+      if(payload.type==='request_state'&&lobbyIdRef.current){
+        if(stageRef.current==='play'&&starterRef.current){
+          sendGameEvent('start_game',{lobbyId:lobbyIdRef.current,gameName:snapshotRef.current?.gameName,snapshot:snapshotRef.current});
+        } else if(isHostRef.current&&stageRef.current==='lobby'){
+          sendGameEvent('lobby_state',{lobbyId:lobbyIdRef.current,...snapshotRef.current,hostId:userId});
+        }
       } else if(payload.type==='create_lobby'){
         const found=GAMES.find(g=>g.name===payload.gameName);
         if(!found||lobbyIdRef.current)return;
@@ -432,11 +438,12 @@ export default function RoomGames({visible,onClose,roomId,creatorName='Host',use
         lobbyIdRef.current=payload.lobbyId;setSelected(GAMES.find(g=>g.name===payload.gameName)||null);
         setBet(payload.bet||0);setCarromMode(payload.carromMode||2);setPlayers(payload.players||[]);
         setSeconds(payload.seconds??60);setStatus(payload.status||'Waiting for players.');
-        if(payload.stage==='play')applyGameSnapshot(payload);
-        else setStage('lobby');
+        if(payload.stage==='play'){
+          if(stageRef.current==='play')applyGameSnapshot(payload);
+        } else setStage('lobby');
       } else if(payload.type==='start_game'&&payload.lobbyId===lobbyIdRef.current){
         applyGameSnapshot(payload.snapshot);setStage('play');
-      } else if(payload.type==='game_state'&&payload.lobbyId===lobbyIdRef.current){
+      } else if(payload.type==='game_state'&&['play','result'].includes(stageRef.current)&&payload.lobbyId===lobbyIdRef.current){
         applyGameSnapshot(payload.snapshot);
       } else if(payload.type==='leave_game'&&isHostRef.current&&payload.lobbyId===lobbyIdRef.current){
         setPlayers(current=>{
