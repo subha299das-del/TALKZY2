@@ -364,16 +364,16 @@ export default function RoomGames({visible,onClose,roomId,creatorName='Host'}) {
   const currentName = players[turn % Math.max(players.length,1)]?.name || 'Player';
 
   useEffect(()=>{
-    if(stage!=='lobby'||!selected?.timed||players.length<2||seconds<=0)return;
+    if(stage!=='lobby'||!selected?.timed||bet===0||players.length<2||seconds<=0)return;
     const timer=setInterval(()=>setSeconds(s=>Math.max(0,s-1)),1000);
     return ()=>clearInterval(timer);
-  },[stage,selected,seconds,players.length]);
+  },[stage,selected,seconds,players.length,bet]);
   useEffect(()=>{
-    if(stage==='lobby'&&selected?.timed&&seconds===0){
+    if(stage==='lobby'&&selected?.timed&&bet>0&&seconds===0){
       if(players.length>=requiredPlayers) startGame();
       else setStatus('Not enough players joined. Required: '+requiredPlayers+'. The game was not started.');
     }
-  },[seconds,stage,selected,players.length,requiredPlayers]);
+  },[seconds,stage,selected,players.length,requiredPlayers,bet]);
 
   function reset(){
     setSelected(null);setBet(0);setCarromMode(2);setStage('select');setPlayers([]);setSeconds(60);
@@ -385,7 +385,7 @@ export default function RoomGames({visible,onClose,roomId,creatorName='Host'}) {
   function createLobby(){
     if(!selected)return;
     const host={id:'host',name:creatorName||'Host'};
-    setPlayers([host]);setSeconds(60);setStatus(selected.timed?'Waiting for players. The one-minute timer starts when the first player joins.':'Waiting for players. Host starts this game manually.');
+    setPlayers([host]);setSeconds(60);setStatus(bet===0?'Free practice is ready. Start now with no bet and no coin rewards.':selected.timed?'Waiting for players. The one-minute timer starts when the first player joins.':'Waiting for players. Host starts this game manually.');
     setStage('lobby');
   }
   function joinDemo(){
@@ -395,20 +395,21 @@ export default function RoomGames({visible,onClose,roomId,creatorName='Host'}) {
     setPlayers(p=>[...p,{id:'local-'+n,name:'Player '+n}]);
     if(selected.timed&&players.length===1)setStatus('One-minute joining countdown started.');
   }
-  function startGame(){
-    if(!selected||players.length<requiredPlayers){setStatus('At least '+requiredPlayers+' players are required.');return;}
-    setGame(selected.name);setStage('play');setTurn(0);setStatus('Game started. Take turns on this device preview.');
-    const init={};players.forEach(p=>{init[p.id]=0;});setPositions(init);
-    const sc={};players.forEach(p=>{sc[p.id]=0;});setScore(sc);
+  function startGame(roster=players){
+    if(!selected||(bet>0&&roster.length<requiredPlayers)){setStatus('At least '+requiredPlayers+' players are required for a bet match.');return;}
+    setPlayers(roster);
+    setGame(selected.name);setStage('play');setTurn(0);setStatus(bet===0?'Free practice started. No Good Coins will be collected or awarded.':'Game started. Take turns on this device preview.');
+    const init={};roster.forEach(p=>{init[p.id]=0;});setPositions(init);
+    const sc={};roster.forEach(p=>{sc[p.id]=0;});setScore(sc);
     if(['UNO','Playcards – Breez','29'].includes(selected.name)){
       const deck=Array.from({length:52},(_,i)=>({id:i,rank:(i%13)+1,suit:['♠','♥','♦','♣'][Math.floor(i/13)],color:['red','blue','green','yellow'][i%4]}));
-      const h={};players.forEach(p=>{h[p.id]=deck.splice(0,selected.name==='UNO'?7:5);});setHands(h);
+      const h={};roster.forEach(p=>{h[p.id]=deck.splice(0,selected.name==='UNO'?7:5);});setHands(h);
     }
     if(selected.name==='Truth and Dare')setPrompt('Choose Truth or Dare to reveal a prompt.');
     if(selected.name==='Brainstorm')setCategory(['Things found in a royal palace','Foods beginning with S','Cities in India','Things that shine'][rand(4)]);
     setGems(Array.from({length:16},()=>rand(4)));
   }
-  function nextTurn(){setTurn(t=>(t+1)%players.length);setRoll(null);setActiveCard(null);setStatus('Next turn: '+players[(turn+1)%players.length]?.name);}
+  function nextTurn(){setTurn(t=>(t+1)%Math.max(players.length,1));setRoll(null);setActiveCard(null);setStatus('Next turn: '+players[(turn+1)%Math.max(players.length,1)]?.name);}
   function updateScore(points){const id=players[turn%players.length]?.id;setScore(s=>({...s,[id]:(s[id]||0)+points}));}
   function rollDice(){
     const d=rand(6)+1;setRoll(d);
@@ -466,7 +467,7 @@ export default function RoomGames({visible,onClose,roomId,creatorName='Host'}) {
         </View>
         {stage==='select'&&<ScrollView style={{marginTop:12}}><View style={{flexDirection:'row',flexWrap:'wrap'}}>{GAMES.map(g=><TouchableOpacity key={g.name} onPress={()=>choose(g)} style={{width:'25%',padding:4,alignItems:'center'}}><View style={{width:62,height:62,borderRadius:14,backgroundColor:'#2A1D32',borderWidth:1,borderColor:GOLD,alignItems:'center',justifyContent:'center'}}><RoyalGameArtwork art={g.art} /></View><Text style={{color:text,fontSize:10,textAlign:'center',marginTop:5}}>{g.name}</Text></TouchableOpacity>)}</View></ScrollView>}
         {stage==='setup'&&<View style={{marginTop:16}}><Text style={[label,{fontSize:19,textAlign:'center'}]}>{selected?.name}</Text><Text style={{color:muted,textAlign:'center',marginVertical:9}}>{selected?.rules}</Text><Text style={label}>Players: {requiredPlayers} required • {selected?.max===Infinity?'Unlimited':selected?.max+' maximum'}</Text>{selected?.name==='Carrom'&&<View style={{flexDirection:'row',marginTop:8}}><Action title="2 PLAYERS" onPress={()=>setCarromMode(2)} disabled={carromMode===2}/><Action title="4 PLAYERS" onPress={()=>setCarromMode(4)} disabled={carromMode===4}/></View>}{selected?.bet&&<><Text style={[label,{marginTop:12}]}>Bet amount (Good Coins)</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{BETS.map(v=><CardTile key={v} active={bet===v} onPress={()=>setBet(v)}>{v.toLocaleString()}</CardTile>)}</View></>}<Action title="CREATE GAME" onPress={createLobby}/><Action title="BACK" onPress={()=>setStage('select')}/></View>}
-        {stage==='lobby'&&<View style={{marginTop:14}}><Text style={[label,{fontSize:18,textAlign:'center'}]}>{selected?.name} Lobby</Text><Text style={{color:muted,textAlign:'center',margin:8}}>Bet: {selected?.bet?bet.toLocaleString()+' Good Coins':'No bet'} • {players.length}/{maxPlayers===Infinity?'∞':maxPlayers} players</Text>{selected?.timed&&<Text style={{color:GOLD,textAlign:'center',fontSize:22,fontWeight:'900'}}>{seconds}s</Text>}<View style={{flexDirection:'row',flexWrap:'wrap'}}>{players.map(p=><View key={p.id} style={{width:'50%',padding:6}}><Text style={{color:text,backgroundColor:'#2A2033',padding:12,borderRadius:10}}>{p.name}{p.id==='host'?' (Creator)':''}</Text></View>)}</View><Text style={{color:muted,textAlign:'center',marginVertical:8}}>{status}</Text><Action title="ADD LOCAL TEST PLAYER" onPress={joinDemo} disabled={players.length>=maxPlayers}/>{!selected?.timed&&<Action title="START GAME" onPress={startGame} disabled={players.length<requiredPlayers}/>}<Action title="CLOSE LOBBY" onPress={close}/></View>}
+        {stage==='lobby'&&<View style={{marginTop:14}}><Text style={[label,{fontSize:18,textAlign:'center'}]}>{selected?.name} Lobby</Text><Text style={{color:muted,textAlign:'center',margin:8}}>Bet: {selected?.bet?bet.toLocaleString()+' Good Coins':'No bet'} • {players.length}/{maxPlayers===Infinity?'∞':maxPlayers} players</Text>{selected?.timed&&bet>0&&<Text style={{color:GOLD,textAlign:'center',fontSize:22,fontWeight:'900'}}>{seconds}s</Text>}<View style={{flexDirection:'row',flexWrap:'wrap'}}>{players.map(p=><View key={p.id} style={{width:'50%',padding:6}}><Text style={{color:text,backgroundColor:'#2A2033',padding:12,borderRadius:10}}>{p.name}{p.id==='host'?' (Creator)':''}</Text></View>)}</View><Text style={{color:muted,textAlign:'center',marginVertical:8}}>{status}</Text><Action title="ADD LOCAL TEST PLAYER" onPress={joinDemo} disabled={players.length>=maxPlayers}/>{bet===0?<Action title="START FREE PRACTICE NOW" onPress={()=>startGame([players[0]||{id:'host',name:creatorName||'Host'}])}/>:!selected?.timed&&<Action title="START GAME" onPress={startGame} disabled={players.length<requiredPlayers}/>}<Action title="CLOSE LOBBY" onPress={close}/></View>}
         {stage==='play'&&<ScrollView style={{marginTop:12}}><Text style={[label,{textAlign:'center',fontSize:18}]}>{game}</Text><Text style={{color:GOLD,textAlign:'center',margin:8}}>Turn: {currentName}</Text><Text style={{color:muted,textAlign:'center'}}>Players: {players.map(p=>p.name+' '+(score[p.id]||0)).join('  •  ')}</Text><View style={{backgroundColor:'#21182B',padding:14,borderRadius:14,marginTop:12}}>{gameControls()}</View><Text style={{color:muted,textAlign:'center',margin:10}}>{status}</Text><Action title="END GAME" onPress={()=>{setStage('result');}}/></ScrollView>}
         {stage==='result'&&<View style={{marginTop:18}}><Text style={[label,{fontSize:21,textAlign:'center'}]}>GAME RESULT</Text><Text style={{color:GOLD,textAlign:'center',fontSize:18,margin:12}}>{winner?.name||'No winner'} • {score[winner?.id]||0} points</Text>{players.map(p=><Text key={p.id} style={{color:text,padding:7}}>{p.name}: {score[p.id]||0}</Text>)}<Action title="BACK TO GAMES" onPress={reset}/></View>}
       </View>
