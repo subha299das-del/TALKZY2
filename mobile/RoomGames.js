@@ -405,7 +405,7 @@ export default function RoomGames({visible,onClose,roomId,creatorName='Host',use
 
   useEffect(()=>{
     if(!visible||!roomId||!userId||!supabase)return;
-    const channel=supabase.channel('room-games-'+roomId,{config:{private:true,presence:{key:userId}}});
+    const channel=supabase.channel('room-games-'+roomId,{config:{private:true}});
     channelRef.current=channel;
     channel.on('broadcast',{event:'game_event'},({payload})=>{
       if(!payload||payload.roomId!==roomId||payload.userId===userId)return;
@@ -449,7 +449,6 @@ export default function RoomGames({visible,onClose,roomId,creatorName='Host',use
     });
     channel.subscribe(async status=>{
       if(status==='SUBSCRIBED'){
-        await channel.track({userId,roomId});
         channel.send({type:'broadcast',event:'game_event',payload:{type:'request_state',roomId,userId}});
       }
     });
