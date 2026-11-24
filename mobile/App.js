@@ -4405,6 +4405,7 @@ function renderRoomInterior() {
             keyboardShouldPersistTaps="handled"
           >
             {showRoomGiftPanel ? (
+              <>
               <View style={{ width: '100%' }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
                   {['Popular', 'Luxury', 'Love', 'Special', 'Bag'].map(category => (
@@ -4474,6 +4475,7 @@ function renderRoomInterior() {
                   <Text style={{ color: '#171717', fontSize: 11, fontWeight: '900', letterSpacing: 0.5 }}>SEND</Text>
                 </TouchableOpacity>
               </View>
+              </>
             ) : (
               (() => {
                 const isCurrentRoomOwner = selectedRoom?.owner_id === session?.user?.id;
