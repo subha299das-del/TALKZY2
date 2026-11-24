@@ -4591,16 +4591,16 @@ function renderRoomInterior() {
 
 
       {showRocketPanel && screen === 'roomInterior' && selectedRoom && (
-        <View style={{ position:'absolute', left:10, right:10, top:48, bottom:76, backgroundColor:'#100B1D', borderRadius:24, padding:14, borderWidth:1.5, borderColor:'#C6A15B', zIndex:46, elevation:30 }}>
+        <View style={{ position:'absolute', left:10, right:10, top:48, bottom:76, backgroundColor:'#100B1D', borderRadius:26, padding:16, borderWidth:1.7, borderColor:'#C6A15B', zIndex:46, elevation:30 }}>
           <View style={{ position:'absolute',top:0,left:18,right:18,height:2,backgroundColor:'#E4C77E',borderRadius:2 }} />
           <View style={{ flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:14 }}>
             <View style={{ flexDirection:'row',alignItems:'center' }}>
-              <View style={{ width:38,height:38,borderRadius:13,backgroundColor:'#2B1B43',borderWidth:1,borderColor:'#B9924F',alignItems:'center',justifyContent:'center',marginRight:10 }}>
-                <Text style={{ fontSize:21 }}>💎</Text>
+              <View style={{ width:42,height:42,borderRadius:14,backgroundColor:'#2B1B43',borderWidth:1,borderColor:'#B9924F',alignItems:'center',justifyContent:'center',marginRight:10 }}>
+                <Text style={{ fontSize:23 }}>💎</Text>
               </View>
               <View>
-                <Text style={{ color:'#F8EBD0',fontSize:19,fontWeight:'900',letterSpacing:1.2 }}>TALKZY TREASURE</Text>
-                <Text style={{ color:'#C5A96E',fontSize:9,marginTop:3,letterSpacing:1.7 }}>ROYAL MILESTONE COLLECTION</Text>
+                <Text style={{ color:'#F8EBD0',fontSize:22,fontWeight:'900',letterSpacing:1.25 }}>TALKZY TREASURE</Text>
+                <Text style={{ color:'#C5A96E',fontSize:10,marginTop:4,letterSpacing:1.8 }}>ROYAL MILESTONE COLLECTION</Text>
               </View>
             </View>
             <TouchableOpacity onPress={()=>setShowRocketPanel(false)} accessibilityRole="button" accessibilityLabel="Close Treasure" style={{ width:36,height:36,borderRadius:12,backgroundColor:'#251934',borderWidth:1,borderColor:'#725638',alignItems:'center',justifyContent:'center' }}>
@@ -4615,21 +4615,21 @@ function renderRoomInterior() {
               {level:4,color:'#69B9F0',name:'SAPPHIRE'},
               {level:5,color:'#E7C16C',name:'ROYAL'}
             ].map(item=>(
-              <TouchableOpacity key={item.level} onPress={()=>{ if(!treasureLaunching) setTreasureLevel(item.level); }} style={{ flex:1,alignItems:'center',paddingVertical:9,marginHorizontal:2,borderRadius:12,backgroundColor:treasureLevel===item.level?'#342344':'#1B1428',borderWidth:1.4,borderColor:treasureLevel===item.level?item.color:'#453451' }}>
-                <Text style={{ color:item.color,fontSize:12,fontWeight:'900' }}>LV {item.level}</Text>
-                <Text style={{ color:treasureLevel===item.level?'#F3E8D5':'#9D91A9',fontSize:7,marginTop:4,fontWeight:'800',letterSpacing:0.4 }}>{item.name}</Text>
+              <TouchableOpacity key={item.level} onPress={()=>{ if(!treasureLaunching) setTreasureLevel(item.level); }} style={{ flex:1,alignItems:'center',paddingVertical:11,marginHorizontal:2,borderRadius:13,backgroundColor:treasureLevel===item.level?'#342344':'#1B1428',borderWidth:1.4,borderColor:treasureLevel===item.level?item.color:'#453451' }}>
+                <Text style={{ color:item.color,fontSize:13,fontWeight:'900' }}>LV {item.level}</Text>
+                <Text style={{ color:treasureLevel===item.level?'#F3E8D5':'#9D91A9',fontSize:8,marginTop:5,fontWeight:'800',letterSpacing:0.4 }}>{item.name}</Text>
                 {treasureLevel===item.level && <View style={{ width:16,height:2,backgroundColor:item.color,borderRadius:2,marginTop:5 }} />}
               </TouchableOpacity>
             ))}
           </View>
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom:10 }}>
-            <View style={{ minHeight:290,borderRadius:20,backgroundColor:'#171126',borderWidth:1.2,borderColor:'#715638',alignItems:'center',justifyContent:'center',padding:14,overflow:'hidden' }}>
+            <View style={{ minHeight:310,borderRadius:20,backgroundColor:'#171126',borderWidth:1.2,borderColor:'#715638',alignItems:'center',justifyContent:'center',padding:14,overflow:'hidden' }}>
               <View style={{ position:'absolute',top:-55,width:250,height:250,borderRadius:125,borderWidth:1,borderColor:'rgba(211,177,112,0.20)' }} />
               <View style={{ position:'absolute',top:-28,width:195,height:195,borderRadius:98,borderWidth:1,borderColor:'rgba(211,177,112,0.12)' }} />
               <View style={{ position:'absolute',width:158,height:158,borderRadius:79,backgroundColor:treasureLevel===1?'rgba(101,213,138,0.12)':treasureLevel===2?'rgba(183,139,255,0.14)':treasureLevel===3?'rgba(240,107,112,0.13)':treasureLevel===4?'rgba(105,185,240,0.14)':'rgba(231,193,108,0.15)' }} />
               <Text style={{ color:'#D8BD83',fontSize:9,fontWeight:'900',letterSpacing:2.4 }}>THE ROCKET COLLECTION</Text>
               <Text style={{ color:'#F6EBD7',fontSize:16,fontWeight:'900',letterSpacing:1,marginTop:4 }}>LEVEL {treasureLevel}</Text>
-              <Animated.View style={{ width:'100%',height:196,alignItems:'center',justifyContent:'center',flexDirection:'row',transform:[{translateY:treasureLaunchMotion.interpolate({inputRange:[0,1],outputRange:[0,-280]})}],opacity:treasureLaunchMotion.interpolate({inputRange:[0,0.72,1],outputRange:[1,1,0]}) }}>
+              <Animated.View style={{ width:'100%',height:184,alignItems:'center',justifyContent:'center',flexDirection:'row',transform:[{translateY:treasureLaunchMotion.interpolate({inputRange:[0,1],outputRange:[0,-280]})}],opacity:treasureLaunchMotion.interpolate({inputRange:[0,0.72,1],outputRange:[1,1,0]}) }}>
                 {(treasureLevel===1
                   ? [{w:48,h:126,accent:'#65D58A',main:true}]
                   : treasureLevel===2
@@ -4655,19 +4655,19 @@ function renderRoomInterior() {
                   </View>
                 ))}
               </Animated.View>
-              <Text style={{ color:'#F3E5C9',fontSize:14,fontWeight:'900',letterSpacing:1.1,marginTop:1 }}>
+              <Text style={{ color:'#F3E5C9',fontSize:15,fontWeight:'900',letterSpacing:1.15,marginTop:2 }}>
                 {['','EMERALD IGNITION','PURPLE BOOSTER','CRIMSON CLUSTER','SAPPHIRE SHUTTLE','ROYAL ORBITER'][treasureLevel]}
               </Text>
-              <Text style={{ color:'#B9AFC8',fontSize:9,marginTop:5,textAlign:'center' }}>
+              <Text style={{ color:'#B9AFC8',fontSize:10,marginTop:6,textAlign:'center' }}>
                 {treasureLevel===1?'A sleek emerald-powered launch vehicle':treasureLevel===2?'A three-core booster with royal violet trim':treasureLevel===3?'A powerful triple-engine crimson rocket':treasureLevel===4?'A sapphire space shuttle with gold detailing':'The royal orbiter with twin support boosters'}
               </Text>
               <View style={{ flexDirection:'row',alignItems:'center',marginTop:10 }}>
                 <View style={{ width:30,height:1,backgroundColor:'#80643C' }} />
-                <Text style={{ color:'#D6B979',fontSize:8,letterSpacing:2,marginHorizontal:8 }}>TALKZY • TREASURE</Text>
+                <Text style={{ color:'#D6B979',fontSize:9,letterSpacing:2,marginHorizontal:8 }}>TALKZY • TREASURE</Text>
                 <View style={{ width:30,height:1,backgroundColor:'#80643C' }} />
               </View>
             </View>
-            <View style={{ marginTop:12,borderRadius:16,padding:13,backgroundColor:'#21172E',borderWidth:1,borderColor:'#725638' }}>
+            <View style={{ marginTop:13,borderRadius:17,padding:15,backgroundColor:'#21172E',borderWidth:1,borderColor:'#725638' }}>
               <View style={{ flexDirection:'row',alignItems:'center',justifyContent:'space-between' }}>
                 <Text style={{ color:'#EBD39D',fontSize:11,fontWeight:'900',letterSpacing:0.8 }}>TREASURE PROGRESSION</Text>
                 <Text style={{ color:'#9B8BAA',fontSize:8 }}>MILESTONE PREVIEW</Text>
