@@ -172,7 +172,7 @@ function gameResults(s){
   ids.forEach((id,i)=>{scoreById[id]=declarerSide===null?0:(i%2===declarerSide?won:13-won);});
   detail='Team tricks';
  }else if(s.name==='29'){
-  ids.forEach((id,i)=>{scoreById[id]=Number(s.teamPoints?.[i%2]||0);});detail='Team points';
+  ids.forEach((id,i)=>{scoreById[id]=Number(s.matchScore?.[i%2]||0);});detail='Team match score';
  }else if(s.name==='Monster Crush'){
   ids.forEach(id=>{scoreById[id]=Number(s.score?.[id]||0);});detail='Points';
  }
@@ -191,7 +191,7 @@ function cardPoints(c){return c.rank==='J'?3:c.rank==='9'?2:(c.rank==='A'||c.ran
 function rank29(r){return ['J','9','A','10','K','Q','8','7'].indexOf(r);}
 function applyMove(src,actor,action){
  const s=clone(src), p=s.players[s.turn], id=p?.id;
- if(!p||p.id!==actor||(s.winner&&!(s.name==='UNO'&&action.type==='uno_next_round')))return s;
+ if(!p||p.id!==actor||(s.winner&&!((s.name==='UNO'&&action.type==='uno_next_round')||(s.name==='29'&&action.type==='29_next_hand'))))return s;
  const finish=()=>{advance(s);return s;};
  if(s.name==='Snakes and Ladders'&&action.type==='roll'){
   if(!Number.isInteger(action.die)||action.die<1||action.die>6)return s;
@@ -284,6 +284,7 @@ function applyMove(src,actor,action){
   const challenge=s.pendingChallenge;if(!challenge||challenge.target!==id)return s;
   unoDraw(s,id,4);s.pendingChallenge=null;if(!(s.hands[challenge.offender]||[]).length){unoRoundEnd(s,challenge.offender);return s;}s.status='Drew four cards; turn skipped.';advance(s);return s;
  }
+ if(s.name==='29'&&action.type==='29_next_hand'){if(!s.winner||s.matchWinner!==null)return s;const next=initialGame('29',s.players);next.round=s.round+1;next.matchScore=[...s.matchScore];next.status='Next hand started.';return next;}
  if(s.name==='UNO'&&action.type==='uno_next_round'){
   if(!s.winner||s.matchWinner)return s;
   const next=initialGame('UNO',s.players);next.round=s.round+1;next.matchPoints={...s.matchPoints};next.status='Round '+next.round+' started.';return next;
@@ -331,7 +332,7 @@ function applyMove(src,actor,action){
    const eligible=s.currentTrick.filter(x=>trump&&x.card.suit===trump);
    const pool=eligible.length?eligible:s.currentTrick.filter(x=>x.card.suit===lead);
    const rank=s.name==='29'?rank29:(r=>['2','3','4','5','6','7','8','9','10','J','Q','K','A'].indexOf(String(r)));
-   pool.sort((a,b)=>rank(b.card.rank)-rank(a.card.rank));
+   pool.sort((a,b)=>rank(a.card.rank)-rank(b.card.rank));
    const win=pool[0],wi=s.players.findIndex(x=>x.id===win.player);
    if(s.name==='29'){
     const team=wi%2;s.teamPoints[team]+=s.currentTrick.reduce((v,x)=>v+cardPoints(x.card),0);
@@ -342,8 +343,8 @@ function applyMove(src,actor,action){
    if(s.name==='29'&&s.tricks.length===8){
     const contractTeam=s.players.findIndex(p=>p.id===s.contract.player)%2;
     const made=s.teamPoints[contractTeam]>=s.contract.bid;
-    s.matchScore[contractTeam]+=made?1:-1;
-    s.phase='complete';s.winner=win.player;s.matchWinner=s.matchScore[contractTeam]>=6?contractTeam:s.matchScore[1-contractTeam]<=-6?1-contractTeam:null;
+    s.matchScore[contractTeam]+=made?1:-1;if(!made)s.matchScore[1-contractTeam]+=1;
+    s.phase='complete';s.winner=win.player;s.matchWinner=s.matchScore.findIndex(v=>v>=6);if(s.matchWinner<0)s.matchWinner=null;
     s.status='29 complete. Team points: '+s.teamPoints.join(' – ')+'. Bid '+(made?'made':'failed')+'. Match score: '+s.matchScore.join(' – ');
    }
   } else advance(s,s.name==='29'?-1:1);
@@ -445,7 +446,7 @@ export default function RoomGames({visible,onClose,onGameAvailable,roomId,creato
      </View>
     </View>)}
    </ScrollView>
-   {state?.name==='UNO'&&state?.winner&&!state?.matchWinner&&hostRef.current&&<Btn title="NEXT ROUND" onPress={()=>{const next=applyMove(state,state.players[state.turn]?.id,{type:'uno_next_round'});stateRef.current=next;setState(next);setStage('play');publish('game_state',{lobbyId:lobbyRef.current,snapshot:next});}}/>}<Btn title="BACK TO GAMES" onPress={reset}/>
+   {state?.name==='UNO'&&state?.winner&&!state?.matchWinner&&hostRef.current&&<Btn title="NEXT ROUND" onPress={()=>{const next=applyMove(state,state.players[state.turn]?.id,{type:'uno_next_round'});stateRef.current=next;setState(next);setStage('play');publish('game_state',{lobbyId:lobbyRef.current,snapshot:next});}}/>}{state?.name==='29'&&state?.winner&&state?.matchWinner===null&&hostRef.current&&<Btn title="NEXT HAND" onPress={()=>{const next=applyMove(state,state.players[state.turn]?.id,{type:'29_next_hand'});stateRef.current=next;setState(next);setStage('play');publish('game_state',{lobbyId:lobbyRef.current,snapshot:next});}}/>}<Btn title="BACK TO GAMES" onPress={reset}/>
   </View>}
  </View></View></Modal>{minimized&&canMinimize&&<TouchableOpacity onPress={reopenGame} style={{position:'absolute',right:16,bottom:112,zIndex:999,elevation:20,backgroundColor:'#24152F',borderColor:GOLD,borderWidth:1.5,borderRadius:24,paddingHorizontal:16,paddingVertical:11}}><Text style={{color:GOLD,fontWeight:'900'}}>🎮 OPEN GAME</Text></TouchableOpacity>}</>;
 }
