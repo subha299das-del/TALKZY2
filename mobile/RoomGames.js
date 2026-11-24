@@ -348,7 +348,7 @@ function bridgeDuplicateScore(contract,tricks,vulnerable=false){
  if(under<=0){
   const base=suit==='NT'?40+30*(contract.level-1):(['♣','♦'].includes(suit)?20:30)*contract.level;
   const contractPoints=base*m;
-  let score=contractPoints+(contractPoints>=100?(vulnerable?500:300):50);
+  let score=contractPoints+(base>=100?(vulnerable?500:300):50);
   if(m===2)score+=50;if(m===4)score+=100;
   if(contract.level===6)score+=vulnerable?750:500;
   if(contract.level===7)score+=vulnerable?1500:1000;
