@@ -371,7 +371,7 @@ function applyMove(src,actor,action){
    if(leaders.length===1){const winnerIndex=s.players.findIndex(pl=>pl.id===leaders[0]);s.turn=winnerIndex;s.phase='play';s.status=(s.players[winnerIndex]?.name||'Player')+' rolled highest and starts.';return s;}
    s.tiedStartPlayers=leaders;s.startingRolls={};s.turn=s.players.findIndex(pl=>pl.id===leaders[0]);s.status='Tie for highest spin. Tied players spin again.';return s;
   }
-  const next=s.tiedStartPlayers[(s.tiedStartPlayers.indexOf(id)+1)%s.tiedStartPlayers.length];s.turn=s.players.findIndex(pl=>pl.id===next);s.status=(p.name||'Player')+' spun '+action.die+'.';return s;
+  const next=s.tiedStartPlayers[(s.tiedStartPlayers.indexOf(id)+1)%s.tiedStartPlayers.length];s.turn=s.players.findIndex(pl=>pl.id===next);s.status=(p.name||'Player')+' spun '+die+'.';return s;
  }
  if(s.name==='Snakes and Ladders'&&action.type==='roll'){
   if(s.phase!=='play')return s;
