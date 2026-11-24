@@ -468,6 +468,110 @@ function ComingSoon({ title, description }) {
     </Card>
   );
           }
+
+const ROOM_GAME_OPTIONS = [
+  { name: 'Ludo', art: 'ludo' },
+  { name: 'Carrom', art: 'carrom' },
+  { name: 'Playcards – Breez', art: 'breez' },
+  { name: 'UNO', art: 'uno' },
+  { name: 'Monster Crush', art: 'monster' },
+  { name: 'Truth and Dare', art: 'truth' },
+  { name: 'Snakes and Ladders', art: 'snake' },
+  { name: 'Jackaroo', art: 'jackaroo' },
+  { name: 'Brainstorm', art: 'brain' },
+  { name: '29', art: 'twentynine' }
+];
+
+function RoyalGameArtwork({ art }) {
+  const gold = '#E8C477';
+  const pale = '#F6E7C4';
+  const gem = (color, size = 12) => (
+    <View style={{ width: size, height: size, backgroundColor: color, borderWidth: 1, borderColor: '#F7DFA5', borderRadius: 3, transform: [{ rotate: '45deg' }], margin: 3 }} />
+  );
+  if (art === 'ludo') return (
+    <View style={{ width: 48, height: 48, borderWidth: 2, borderColor: gold, borderRadius: 10, backgroundColor: '#21182B', padding: 6, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-around', alignItems: 'center' }}>
+      {['#D94B58', '#4E91D6', '#55B879', '#E6B94F'].map((color, i) => <View key={i} style={{ width: 12, height: 12, borderRadius: 7, backgroundColor: color, borderWidth: 1.5, borderColor: '#F8E4B2' }} />)}
+      <View style={{ position: 'absolute', width: 15, height: 15, backgroundColor: '#F1E2C1', borderRadius: 4, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: gold }}><Text style={{ color: '#261B2D', fontSize: 10, fontWeight: '900' }}>✦</Text></View>
+    </View>
+  );
+  if (art === 'carrom') return (
+    <View style={{ width: 50, height: 50, borderRadius: 9, borderWidth: 2, borderColor: gold, backgroundColor: '#3A2419', alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ width: 35, height: 35, borderRadius: 18, borderWidth: 1, borderColor: '#D6A85B', alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ width: 14, height: 14, borderRadius: 8, backgroundColor: '#E8C477', borderWidth: 2, borderColor: '#FFF0C7' }} />
+        <View style={{ position: 'absolute', top: 3, left: 5, width: 7, height: 7, borderRadius: 5, backgroundColor: '#171018', borderWidth: 1, borderColor: gold }} />
+        <View style={{ position: 'absolute', bottom: 3, right: 5, width: 7, height: 7, borderRadius: 5, backgroundColor: '#171018', borderWidth: 1, borderColor: gold }} />
+      </View>
+    </View>
+  );
+  if (art === 'breez') return (
+    <View style={{ width: 52, height: 50, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ position: 'absolute', width: 27, height: 39, borderRadius: 5, backgroundColor: '#D9C39A', borderWidth: 1.5, borderColor: gold, transform: [{ rotate: '-17deg' }], left: 4, top: 6 }} />
+      <View style={{ position: 'absolute', width: 27, height: 39, borderRadius: 5, backgroundColor: '#F4E9D2', borderWidth: 1.5, borderColor: gold, transform: [{ rotate: '15deg' }], right: 4, top: 6 }} />
+      <View style={{ width: 27, height: 39, borderRadius: 5, backgroundColor: '#21172C', borderWidth: 1.5, borderColor: '#F1D38C', alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ color: gold, fontSize: 17, fontWeight: '900' }}>A</Text><Text style={{ color: '#D9B76D', fontSize: 13 }}>♠</Text>
+      </View>
+    </View>
+  );
+  if (art === 'uno') return (
+    <View style={{ width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: gold, backgroundColor: '#21172C', alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ position: 'absolute', top: 6, left: 17 }}>{gem('#D94B58', 10)}</View>
+      <View style={{ position: 'absolute', top: 17, right: 5 }}>{gem('#4E91D6', 10)}</View>
+      <View style={{ position: 'absolute', bottom: 6, left: 17 }}>{gem('#55B879', 10)}</View>
+      <View style={{ position: 'absolute', top: 17, left: 5 }}>{gem('#E6B94F', 10)}</View>
+      <Text style={{ color: gold, fontSize: 13, fontWeight: '900' }}>✦</Text>
+    </View>
+  );
+  if (art === 'monster') return (
+    <View style={{ width: 49, height: 48, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ position: 'absolute', top: 1, left: 7, width: 0, height: 0, borderLeftWidth: 8, borderRightWidth: 3, borderBottomWidth: 15, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: gold, transform: [{ rotate: '-22deg' }] }} />
+      <View style={{ position: 'absolute', top: 1, right: 7, width: 0, height: 0, borderLeftWidth: 3, borderRightWidth: 8, borderBottomWidth: 15, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: gold, transform: [{ rotate: '22deg' }] }} />
+      <View style={{ width: 40, height: 38, borderRadius: 15, backgroundColor: '#4B2A62', borderWidth: 2, borderColor: gold, alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ flexDirection: 'row', gap: 9 }}><View style={{ width: 7, height: 9, borderRadius: 5, backgroundColor: '#F4E8C9' }} /><View style={{ width: 7, height: 9, borderRadius: 5, backgroundColor: '#F4E8C9' }} /></View>
+        <View style={{ width: 15, height: 4, borderBottomWidth: 2, borderColor: '#F4E8C9', borderRadius: 8, marginTop: 5 }} />
+      </View>
+    </View>
+  );
+  if (art === 'truth') return (
+    <View style={{ width: 49, height: 49, borderRadius: 25, borderWidth: 3, borderColor: gold, backgroundColor: '#302044', alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ position: 'absolute', width: 37, height: 37, borderRadius: 20, borderWidth: 1, borderColor: '#A9844D' }} />
+      <Text style={{ color: pale, fontSize: 24, fontWeight: '900' }}>?</Text><Text style={{ position: 'absolute', bottom: 1, right: 5, color: gold, fontSize: 12 }}>✦</Text>
+    </View>
+  );
+  if (art === 'snake') return (
+    <View style={{ width: 52, height: 50, borderRadius: 9, borderWidth: 2, borderColor: gold, backgroundColor: '#21172C', alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ position: 'absolute', left: 12, top: 8, width: 22, height: 33, borderLeftWidth: 3, borderRightWidth: 3, borderColor: '#D9B66D', justifyContent: 'space-evenly' }}>
+        {[0,1,2,3].map(i => <View key={i} style={{ height: 2, backgroundColor: '#D9B66D' }} />)}
+      </View>
+      <Text style={{ color: '#6FC18B', fontSize: 27, fontWeight: '900', textShadowColor: '#D9B66D', textShadowRadius: 5 }}>S</Text>
+    </View>
+  );
+  if (art === 'jackaroo') return (
+    <View style={{ width: 52, height: 50, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ width: 40, height: 40, borderRadius: 9, backgroundColor: '#1E1828', borderWidth: 2, borderColor: gold, alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ color: pale, fontSize: 18, fontWeight: '900' }}>♠</Text>
+        <View style={{ position: 'absolute', top: 4, left: 5, width: 7, height: 7, borderRadius: 4, backgroundColor: '#D94B58' }} />
+        <View style={{ position: 'absolute', top: 4, right: 5, width: 7, height: 7, borderRadius: 4, backgroundColor: '#4E91D6' }} />
+        <View style={{ position: 'absolute', bottom: 4, left: 5, width: 7, height: 7, borderRadius: 4, backgroundColor: '#55B879' }} />
+        <View style={{ position: 'absolute', bottom: 4, right: 5, width: 7, height: 7, borderRadius: 4, backgroundColor: '#E6B94F' }} />
+      </View>
+    </View>
+  );
+  if (art === 'brain') return (
+    <View style={{ width: 50, height: 50, borderRadius: 25, borderWidth: 2, borderColor: gold, backgroundColor: '#302044', alignItems: 'center', justifyContent: 'center' }}>
+      <Text style={{ color: '#E7C477', fontSize: 28, fontWeight: '900' }}>Ψ</Text>
+      <Text style={{ position: 'absolute', top: 1, right: 5, color: pale, fontSize: 12 }}>✦</Text>
+    </View>
+  );
+  return (
+    <View style={{ width: 52, height: 50, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ width: 30, height: 41, borderRadius: 5, backgroundColor: '#E8D8B8', borderWidth: 1.5, borderColor: gold, alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ color: '#25182E', fontSize: 10, fontWeight: '900' }}>29</Text><Text style={{ color: '#9B3443', fontSize: 17 }}>♥</Text>
+      </View>
+      <Text style={{ position: 'absolute', right: 1, bottom: 1, color: gold, fontSize: 16 }}>♠</Text>
+    </View>
+  );
+}
+
 export default function App() {
   // ---------------------------------
   // MAIN APP STATES
@@ -4790,42 +4894,41 @@ function renderRoomInterior() {
           left: 12,
           right: 12,
           bottom: 86,
-          backgroundColor: 'rgba(10, 22, 34, 0.98)',
-          borderRadius: 18,
-          padding: 16,
-          borderWidth: 1,
-          borderColor: '#287B91',
+          maxHeight: '72%',
+          backgroundColor: '#100D18',
+          borderRadius: 20,
+          padding: 14,
+          borderWidth: 1.5,
+          borderColor: '#B58A49',
           zIndex: 43,
-          elevation: 25
+          elevation: 25,
+          overflow: 'hidden'
         }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={{ fontSize: 21, marginRight: 8 }}>🎮</Text>
-              <Text style={{ color: C.text, fontSize: 16, fontWeight: '900' }}>Room Games</Text>
+          <View style={{ position: 'absolute', top: 5, left: 5, right: 5, bottom: 5, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(232,196,119,0.24)' }} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+            <View>
+              <Text style={{ color: '#F4E6C5', fontSize: 17, fontWeight: '900', letterSpacing: 1 }}>♛ ROYAL GAMES</Text>
+              <Text style={{ color: '#B99B67', fontSize: 9, marginTop: 3, letterSpacing: 1.4 }}>TALKZY • GOLD COLLECTION</Text>
             </View>
-            <TouchableOpacity onPress={() => setShowRoomGamePanel(false)} style={{ paddingHorizontal: 7, paddingVertical: 3 }}>
-              <Text style={{ color: C.muted, fontSize: 20 }}>✕</Text>
+            <TouchableOpacity onPress={() => setShowRoomGamePanel(false)} style={{ paddingHorizontal: 8, paddingVertical: 5 }}>
+              <Text style={{ color: '#E8C477', fontSize: 21 }}>✕</Text>
             </TouchableOpacity>
           </View>
-          <View style={{
-            minHeight: 126,
-            borderRadius: 14,
-            borderWidth: 1,
-            borderColor: '#24566B',
-            backgroundColor: 'rgba(40, 123, 145, 0.12)',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 18
-          }}>
-            <Text style={{ fontSize: 34, marginBottom: 9 }}>🕹️</Text>
-            <Text style={{ color: C.text, fontSize: 14, fontWeight: '800', textAlign: 'center' }}>Games section is ready</Text>
-            <Text style={{ color: C.muted, fontSize: 11, textAlign: 'center', marginTop: 7, lineHeight: 17 }}>
-              The game cards and play experience will be added after the game section is finalized.
-            </Text>
-          </View>
-          <Text style={{ color: '#80C9DA', fontSize: 10, textAlign: 'center', marginTop: 10 }}>
-            Room Games · Gameplay not active yet
-          </Text>
+          <View style={{ height: 1, backgroundColor: '#5B452C', marginBottom: 12, marginTop: 8 }} />
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 5 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
+              {ROOM_GAME_OPTIONS.map((game, index) => (
+                <View key={game.name} style={{ width: '25%', alignItems: 'center', paddingHorizontal: 2, paddingBottom: 15 }}>
+                  <View style={{ width: 68, height: 68, borderRadius: 17, backgroundColor: '#21182B', borderWidth: 1.5, borderColor: '#C39A55', alignItems: 'center', justifyContent: 'center', shadowColor: '#D7B36B', shadowOpacity: 0.18, shadowRadius: 6, elevation: 3 }}>
+                    <View style={{ position: 'absolute', top: 3, left: 3, right: 3, bottom: 3, borderRadius: 13, borderWidth: 1, borderColor: 'rgba(232,196,119,0.24)' }} />
+                    <RoyalGameArtwork art={game.art} />
+                  </View>
+                  <Text numberOfLines={2} style={{ color: '#E9D5A8', fontSize: 10, fontWeight: '800', textAlign: 'center', marginTop: 6, minHeight: 26, paddingHorizontal: 1 }}>{game.name}</Text>
+                </View>
+              ))}
+            </View>
+          </ScrollView>
+          <Text style={{ color: '#A88B5C', fontSize: 9, textAlign: 'center', marginTop: 4, letterSpacing: 1 }}>ANTIQUE GOLD  •  BLACK VELVET  •  ROYAL PURPLE</Text>
         </View>
       )}
 
