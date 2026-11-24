@@ -850,7 +850,7 @@ export default function RoomGames({visible,onClose,onGameAvailable,roomId,creato
    if(left===currentState.secondsLeft)return;
    const next=clone(currentState);next.secondsLeft=left;
    if(left===0){const winner=next.players.slice().sort((a,b)=>(next.score[b.id]||0)-(next.score[a.id]||0))[0];next.winner=winner?.id;next.status='Time is up. '+(winner?.name||'Player')+' wins with '+(next.score[winner?.id]||0)+' points.';}
-   stateRef.current=next;setState(next);sendGameSnapshots(next);
+   stateRef.current=next;setState(next);sendGameSnapshots(next);if(left===0)setStage('result');
    if(left===0)clearInterval(timer);
   },250);
   return()=>clearInterval(timer);
