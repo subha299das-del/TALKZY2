@@ -22,6 +22,314 @@ const btn = { backgroundColor:'#30213B', borderColor:'#A77D45', borderWidth:1, p
 const label = { color:text, fontWeight:'900' };
 const rand = n => Math.floor(Math.random()*n);
 
+function RoyalGameArtwork({ art }) {
+  const gold = '#E8C477';
+  const pale = '#F6E7C4';
+  const gem = (color, size = 12) => (
+    <View style={{ width: size, height: size, backgroundColor: color, borderWidth: 1, borderColor: '#F7DFA5', borderRadius: 3, transform: [{ rotate: '45deg' }], margin: 3 }} />
+  );
+  if (art === 'ludo') return (
+    <View style={{ width: 48, height: 48, borderWidth: 2, borderColor: gold, borderRadius: 10, backgroundColor: '#21182B', padding: 6, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-around', alignItems: 'center' }}>
+      {['#D94B58', '#4E91D6', '#55B879', '#E6B94F'].map((color, i) => <View key={i} style={{ width: 12, height: 12, borderRadius: 7, backgroundColor: color, borderWidth: 1.5, borderColor: '#F8E4B2' }} />)}
+      <View style={{ position: 'absolute', width: 15, height: 15, backgroundColor: '#F1E2C1', borderRadius: 4, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: gold }}><Text style={{ color: '#261B2D', fontSize: 10, fontWeight: '900' }}>✦</Text></View>
+    </View>
+  );
+  if (art === 'carrom') return (
+    <View style={{ width: 50, height: 50, borderRadius: 9, borderWidth: 2, borderColor: gold, backgroundColor: '#3A2419', alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ width: 35, height: 35, borderRadius: 18, borderWidth: 1, borderColor: '#D6A85B', alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ width: 14, height: 14, borderRadius: 8, backgroundColor: '#E8C477', borderWidth: 2, borderColor: '#FFF0C7' }} />
+        <View style={{ position: 'absolute', top: 3, left: 5, width: 7, height: 7, borderRadius: 5, backgroundColor: '#171018', borderWidth: 1, borderColor: gold }} />
+        <View style={{ position: 'absolute', bottom: 3, right: 5, width: 7, height: 7, borderRadius: 5, backgroundColor: '#171018', borderWidth: 1, borderColor: gold }} />
+      </View>
+    </View>
+  );
+  if (art === 'breez') return (
+    <View style={{ width: 52, height: 50, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ position: 'absolute', width: 27, height: 39, borderRadius: 5, backgroundColor: '#D9C39A', borderWidth: 1.5, borderColor: gold, transform: [{ rotate: '-17deg' }], left: 4, top: 6 }} />
+      <View style={{ position: 'absolute', width: 27, height: 39, borderRadius: 5, backgroundColor: '#F4E9D2', borderWidth: 1.5, borderColor: gold, transform: [{ rotate: '15deg' }], right: 4, top: 6 }} />
+      <View style={{ width: 27, height: 39, borderRadius: 5, backgroundColor: '#21172C', borderWidth: 1.5, borderColor: '#F1D38C', alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ color: gold, fontSize: 17, fontWeight: '900' }}>A</Text><Text style={{ color: '#D9B76D', fontSize: 13 }}>♠</Text>
+      </View>
+    </View>
+  );
+  if (art === 'uno') return (
+    <View style={{ width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: gold, backgroundColor: '#21172C', alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ position: 'absolute', top: 6, left: 17 }}>{gem('#D94B58', 10)}</View>
+      <View style={{ position: 'absolute', top: 17, right: 5 }}>{gem('#4E91D6', 10)}</View>
+      <View style={{ position: 'absolute', bottom: 6, left: 17 }}>{gem('#55B879', 10)}</View>
+      <View style={{ position: 'absolute', top: 17, left: 5 }}>{gem('#E6B94F', 10)}</View>
+      <Text style={{ color: gold, fontSize: 13, fontWeight: '900' }}>✦</Text>
+    </View>
+  );
+  if (art === 'monster') return (
+    <View style={{ width: 49, height: 48, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ position: 'absolute', top: 1, left: 7, width: 0, height: 0, borderLeftWidth: 8, borderRightWidth: 3, borderBottomWidth: 15, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: gold, transform: [{ rotate: '-22deg' }] }} />
+      <View style={{ position: 'absolute', top: 1, right: 7, width: 0, height: 0, borderLeftWidth: 3, borderRightWidth: 8, borderBottomWidth: 15, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: gold, transform: [{ rotate: '22deg' }] }} />
+      <View style={{ width: 40, height: 38, borderRadius: 15, backgroundColor: '#4B2A62', borderWidth: 2, borderColor: gold, alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ flexDirection: 'row', gap: 9 }}><View style={{ width: 7, height: 9, borderRadius: 5, backgroundColor: '#F4E8C9' }} /><View style={{ width: 7, height: 9, borderRadius: 5, backgroundColor: '#F4E8C9' }} /></View>
+        <View style={{ width: 15, height: 4, borderBottomWidth: 2, borderColor: '#F4E8C9', borderRadius: 8, marginTop: 5 }} />
+      </View>
+    </View>
+  );
+  if (art === 'truth') return (
+    <View style={{ width: 49, height: 49, borderRadius: 25, borderWidth: 3, borderColor: gold, backgroundColor: '#302044', alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ position: 'absolute', width: 37, height: 37, borderRadius: 20, borderWidth: 1, borderColor: '#A9844D' }} />
+      <Text style={{ color: pale, fontSize: 24, fontWeight: '900' }}>?</Text><Text style={{ position: 'absolute', bottom: 1, right: 5, color: gold, fontSize: 12 }}>✦</Text>
+    </View>
+  );
+  if (art === 'snake') return (
+    <View style={{ width: 52, height: 50, borderRadius: 9, borderWidth: 2, borderColor: gold, backgroundColor: '#21172C', alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ position: 'absolute', left: 12, top: 8, width: 22, height: 33, borderLeftWidth: 3, borderRightWidth: 3, borderColor: '#D9B66D', justifyContent: 'space-evenly' }}>
+        {[0,1,2,3].map(i => <View key={i} style={{ height: 2, backgroundColor: '#D9B66D' }} />)}
+      </View>
+      <Text style={{ color: '#6FC18B', fontSize: 27, fontWeight: '900', textShadowColor: '#D9B66D', textShadowRadius: 5 }}>S</Text>
+    </View>
+  );
+  if (art === 'jackaroo') return (
+    <View style={{ width: 52, height: 50, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ width: 40, height: 40, borderRadius: 9, backgroundColor: '#1E1828', borderWidth: 2, borderColor: gold, alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ color: pale, fontSize: 18, fontWeight: '900' }}>♠</Text>
+        <View style={{ position: 'absolute', top: 4, left: 5, width: 7, height: 7, borderRadius: 4, backgroundColor: '#D94B58' }} />
+        <View style={{ position: 'absolute', top: 4, right: 5, width: 7, height: 7, borderRadius: 4, backgroundColor: '#4E91D6' }} />
+        <View style={{ position: 'absolute', bottom: 4, left: 5, width: 7, height: 7, borderRadius: 4, backgroundColor: '#55B879' }} />
+        <View style={{ position: 'absolute', bottom: 4, right: 5, width: 7, height: 7, borderRadius: 4, backgroundColor: '#E6B94F' }} />
+      </View>
+    </View>
+  );
+  if (art === 'brain') return (
+    <View style={{ width: 50, height: 50, borderRadius: 25, borderWidth: 2, borderColor: gold, backgroundColor: '#302044', alignItems: 'center', justifyContent: 'center' }}>
+      <Text style={{ color: '#E7C477', fontSize: 28, fontWeight: '900' }}>Ψ</Text>
+      <Text style={{ position: 'absolute', top: 1, right: 5, color: pale, fontSize: 12 }}>✦</Text>
+    </View>
+  );
+  return (
+    <View style={{ width: 52, height: 50, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ width: 30, height: 41, borderRadius: 5, backgroundColor: '#E8D8B8', borderWidth: 1.5, borderColor: gold, alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ color: '#25182E', fontSize: 10, fontWeight: '900' }}>29</Text><Text style={{ color: '#9B3443', fontSize: 17 }}>♥</Text>
+      </View>
+      <Text style={{ position: 'absolute', right: 1, bottom: 1, color: gold, fontSize: 16 }}>♠</Text>
+    </View>
+  );
+}
+
+export default function App() {
+  // ---------------------------------
+  // MAIN APP STATES
+  // ---------------------------------
+
+  const [session, setSession] = useState(null);
+  const [profile, setProfile] = useState(null);
+
+  const profileLoadRef = useRef(null);
+  const activeAuthUserIdRef = useRef(null);
+  const authStateVersionRef = useRef(0);
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const [screen, setScreen] = useState('login');
+ const [selectedOfficialEvent, setSelectedOfficialEvent] = useState(null);
+ const [showHotEventsPopup, setShowHotEventsPopup] = useState(false);
+ const [eventFrontReturnScreen, setEventFrontReturnScreen] = useState('roomInterior');
+ const [activeEventSection, setActiveEventSection] = useState('rank');
+ const [eventInfoPopup, setEventInfoPopup] = useState(null);
+ const [eventCountdown, setEventCountdown] = useState({
+  days: '00',
+  hours: '00',
+  minutes: '00',
+  seconds: '00'
+});
+  const [popularReturnScreen, setPopularReturnScreen] = useState('main');
+  const [activeTab, setActiveTab] = useState('Room');
+  const [roomSettingsType, setRoomSettingsType] = useState('public');
+const [roomSettingsPassword, setRoomSettingsPassword] = useState('');
+const [roomSettingName, setRoomSettingName] = useState('');
+const [roomSettingAnnouncement, setRoomSettingAnnouncement] = useState('');
+const [roomSettingDp, setRoomSettingDp] = useState(null);
+const [touristsOnMic, setTouristsOnMic] = useState(true);
+const [touristsSendText, setTouristsSendText] = useState(true);
+const [touristsSendPic, setTouristsSendPic] = useState(false);
+const [roomSettingSaving, setRoomSettingSaving] = useState(false);
+const [roomSettingsSubpage, setRoomSettingsSubpage] = useState(null);
+const [roomSettingsReturnScreen, setRoomSettingsReturnScreen] = useState('main');
+const [roomSettingAdmins, setRoomSettingAdmins] = useState([]);
+const [roomSettingKicked, setRoomSettingKicked] = useState([]);
+const [roomSettingMembers, setRoomSettingMembers] = useState([]);
+const [roomActivities, setRoomActivities] = useState([]);
+const [loadingRoomActivities, setLoadingRoomActivities] = useState(false);
+const [showRoomActivityComposer, setShowRoomActivityComposer] = useState(false);
+const [roomActivityTitle, setRoomActivityTitle] = useState('');
+const [roomActivityDescription, setRoomActivityDescription] = useState('');
+const [roomActivityPoster, setRoomActivityPoster] = useState(null);
+const [roomActivitySaving, setRoomActivitySaving] = useState(false);
+
+
+
+
+  // ---------------------------------
+  // LOGIN / SIGNUP STATES
+  // ---------------------------------
+
+  const [authMode, setAuthMode] = useState('login');
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  // ---------------------------------
+  // PROFILE STATES
+  // ---------------------------------
+
+  const [displayName, setDisplayName] = useState('');
+  const [gender, setGender] = useState('Male');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [country, setCountry] = useState('India');
+  const [language, setLanguage] = useState('English');
+const [bio, setBio] = useState('');
+  const [avatarUri, setAvatarUri] = useState(null);
+
+  // ---------------------------------
+  // ROOM STATES
+  // ---------------------------------
+
+  const [roomTab, setRoomTab] = useState('Mine');
+ const [officialEvents, setOfficialEvents] = useState([]);
+const [loadingOfficialEvents, setLoadingOfficialEvents] = useState(false);
+ const [eventDraft, setEventDraft] = useState({
+  event_name: '',
+  poster_uri: null,
+  background_uri: null,
+  border_uri: null,
+  duration: '7_days',
+  start_at: '',
+  rules: '',
+  gifts: [
+    { name: '', coin_value: '', image_uri: null },
+    { name: '', coin_value: '', image_uri: null },
+    { name: '', coin_value: '', image_uri: null }
+  ],
+  top_rewards: [
+    { description: '' },
+    { description: '' },
+    { description: '' }
+  ],
+  milestones: []
+});
+ 
+ const [showEventPreview, setShowEventPreview] = useState(false);
+  const [popularPage, setPopularPage] = useState('main');
+  const [mineTab, setMineTab] = useState('Recent');
+  const [countrySearch, setCountrySearch] = useState('');
+ 
+const [selectedCountry, setSelectedCountry] = useState(null);
+const [showCountryRooms, setShowCountryRooms] = useState(false);
+const [showCountryRegion, setShowCountryRegion] = useState(false);
+ const [countryRoomsFromRegion, setCountryRoomsFromRegion] = useState(false);
+         
+  // COMMUNITY ACTIVITY STATES
+const [showMySubscription, setShowMySubscription] = useState(false);
+const [showCreateRoomActivity, setShowCreateRoomActivity] = useState(false);
+const [subscriptionTab, setSubscriptionTab] = useState('My Subscription');
+ 
+const [activityTitle, setActivityTitle] = useState('');
+const [activityDescription, setActivityDescription] = useState('');
+const [activitySelectedRoom, setActivitySelectedRoom] = useState(null);
+const [activityPoster, setActivityPoster] = useState(null);
+ const [showPosterOptions, setShowPosterOptions] = useState(false);
+ const [showPosterTemplates, setShowPosterTemplates] = useState(false);
+const [showPosterEditor, setShowPosterEditor] = useState(false);
+ const [activityPosterTemplate, setActivityPosterTemplate] = useState(null);
+ 
+const [activityDate, setActivityDate] = useState('');
+const [activityStartTime, setActivityStartTime] = useState('');
+const [activityEndTime, setActivityEndTime] = useState('');
+ 
+ 
+  const [hotEventIndex, setHotEventIndex] = useState(0);
+const hotEventsScrollRef = useRef(null);
+
+  const [rooms, setRooms] = useState([]);
+ const [roomDetailsVisible, setRoomDetailsVisible] = useState(false);
+const [roomDetailsTab, setRoomDetailsTab] = useState('Information');
+const [roomDetails, setRoomDetails] = useState(null);
+const [memberSearch, setMemberSearch] = useState('');
+ const [roomDetailMembers, setRoomDetailMembers] = useState([]);
+ const [loadingRoomDetailMembers, setLoadingRoomDetailMembers] = useState(false);
+  const [joinedRooms, setJoinedRooms] = useState([]);
+  const [followedRooms, setFollowedRooms] = useState([]);
+  const [myRooms, setMyRooms] = useState([]);
+  const [hasEverCreatedRoom, setHasEverCreatedRoom] = useState(false);
+  const [roomCreationEligibilityLoaded, setRoomCreationEligibilityLoaded] = useState(false);
+
+  const [roomName, setRoomName] = useState('');
+  const [roomDescription, setRoomDescription] = useState('');
+
+  const [roomType, setRoomType] = useState('public');
+  const [roomPassword, setRoomPassword] = useState('');
+  const [showCreateRoomPasswordPopup, setShowCreateRoomPasswordPopup] = useState(false);
+
+  const [showCreateRoom, setShowCreateRoom] = useState(false);
+  const [roomDpUri, setRoomDpUri] = useState(null);
+const [roomDpUploading, setRoomDpUploading] = useState(false);
+  const [loadingRooms, setLoadingRooms] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const selectedRoomIdRef = useRef(null);
+  selectedRoomIdRef.current = selectedRoom?.id || null;
+  const roomDetailsIdRef = useRef(null);
+  roomDetailsIdRef.current = roomDetails?.id || null;
+  const activeUserIdRef = useRef(null);
+  activeUserIdRef.current = session?.user?.id || null;
+  const roomDetailsLoadVersionRef = useRef(0);
+  const roomActivityLoadVersionRef = useRef(0);
+  const roomSettingsLoadVersionRef = useRef(0);
+  const [worldLuckyBagNotification, setWorldLuckyBagNotification] = useState(null);
+const [worldLuckyBagQueue, setWorldLuckyBagQueue] = useState([]);
+ const [isRoomMinimized, setIsRoomMinimized] = useState(false);
+ const [showRoomMenu, setShowRoomMenu] = useState(false);
+ const [isOnMic, setIsOnMic] = useState(false);
+ const [myMicSeat, setMyMicSeat] = useState(null);
+ const [isMicMuted, setIsMicMuted] = useState(false);
+ const [showMicEmojiPicker, setShowMicEmojiPicker] = useState(false);
+ const [showMicChatPopup, setShowMicChatPopup] = useState(false);
+ const [showRoomChatComposer, setShowRoomChatComposer] = useState(false);
+ const roomChatInputRef = useRef(null);
+ const roomChatKeyboardShownRef = useRef(false);
+ useEffect(() => {
+   const keyboardShown = Keyboard.addListener('keyboardDidShow', () => {
+     roomChatKeyboardShownRef.current = true;
+   });
+   const keyboardHidden = Keyboard.addListener('keyboardDidHide', () => {
+     // Android can emit keyboardDidHide while the Modal is mounting.
+     // Ignore that initial event; only close after this composer actually showed the keyboard.
+     if (showRoomChatComposer && roomChatKeyboardShownRef.current) {
+       roomChatKeyboardShownRef.current = false;
+       setShowRoomChatComposer(false);
+       setShowRoomChatActionMenu(false);
+     }
+   });
+   return () => {
+     keyboardShown.remove();
+     keyboardHidden.remove();
+   };
+ }, [showRoomChatComposer]);
+ const [showRoomChatActionMenu, setShowRoomChatActionMenu] = useState(false);
+ const [isRoomChatMinimized, setIsRoomChatMinimized] = useState(false);
+ const [roomReactions, setRoomReactions] = useState([]);
+ const roomReactionChannelRef = useRef(null);
+ const [micGame, setMicGame] = useState(null);
+ const [micCount, setMicCount] = useState(8);
+const [micSeats, setMicSeats] = useState([]);
+const [micControls, setMicControls] = useState([]);
+const [showMicControlPopup, setShowMicControlPopup] = useState(false);
+const [micControlSeat, setMicControlSeat] = useState(null);
+const [roomPresence, setRoomPresence] = useState([]);
+const [roomPresenceLoading, setRoomPresenceLoading] = useState(false);
+const [showRoomUsers, setShowRoomUsers] = useState(false);
+const micSeatLoadVersionRef = useRef(0);
+const micSeatActionVersionRef = useRef(0);
+const micSeatActionInFlightRef = useRef(0);
+const micSeatActionWaitersRef = useRef([]);
+
 function Action({title,onPress,disabled=false}) {
   return <TouchableOpacity disabled={disabled} onPress={onPress} style={[btn,{opacity:disabled?.4:1,flex:1,margin:3}]}><Text style={label}>{title}</Text></TouchableOpacity>;
 }
@@ -56,10 +364,10 @@ export default function RoomGames({visible,onClose,roomId,creatorName='Host'}) {
   const currentName = players[turn % Math.max(players.length,1)]?.name || 'Player';
 
   useEffect(()=>{
-    if(stage!=='lobby'||!selected?.timed||seconds<=0)return;
+    if(stage!=='lobby'||!selected?.timed||players.length<2||seconds<=0)return;
     const timer=setInterval(()=>setSeconds(s=>Math.max(0,s-1)),1000);
     return ()=>clearInterval(timer);
-  },[stage,selected,seconds]);
+  },[stage,selected,seconds,players.length]);
   useEffect(()=>{
     if(stage==='lobby'&&selected?.timed&&seconds===0){
       if(players.length>=selected.min) startGame();
@@ -156,9 +464,9 @@ export default function RoomGames({visible,onClose,roomId,creatorName='Host'}) {
           <View><Text style={{color:GOLD,fontWeight:'900',fontSize:17}}>♛ TALKZY ROYAL GAMES</Text><Text style={{color:muted,fontSize:10}}>ROOM GAME ARENA</Text></View>
           <TouchableOpacity onPress={close}><Text style={{color:GOLD,fontSize:22}}>✕</Text></TouchableOpacity>
         </View>
-        {stage==='select'&&<ScrollView style={{marginTop:12}}><View style={{flexDirection:'row',flexWrap:'wrap'}}>{GAMES.map(g=><TouchableOpacity key={g.name} onPress={()=>choose(g)} style={{width:'25%',padding:4,alignItems:'center'}}><View style={{width:62,height:62,borderRadius:14,backgroundColor:'#2A1D32',borderWidth:1,borderColor:GOLD,alignItems:'center',justifyContent:'center'}}><Text style={{fontSize:27}}>{({ludo:'🎲',carrom:'⚫',breez:'🂡',uno:'💎',monster:'👾',truth:'🎡',snake:'🐍',jackaroo:'🃏',brain:'🧠',twentynine:'♠'})[g.art]}</Text></View><Text style={{color:text,fontSize:10,textAlign:'center',marginTop:5}}>{g.name}</Text></TouchableOpacity>)}</View></ScrollView>}
+        {stage==='select'&&<ScrollView style={{marginTop:12}}><View style={{flexDirection:'row',flexWrap:'wrap'}}>{GAMES.map(g=><TouchableOpacity key={g.name} onPress={()=>choose(g)} style={{width:'25%',padding:4,alignItems:'center'}}><View style={{width:62,height:62,borderRadius:14,backgroundColor:'#2A1D32',borderWidth:1,borderColor:GOLD,alignItems:'center',justifyContent:'center'}}><RoyalGameArtwork art={g.art} /></View><Text style={{color:text,fontSize:10,textAlign:'center',marginTop:5}}>{g.name}</Text></TouchableOpacity>)}</View></ScrollView>}
         {stage==='setup'&&<View style={{marginTop:16}}><Text style={[label,{fontSize:19,textAlign:'center'}]}>{selected?.name}</Text><Text style={{color:muted,textAlign:'center',marginVertical:9}}>{selected?.rules}</Text><Text style={label}>Players: {selected?.min} minimum • {selected?.max===Infinity?'Unlimited':selected?.max+' maximum'}</Text>{selected?.name==='Carrom'&&<View style={{flexDirection:'row',marginTop:8}}><Action title="2 PLAYERS" onPress={()=>setCarromMode(2)} disabled={carromMode===2}/><Action title="4 PLAYERS" onPress={()=>setCarromMode(4)} disabled={carromMode===4}/></View>}{selected?.bet&&<><Text style={[label,{marginTop:12}]}>Bet amount (Good Coins)</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{BETS.map(v=><CardTile key={v} active={bet===v} onPress={()=>setBet(v)}>{v.toLocaleString()}</CardTile>)}</View></>}<Action title="CREATE GAME" onPress={createLobby}/><Action title="BACK" onPress={()=>setStage('select')}/></View>}
-        {stage==='lobby'&&<View style={{marginTop:14}}><Text style={[label,{fontSize:18,textAlign:'center'}]}>{selected?.name} Lobby</Text><Text style={{color:muted,textAlign:'center',margin:8}}>Bet: {selected?.bet?bet.toLocaleString()+' Good Coins':'No bet'} • {players.length}/{maxPlayers===Infinity?'∞':maxPlayers} players</Text>{selected?.timed&&<Text style={{color:GOLD,textAlign:'center',fontSize:22,fontWeight:'900'}}>{seconds}s</Text>}<View style={{flexDirection:'row',flexWrap:'wrap'}}>{players.map(p=><View key={p.id} style={{width:'50%',padding:6}}><Text style={{color:text,backgroundColor:'#2A2033',padding:12,borderRadius:10}}>{p.name}{p.id==='host'?' (Creator)':''}</Text></View>)}</View><Text style={{color:muted,textAlign:'center',marginVertical:8}}>{status}</Text><Action title="SIMULATE JOIN" onPress={joinDemo} disabled={players.length>=maxPlayers}/>{!selected?.timed&&<Action title="START GAME" onPress={startGame} disabled={players.length<selected?.min}/>}<Action title="CLOSE LOBBY" onPress={close}/></View>}
+        {stage==='lobby'&&<View style={{marginTop:14}}><Text style={[label,{fontSize:18,textAlign:'center'}]}>{selected?.name} Lobby</Text><Text style={{color:muted,textAlign:'center',margin:8}}>Bet: {selected?.bet?bet.toLocaleString()+' Good Coins':'No bet'} • {players.length}/{maxPlayers===Infinity?'∞':maxPlayers} players</Text>{selected?.timed&&<Text style={{color:GOLD,textAlign:'center',fontSize:22,fontWeight:'900'}}>{seconds}s</Text>}<View style={{flexDirection:'row',flexWrap:'wrap'}}>{players.map(p=><View key={p.id} style={{width:'50%',padding:6}}><Text style={{color:text,backgroundColor:'#2A2033',padding:12,borderRadius:10}}>{p.name}{p.id==='host'?' (Creator)':''}</Text></View>)}</View><Text style={{color:muted,textAlign:'center',marginVertical:8}}>{status}</Text><Action title="ADD LOCAL TEST PLAYER" onPress={joinDemo} disabled={players.length>=maxPlayers}/>{!selected?.timed&&<Action title="START GAME" onPress={startGame} disabled={players.length<selected?.min}/>}<Action title="CLOSE LOBBY" onPress={close}/></View>}
         {stage==='play'&&<ScrollView style={{marginTop:12}}><Text style={[label,{textAlign:'center',fontSize:18}]}>{game}</Text><Text style={{color:GOLD,textAlign:'center',margin:8}}>Turn: {currentName}</Text><Text style={{color:muted,textAlign:'center'}}>Players: {players.map(p=>p.name+' '+(score[p.id]||0)).join('  •  ')}</Text><View style={{backgroundColor:'#21182B',padding:14,borderRadius:14,marginTop:12}}>{gameControls()}</View><Text style={{color:muted,textAlign:'center',margin:10}}>{status}</Text><Action title="END GAME" onPress={()=>{setStage('result');}}/></ScrollView>}
         {stage==='result'&&<View style={{marginTop:18}}><Text style={[label,{fontSize:21,textAlign:'center'}]}>GAME RESULT</Text><Text style={{color:GOLD,textAlign:'center',fontSize:18,margin:12}}>{winner?.name||'No winner'} • {score[winner?.id]||0} points</Text>{players.map(p=><Text key={p.id} style={{color:text,padding:7}}>{p.name}: {score[p.id]||0}</Text>)}<Action title="BACK TO GAMES" onPress={reset}/></View>}
       </View>
