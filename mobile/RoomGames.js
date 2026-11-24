@@ -548,6 +548,7 @@ function applyMove(src,actor,action){
   if(c.rank==='Skip')skip=2;
   if(c.rank==='Reverse'){s.direction*=-1;if(s.players.length===2)skip=2;}
   if(c.rank==='+2'){const target=s.players[(s.turn+s.direction+s.players.length)%s.players.length].id;unoDraw(s,target,2);skip=2;}
+  if(skip===2)s.pendingUno=null;
   s.turn=(s.turn+s.direction*skip+s.players.length*2)%s.players.length;s.status='Played '+c.rank+'.';
   return s;
  }
