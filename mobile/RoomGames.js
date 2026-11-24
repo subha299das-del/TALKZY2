@@ -363,8 +363,8 @@ function applyMove(src,actor,action){
  if(!p||(p.id!==actor&&!dummyControl&&!unoCatchAction)||(s.winner&&!((s.name==='UNO'&&action.type==='uno_next_round')||(s.name==='29'&&action.type==='29_next_hand')||(s.name==='Playcards – Breez'&&action.type==='bridge_next_deal'))))return s;
  const finish=()=>{advance(s);return s;};
  if(s.name==='Snakes and Ladders'&&action.type==='start_roll'){
-  if(s.phase!=='start_roll'||!s.tiedStartPlayers?.includes(id)||!Number.isInteger(action.die)||action.die<1||action.die>6)return s;
-  s.startingRolls[id]=action.die;
+  if(s.phase!=='start_roll'||!s.tiedStartPlayers?.includes(id))return s;
+  const die=rand(6)+1;s.startingRolls[id]=die;
   if(s.tiedStartPlayers.every(pid=>Number.isInteger(s.startingRolls[pid]))){
    const high=Math.max(...s.tiedStartPlayers.map(pid=>s.startingRolls[pid])),leaders=s.tiedStartPlayers.filter(pid=>s.startingRolls[pid]===high);
    if(leaders.length===1){const winnerIndex=s.players.findIndex(pl=>pl.id===leaders[0]);s.turn=winnerIndex;s.phase='play';s.status=(s.players[winnerIndex]?.name||'Player')+' rolled highest and starts.';return s;}
@@ -373,15 +373,15 @@ function applyMove(src,actor,action){
   const next=s.tiedStartPlayers[(s.tiedStartPlayers.indexOf(id)+1)%s.tiedStartPlayers.length];s.turn=s.players.findIndex(pl=>pl.id===next);s.status=(p.name||'Player')+' spun '+action.die+'.';return s;
  }
  if(s.name==='Snakes and Ladders'&&action.type==='roll'){
-  if(s.phase!=='play'||!Number.isInteger(action.die)||action.die<1||action.die>6)return s;
-  const pos=s.positions[id]||0,next=pos+action.die;
+  if(s.phase!=='play')return s;
+  const die=rand(6)+1,pos=s.positions[id]||0,next=pos+die;
   if(next<=100){s.positions[id]=s.ladders[next]||s.snakes[next]||next;if(s.positions[id]===100)s.winner=id;}
-  s.status=next>100?'Need exact count to reach 100.':s.ladders[next]?'Climbed a ladder!':s.snakes[next]?'Slid down a chute.':'Moved '+action.die+' spaces.';
+  s.status=next>100?'Need exact count to reach 100.':s.ladders[next]?'Climbed a ladder!':s.snakes[next]?'Slid down a chute.':'Moved '+die+' spaces.';
   return finish();
  }
  if(s.name==='Ludo'&&action.type==='ludo_roll'){
-  if(!Number.isInteger(action.die)||action.die<1||action.die>6||s.pendingDie)return s;
-  const d=action.die;
+  if(s.pendingDie)return s;
+  const d=rand(6)+1;
   s.consecutiveSix=d===6?(s.consecutiveSix||0)+1:0;
   if(s.consecutiveSix>=3){s.consecutiveSix=0;s.status='Three consecutive sixes: the third roll is forfeited.';advanceLudo(s);return s;}
   const tokens=s.tokens[id]||[],legal=tokens.some(v=>v!==57&&(v===-1?d===6:v+d<=57));
@@ -817,20 +817,20 @@ export default function RoomGames({visible,onClose,onGameAvailable,roomId,creato
  const join=()=>{if(stage!=='lobby')return;if(selected?.timed&&seconds<=0){setStatus('The one-minute joining time has ended.');return;}if(!canJoin){setStatus('Take a room mic seat before joining this game.');return;}if(inLobby||players.length>=max)return;publish('join_game',{lobbyId:lobbyRef.current,player:{id:userId,name:creatorName}});setStatus('Join request sent.');};
  const start=()=>{if(!(isAuthorisedStarter||hostRef.current)||players.length<min||['Truth and Dare','Brainstorm','Monster Crush','29'].includes(selected?.name))return;const previousLobbyId=lobbyRef.current;if(isAuthorisedStarter&&!hostRef.current&&previousLobbyId){previousLobbyIdRef.current=previousLobbyId;lobbyRef.current=String(Date.now())+'-'+userId;clearPrivateChannels();}else previousLobbyIdRef.current=null;hostRef.current=true;hostIdRef.current=userId;const s=initialGame(selected.name,players,mode);stateRef.current=s;setState(s);setMinimized(false);minimizedRef.current=false;setStage('play');publish('start_game',{lobbyId:lobbyRef.current,previousLobbyId:previousLobbyIdRef.current,authorizedStarter:!!isAuthorisedStarter,snapshot:publicGameSnapshot(s)});sendGameSnapshots(s);};
  const act=action=>doAction(action);
- const roll=()=>act({type:'roll',die:rand(6)+1});
+ const roll=()=>act({type:'roll'});
  const currentHand=state?.hands?.[bridgeDummyTurn?state.dummy:userId]||[];
  const renderControls=()=>{
   if(!state)return null;
   if(state.name==='Snakes and Ladders'){
   const boardRows=Array.from({length:10},(_,row)=>{const level=9-row,base=level*10,nums=Array.from({length:10},(_,i)=>level%2===0?base+i+1:base+10-i);return <View key={'snakerow'+row} style={{flexDirection:'row'}}>{nums.map(n=>{const occupants=state.players.map((pl,i)=>({pl,i})).filter(x=>state.positions[x.pl.id]===n);const ladder=state.ladders[n],snake=state.snakes[n];return <View key={n} style={{flex:1,aspectRatio:1,borderWidth:0.5,borderColor:'#78634C',backgroundColor:ladder?'#244A37':snake?'#4A2630':'#2A2134',alignItems:'center',justifyContent:'center',padding:1}}><Text style={{color:ink,fontSize:8,fontWeight:'800'}}>{n}</Text>{ladder&&<Text style={{color:'#8FE0A8',fontSize:7}}>↑{ladder}</Text>}{snake&&<Text style={{color:'#FF9A9A',fontSize:7}}>↓{snake}</Text>}{occupants.length>0&&<Text style={{color:ink,fontSize:8}}>{occupants.map(x=>['🔴','🔵','🟢','🟡'][x.i]).join('')}</Text>}</View>;})}</View>;});
-  return <><View style={{width:'100%',maxWidth:320,alignSelf:'center',borderWidth:1,borderColor:GOLD,padding:2,borderRadius:8}}>{boardRows}</View>{state.phase==='start_roll'?<><Text style={{color:ink}}>Everyone spins once. Highest number starts.</Text><Text style={{color:muted}}>{state.tiedStartPlayers.map(pid=>(state.players.find(p=>p.id===pid)?.name||'Player')+': '+(state.startingRolls[pid]??'—')).join(' · ')}</Text><Btn title="SPIN TO CHOOSE START PLAYER" onPress={()=>act({type:'start_roll',die:rand(6)+1})}/></>:<><Text style={{color:ink}}>Position: {state.positions[userId]} / 100</Text><Btn title="SPIN 1–6" onPress={roll}/></>}</>;
+  return <><View style={{width:'100%',maxWidth:320,alignSelf:'center',borderWidth:1,borderColor:GOLD,padding:2,borderRadius:8}}>{boardRows}</View>{state.phase==='start_roll'?<><Text style={{color:ink}}>Everyone spins once. Highest number starts.</Text><Text style={{color:muted}}>{state.tiedStartPlayers.map(pid=>(state.players.find(p=>p.id===pid)?.name||'Player')+': '+(state.startingRolls[pid]??'—')).join(' · ')}</Text><Btn title="SPIN TO CHOOSE START PLAYER" onPress={()=>act({type:'start_roll'})}/></>:<><Text style={{color:ink}}>Position: {state.positions[userId]} / 100</Text><Btn title="SPIN 1–6" onPress={roll}/></>}</>;
  }
   if(state.name==='Ludo'){
   const markers={};
   state.players.forEach((pl,seat)=>state.tokens[pl.id].forEach((progress,i)=>{let coord=null;if(progress===-1)coord=LUDO_BASES[seat][i];else if(progress===57)coord=[7,7];else if(progress>=52)coord=LUDO_HOME_LANES[seat][progress-52];else if(progress>=0)coord=LUDO_PATH[(seat*13+progress)%52];if(coord){const key=coord.join(',');if(!markers[key])markers[key]=[];markers[key].push({seat,i});}}));
   const startCells=[0,13,26,39],homeCellMap={};LUDO_HOME_LANES.forEach((lane,seat)=>lane.forEach(([r,col])=>homeCellMap[r+','+col]=seat));
   const board=Array.from({length:15},(_,r)=><View key={'lrow'+r} style={{flexDirection:'row'}}>{Array.from({length:15},(_,col)=>{const key=r+','+col,pathIndex=LUDO_PATH.findIndex(([rr,cc])=>rr===r&&cc===col),homeSeat=homeCellMap[key],baseSeat=r<6&&col<6?0:r<6&&col>8?1:r>8&&col>8?2:r>8&&col<6?3:-1,baseToken=markers[key]||[],safe=state.safe.includes(pathIndex),startSeat=startCells.indexOf(pathIndex),bg=pathIndex>=0?(startSeat>=0?LUDO_COLORS[startSeat]:safe?'#55452D':'#2A2134'):homeSeat!==undefined?LUDO_COLORS[homeSeat]:baseSeat>=0?LUDO_COLORS[baseSeat]+'33':r===7&&col===7?'#7A5A2C':'#1B1524';return <View key={key} style={{flex:1,aspectRatio:1,borderWidth:0.35,borderColor:'#76647E',backgroundColor:bg,alignItems:'center',justifyContent:'center'}}>{baseToken.length>0?<Text style={{fontSize:8,color:baseToken.length?LUDO_COLORS[baseToken[0].seat]:ink}}>{baseToken.length>1?'●'+baseToken.length:'●'}</Text>:pathIndex>=0&&safe?<Text style={{fontSize:7,color:GOLD}}>✦</Text>:r===7&&col===7?<Text style={{fontSize:8,color:GOLD}}>★</Text>:null}</View>;})}</View>);
-  return <><Text style={{color:ink}}>Roll a die, then choose one legal token. Safe squares are marked ✦.</Text><View style={{width:'100%',maxWidth:320,alignSelf:'center',borderWidth:1,borderColor:GOLD,borderRadius:8,padding:2}}>{board}</View><Text style={{color:muted}}>Your tokens: {(state.tokens[userId]||[]).map((v,i)=>'T'+(i+1)+': '+(v<0?'Base':v===57?'Home':v)).join(' · ')}</Text><Btn title={state.pendingDie?'DIE '+state.pendingDie+' · CHOOSE TOKEN':'ROLL DICE'} onPress={()=>act({type:'ludo_roll',die:rand(6)+1})} disabled={!!state.pendingDie}/>{state.tokens[userId]?.map((v,i)=><Tile key={i} onPress={()=>act({type:'ludo_move',token:i})} disabled={!state.pendingDie||v===57||(v===-1&&state.pendingDie!==6)||(v>=0&&v+state.pendingDie>57)} active>{'TOKEN '+(i+1)+' · '+(v<0?'BASE':v===57?'HOME':v)}</Tile>)}</>;
+  return <><Text style={{color:ink}}>Roll a die, then choose one legal token. Safe squares are marked ✦.</Text><View style={{width:'100%',maxWidth:320,alignSelf:'center',borderWidth:1,borderColor:GOLD,borderRadius:8,padding:2}}>{board}</View><Text style={{color:muted}}>Your tokens: {(state.tokens[userId]||[]).map((v,i)=>'T'+(i+1)+': '+(v<0?'Base':v===57?'Home':v)).join(' · ')}</Text><Btn title={state.pendingDie?'DIE '+state.pendingDie+' · CHOOSE TOKEN':'ROLL DICE'} onPress={()=>act({type:'ludo_roll'})} disabled={!!state.pendingDie}/>{state.tokens[userId]?.map((v,i)=><Tile key={i} onPress={()=>act({type:'ludo_move',token:i})} disabled={!state.pendingDie||v===57||(v===-1&&state.pendingDie!==6)||(v>=0&&v+state.pendingDie>57)} active>{'TOKEN '+(i+1)+' · '+(v<0?'BASE':v===57?'HOME':v)}</Tile>)}</>;
  }
   if(state.name==='Carrom'){
   const board=state.carromBoard,scale=0.29,starts=state.mode===2?[{x:500,y:900},{x:500,y:100}]:[{x:500,y:900},{x:100,y:500},{x:500,y:100},{x:900,y:500}],striker=starts[(state.turn+(state.seatRotation||0))%state.mode],piecesLeft={white:9-(board.pocketed?.white||0),black:9-(board.pocketed?.black||0)};
