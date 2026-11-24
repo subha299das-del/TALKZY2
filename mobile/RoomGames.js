@@ -103,7 +103,7 @@ const GAMES=[
  {name:'Brainstorm',art:'brain',min:2,max:Infinity,bet:false,timed:false,rules:'Rules to be finalised later.'},
  {name:'29',art:'twentynine',min:4,max:4,bet:true,timed:true,rules:'Four players, two partnerships, 32 cards, bidding and hidden trump.'}
 ];
-const suits=['♠','♥','♦','♣'], colors=['red','blue','green','yellow'];
+const suits=['♠','♥','♦','♣'], bridgeStrains=['♣','♦','♥','♠','NT'], colors=['red','blue','green','yellow'];
 const rand=n=>Math.floor(Math.random()*n);
 const makeDeck=(ranks)=>suits.flatMap((s,si)=>ranks.map((r,ri)=>({id:s+String(r)+ri,rank:r,suit:s,color:colors[si]})));
 const cardLabel=c=>String(c.rank)+c.suit;
@@ -118,7 +118,7 @@ function initialGame(name,players,mode=2){
  if(name==='Snakes and Ladders'){s.positions={};ids.forEach(id=>s.positions[id]=0);s.ladders={3:22,8:30,20:41,28:55,50:67,71:91,80:100};s.snakes={17:7,54:34,62:19,64:60,87:24,93:73,95:75,99:78};}
  if(name==='Carrom'){s.mode=mode;s.carromBoard=createCarromBoard();s.colours={};s.teamColours=[null,null];s.queenPending=null;s.queenCoveredBy=null;s.breakAttempts=0;s.breakDone=false;s.shot=0;s.boardShots=0;s.fouls={};s.boardNumber=1;s.boardComplete=false;s.matchPoints=[0,0];s.score={};ids.forEach(id=>s.score[id]=0);s.boardsPlayed=0;}
  if(name==='UNO'){s.deck=[];let cardNo=0;colors.forEach(color=>{s.deck.push({id:'UNO-'+(cardNo++),rank:0,color,suit:'*'});for(let n=1;n<=9;n++)for(let copy=0;copy<2;copy++)s.deck.push({id:'UNO-'+(cardNo++),rank:n,color,suit:'*'});for(const rank of ['Skip','Reverse','+2'])for(let copy=0;copy<2;copy++)s.deck.push({id:'UNO-'+(cardNo++),rank,color,suit:'*'});});for(let copy=0;copy<4;copy++){s.deck.push({id:'UNO-'+(cardNo++),rank:'Wild',color:'wild',suit:'*'});s.deck.push({id:'UNO-'+(cardNo++),rank:'+4',color:'wild',suit:'*'});}for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}const dealerDraws=players.map(p=>s.deck.pop()),dealerScores=dealerDraws.map(card=>typeof card.rank==='number'?card.rank:0);s.dealer=dealerScores.indexOf(Math.max(...dealerScores));s.deck.push(...dealerDraws);for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}s.turn=(s.dealer+1)%players.length;s.hands={};players.forEach(p=>s.hands[p.id]=s.deck.splice(0,7));let first=s.deck.shift();while(first?.rank==='+4'){s.deck.push(first);for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}first=s.deck.shift();}s.discard=[first];if(first?.rank==='Reverse')s.turn=s.dealer;s.direction=first?.rank==='Reverse'?-1:1;s.activeColor=first?.color||'red';s.pendingOpeningWild=first?.rank==='Wild';s.drawnCard=null;s.pendingUno=null;s.pendingChallenge=null;s.unoCalled={};s.matchPoints={};s.roundPoints=0;ids.forEach(id=>s.matchPoints[id]=0);if(first?.rank==='+2'){unoDraw(s,players[s.turn].id,2);advance(s);}else if(first?.rank==='Skip')advance(s);}
- if(name==='Playcards – Breez'){s.deck=makeDeck(['A','K','Q','J','10','9','8','7','6','5','4','3','2']);s.deck.sort(()=>Math.random()-.5);s.hands={};players.forEach(p=>s.hands[p.id]=s.deck.splice(0,13));s.bids=[];s.contract=null;s.trump=null;s.trumpChoice=null;s.tricks=[];s.currentTrick=[];s.trickLeader=0;s.declarer=null;s.dummy=null;s.dummyRevealed=false;s.contractTricks=0;}
+ if(name==='Playcards – Breez'){s.deck=makeDeck(['A','K','Q','J','10','9','8','7','6','5','4','3','2']);for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}s.hands={};players.forEach(p=>s.hands[p.id]=s.deck.splice(0,13));s.dealer=rand(4);s.turn=s.dealer;s.boardNumber=1;s.phase='auction';s.bids=[];s.lastBid=null;s.lastBidder=null;s.passCount=0;s.multiplier=1;s.contract=null;s.trump=null;s.tricks=[];s.currentTrick=[];s.trickLeader=0;s.declarer=null;s.dummy=null;s.dummyRevealed=false;s.contractTricks=0;s.vulnerable=false;s.teamScore=[0,0];}
  if(name==='29'){s.deck=makeDeck(['J','9','A','10','K','Q','8','7']);for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}s.hands={};players.forEach(p=>s.hands[p.id]=s.deck.splice(0,4));s.dealer=rand(4);s.firstTurn=(s.dealer+3)%4;s.turn=s.firstTurn;s.bids=[];s.bidCount=0;s.highBid=0;s.contract=null;s.trump=null;s.trumpHidden=true;s.trumpRevealed=false;s.tricks=[];s.currentTrick=[];s.trickLeader=0;s.teamPoints=[0,0];s.matchScore=[0,0];s.phase='bidding';s.lastTrickTeam=null;}
  if(name==='Jackaroo'){s.deck=makeDeck(['A','K','Q','J','10','9','8','7','6','5','4','3','2']);for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}s.hands={};s.marbles={};players.forEach(p=>{s.hands[p.id]=[];s.marbles[p.id]=[-1,-1,-1,-1];});s.deckDiscard=[];s.dealer=rand(4);s.handRound=0;s.teamSafe=[0,0];jackarooDeal(s);}
  if(name==='Monster Crush'){s.ammo=8;s.board=Array.from({length:5},(_,r)=>Array.from({length:5},(_,c)=>({id:r*5+c,type:Math.random()<.68?'monster':(Math.random()<.5?'barrel':'saw'),alive:true})));s.shots=0;}
@@ -310,6 +310,26 @@ function gameResults(s){
 }
 function cardPoints(c){return c.rank==='J'?3:c.rank==='9'?2:(c.rank==='A'||c.rank==='10')?1:0;}
 function rank29(r){return ['J','9','A','10','K','Q','8','7'].indexOf(r);}
+function bridgeDuplicateScore(contract,tricks,vulnerable=false){
+ const target=contract.level+6,under=target-tricks,m=contract.multiplier||1,suit=contract.suit;
+ if(under<=0){
+  const base=suit==='NT'?40+30*(contract.level-1):(['♣','♦'].includes(suit)?20:30)*contract.level;
+  const contractPoints=base*m;
+  let score=contractPoints+(contractPoints>=100?(vulnerable?500:300):50);
+  if(m===2)score+=50;if(m===4)score+=100;
+  if(contract.level===6)score+=vulnerable?750:500;
+  if(contract.level===7)score+=vulnerable?1500:1000;
+  const over=tricks-target;
+  if(m===1)score+=over*(suit==='NT'||['♥','♠'].includes(suit)?30:20);
+  else score+=over*(vulnerable?200:100)*(m===4?2:1);
+  return score;
+ }
+ let penalty=0;
+ if(m===1)penalty=under*(vulnerable?100:50);
+ else if(vulnerable)penalty=200+(under-1)*300;
+ else penalty=under===1?100:under===2?300:under===3?500:500+(under-3)*300;
+ return -penalty*(m===4?2:1);
+}
 function applyMove(src,actor,action){
  const s=clone(src), p=s.players[s.turn], id=p?.id;
  if(!p||p.id!==actor||(s.winner&&!((s.name==='UNO'&&action.type==='uno_next_round')||(s.name==='29'&&action.type==='29_next_hand'))))return s;
@@ -478,13 +498,37 @@ function applyMove(src,actor,action){
   s.trumpHidden=false;s.trumpRevealed=true;s.status='Trump revealed: '+s.trump+'.';return s;
  }
  if(s.name==='Playcards – Breez'&&action.type==='bridge_bid'){
-  s.bids.push({player:id,bid:action.bid,level:action.level,suit:action.suit});
-  if(action.pass){if(s.bids.filter(x=>x.pass).length>=3){s.contract=s.bids.filter(x=>!x.pass).slice(-1)[0]||null;s.status='Bidding complete. Contract set.';}else advance(s);}
-  else {s.status='Bid '+action.level+' '+action.suit+'.';advance(s);}
-  return s;
+  if(s.phase!=='auction')return s;
+  if(action.pass){
+   s.bids.push({player:id,kind:'pass'});s.passCount++;
+   if(!s.lastBid&&s.passCount>=4){const next=initialGame('Playcards – Breez',s.players);next.boardNumber=s.boardNumber+1;next.dealer=(s.dealer+1)%4;next.turn=next.dealer;next.status='Passed out. New deal.';return next;}
+   if(s.lastBid&&s.passCount>=3){
+    const side=s.players.findIndex(p=>p.id===s.lastBidder)%2;
+    const declarerBid=s.bids.find(x=>x.kind==='bid'&&x.suit===s.lastBid.suit&&s.players.findIndex(p=>p.id===x.player)%2===side);
+    s.declarer=declarerBid?.player||s.lastBidder;s.dummy=s.players[(s.players.findIndex(p=>p.id===s.declarer)+2)%4].id;
+    s.contract={...s.lastBid,player:s.declarer,bidder:s.lastBidder,multiplier:s.multiplier};s.trump=s.contract.suit==='NT'?null:s.contract.suit;s.phase='play';s.dummyRevealed=false;s.contractTricks=0;s.currentTrick=[];s.tricks=[];s.turn=(s.players.findIndex(p=>p.id===s.declarer)+1)%4;s.trickLeader=s.turn;s.status='Contract set: '+s.contract.level+s.contract.suit+'. Opening lead.';return s;
+   }
+   advance(s);s.status='Pass.';return s;
+  }
+  if(action.double||action.redouble){
+   if(!s.lastBid)return s;
+   const bidderSide=s.players.findIndex(p=>p.id===s.lastBidder)%2,actorSide=s.turn%2;
+   if(action.double&&s.multiplier===1&&actorSide!==bidderSide)s.multiplier=2;
+   else if(action.redouble&&s.multiplier===2&&actorSide===bidderSide)s.multiplier=4;
+   else return s;
+   s.passCount=0;s.bids.push({player:id,kind:action.double?'double':'redouble'});advance(s);s.status=action.double?'Doubled.':'Redoubled.';return s;
+  }
+  const level=Number(action.level),strain=bridgeStrains.indexOf(action.suit);
+  if(!Number.isInteger(level)||level<1||level>7||strain<0)return s;
+  const value=(level-1)*5+strain,last=s.lastBid?(s.lastBid.level-1)*5+bridgeStrains.indexOf(s.lastBid.suit):-1;
+  if(value<=last)return s;
+  s.lastBid={level,suit:action.suit};s.lastBidder=id;s.multiplier=1;s.passCount=0;s.bids.push({player:id,kind:'bid',level,suit:action.suit});advance(s);s.status='Bid '+level+action.suit+'.';return s;
  }
- if(s.name==='Playcards – Breez'&&action.type==='bridge_trump'){s.trump=action.suit;s.declarer=id;s.dummy=s.players[(s.turn+2)%4].id;s.dummyRevealed=true;s.status='Trump selected. Play the opening lead.';return s;}
- if((s.name==='Playcards – Breez'||s.name==='29')&&action.type==='trick_card'){
+ if(s.name==='Playcards – Breez'&&action.type==='bridge_next_deal'){
+  if(!s.winner)return s;
+  const next=initialGame('Playcards – Breez',s.players);next.boardNumber=s.boardNumber+1;next.dealer=(s.dealer+1)%4;next.turn=next.dealer;next.vulnerable=[false,true,true,false][(next.boardNumber-1)%4];next.status='Board '+next.boardNumber+' auction begins.';return next;
+ }
+if((s.name==='Playcards – Breez'||s.name==='29')&&action.type==='trick_card'){
   if(s.name==='29'&&s.phase!=='play')return s;
   const hand=s.hands[id]||[],c=hand.find(x=>x.id===action.cardId);if(!c)return s;
   if(s.currentTrick.length&&hand.some(x=>x.suit===s.currentTrick[0].card.suit)&&c.suit!==s.currentTrick[0].card.suit)return s;
