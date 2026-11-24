@@ -174,14 +174,15 @@ function applyMove(src,actor,action){
  if(!p||p.id!==actor||s.winner)return s;
  const finish=()=>{advance(s);return s;};
  if(s.name==='Snakes and Ladders'&&action.type==='roll'){
+  if(!Number.isInteger(action.die)||action.die<1||action.die>6)return s;
   const d=action.die,pos=s.positions[id]||0,next=pos+d;
   if(next<=100){s.positions[id]=s.ladders[next]||s.snakes[next]||next;if(s.positions[id]===100)s.winner=id;}
   s.status=next>100?'Need exact roll to reach 100.':s.ladders[next]?'Climbed a ladder!':s.snakes[next]?'Slid down a snake.':'Moved '+d+' spaces.';
   return finish();
  }
- if(s.name==='Ludo'&&action.type==='ludo_roll'){s.pendingDie=action.die;const anyOut=(s.tokens[id]||[]).some(v=>v>=0);if(action.die!==6&&!anyOut){s.status='No 6 — turn passes.';delete s.pendingDie;return finish();}s.status='Rolled '+action.die+'. Choose a token.';return s;}
+ if(s.name==='Ludo'&&action.type==='ludo_roll'){if(!Number.isInteger(action.die)||action.die<1||action.die>6)return s;s.pendingDie=action.die;const anyOut=(s.tokens[id]||[]).some(v=>v>=0);if(action.die!==6&&!anyOut){s.status='No 6 — turn passes.';delete s.pendingDie;return finish();}s.status='Rolled '+action.die+'. Choose a token.';return s;}
  if(s.name==='Ludo'&&action.type==='ludo_move'){
-  const d=s.pendingDie||action.die,tokens=s.tokens[id].slice(),i=action.token,old=tokens[i];if(!d)return s;
+  const d=s.pendingDie||action.die,tokens=s.tokens[id].slice(),i=action.token;if(!Number.isInteger(i)||i<0||i>=4)return s;const old=tokens[i];if(!d||old===57)return s;
   if(old===-1&&d!==6){s.status='A 6 is required to leave base.';return finish();}
   const next=old===-1?0:old+d;if(next>57){s.status='Exact count needed to enter home.';return finish();}
   tokens[i]=next;s.tokens[id]=tokens;
