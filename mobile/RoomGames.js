@@ -191,7 +191,7 @@ function cardPoints(c){return c.rank==='J'?3:c.rank==='9'?2:(c.rank==='A'||c.ran
 function rank29(r){return ['J','9','A','10','K','Q','8','7'].indexOf(r);}
 function applyMove(src,actor,action){
  const s=clone(src), p=s.players[s.turn], id=p?.id;
- if(!p||p.id!==actor||s.winner)return s;
+ if(!p||p.id!==actor||(s.winner&&!(s.name==='UNO'&&action.type==='uno_next_round')))return s;
  const finish=()=>{advance(s);return s;};
  if(s.name==='Snakes and Ladders'&&action.type==='roll'){
   if(!Number.isInteger(action.die)||action.die<1||action.die>6)return s;
@@ -245,7 +245,10 @@ function applyMove(src,actor,action){
   s.hands[id]=hand.filter(x=>x.id!==c.id);s.discard.push(c);s.activeColor=c.color==='wild'?action.wildColor:c.color;s.drawnCard=null;
   if(s.hands[id].length===1){s.pendingUno=action.uno?null:id;}
   else s.pendingUno=null;
-  if(!s.hands[id].length){unoRoundEnd(s,id);return s;}
+  if(!s.hands[id].length&&c.rank!=='+4'){
+   if(c.rank==='+2'){const target=s.players[(s.turn+s.direction+s.players.length)%s.players.length].id;unoDraw(s,target,2);}
+   unoRoundEnd(s,id);return s;
+  }
   if(c.rank==='+4'){
    s.pendingChallenge={offender:id,target:s.players[(s.turn+s.direction+s.players.length)%s.players.length].id,hadMatchingColor,chosenColor:action.wildColor};
    s.turn=(s.turn+s.direction+s.players.length)%s.players.length;s.status='Wild Draw Four played. The next player may challenge or accept the draw.';return s;
@@ -273,13 +276,13 @@ function applyMove(src,actor,action){
  }
  if(s.name==='UNO'&&action.type==='uno_challenge'){
   const challenge=s.pendingChallenge;if(!challenge||challenge.target!==id)return s;
-  if(challenge.hadMatchingColor){unoDraw(s,challenge.offender,4);s.turn=s.players.findIndex(p=>p.id===challenge.offender);s.status='Challenge successful. The Wild Draw Four player draws four.';}
+  if(challenge.hadMatchingColor){unoDraw(s,challenge.offender,4);s.pendingUno=null;if(!(s.hands[challenge.offender]||[]).length)unoRoundEnd(s,challenge.offender);else{s.turn=s.players.findIndex(p=>p.id===challenge.offender);s.status='Challenge successful. The Wild Draw Four player draws four.';}}
   else{unoDraw(s,id,6);s.status='Challenge unsuccessful. Draw six cards.';advance(s);}
   s.pendingChallenge=null;return s;
  }
  if(s.name==='UNO'&&action.type==='uno_accept'){
   const challenge=s.pendingChallenge;if(!challenge||challenge.target!==id)return s;
-  unoDraw(s,id,4);s.pendingChallenge=null;s.status='Drew four cards; turn skipped.';advance(s);return s;
+  unoDraw(s,id,4);s.pendingChallenge=null;if(!(s.hands[challenge.offender]||[]).length){unoRoundEnd(s,challenge.offender);return s;}s.status='Drew four cards; turn skipped.';advance(s);return s;
  }
  if(s.name==='UNO'&&action.type==='uno_next_round'){
   if(!s.winner||s.matchWinner)return s;
@@ -325,7 +328,7 @@ function applyMove(src,actor,action){
 }
 
 export default function RoomGames({visible,onClose,onGameAvailable,roomId,creatorName='Player',userId,supabase,isAuthorisedStarter=false,hasRoomSeat=false}){
- const [stage,setStage]=useState('select'),[selected,setSelected]=useState(null),[mode,setMode]=useState(2),[players,setPlayers]=useState([]),[seconds,setSeconds]=useState(60),[state,setState]=useState(null),[bet,setBet]=useState(0),[status,setStatus]=useState(''),[minimized,setMinimized]=useState(false);\n const [unoColor,setUnoColor]=useState('red');
+ const [stage,setStage]=useState('select'),[selected,setSelected]=useState(null),[mode,setMode]=useState(2),[players,setPlayers]=useState([]),[seconds,setSeconds]=useState(60),[state,setState]=useState(null),[bet,setBet]=useState(0),[status,setStatus]=useState(''),[minimized,setMinimized]=useState(false);\n const [unoColor,setUnoColor]=useState('red'),[unoCallSelected,setUnoCallSelected]=useState(false);
  const channelRef=useRef(null),hostRef=useRef(false),lobbyRef=useRef(null),stateRef=useRef(null),stageRef=useRef(stage),timerRef=useRef(null),selectedRef=useRef(selected),playersRef=useRef(players),secondsRef=useRef(seconds),modeRef=useRef(mode);
  const onGameAvailableRef=useRef(onGameAvailable),minimizedRef=useRef(minimized);onGameAvailableRef.current=onGameAvailable;minimizedRef.current=minimized;
  const hideableGame=selected&&!['Brainstorm','Truth and Dare'].includes(selected.name);
@@ -376,7 +379,7 @@ export default function RoomGames({visible,onClose,onGameAvailable,roomId,creato
   if(!state)return null;
   if(state.name==='Snakes and Ladders')return <><Text style={{color:ink}}>Position: {state.positions[userId]} / 100</Text><Btn title="ROLL DICE" onPress={roll}/></>;
   if(state.name==='Ludo')return <><Text style={{color:ink}}>Roll a die, then choose one of your four tokens.</Text><Btn title="ROLL DICE" onPress={()=>act({type:'ludo_roll',die:rand(6)+1})}/>{state.tokens[userId]?.map((v,i)=><Tile key={i} onPress={()=>act({type:'ludo_move',token:i})} disabled={!state.pendingDie|| (v===-1&&state.pendingDie!==6)} active>{'Token '+(i+1)+' · '+(v<0?'Base':v===57?'Home':v)}</Tile>)}</>;
-  if(state.name==='UNO')return <><Text style={{color:ink}}>Top: {String(state.discard.at(-1)?.rank)} · Colour: {state.activeColor}</Text><Text style={{color:GOLD}}>Match points: {state.matchPoints?.[userId]||0}/500</Text>{state.pendingChallenge?.target===userId&&<><Btn title="ACCEPT +4" onPress={()=>act({type:'uno_accept'})}/><Btn title="CHALLENGE +4" onPress={()=>act({type:'uno_challenge'})}/></>}{state.pendingUno&&state.turn===state.players.findIndex(p=>p.id===userId)&&<Btn title="CATCH MISSED UNO (+2)" onPress={()=>act({type:'uno_catch'})}/>}<Text style={{color:ink}}>Choose wild colour before playing:</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{colors.map(color=><Btn key={color} small title={color.toUpperCase()} onPress={()=>setUnoColor(color)}/>)}</View><Text style={{color:muted}}>Selected: {unoColor}</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{currentHand.map(c=><Tile key={c.id} onPress={()=>act({type:'uno_play',cardId:c.id,wildColor:unoColor,uno:false})} disabled={state.drawnCard&&state.drawnCard!==c.id}>{String(c.rank)} {c.color==='wild'?'★':c.color}</Tile>)}</View>{state.drawnCard&&<Btn title="PASS AFTER DRAW" onPress={()=>act({type:'uno_pass_drawn'})}/>}<Btn title="DRAW ONE" onPress={()=>act({type:'uno_draw'})} disabled={!!state.drawnCard}/>{currentHand.length===1&&state.pendingUno===userId&&<Btn title="CALL UNO" onPress={()=>act({type:'uno_call'})}/>}</>;
+  if(state.name==='UNO')return <><Text style={{color:ink}}>Top: {String(state.discard.at(-1)?.rank)} · Colour: {state.activeColor}</Text><Text style={{color:GOLD}}>Match points: {state.matchPoints?.[userId]||0}/500</Text>{state.pendingChallenge?.target===userId&&<><Btn title="ACCEPT +4" onPress={()=>act({type:'uno_accept'})}/><Btn title="CHALLENGE +4" onPress={()=>act({type:'uno_challenge'})}/></>}{state.pendingUno&&state.turn===state.players.findIndex(p=>p.id===userId)&&<Btn title="CATCH MISSED UNO (+2)" onPress={()=>act({type:'uno_catch'})}/>}<Text style={{color:ink}}>Choose wild colour before playing:</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{colors.map(color=><Btn key={color} small title={color.toUpperCase()} onPress={()=>setUnoColor(color)}/>)}</View><Text style={{color:muted}}>Selected: {unoColor}</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{currentHand.map(c=><Tile key={c.id} onPress={()=>act({type:'uno_play',cardId:c.id,wildColor:unoColor,uno:currentHand.length===2&&unoCallSelected})} disabled={state.drawnCard&&state.drawnCard!==c.id}>{String(c.rank)} {c.color==='wild'?'★':c.color}</Tile>)}</View>{state.drawnCard&&<Btn title="PASS AFTER DRAW" onPress={()=>act({type:'uno_pass_drawn'})}/>}<Btn title="DRAW ONE" onPress={()=>act({type:'uno_draw'})} disabled={!!state.drawnCard}/>{currentHand.length===2&&<Btn title={unoCallSelected?'UNO CALL: ON':'UNO CALL: OFF'} onPress={()=>setUnoCallSelected(v=>!v)}/ >}</>;
   if(state.name==='Playcards – Breez'||state.name==='29')return <><Text style={{color:ink}}>Trump: {state.trump||'Not selected'} · Tricks: {state.tricks.length}</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{currentHand.map(c=><Tile key={c.id} onPress={()=>act({type:'trick_card',cardId:c.id})}>{cardLabel(c)}</Tile>)}</View><Btn title="PASS / BID" onPress={()=>act(state.name==='29'?{type:'29_bid',bid:16,suit:'♠'}:{type:'bridge_bid',pass:true})}/></>;
   if(state.name==='Jackaroo')return <><Text style={{color:ink}}>Select a card, then a marble. A/K bring a marble out; 7 splits; J swaps.</Text>{currentHand.map(c=><Tile key={c.id} onPress={()=>act({type:'jackaroo_play',cardId:c.id,marble:0})}>{c.rank}</Tile>)}</>;
   if(state.name==='Carrom')return <><Text style={{color:ink}}>Coins left — White {state.coins.white}, Black {state.coins.black}, Queen {state.coins.queen?'on board':'pocketed'}</Text><Btn title="POCKET OWN COIN" onPress={()=>act({type:'carrom_shot',pocket:true,own:true,colour:state.colours[userId]||'white'})}/><Btn title="MISS SHOT" onPress={()=>act({type:'carrom_shot'})}/><Btn title="FOUL" onPress={()=>act({type:'carrom_shot',foul:true})}/></>;
