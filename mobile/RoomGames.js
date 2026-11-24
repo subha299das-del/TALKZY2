@@ -889,7 +889,39 @@ export default function RoomGames({visible,onClose,onGameAvailable,roomId,creato
   {stage==='select'&&<ScrollView><View style={{flexDirection:'row',flexWrap:'wrap'}}>{GAMES.map(g=>{const held=['Monster Crush','Truth and Dare','Brainstorm'].includes(g.name);return <TouchableOpacity key={g.name} onPress={()=>choose(g)} style={{width:'25%',padding:4,alignItems:'center',opacity:held?0.72:1}}><View style={{width:62,height:62,borderRadius:14,backgroundColor:'#2A1D32',borderWidth:1,borderColor:held?'#766A59':GOLD,alignItems:'center',justifyContent:'center'}}><RoyalGameArtwork art={g.art}/></View><Text style={{color:held?muted:ink,fontSize:10,textAlign:'center'}}>{g.name}</Text>{held&&<Text style={{color:'#C6A36A',fontSize:7,fontWeight:'900'}}>RULESET NEEDED</Text>}</TouchableOpacity>;})}</View>{status? <Text style={{color:muted,textAlign:'center',padding:10}}>{status}</Text>:null}</ScrollView>}
   {stage==='setup'&&<View><Text style={{color:GOLD,fontSize:18,textAlign:'center',fontWeight:'900'}}>{selected.name}</Text><Text style={{color:muted,textAlign:'center',margin:8}}>{selected.rules}</Text><Text style={{color:ink}}>Players: {min} required · {max===Infinity?'Unlimited':max+' maximum'}</Text>{selected.name==='Carrom'&&<View style={{flexDirection:'row'}}><Btn title="2 PLAYERS" onPress={()=>setMode(2)}/><Btn title="4 PLAYERS" onPress={()=>setMode(4)}/></View>}{!canJoin&&<Text style={{color:GOLD}}>You can create the lobby without a mic seat. Other players need a mic seat to join this game.</Text>}<Btn title="CREATE GAME" onPress={create}/><Btn title="BACK" onPress={()=>setStage('select')}/></View>}
   {stage==='lobby'&&<View><Text style={{color:GOLD,fontSize:18,textAlign:'center'}}>{selected?.name} Lobby</Text><Text style={{color:ink,textAlign:'center'}}>{players.length}/{max===Infinity?'∞':max} players · Free play (0 Good Coins)</Text>{selected?.timed&&<Text style={{color:GOLD,textAlign:'center'}}>{seconds}s</Text>}{players.map(p=><Text key={p.id} style={{color:ink,padding:7}}>{p.name}</Text>)}<Text style={{color:muted}}>{status}</Text>{!inLobby&&<Btn title="JOIN GAME" onPress={join} disabled={!canJoin||players.length>=max||(selected?.timed&&seconds<=0)}/>}<Btn title="START GAME" onPress={start} disabled={(!isAuthorisedStarter&&!hostRef.current)||players.length<min}/><Text style={{color:muted,textAlign:'center'}}>The game creator, room owner or authorised admin can start.</Text></View>}
-  {stage==='play'&&<ScrollView><View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:6}}><Text style={{color:GOLD,fontSize:18,fontWeight:'900',flex:1}}>{selected?.name}</Text><View style={{flexDirection:'row',alignItems:'center',gap:8}}><TouchableOpacity onPress={()=>setRulesVisible(true)} accessibilityLabel="Game rules" style={{width:25,height:25,borderRadius:13,borderWidth:1,borderColor:GOLD,alignItems:'center',justifyContent:'center'}}><Text style={{color:GOLD,fontWeight:'900',fontSize:13}}>?</Text></TouchableOpacity><TouchableOpacity onPress={toggleGameSound} accessibilityLabel={soundMuted?'Turn game sound on':'Turn game sound off'} style={{paddingHorizontal:5,paddingVertical:3}}><Text style={{fontSize:18}}>{soundMuted?'🔇':'🔊'}</Text></TouchableOpacity></View></View><Text style={{color:ink,textAlign:'center'}}>Turn: {current?.name||'—'}</Text><Text style={{color:muted,textAlign:'center'}}>{state.status}</Text><View style={{backgroundColor:'#21182B',padding:10,borderRadius:12}}>{!isMyTurn&&<Text style={{color:muted,marginBottom:6}}>Waiting for {current?.name||'player'}.</Text>}<View pointerEvents={isMyTurn?'auto':'none'} style={{opacity:isMyTurn?1:0.78}}>{renderControls()}</View>{state.name==='UNO'&&state.pendingUno===userId&&<Btn title="CALL UNO NOW" onPress={()=>act({type:'uno_call'})}/>}{state.name==='UNO'&&state.pendingUno&&state.pendingUno!==userId&&<Btn title="CATCH MISSED UNO (+2)" onPress={()=>act({type:'uno_catch'})}/>}</View>{state.winner&&<Btn title="VIEW RESULT" onPress={()=>setStage('result')}/>}</ScrollView>}
+  {stage==='play'&&<ScrollView showsVerticalScrollIndicator={false}>
+   <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:8,paddingBottom:7,borderBottomWidth:1,borderBottomColor:'#594632'}}>
+    <View style={{flex:1}}><Text style={{color:GOLD,fontSize:18,fontWeight:'900'}}>{selected?.name}</Text><Text style={{color:muted,fontSize:9,letterSpacing:1}}>TALKZY GAME ARENA</Text></View>
+    <View style={{flexDirection:'row',alignItems:'center',gap:9}}>
+     <TouchableOpacity onPress={()=>setRulesVisible(true)} accessibilityLabel="Game rules" style={{width:26,height:26,borderRadius:13,borderWidth:1,borderColor:GOLD,alignItems:'center',justifyContent:'center'}}><Text style={{color:GOLD,fontWeight:'900',fontSize:13}}>?</Text></TouchableOpacity>
+     <TouchableOpacity onPress={toggleGameSound} accessibilityLabel={soundMuted?'Turn game sound on':'Turn game sound off'} style={{paddingHorizontal:3,paddingVertical:3}}><Text style={{fontSize:18}}>{soundMuted?'🔇':'🔊'}</Text></TouchableOpacity>
+     {canMinimize&&<TouchableOpacity onPress={()=>{setMinimized(true);minimizedRef.current=true;}} accessibilityLabel="Minimize game panel" style={{width:26,height:26,borderRadius:13,borderWidth:1,borderColor:'#806C52',alignItems:'center',justifyContent:'center'}}><Text style={{color:GOLD,fontSize:17,fontWeight:'900'}}>×</Text></TouchableOpacity>}
+    </View>
+   </View>
+   <View style={{backgroundColor:'#21182B',padding:9,borderRadius:12,marginBottom:8}}>
+    <Text style={{color:GOLD,fontSize:10,fontWeight:'900',letterSpacing:1,marginBottom:4}}>LIVE GAME STATUS</Text>
+    <Text style={{color:ink,textAlign:'center',fontWeight:'800'}}>Turn: {current?.name||'—'}</Text>
+    <Text style={{color:muted,textAlign:'center',fontSize:11,marginTop:3}}>{state.status}</Text>
+    {!isMyTurn&&<Text style={{color:muted,textAlign:'center',fontSize:10,marginTop:4}}>Waiting for {current?.name||'player'}.</Text>}
+   </View>
+   <View style={{backgroundColor:'#21182B',padding:10,borderRadius:12,borderWidth:1,borderColor:'#4B3A54'}}>
+    <View pointerEvents={isMyTurn?'auto':'none'} style={{opacity:isMyTurn?1:0.78}}>{renderControls()}</View>
+    {state.name==='UNO'&&state.pendingUno===userId&&<Btn title="CALL UNO NOW" onPress={()=>act({type:'uno_call'})}/>}
+    {state.name==='UNO'&&state.pendingUno&&state.pendingUno!==userId&&<Btn title="CATCH MISSED UNO (+2)" onPress={()=>act({type:'uno_catch'})}/>}
+   </View>
+   <View style={{marginTop:10,marginBottom:4}}>
+    <Text style={{color:GOLD,fontSize:10,fontWeight:'900',letterSpacing:1,marginBottom:6}}>PLAYERS · LIVE SCORES · RANK</Text>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:7,paddingBottom:3}}>
+     {gameResults(state).map(row=><View key={row.id} style={{width:104,backgroundColor:row.id===current?.id?'#3B2C22':'#251B31',borderWidth:1,borderColor:row.id===current?.id?GOLD:'#51415B',borderRadius:11,padding:8,alignItems:'center'}}>
+      <View style={{width:30,height:30,borderRadius:15,backgroundColor:'#49364F',borderWidth:1,borderColor:GOLD,alignItems:'center',justifyContent:'center',marginBottom:4}}><Text style={{color:GOLD,fontWeight:'900',fontSize:11}}>{String(row.name||'P').trim().split(/\\s+/).map(v=>v[0]).join('').slice(0,2).toUpperCase()}</Text></View>
+      <Text numberOfLines={1} style={{color:ink,fontSize:10,fontWeight:'800',maxWidth:88}}>{row.name}{row.id===userId?' (You)':''}</Text>
+      <Text style={{color:GOLD,fontSize:15,fontWeight:'900',marginTop:2}}>{row.score}</Text>
+      <Text style={{color:muted,fontSize:9}}>RANK #{row.rank}</Text>
+     </View>)}
+    </ScrollView>
+   </View>
+   {state.winner&&<Btn title="VIEW RESULT" onPress={()=>setStage('result')}/>}
+  </ScrollView>}
   {stage==='result'&&<View style={{maxHeight:520}}>
    <Text style={{color:GOLD,fontSize:20,textAlign:'center',fontWeight:'900'}}>♛ GAME RESULTS</Text>
    <Text style={{color:muted,textAlign:'center',fontSize:11,marginTop:4,marginBottom:12}}>{state?.name||selected?.name} · Final rankings</Text>
