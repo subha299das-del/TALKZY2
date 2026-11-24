@@ -857,31 +857,25 @@ useEffect(() => {
 // invoke its main Close action.
 useEffect(() => {
   const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-    // Room Tools must consume the first Android Back press. A second press
-    // can then reach the room Minimize / Exit menu below.
-    if (showRoomTools) {
-      setShowRoomTools(false);
-      return true;
-    }
-    if (showSpecialEffectSettings) {
-      setShowSpecialEffectSettings(false);
-      return true;
-    }
-    // Room Chat: first Back closes the composer; the next Back opens options.
+    // First dismiss the topmost open popup/panel. Only a subsequent Back
+    // press may open the room Minimize / Exit menu.
+    if (showRoomTools) { setShowRoomTools(false); return true; }
+    if (showSpecialEffectSettings) { setShowSpecialEffectSettings(false); return true; }
     if (showRoomChatComposer) {
       Keyboard.dismiss();
       setShowRoomChatComposer(false);
       setShowRoomChatActionMenu(false);
       return true;
     }
+    if (showRoomChatActionMenu) { setShowRoomChatActionMenu(false); return true; }
     if (showRoomShortcutsPage) { setShowRoomShortcutsPage(false); return true; }
-    // Close any active room-level panel before opening the room action menu.
     if (showMicEmojiPicker) { setShowMicEmojiPicker(false); return true; }
     if (showMicControlPopup) { setShowMicControlPopup(false); return true; }
     if (showRoomUsers) { setShowRoomUsers(false); return true; }
     if (showMicCountPicker) { setShowMicCountPicker(false); return true; }
     if (showRoomMessageMenu) { setShowRoomMessageMenu(false); return true; }
     if (showRoomInfo) { setShowRoomInfo(false); return true; }
+    if (showRoomGiftQuantityOptions) { setShowRoomGiftQuantityOptions(false); return true; }
     if (showRoomGiftPanel) { setShowRoomGiftPanel(false); return true; }
     if (showGreedyPanel) { setShowGreedyPanel(false); return true; }
     if (showRoomGamePanel) { setShowRoomGamePanel(false); return true; }
@@ -893,13 +887,25 @@ useEffect(() => {
     if (roomDetailsVisible) { setRoomDetailsVisible(false); return true; }
     if (showRoomMenu) { setShowRoomMenu(false); return true; }
     if (showMicChatPopup) { setShowMicChatPopup(false); return true; }
+    if (showYoutubeVolumePopup) { setShowYoutubeVolumePopup(false); return true; }
+    if (showYoutubeQueuePopup) { setShowYoutubeQueuePopup(false); return true; }
+    if (showYoutubePicker) { setShowYoutubePicker(false); return true; }
+    if (showYoutubePanel) { setShowYoutubePanel(false); return true; }
     if (showMusicPanel) { setShowMusicPanel(false); return true; }
+    if (showRoomActivityComposer) { setShowRoomActivityComposer(false); return true; }
+    if (showEventPreview) { setShowEventPreview(false); return true; }
+    if (showCountryRooms) { setShowCountryRooms(false); return true; }
+    if (showCountryRegion) { setShowCountryRegion(false); return true; }
+    if (showMySubscription) { setShowMySubscription(false); return true; }
+    if (showCreateRoomActivity) { setShowCreateRoomActivity(false); return true; }
+    if (showPosterOptions) { setShowPosterOptions(false); return true; }
+    if (showPosterTemplates) { setShowPosterTemplates(false); return true; }
+    if (showPosterEditor) { setShowPosterEditor(false); return true; }
+    if (showCreateRoomPasswordPopup) { setShowCreateRoomPasswordPopup(false); return true; }
+    if (showCreateRoom) { setShowCreateRoom(false); return true; }
+    if (eventInfoPopup) { setEventInfoPopup(null); return true; }
 
     if (selectedRoom?.id && screen === 'roomInterior') {
-      if (showYoutubePanel) {
-        // Deliberate exception: do not close/dismiss YouTube from Android Back.
-        return true;
-      }
       // Android system Back opens the room's Minimize / Exit menu.
       // Do not route it to the separate chat-options menu.
       setShowRoomMenu(true);
@@ -939,14 +945,17 @@ useEffect(() => {
   });
   return () => subscription.remove();
 }, [
-  selectedRoom?.id, screen, showRoomChatComposer, showSpecialEffectSettings,
-  showYoutubePanel, eventFrontReturnScreen, roomSettingsReturnScreen, activeTab,
-  showRoomShortcutsPage,
-  showMicEmojiPicker, showMicControlPopup, showRoomUsers, showMicCountPicker,
-  showRoomMessageMenu, showRoomInfo, showRoomGiftPanel, showGreedyPanel,
-  showRoomGamePanel, showRocketPanel, showRoomTools, showRoomThemeMenu,
-  showLuckyBagPopup, showHotEventsPopup, showJoinPassword, roomDetailsVisible,
-  showRoomMenu, showMicChatPopup, showMusicPanel
+  selectedRoom?.id, screen, eventFrontReturnScreen, roomSettingsReturnScreen, activeTab,
+  showRoomTools, showSpecialEffectSettings, showRoomChatComposer, showRoomChatActionMenu,
+  showRoomShortcutsPage, showMicEmojiPicker, showMicControlPopup, showRoomUsers,
+  showMicCountPicker, showRoomMessageMenu, showRoomInfo, showRoomGiftQuantityOptions,
+  showRoomGiftPanel, showGreedyPanel, showRoomGamePanel, showRocketPanel,
+  showRoomThemeMenu, showLuckyBagPopup, showHotEventsPopup, showJoinPassword,
+  roomDetailsVisible, showRoomMenu, showMicChatPopup, showYoutubeVolumePopup,
+  showYoutubeQueuePopup, showYoutubePicker, showYoutubePanel, showMusicPanel,
+  showRoomActivityComposer, showEventPreview, showCountryRooms, showCountryRegion,
+  showMySubscription, showCreateRoomActivity, showPosterOptions, showPosterTemplates,
+  showPosterEditor, showCreateRoomPasswordPopup, showCreateRoom, eventInfoPopup
 ]);
 
 // REALTIME MICROPHONE SEAT SYNC
