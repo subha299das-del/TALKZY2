@@ -823,7 +823,7 @@ export default function RoomGames({visible,onClose,onGameAvailable,roomId,creato
    if(p.type==='game_state'&&p.userId===hostIdRef.current&&p.lobbyId===lobbyRef.current&&!hostRef.current){stateRef.current=p.snapshot;setState(p.snapshot);if(p.snapshot?.winner)setStage('result');}
    if(p.type==='game_sound'&&p.lobbyId===lobbyRef.current)playGameSound();
    
-   if(p.type==='leave_game'&&hostRef.current&&p.lobbyId===lobbyRef.current&&p.playerId===p.userId){setPlayers(old=>{const next=old.filter(x=>x.id!==p.playerId);playersRef.current=next;const isType5=selectedRef.current?.name==='29'||(selectedRef.current?.name==='Carrom'&&modeRef.current===4);if(isType5&&old.length>=4&&next.length<4){secondsRef.current=60;setSeconds(60);}publish('lobby_state',{lobbyId:lobbyRef.current,players:next,stage:stageRef.current,selected:selectedRef.current?.name,seconds:secondsRef.current,mode:modeRef.current,bet:betRef.current});return next;});}
+   if(p.type==='leave_game'&&hostRef.current&&stageRef.current==='lobby'&&p.lobbyId===lobbyRef.current&&p.playerId===p.userId){setPlayers(old=>{const next=old.filter(x=>x.id!==p.playerId);playersRef.current=next;const isType5=selectedRef.current?.name==='29'||(selectedRef.current?.name==='Carrom'&&modeRef.current===4);if(isType5&&old.length>=4&&next.length<4){secondsRef.current=60;setSeconds(60);}publish('lobby_state',{lobbyId:lobbyRef.current,players:next,stage:stageRef.current,selected:selectedRef.current?.name,seconds:secondsRef.current,mode:modeRef.current,bet:betRef.current});return next;});}
    if(p.type==='lobby_closed'&&p.userId===hostIdRef.current&&p.lobbyId===lobbyRef.current){reset(false);}
   });
   ch.subscribe(st=>{if(st==='SUBSCRIBED')publish('request_state');});
