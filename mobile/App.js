@@ -5743,27 +5743,80 @@ function renderRoomInterior() {
         </View>
       </Modal>
 
-      {/* ROOM MESSAGE / FRIENDS POPUP */}
-      <Modal visible={showRoomMessageMenu} transparent animationType="fade" onRequestClose={() => setShowRoomMessageMenu(false)}>
-        <Pressable onPress={() => setShowRoomMessageMenu(false)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.68)', justifyContent: 'center', paddingHorizontal: 28 }}>
-          <Pressable onPress={() => {}} style={{ backgroundColor: C.card, borderRadius: 18, borderWidth: 1, borderColor: C.line, padding: 14 }}>
-            <Text style={{ color: C.text, fontSize: 16, fontWeight: '900', marginBottom: 10 }}>Messages</Text>
-            <TouchableOpacity
-              onPress={() => { setShowRoomMessageMenu(false); setMessageTab('Message'); setActiveTab('Message'); }}
-              style={{ minHeight: 52, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, borderRadius: 11, backgroundColor: C.panel, marginBottom: 8 }}
-            >
-              <Text style={{ fontSize: 18, marginRight: 11 }}>💬</Text>
-              <Text style={{ color: C.text, fontSize: 14, fontWeight: '800' }}>Message</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => { setShowRoomMessageMenu(false); setMessageTab('Friends'); setActiveTab('Message'); }}
-              style={{ minHeight: 52, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, borderRadius: 11, backgroundColor: C.panel }}
-            >
-              <Text style={{ fontSize: 18, marginRight: 11 }}>👥</Text>
-              <Text style={{ color: C.text, fontSize: 14, fontWeight: '800' }}>Friends</Text>
-            </TouchableOpacity>
-          </Pressable>
-        </Pressable>
+      {/* BELL: ROOM MESSAGES AND FRIENDS */}
+      <Modal visible={showRoomMessageMenu} transparent animationType="slide" onRequestClose={() => setShowRoomMessageMenu(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.58)', justifyContent: 'flex-end' }}>
+          <Pressable onPress={() => setShowRoomMessageMenu(false)} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+          <View style={{ height: '84%', backgroundColor: '#FFFFFF', borderTopLeftRadius: 25, borderTopRightRadius: 25, overflow: 'hidden' }}>
+            <View style={{ height: 5, width: 42, borderRadius: 4, backgroundColor: '#D7DCE3', alignSelf: 'center', marginTop: 9, marginBottom: 8 }} />
+            <View style={{ paddingHorizontal: 18, paddingTop: 8, paddingBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: '#EEF0F3' }}>
+              <Text style={{ color: '#202633', fontSize: 20, fontWeight: '900' }}>Messages</Text>
+              <TouchableOpacity onPress={() => setShowRoomMessageMenu(false)} style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#F1F3F6', alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: '#596273', fontSize: 21, fontWeight: '700' }}>×</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={{ flexDirection: 'row', paddingHorizontal: 18, borderBottomWidth: 1, borderBottomColor: '#E9ECF1' }}>
+              {['Message', 'Friends'].map(tab => {
+                const active = messageTab === tab;
+                return (
+                  <TouchableOpacity key={tab} onPress={() => setMessageTab(tab)} style={{ flex: 1, alignItems: 'center', paddingVertical: 14, borderBottomWidth: active ? 3 : 0, borderBottomColor: '#F05A9D' }}>
+                    <Text style={{ color: active ? '#E84991' : '#737D8D', fontSize: 15, fontWeight: active ? '900' : '700' }}>{tab === 'Friends' ? 'Friend' : tab}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 28 }}>
+              {messageTab === 'Message' ? (
+                <>
+                  <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
+                    <TouchableOpacity onPress={() => Alert.alert('Official Notification', 'Official TALKZY notifications will appear here.')} style={{ flex: 1, minHeight: 76, borderRadius: 13, backgroundColor: '#FFF2F7', padding: 12, justifyContent: 'center' }}>
+                      <Text style={{ fontSize: 22 }}>📢</Text>
+                      <Text style={{ color: '#303746', fontSize: 12, fontWeight: '800', marginTop: 5 }}>Official Notification</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => Alert.alert('Help and Support', 'Help and Support will be available here.')} style={{ flex: 1, minHeight: 76, borderRadius: 13, backgroundColor: '#F1F5FF', padding: 12, justifyContent: 'center' }}>
+                      <Text style={{ fontSize: 22 }}>🎧</Text>
+                      <Text style={{ color: '#303746', fontSize: 12, fontWeight: '800', marginTop: 5 }}>Help and Support</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <Text style={{ color: '#303746', fontSize: 15, fontWeight: '900', marginBottom: 9 }}>System Notification</Text>
+                  <TouchableOpacity onPress={() => Alert.alert('System Notification', 'Your TALKZY event and reward notifications will appear here.')} style={{ flexDirection: 'row', alignItems: 'center', padding: 13, borderRadius: 13, backgroundColor: '#F7F8FA', marginBottom: 18 }}>
+                    <View style={{ width: 43, height: 43, borderRadius: 22, backgroundColor: '#FFF0D8', alignItems: 'center', justifyContent: 'center', marginRight: 11 }}>
+                      <Text style={{ fontSize: 22 }}>🔔</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: '#252C39', fontWeight: '900', fontSize: 13 }}>TALKZY System</Text>
+                      <Text style={{ color: '#7B8492', fontSize: 12, marginTop: 3 }}>Event updates, rewards and important notifications</Text>
+                    </View>
+                    <Text style={{ color: '#A0A7B2', fontSize: 11 }}>›</Text>
+                  </TouchableOpacity>
+                  <Text style={{ color: '#303746', fontSize: 15, fontWeight: '900', marginBottom: 9 }}>Messages</Text>
+                  <View style={{ alignItems: 'center', paddingVertical: 28 }}>
+                    <Text style={{ fontSize: 34 }}>💬</Text>
+                    <Text style={{ color: '#555F70', fontWeight: '800', marginTop: 9 }}>No messages yet</Text>
+                    <Text style={{ color: '#929AA6', fontSize: 12, marginTop: 4, textAlign: 'center' }}>Your conversations will appear here.</Text>
+                  </View>
+                </>
+              ) : (
+                <>
+                  <Text style={{ color: '#303746', fontSize: 15, fontWeight: '900', marginBottom: 10 }}>New Friend</Text>
+                  <View style={{ backgroundColor: '#FFF3F8', borderRadius: 13, padding: 14, flexDirection: 'row', alignItems: 'center', marginBottom: 18 }}>
+                    <Text style={{ fontSize: 24, marginRight: 11 }}>👋</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: '#303746', fontWeight: '800', fontSize: 13 }}>Friend requests</Text>
+                      <Text style={{ color: '#8A929F', fontSize: 11, marginTop: 3 }}>New friend requests will appear here.</Text>
+                    </View>
+                  </View>
+                  <Text style={{ color: '#303746', fontSize: 15, fontWeight: '900', marginBottom: 10 }}>My Friends</Text>
+                  <View style={{ alignItems: 'center', paddingVertical: 28 }}>
+                    <Text style={{ fontSize: 34 }}>👥</Text>
+                    <Text style={{ color: '#555F70', fontWeight: '800', marginTop: 9 }}>No friends to show</Text>
+                    <Text style={{ color: '#929AA6', fontSize: 12, marginTop: 4, textAlign: 'center' }}>Your friend list will appear here.</Text>
+                  </View>
+                </>
+              )}
+            </ScrollView>
+          </View>
+        </View>
       </Modal>
 
       {/* LIVE ROOM USERS LIST */}
