@@ -413,7 +413,7 @@ function applyMove(src,actor,action){
   s.fouls[id]=(s.fouls[id]||0)+1;s.turnDeadline=Date.now()+15000;s.status='15-second stroke limit exceeded: technical foul; one due. Your turn continues.';return s;
  }
  if(s.name==='Carrom'&&action.type==='carrom_shot'){
-  if(s.boardComplete)return s;
+  if(s.boardComplete||s.turnDeadline&&Date.now()>s.turnDeadline)return s;
   const team=s.turn%2,ownColor=s.teamColours[team],oppColor=s.teamColours[1-team],oldBoard=s.carromBoard;
   const board=carromShoot(oldBoard,(s.turn+(s.seatRotation||0))%s.mode,Number(action.angle)||0,Math.max(4,Math.min(28,Number(action.power)||14)),s.mode);
   const newly=board.coins.filter(x=>x.pocketed&&!oldBoard.coins.find(o=>o.id===x.id)?.pocketed);
