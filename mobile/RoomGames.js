@@ -275,8 +275,8 @@ function gameResults(s){
  ids.forEach(id=>{scoreById[id]=Number(s.score?.[id]||0);});
  let higherIsBetter=true, detail='Points';
  if(s.name==='Ludo'){
-  ids.forEach(id=>{const tokens=s.tokens?.[id]||[];scoreById[id]=tokens.reduce((n,v)=>n+(v===57?100:v>=0?v:0),0);});
-  detail='Progress points';
+  ids.forEach(id=>{const tokens=s.tokens?.[id]||[];scoreById[id]=tokens.filter(v=>v===57).length;});
+  detail='Tokens home';
  }else if(s.name==='Snakes and Ladders'){
   ids.forEach(id=>{scoreById[id]=Number(s.positions?.[id]||0);});detail='Board position';
  }else if(s.name==='Carrom'){
@@ -339,18 +339,31 @@ function applyMove(src,actor,action){
   s.status=next>100?'Need exact roll to reach 100.':s.ladders[next]?'Climbed a ladder!':s.snakes[next]?'Slid down a snake.':'Moved '+d+' spaces.';
   return finish();
  }
- if(s.name==='Ludo'&&action.type==='ludo_roll'){if(!Number.isInteger(action.die)||action.die<1||action.die>6)return s;s.pendingDie=action.die;const anyOut=(s.tokens[id]||[]).some(v=>v>=0);if(action.die!==6&&!anyOut){s.status='No 6 — turn passes.';delete s.pendingDie;return finish();}s.status='Rolled '+action.die+'. Choose a token.';return s;}
- if(s.name==='Ludo'&&action.type==='ludo_move'){
-  const d=s.pendingDie||action.die,tokens=s.tokens[id].slice(),i=action.token;if(!Number.isInteger(i)||i<0||i>=4)return s;const old=tokens[i];if(!d||old===57)return s;
-  if(old===-1&&d!==6){s.status='A 6 is required to leave base.';return finish();}
-  const next=old===-1?0:old+d;if(next>57){s.status='Exact count needed to enter home.';return finish();}
-  tokens[i]=next;s.tokens[id]=tokens;
-  if(next<52&&!s.safe.includes(next)){s.players.forEach(op=>{if(op.id!==id)s.tokens[op.id]=s.tokens[op.id].map(v=>{if(v===next){s.status='Captured an opponent token!';return -1;}return v;});});}
-  if(tokens.every(v=>v===57))s.winner=id;
+ if(s.name==='Ludo'&&action.type==='ludo_roll'){
+  if(!Number.isInteger(action.die)||action.die<1||action.die>6||s.pendingDie)return s;
+  const d=action.die;
   s.consecutiveSix=d===6?(s.consecutiveSix||0)+1:0;
-  if(s.consecutiveSix>=3){s.consecutiveSix=0;s.status='Three consecutive sixes: turn forfeited.';return finish();}
-  delete s.pendingDie;if(d!==6)advance(s);else s.status='Rolled a 6 — roll again.';
-  return s;
+  if(s.consecutiveSix>=3){s.consecutiveSix=0;s.status='Three consecutive sixes: the third roll is forfeited.';advance(s);return s;}
+  const tokens=s.tokens[id]||[],legal=tokens.some(v=>v!==57&&(v===-1?d===6:v+d<=57));
+  if(!legal){s.status=d===6?'No legal move. Six grants another roll.':'No legal move. Turn passes.';if(d!==6)advance(s);return s;}
+  s.pendingDie=d;s.status='Rolled '+d+'. Choose a token.';return s;
+ }
+ if(s.name==='Ludo'&&action.type==='ludo_move'){
+  const d=s.pendingDie,tokens=(s.tokens[id]||[]).slice(),i=action.token;
+  if(!Number.isInteger(i)||i<0||i>=4||!d)return s;
+  const old=tokens[i];if(old===57)return s;
+  if(old===-1&&d!==6)return s;
+  const next=old===-1?0:old+d;if(next>57)return s;
+  tokens[i]=next;s.tokens[id]=tokens;
+  let captured=false,home=next===57;
+  if(next<52){
+   const seat=s.players.findIndex(p=>p.id===id),global=(seat*13+next)%52,safe=s.safe.includes(global);
+   if(!safe)s.players.forEach((op,oi)=>{if(op.id!==id)s.tokens[op.id]=s.tokens[op.id].map(v=>{if(v>=0&&v<52&&(oi*13+v)%52===global){captured=true;return -1;}return v;});});
+  }
+  delete s.pendingDie;
+  if(tokens.every(v=>v===57)){s.winner=id;s.status=(p.name||'Player')+' brought all four tokens home.';return s;}
+  if(d===6||captured||home){s.status=captured?'Captured an opponent token — roll again.':home?'Token reached home — roll again.':'Rolled a 6 — roll again.';return s;}
+  s.status='Token moved '+d+' spaces.';advance(s);return s;
  }
  if(s.name==='Carrom'&&action.type==='carrom_shot'){
   if(s.boardComplete)return s;
@@ -674,7 +687,7 @@ export default function RoomGames({visible,onClose,onGameAvailable,roomId,creato
  const renderControls=()=>{
   if(!state)return null;
   if(state.name==='Snakes and Ladders')return <><Text style={{color:ink}}>Position: {state.positions[userId]} / 100</Text><Btn title="ROLL DICE" onPress={roll}/></>;
-  if(state.name==='Ludo')return <><Text style={{color:ink}}>Roll a die, then choose one of your four tokens.</Text><Btn title="ROLL DICE" onPress={()=>act({type:'ludo_roll',die:rand(6)+1})}/>{state.tokens[userId]?.map((v,i)=><Tile key={i} onPress={()=>act({type:'ludo_move',token:i})} disabled={!state.pendingDie|| (v===-1&&state.pendingDie!==6)} active>{'Token '+(i+1)+' · '+(v<0?'Base':v===57?'Home':v)}</Tile>)}</>;
+  if(state.name==='Ludo')return <><Text style={{color:ink}}>Roll a die, then choose one of your four tokens.</Text><Btn title="ROLL DICE" onPress={()=>act({type:'ludo_roll',die:rand(6)+1})} disabled={!!state.pendingDie}/>{state.tokens[userId]?.map((v,i)=><Tile key={i} onPress={()=>act({type:'ludo_move',token:i})} disabled={!state.pendingDie||v===57||(v===-1&&state.pendingDie!==6)||(v>=0&&v+state.pendingDie>57)} active>{'Token '+(i+1)+' · '+(v<0?'Base':v===57?'Home':v)}</Tile>)}</>;
   if(state.name==='UNO')return <>{state.pendingOpeningWild&&<View style={{flexDirection:'row',flexWrap:'wrap'}}>{colors.map(color=><Btn key={'open'+color} title={'START '+color.toUpperCase()} onPress={()=>act({type:'uno_opening_color',color})}/>)}</View>}<Text style={{color:ink}}>Top: {String(state.discard.at(-1)?.rank)} · Colour: {state.activeColor}</Text><Text style={{color:GOLD}}>Match points: {state.matchPoints?.[userId]||0}/500</Text>{state.pendingChallenge?.target===userId&&<><Btn title="ACCEPT +4" onPress={()=>act({type:'uno_accept'})}/><Btn title="CHALLENGE +4" onPress={()=>act({type:'uno_challenge'})}/></>}{state.pendingUno&&state.turn===state.players.findIndex(p=>p.id===userId)&&<Btn title="CATCH MISSED UNO (+2)" onPress={()=>act({type:'uno_catch'})}/>}<Text style={{color:ink}}>Choose wild colour before playing:</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{colors.map(color=><Btn key={color} small title={color.toUpperCase()} onPress={()=>setUnoColor(color)}/>)}</View><Text style={{color:muted}}>Selected: {unoColor}</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{currentHand.map(c=><Tile key={c.id} onPress={()=>{act({type:'uno_play',cardId:c.id,wildColor:unoColor,uno:currentHand.length===2&&unoCallSelected});setUnoCallSelected(false);}} disabled={state.drawnCard&&state.drawnCard!==c.id}>{String(c.rank)} {c.color==='wild'?'★':c.color}</Tile>)}</View>{state.drawnCard&&<Btn title="PASS AFTER DRAW" onPress={()=>act({type:'uno_pass_drawn'})}/>}<Btn title="DRAW ONE" onPress={()=>act({type:'uno_draw'})} disabled={!!state.drawnCard}/>{currentHand.length===2&&<Btn title={unoCallSelected?'UNO CALL: ON':'UNO CALL: OFF'} onPress={()=>setUnoCallSelected(v=>!v)}/>}</>;
   if(state.name==='29')return <><Text style={{color:ink}}>Phase: {state.phase} · Trump: {state.trumpHidden?'Hidden':state.trump||'—'} · Tricks: {state.tricks.length}/8</Text><Text style={{color:ink}}>Team points: {state.teamPoints.join(' – ')} · Match: {state.matchScore.join(' – ')}</Text>{state.phase==='bidding'&&<View style={{flexDirection:'row',flexWrap:'wrap'}}>{[16,17,18,19,20,21,22,23,24,25,26,27,28].filter(v=>v>state.highBid).map(v=><Btn key={v} title={'BID '+v} small onPress={()=>act({type:'29_bid',bid:v})}/>)}<Btn title="PASS" onPress={()=>act({type:'29_bid',pass:true})}/></View>}{state.phase==='deal2'&&state.contract?.player===userId&&<View style={{flexDirection:'row',flexWrap:'wrap'}}>{suits.map(s=><Btn key={s} title={'SELECT '+s} onPress={()=>act({type:'29_trump',suit:s})}/>)}</View>}{state.phase==='play'&&<><View style={{flexDirection:'row',flexWrap:'wrap'}}>{currentHand.map(c=><Tile key={c.id} onPress={()=>act({type:'trick_card',cardId:c.id})}>{cardLabel(c)}</Tile>)}</View>{state.trumpHidden&&state.currentTrick.length>0&&!currentHand.some(x=>x.suit===state.currentTrick[0].card.suit)&&<Btn title="REVEAL TRUMP" onPress={()=>act({type:'29_reveal_trump'})}/>}</>}</>;if(state.name==='Playcards – Breez')return <><Text style={{color:ink}}>Board {state.boardNumber} · {state.phase==='auction'?'Auction':state.contract?.level+state.contract?.suit+' · '+state.contract?.multiplier+'×'} · Tricks {state.tricks.length}/13</Text>{state.phase==='auction'&&<><Text style={{color:muted}}>Highest bid: {state.lastBid?state.lastBid.level+state.lastBid.suit:'None'} · Passes: {state.passCount}</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{Array.from({length:7},(_,i)=>i+1).flatMap(level=>bridgeStrains.map(strain=><Btn key={level+strain} small title={level+strain} onPress={()=>act({type:'bridge_bid',level,suit:strain})}/>))}</View><View style={{flexDirection:'row'}}><Btn title="PASS" onPress={()=>act({type:'bridge_bid',pass:true})}/>{state.lastBid&&<Btn title="DOUBLE" onPress={()=>act({type:'bridge_bid',double:true})}/>}{state.multiplier===2&&<Btn title="REDOUBLE" onPress={()=>act({type:'bridge_bid',redouble:true})}/>}</View></>}{state.phase==='play'&&<><Text style={{color:ink}}>Contract: {state.contract.level}{state.contract.suit} · Declarer: {state.players.find(p=>p.id===state.declarer)?.name} · Dummy: {state.dummyRevealed?state.players.find(p=>p.id===state.dummy)?.name:'Hidden'}</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{currentHand.map(card=><Tile key={card.id} onPress={()=>act({type:'trick_card',cardId:card.id})}>{cardLabel(card)}</Tile>)}</View>{state.dummyRevealed&&<Text style={{color:muted}}>Dummy's hand is exposed.</Text>}</>}</>;
   if(state.name==='Jackaroo'){
