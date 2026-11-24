@@ -254,7 +254,7 @@ function unoRoundEnd(s,winnerId){
  s.matchPoints[winnerId]=(s.matchPoints[winnerId]||0)+points;
  s.roundPoints=points;
  const matchWinner=s.players.find(p=>(s.matchPoints[p.id]||0)>=500);
- if(matchWinner)s.matchWinner=matchWinner.id;
+ if(matchWinner){s.matchWinner=matchWinner.id;s.winner=matchWinner.id;}
  s.status=(s.players.find(p=>p.id===winnerId)?.name||'Player')+' wins the round and scores '+points+' points.';
 }
 function publicGameSnapshot(source,viewerId=null){
@@ -605,7 +605,7 @@ if((s.name==='Playcards – Breez'||s.name==='29')&&action.type==='trick_card'){
    }
    if(s.name==='29'&&s.tricks.length===8){
     const contractTeam=s.players.findIndex(p=>p.id===s.contract.player)%2,made=s.teamPoints[contractTeam]>=s.contract.bid;
-    s.matchScore[contractTeam]+=made?1:-1;s.phase='complete';s.winner=win.player;
+    s.matchScore[contractTeam]+=made?1:-1;s.phase='complete';const handWinnerTeam=made?contractTeam:1-contractTeam;s.winner=s.players.find((p,i)=>i%2===handWinnerTeam)?.id;
     s.matchWinner=s.matchScore[contractTeam]>=6?contractTeam:s.matchScore[contractTeam]<=-6?1-contractTeam:null;
     s.status='29 complete. Team points: '+s.teamPoints.join(' – ')+'. Bid '+(made?'made':'failed')+'. Match score: '+s.matchScore.join(' – ');
    }
