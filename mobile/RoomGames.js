@@ -114,7 +114,7 @@ const Tile=({children,onPress,active=false,disabled=false})=><TouchableOpacity d
 function initialGame(name,players,mode=2){
  const ids=players.map(p=>p.id), s={name,players,turn:0,round:1,score:{},status:'Game started.',winner:null};
  ids.forEach(id=>s.score[id]=0);
- if(name==='Ludo') {s.tokens={};players.forEach(p=>s.tokens[p.id]=[-1,-1,-1,-1]);s.consecutiveSix=0;s.safe=[0,8,13,21,26,34,39,47];}
+ if(name==='Ludo') {s.tokens={};players.forEach(p=>s.tokens[p.id]=[-1,-1,-1,-1]);s.consecutiveSix=0;s.finishOrder=[];s.safe=[0,8,13,21,26,34,39,47];}
  if(name==='Snakes and Ladders'){s.positions={};ids.forEach(id=>s.positions[id]=0);s.ladders={1:38,4:14,9:31,21:42,28:84,36:44,51:67,71:91,80:100};s.snakes={16:6,47:26,49:11,56:53,62:19,64:60,87:24,93:73,95:75,98:78};s.phase='start_roll';s.startingRolls={};s.tiedStartPlayers=[...ids];}
  if(name==='Carrom'){s.mode=mode;s.carromBoard=createCarromBoard();s.turn=rand(players.length);s.colours={};s.teamColours=[];s.teamColours[s.turn%2]='white';s.teamColours[1-s.turn%2]='black';s.players.forEach((pl,i)=>{s.colours[pl.id]=s.teamColours[i%2];});s.queenPending=null;s.queenCoveredBy=null;s.due=[0,0];s.breakAttempts=0;s.breakDone=false;s.shot=0;s.boardShots=0;s.fouls={};s.boardNumber=1;s.boardComplete=false;s.matchPoints=[0,0];s.score={};ids.forEach(id=>s.score[id]=0);s.boardsPlayed=0;}
  if(name==='UNO'){s.deck=[];let cardNo=0;colors.forEach(color=>{s.deck.push({id:'UNO-'+(cardNo++),rank:0,color,suit:'*'});for(let n=1;n<=9;n++)for(let copy=0;copy<2;copy++)s.deck.push({id:'UNO-'+(cardNo++),rank:n,color,suit:'*'});for(const rank of ['Skip','Reverse','+2'])for(let copy=0;copy<2;copy++)s.deck.push({id:'UNO-'+(cardNo++),rank,color,suit:'*'});});for(let copy=0;copy<4;copy++){s.deck.push({id:'UNO-'+(cardNo++),rank:'Wild',color:'wild',suit:'*'});s.deck.push({id:'UNO-'+(cardNo++),rank:'+4',color:'wild',suit:'*'});}for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}const dealerDraws=players.map(p=>s.deck.pop()),dealerScores=dealerDraws.map(card=>typeof card.rank==='number'?card.rank:0);s.dealer=dealerScores.indexOf(Math.max(...dealerScores));s.deck.push(...dealerDraws);for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}s.turn=(s.dealer+1)%players.length;s.hands={};players.forEach(p=>s.hands[p.id]=s.deck.splice(0,7));let first=s.deck.shift();while(first?.rank==='+4'){s.deck.push(first);for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}first=s.deck.shift();}s.discard=[first];if(first?.rank==='Reverse')s.turn=s.dealer;s.direction=first?.rank==='Reverse'?-1:1;s.activeColor=first?.color||'red';s.pendingOpeningWild=first?.rank==='Wild';s.drawnCard=null;s.pendingUno=null;s.pendingChallenge=null;s.unoCalled={};s.matchPoints={};s.roundPoints=0;ids.forEach(id=>s.matchPoints[id]=0);if(first?.rank==='+2'){unoDraw(s,players[s.turn].id,2);advance(s);}else if(first?.rank==='Skip')advance(s);}
@@ -126,6 +126,7 @@ function initialGame(name,players,mode=2){
 }
 
 function advance(s,n=1){s.turn=(s.turn+n+s.players.length)%s.players.length;return s;}
+function advanceLudo(s){const finished=new Set(s.finishOrder||[]);for(let i=0;i<s.players.length;i++){advance(s);if(!finished.has(s.players[s.turn].id))return s;}return s;}
 function clone(s){return JSON.parse(JSON.stringify(s));}
 function unoDraw(s,playerId,count=1){
  const hand=s.hands[playerId]||[];
@@ -275,8 +276,8 @@ function gameResults(s){
  ids.forEach(id=>{scoreById[id]=Number(s.score?.[id]||0);});
  let higherIsBetter=true, detail='Points';
  if(s.name==='Ludo'){
-  ids.forEach(id=>{const tokens=s.tokens?.[id]||[];scoreById[id]=tokens.filter(v=>v===57).length;});
-  detail='Tokens home';
+  ids.forEach(id=>{const order=s.finishOrder||[];scoreById[id]=order.includes(id)?s.players.length-order.indexOf(id):(s.tokens?.[id]||[]).filter(v=>v===57).length;});
+  detail='Finish points';
  }else if(s.name==='Snakes and Ladders'){
   ids.forEach(id=>{scoreById[id]=Number(s.positions?.[id]||0);});detail='Board position';
  }else if(s.name==='Carrom'){
@@ -353,9 +354,9 @@ function applyMove(src,actor,action){
   if(!Number.isInteger(action.die)||action.die<1||action.die>6||s.pendingDie)return s;
   const d=action.die;
   s.consecutiveSix=d===6?(s.consecutiveSix||0)+1:0;
-  if(s.consecutiveSix>=3){s.consecutiveSix=0;s.status='Three consecutive sixes: the third roll is forfeited.';advance(s);return s;}
+  if(s.consecutiveSix>=3){s.consecutiveSix=0;s.status='Three consecutive sixes: the third roll is forfeited.';advanceLudo(s);return s;}
   const tokens=s.tokens[id]||[],legal=tokens.some(v=>v!==57&&(v===-1?d===6:v+d<=57));
-  if(!legal){s.status=d===6?'No legal move. Six grants another roll.':'No legal move. Turn passes.';if(d!==6)advance(s);return s;}
+  if(!legal){s.status=d===6?'No legal move. Six grants another roll.':'No legal move. Turn passes.';if(d!==6)advanceLudo(s);return s;}
   s.pendingDie=d;s.status='Rolled '+d+'. Choose a token.';return s;
  }
  if(s.name==='Ludo'&&action.type==='ludo_move'){
@@ -371,9 +372,9 @@ function applyMove(src,actor,action){
    if(!safe)s.players.forEach((op,oi)=>{if(op.id!==id)s.tokens[op.id]=s.tokens[op.id].map(v=>{if(v>=0&&v<52&&(oi*13+v)%52===global){captured=true;return -1;}return v;});});
   }
   delete s.pendingDie;
-  if(tokens.every(v=>v===57)){s.winner=id;s.status=(p.name||'Player')+' brought all four tokens home.';return s;}
+  if(tokens.every(v=>v===57)){if(!s.finishOrder.includes(id))s.finishOrder.push(id);const remaining=s.players.filter(pl=>!s.finishOrder.includes(pl.id));if(remaining.length===1){s.finishOrder.push(remaining[0].id);s.winner=s.finishOrder[0];s.status='All Ludo players ranked. '+(s.players.find(pl=>pl.id===s.winner)?.name||'Player')+' wins.';}else{s.status=(p.name||'Player')+' finished in position '+s.finishOrder.length+'.';advanceLudo(s);}return s;}
   if(d===6||captured||home){s.status=captured?'Captured an opponent token — roll again.':home?'Token reached home — roll again.':'Rolled a 6 — roll again.';return s;}
-  s.status='Token moved '+d+' spaces.';advance(s);return s;
+  s.status='Token moved '+d+' spaces.';advanceLudo(s);return s;
  }
  if(s.name==='Carrom'&&action.type==='carrom_shot'){
   if(s.boardComplete)return s;
