@@ -168,8 +168,8 @@ function carromShoot(board,playerIndex,angle,power){
    if(dist>0&&dist<min){const nx=dx/dist,ny=dy/dist,overlap=min-dist;a.x-=nx*overlap/2;a.y-=ny*overlap/2;d.x+=nx*overlap/2;d.y+=ny*overlap/2;const rel=(d.vx-a.vx)*nx+(d.vy-a.vy)*ny;if(rel<0){const impulse=-(1+.9)*rel/2;a.vx-=impulse*nx;a.vy-=impulse*ny;d.vx+=impulse*nx;d.vy+=impulse*ny;}}
   }
  }
- b.strikerPocketed=b.striker.pocketed;
- b.coins.forEach(x=>{if(x.pocketed){if(x.color==='white'||x.color==='black')b.pocketed[x.color]++;}});
+ b.strikerPocketed=b.striker.pocketed;b.pocketed={white:0,black:0};
+ b.coins.forEach(x=>{if(x.pocketed&&(x.color==='white'||x.color==='black'))b.pocketed[x.color]++;});
  return b;
 }
 function unoRoundEnd(s,winnerId){
@@ -247,13 +247,53 @@ function applyMove(src,actor,action){
   return s;
  }
  if(s.name==='Carrom'&&action.type==='carrom_shot'){
-  const {pocket,own,queen}=action;
+  if(s.boardComplete)return s;
+  const team=s.turn%2,oldBoard=s.carromBoard,board=carromShoot(oldBoard,s.turn,Number(action.angle)||0,Math.max(4,Math.min(28,Number(action.power)||14)));
+  const newly=board.coins.filter(x=>x.pocketed&&!oldBoard.coins.find(o=>o.id===x.id)?.pocketed);
+  const firstCoin=newly.find(x=>x.color==='white'||x.color==='black');
+  if(!s.teamColours[team]&&firstCoin){s.teamColours[team]=firstCoin.color;s.teamColours[1-team]=firstCoin.color==='white'?'black':'white';s.players.forEach((pl,i)=>{s.colours[pl.id]=s.teamColours[i%2];});}
+  const ownColor=s.teamColours[team],ownPocketed=newly.some(x=>x.color===ownColor),opponentPocketed=!!ownColor&&newly.some(x=>(x.color==='white'||x.color==='black')&&x.color!==ownColor);
+  const foul=board.strikerPocketed||board.offBoard||opponentPocketed;
   s.shot++;
-  if(action.foul){s.fouls[id]=(s.fouls[id]||0)+1;s.status='Foul: turn ends and one of your pocketed coins is returned.';return finish();}
-  if(queen&&s.coins.queen){s.coins.queen=false;s.queenPending=true;s.status='Queen pocketed — cover it with your colour on this or next shot.';}
-  if(own&&pocket){const colour=s.colours[id]||action.colour;if(!s.colours[id])s.colours[id]=colour;s.coins[colour]=Math.max(0,s.coins[colour]-1);if(s.queenPending){s.queenPending=false;s.queenCovered=true;s.score[id]=(s.score[id]||0)+3;}s.status='Own coin pocketed; shoot again.';return s;}
-  if(s.queenPending&&action.missedCover){s.coins.queen=true;s.queenPending=false;s.status='Queen returned to centre.';}
-  s.status='No own coin pocketed. Turn passes.';return finish();
+  if(foul){
+   s.fouls[id]=(s.fouls[id]||0)+1;
+   const returned=newly.find(x=>x.color!=='queen')||newly[0];
+   if(returned){const coin=board.coins.find(x=>x.id===returned.id);coin.pocketed=false;coin.x=500;coin.y=500;coin.vx=0;coin.vy=0;}
+   if(newly.some(x=>x.color==='queen')){const q=board.coins.find(x=>x.color==='queen');q.pocketed=false;q.x=500;q.y=500;}
+   board.pocketed={white:0,black:0};board.coins.forEach(x=>{if(x.pocketed&&(x.color==='white'||x.color==='black'))board.pocketed[x.color]++;});
+   s.carromBoard=board;s.queenPending=null;s.status='Foul: striker, opponent coin or off-board. One pocketed coin returned to centre.';advance(s);return s;
+  }
+  const queenShot=newly.some(x=>x.color==='queen');
+  if(queenShot)s.queenPending={team,playerId:id};
+  if(s.queenPending&&ownPocketed){s.queenPending=null;s.queenCoveredBy=team;board.queenCoveredBy=team;}
+  else if(s.queenPending&&!ownPocketed&&!queenShot){
+   const q=board.coins.find(x=>x.color==='queen');if(q){q.pocketed=false;q.x=500;q.y=500;q.vx=0;q.vy=0;}
+   s.queenPending=null;s.queenCoveredBy=null;board.queenCoveredBy=null;
+  }
+  s.carromBoard=board;
+  if(ownColor&&board.pocketed[ownColor]>=9){
+   const last=newly.filter(x=>x.color===ownColor).slice(-1)[0];
+   if(!s.queenCoveredBy||s.queenCoveredBy!==team){
+    if(last){const coin=board.coins.find(x=>x.id===last.id);coin.pocketed=false;coin.x=500;coin.y=500;}
+    const q=board.coins.find(x=>x.color==='queen');if(q){q.pocketed=false;q.x=500;q.y=500;}
+    board.pocketed[ownColor]=Math.max(0,board.pocketed[ownColor]-1);s.queenPending=null;s.status='Final coin before a covered Queen: Queen and final coin return to centre.';advance(s);return s;
+   }
+   const opponentColor=s.teamColours[1-team],points=Math.max(0,9-board.pocketed[opponentColor])+(s.queenCoveredBy===team?3:0);
+   s.matchPoints[team]+=points;s.boardsPlayed++;s.boardComplete=true;s.status='Board won. Team earns '+points+' points.';
+   s.players.forEach((pl,i)=>{s.score[pl.id]=s.matchPoints[i%2];});
+   if(s.matchPoints[team]>=25||s.boardsPlayed>=8){
+    const winningTeam=s.matchPoints[0]===s.matchPoints[1]?team:s.matchPoints[0]>s.matchPoints[1]?0:1;
+    s.winner=s.players.find((pl,i)=>i%2===winningTeam)?.id;s.matchWinner=winningTeam;s.status='Carrom match complete. Final score '+s.matchPoints.join(' – ')+'.';
+   }
+   return s;
+  }
+  if(ownPocketed||queenShot){s.status=queenShot&&!ownPocketed?'Queen pocketed. Cover it with your own coin on the next shot.':'Own coin pocketed. Shoot again.';return s;}
+  if(s.shot<=1&&s.boardsPlayed===0&&s.breakAttempts<2){s.breakAttempts++;s.status='Break attempt '+(s.breakAttempts+1)+' of 3.';return s;}
+  s.breakAttempts=0;s.status='No own coin pocketed. Turn passes.';advance(s);return s;
+ }
+ if(s.name==='Carrom'&&action.type==='carrom_next_board'){
+  if(!s.boardComplete||s.winner)return s;
+  const next=initialGame('Carrom',s.players,s.mode);next.boardNumber=s.boardNumber+1;next.boardsPlayed=s.boardsPlayed;next.matchPoints=[...s.matchPoints];next.score={};next.players.forEach((pl,i)=>next.score[pl.id]=next.matchPoints[i%2]);next.turn=(s.turn+1)%s.players.length;next.status='Board '+next.boardNumber+' started.';return next;
  }
  if(s.name==='Monster Crush'&&action.type==='monster_shot'){
   const cell=s.board.flat().find(x=>x.id===action.cell&&x.alive);if(!cell||s.ammo<=0)return s;
