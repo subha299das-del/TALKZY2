@@ -913,7 +913,7 @@ export default function RoomGames({visible,onClose,onGameAvailable,roomId,creato
     <Text style={{color:GOLD,fontSize:10,fontWeight:'900',letterSpacing:1,marginBottom:6}}>PLAYERS · LIVE SCORES · RANK</Text>
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:7,paddingBottom:3}}>
      {gameResults(state).map(row=><View key={row.id} style={{width:104,backgroundColor:row.id===current?.id?'#3B2C22':'#251B31',borderWidth:1,borderColor:row.id===current?.id?GOLD:'#51415B',borderRadius:11,padding:8,alignItems:'center'}}>
-      <View style={{width:30,height:30,borderRadius:15,backgroundColor:'#49364F',borderWidth:1,borderColor:GOLD,alignItems:'center',justifyContent:'center',marginBottom:4}}><Text style={{color:GOLD,fontWeight:'900',fontSize:11}}>{String(row.name||'P').trim().split(/\\s+/).map(v=>v[0]).join('').slice(0,2).toUpperCase()}</Text></View>
+      <View style={{width:30,height:30,borderRadius:15,backgroundColor:'#49364F',borderWidth:1,borderColor:GOLD,alignItems:'center',justifyContent:'center',marginBottom:4}}><Text style={{color:GOLD,fontWeight:'900',fontSize:11}}>{String(row.name||'P').trim().split(' ').map(v=>v[0]).join('').slice(0,2).toUpperCase()}</Text></View>
       <Text numberOfLines={1} style={{color:ink,fontSize:10,fontWeight:'800',maxWidth:88}}>{row.name}{row.id===userId?' (You)':''}</Text>
       <Text style={{color:GOLD,fontSize:15,fontWeight:'900',marginTop:2}}>{row.score}</Text>
       <Text style={{color:muted,fontSize:9}}>RANK #{row.rank}</Text>
