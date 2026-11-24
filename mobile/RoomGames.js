@@ -514,7 +514,7 @@ function applyMove(src,actor,action){
   const challenge=s.pendingChallenge;if(!challenge||challenge.target!==id)return s;
   s.pendingUno=null;unoDraw(s,id,4);s.pendingChallenge=null;if(!(s.hands[challenge.offender]||[]).length){unoRoundEnd(s,challenge.offender);return s;}s.status='Drew four cards; turn skipped.';advance(s);return s;
  }
- if(s.name==='29'&&action.type==='29_next_hand'){if(!s.winner||s.matchWinner!==null)return s;const next=initialGame('29',s.players);next.round=s.round+1;next.matchScore=[...s.matchScore];next.status='Next hand started.';return next;}
+ if(s.name==='29'&&action.type==='29_next_hand'){if(!s.winner||s.matchWinner!==null)return s;const next=initialGame('29',s.players);next.round=s.round+1;next.dealer=(s.dealer+3)%4;next.firstTurn=(next.dealer+3)%4;next.turn=next.firstTurn;next.matchScore=[...s.matchScore];next.status='Next hand started.';return next;}
  if(s.name==='UNO'&&action.type==='uno_next_round'){
   if(!s.winner||s.matchWinner)return s;
   const next=initialGame('UNO',s.players);next.round=s.round+1;next.matchPoints={...s.matchPoints};next.status='Round '+next.round+' started.';return next;
@@ -527,7 +527,7 @@ function applyMove(src,actor,action){
   if(!action.pass){s.highBid=bid;s.contract={player:id,bid};}
   if(s.bidCount===4){
    const winning=s.bids.filter(x=>!x.pass).slice(-1)[0];
-   if(!winning){const next=initialGame('29',s.players);next.round=s.round+1;next.matchScore=[...s.matchScore];next.status='All players passed. New deal.';return next;}
+   if(!winning){const next=initialGame('29',s.players);next.round=s.round+1;next.dealer=(s.dealer+3)%4;next.firstTurn=(next.dealer+3)%4;next.turn=next.firstTurn;next.matchScore=[...s.matchScore];next.status='All players passed. New deal.';return next;}
    s.contract=winning;s.phase='deal2';
    s.players.forEach(p=>{s.hands[p.id]=s.hands[p.id].concat(s.deck.splice(0,4));});
    s.turn=s.players.findIndex(p=>p.id===s.contract.player);s.status='Second four cards dealt. Bid winner must select hidden trump.';return s;
