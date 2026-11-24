@@ -400,6 +400,8 @@ export default function RoomGames({visible,onClose,roomId,creatorName='Host',use
     if(snapshot.shot!==undefined)setShot(snapshot.shot);
   };
   const currentSnapshot=()=>({gameName:selected?.name,bet,carromMode,players,stage,game,turn,score,status,roll,positions,hands,activeCard,category,answers,truthType,prompt,gems,shot});
+  const snapshotRef=useRef(null);
+  snapshotRef.current=currentSnapshot();
 
   useEffect(()=>{
     if(!visible||!roomId||!userId||!supabase)return;
@@ -408,19 +410,21 @@ export default function RoomGames({visible,onClose,roomId,creatorName='Host',use
     channel.on('broadcast',{event:'game_event'},({payload})=>{
       if(!payload||payload.roomId!==roomId||payload.userId===userId)return;
       if(payload.type==='request_state'&&isHostRef.current&&lobbyIdRef.current){
-        sendGameEvent('lobby_state',{lobbyId:lobbyIdRef.current,...currentSnapshot(),hostId:userId});
+        sendGameEvent('lobby_state',{lobbyId:lobbyIdRef.current,...snapshotRef.current,hostId:userId});
       } else if(payload.type==='create_lobby'){
         const found=GAMES.find(g=>g.name===payload.gameName);
-        if(!found||stage!=='select')return;
+        if(!found||lobbyIdRef.current)return;
         lobbyIdRef.current=payload.lobbyId;isHostRef.current=false;
         setSelected(found);setBet(payload.bet||0);setCarromMode(payload.carromMode||2);
         setPlayers(payload.players||[]);setSeconds(60);setStatus('Open game lobby. Join to play.');
         setStage('lobby');
       } else if(payload.type==='join_game'&&isHostRef.current&&payload.lobbyId===lobbyIdRef.current){
         setPlayers(current=>{
-          if(current.some(p=>p.id===payload.player?.id)||current.length>=maxPlayers)return current;
+          const latest=snapshotRef.current||{};
+          const cap=latest.gameName==='Carrom'?(latest.carromMode||2):(GAMES.find(g=>g.name===latest.gameName)?.max??4);
+          if(current.some(p=>p.id===payload.player?.id)||(cap!==Infinity&&current.length>=cap))return current;
           const next=[...current,payload.player];
-          setTimeout(()=>sendGameEvent('lobby_state',{lobbyId:lobbyIdRef.current,...currentSnapshot(),players:next,hostId:userId}),0);
+          setTimeout(()=>sendGameEvent('lobby_state',{lobbyId:lobbyIdRef.current,...snapshotRef.current,players:next,hostId:userId}),0);
           return next;
         });
       } else if(payload.type==='lobby_state'&&(!lobbyIdRef.current||payload.lobbyId===lobbyIdRef.current)){
@@ -570,7 +574,7 @@ export default function RoomGames({visible,onClose,roomId,creatorName='Host',use
         </View>
         {stage==='select'&&<ScrollView style={{marginTop:12}}><View style={{flexDirection:'row',flexWrap:'wrap'}}>{GAMES.map(g=><TouchableOpacity key={g.name} onPress={()=>choose(g)} style={{width:'25%',padding:4,alignItems:'center'}}><View style={{width:62,height:62,borderRadius:14,backgroundColor:'#2A1D32',borderWidth:1,borderColor:GOLD,alignItems:'center',justifyContent:'center'}}><RoyalGameArtwork art={g.art} /></View><Text style={{color:text,fontSize:10,textAlign:'center',marginTop:5}}>{g.name}</Text></TouchableOpacity>)}</View></ScrollView>}
         {stage==='setup'&&<View style={{marginTop:16}}><Text style={[label,{fontSize:19,textAlign:'center'}]}>{selected?.name}</Text><Text style={{color:muted,textAlign:'center',marginVertical:9}}>{selected?.rules}</Text><Text style={label}>Players: {requiredPlayers} required • {selected?.max===Infinity?'Unlimited':selected?.max+' maximum'}</Text>{selected?.name==='Carrom'&&<View style={{flexDirection:'row',marginTop:8}}><Action title="2 PLAYERS" onPress={()=>setCarromMode(2)} disabled={carromMode===2}/><Action title="4 PLAYERS" onPress={()=>setCarromMode(4)} disabled={carromMode===4}/></View>}{selected?.bet&&<><Text style={[label,{marginTop:12}]}>Bet amount (Good Coins)</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{BETS.map(v=><CardTile key={v} active={bet===v} onPress={()=>setBet(v)}>{v.toLocaleString()}</CardTile>)}</View></>}<Action title="CREATE GAME" onPress={createLobby}/><Action title="BACK" onPress={()=>setStage('select')}/></View>}
-        {stage==='lobby'&&<View style={{marginTop:14}}><Text style={[label,{fontSize:18,textAlign:'center'}]}>{selected?.name} Lobby</Text><Text style={{color:muted,textAlign:'center',margin:8}}>Bet: {selected?.bet?bet.toLocaleString()+' Good Coins':'No bet'} • {players.length}/{maxPlayers===Infinity?'∞':maxPlayers} players</Text>{selected?.timed&&bet>0&&<Text style={{color:GOLD,textAlign:'center',fontSize:22,fontWeight:'900'}}>{seconds}s</Text>}<View style={{flexDirection:'row',flexWrap:'wrap'}}>{players.map(p=><View key={p.id} style={{width:'50%',padding:6}}><Text style={{color:text,backgroundColor:'#2A2033',padding:12,borderRadius:10}}>{p.name}{p.id==='host'?' (Creator)':''}</Text></View>)}</View><Text style={{color:muted,textAlign:'center',marginVertical:8}}>{status}</Text>{!isInLobby&&<Action title="JOIN GAME" onPress={joinLobby} disabled={players.length>=maxPlayers||!canJoinThisGame}/>}{isAuthorisedStarter&&<Action title="START GAME" onPress={()=>startGame()} disabled={players.length<requiredPlayers}/>}<Text style={{color:muted,textAlign:'center',fontSize:10,marginVertical:5}}>{isAuthorisedStarter?'You are authorised to start this game.':'Only the room owner or an authorised admin can start this game.'}</Text><Action title="CLOSE" onPress={()=>{if(isHostRef.current)sendGameEvent('lobby_closed',{lobbyId:lobbyIdRef.current});close();}}/></View>}
+        {stage==='lobby'&&<View style={{marginTop:14}}><Text style={[label,{fontSize:18,textAlign:'center'}]}>{selected?.name} Lobby</Text><Text style={{color:muted,textAlign:'center',margin:8}}>Bet: {selected?.bet?bet.toLocaleString()+' Good Coins':'No bet'} • {players.length}/{maxPlayers===Infinity?'∞':maxPlayers} players</Text>{selected?.timed&&bet>0&&<Text style={{color:GOLD,textAlign:'center',fontSize:22,fontWeight:'900'}}>{seconds}s</Text>}<View style={{flexDirection:'row',flexWrap:'wrap'}}>{players.map(p=><View key={p.id} style={{width:'50%',padding:6}}><Text style={{color:text,backgroundColor:'#2A2033',padding:12,borderRadius:10}}>{p.name}{p.id===lobbyIdRef.current?.split('-').slice(1).join('-')?' (Creator)':''}</Text></View>)}</View><Text style={{color:muted,textAlign:'center',marginVertical:8}}>{status}</Text>{!isInLobby&&<Action title="JOIN GAME" onPress={joinLobby} disabled={players.length>=maxPlayers||!canJoinThisGame}/>}{isAuthorisedStarter&&<Action title="START GAME" onPress={()=>startGame()} disabled={players.length<requiredPlayers}/>}<Text style={{color:muted,textAlign:'center',fontSize:10,marginVertical:5}}>{isAuthorisedStarter?'You are authorised to start this game.':'Only the room owner or an authorised admin can start this game.'}</Text><Action title="CLOSE" onPress={()=>{if(isHostRef.current)sendGameEvent('lobby_closed',{lobbyId:lobbyIdRef.current});close();}}/></View>}
         {stage==='play'&&<ScrollView style={{marginTop:12}}><Text style={[label,{textAlign:'center',fontSize:18}]}>{game}</Text><Text style={{color:GOLD,textAlign:'center',margin:8}}>Turn: {currentName}</Text><Text style={{color:muted,textAlign:'center'}}>Players: {players.map(p=>p.name+' '+(score[p.id]||0)).join('  •  ')}</Text><View style={{backgroundColor:'#21182B',padding:14,borderRadius:14,marginTop:12}}><View pointerEvents={canAct?'auto':'none'} style={{opacity:canAct?1:0.48}}>{gameControls()}</View>{!canAct&&<Text style={{color:muted,textAlign:'center',marginTop:8}}>Waiting for {currentName} to play.</Text>}</View><Text style={{color:muted,textAlign:'center',margin:10}}>{status}</Text><Action title="END GAME" onPress={()=>{if(isAuthorisedStarter){markLocalAction();setStage('result');}}} disabled={!isAuthorisedStarter}/></ScrollView>}
         {stage==='result'&&<View style={{marginTop:18}}><Text style={[label,{fontSize:21,textAlign:'center'}]}>GAME RESULT</Text><Text style={{color:GOLD,textAlign:'center',fontSize:18,margin:12}}>{winner?.name||'No winner'} • {score[winner?.id]||0} points</Text>{players.map(p=><Text key={p.id} style={{color:text,padding:7}}>{p.name}: {score[p.id]||0}</Text>)}<Action title="BACK TO GAMES" onPress={reset}/></View>}
       </View>
