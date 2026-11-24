@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, View, Text, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
 
 const GAMES = [
@@ -337,7 +337,7 @@ function CardTile({children,onPress,active=false}) {
   return <TouchableOpacity onPress={onPress} style={{minWidth:42,padding:10,margin:3,borderRadius:9,borderWidth:1,borderColor:active?GOLD:'#5A4964',backgroundColor:active?'#634B2B':'#251B31',alignItems:'center'}}><Text style={{color:text,fontWeight:'900'}}>{children}</Text></TouchableOpacity>;
 }
 
-export default function RoomGames({visible,onClose,roomId,creatorName='Host'}) {
+export default function RoomGames({visible,onClose,roomId,creatorName='Host',userId,supabase,isAuthorisedStarter=false,hasRoomSeat=false}) {
   const [selected,setSelected]=useState(null);
   const [bet,setBet]=useState(0);
   const [carromMode,setCarromMode]=useState(2);
@@ -362,6 +362,97 @@ export default function RoomGames({visible,onClose,roomId,creatorName='Host'}) {
   const maxPlayers = selected?.name==='Carrom' ? carromMode : selected?.max;
   const requiredPlayers = selected?.name==='Carrom' ? carromMode : selected?.min || 2;
   const currentName = players[turn % Math.max(players.length,1)]?.name || 'Player';
+  const channelRef=useRef(null);
+  const lobbyIdRef=useRef(null);
+  const isHostRef=useRef(false);
+  const applyingRemoteRef=useRef(false);
+  const pendingLocalActionRef=useRef(false);
+  const canJoinWithoutSeat=selected?.name==='Brainstorm'||selected?.name==='Truth and Dare';
+  const canJoinThisGame=canJoinWithoutSeat||hasRoomSeat;
+  const isInLobby=players.some(p=>p.id===userId);
+  const canAct=stage==='play'&&players[turn]?.id===userId;
+  const markLocalAction=()=>{pendingLocalActionRef.current=true;};
+  const sendGameEvent=(type,extra={})=>{
+    if(!channelRef.current||!roomId||!userId)return;
+    channelRef.current.send({type:'broadcast',event:'game_event',payload:{type,roomId,userId,...extra}});
+  };
+  const applyGameSnapshot=(snapshot)=>{
+    if(!snapshot)return;
+    applyingRemoteRef.current=true;
+    if(snapshot.gameName){const found=GAMES.find(g=>g.name===snapshot.gameName);if(found)setSelected(found);}
+    if(snapshot.bet!==undefined)setBet(snapshot.bet);
+    if(snapshot.carromMode!==undefined)setCarromMode(snapshot.carromMode);
+    if(snapshot.players)setPlayers(snapshot.players);
+    if(snapshot.stage)setStage(snapshot.stage);
+    if(snapshot.game!==undefined)setGame(snapshot.game);
+    if(snapshot.turn!==undefined)setTurn(snapshot.turn);
+    if(snapshot.score)setScore(snapshot.score);
+    if(snapshot.status!==undefined)setStatus(snapshot.status);
+    if(snapshot.roll!==undefined)setRoll(snapshot.roll);
+    if(snapshot.positions)setPositions(snapshot.positions);
+    if(snapshot.hands)setHands(snapshot.hands);
+    if(snapshot.activeCard!==undefined)setActiveCard(snapshot.activeCard);
+    if(snapshot.category!==undefined)setCategory(snapshot.category);
+    if(snapshot.answers)setAnswers(snapshot.answers);
+    if(snapshot.truthType)setTruthType(snapshot.truthType);
+    if(snapshot.prompt!==undefined)setPrompt(snapshot.prompt);
+    if(snapshot.gems)setGems(snapshot.gems);
+    if(snapshot.shot!==undefined)setShot(snapshot.shot);
+  };
+  const currentSnapshot=()=>({gameName:selected?.name,bet,carromMode,players,stage,game,turn,score,status,roll,positions,hands,activeCard,category,answers,truthType,prompt,gems,shot});
+
+  useEffect(()=>{
+    if(!visible||!roomId||!userId||!supabase)return;
+    const channel=supabase.channel('room-games-'+roomId,{config:{private:true,presence:{key:userId}}});
+    channelRef.current=channel;
+    channel.on('broadcast',{event:'game_event'},({payload})=>{
+      if(!payload||payload.roomId!==roomId||payload.userId===userId)return;
+      if(payload.type==='request_state'&&isHostRef.current&&lobbyIdRef.current){
+        sendGameEvent('lobby_state',{lobbyId:lobbyIdRef.current,...currentSnapshot(),hostId:userId});
+      } else if(payload.type==='create_lobby'){
+        const found=GAMES.find(g=>g.name===payload.gameName);
+        if(!found||stage!=='select')return;
+        lobbyIdRef.current=payload.lobbyId;isHostRef.current=false;
+        setSelected(found);setBet(payload.bet||0);setCarromMode(payload.carromMode||2);
+        setPlayers(payload.players||[]);setSeconds(60);setStatus('Open game lobby. Join to play.');
+        setStage('lobby');
+      } else if(payload.type==='join_game'&&isHostRef.current&&payload.lobbyId===lobbyIdRef.current){
+        setPlayers(current=>{
+          if(current.some(p=>p.id===payload.player?.id)||current.length>=maxPlayers)return current;
+          const next=[...current,payload.player];
+          setTimeout(()=>sendGameEvent('lobby_state',{lobbyId:lobbyIdRef.current,...currentSnapshot(),players:next,hostId:userId}),0);
+          return next;
+        });
+      } else if(payload.type==='lobby_state'&&(!lobbyIdRef.current||payload.lobbyId===lobbyIdRef.current)){
+        lobbyIdRef.current=payload.lobbyId;setSelected(GAMES.find(g=>g.name===payload.gameName)||null);
+        setBet(payload.bet||0);setCarromMode(payload.carromMode||2);setPlayers(payload.players||[]);
+        setSeconds(payload.seconds??60);setStatus(payload.status||'Waiting for players.');
+        if(payload.stage==='play')applyGameSnapshot(payload);
+        else setStage('lobby');
+      } else if(payload.type==='start_game'&&payload.lobbyId===lobbyIdRef.current){
+        applyGameSnapshot(payload.snapshot);setStage('play');
+      } else if(payload.type==='game_state'&&payload.lobbyId===lobbyIdRef.current){
+        applyGameSnapshot(payload.snapshot);
+      } else if(payload.type==='lobby_closed'&&payload.lobbyId===lobbyIdRef.current){
+        lobbyIdRef.current=null;isHostRef.current=false;reset();
+      }
+    });
+    channel.subscribe(async status=>{
+      if(status==='SUBSCRIBED'){
+        await channel.track({userId,roomId});
+        channel.send({type:'broadcast',event:'game_event',payload:{type:'request_state',roomId,userId}});
+      }
+    });
+    return ()=>{channelRef.current=null;supabase.removeChannel(channel);};
+  },[visible,roomId,userId,supabase]);
+
+  useEffect(()=>{
+    if(stage!=='play'||!channelRef.current||!lobbyIdRef.current)return;
+    if(applyingRemoteRef.current){applyingRemoteRef.current=false;return;}
+    if(!pendingLocalActionRef.current)return;
+    pendingLocalActionRef.current=false;
+    sendGameEvent('game_state',{lobbyId:lobbyIdRef.current,gameName:selected?.name,snapshot:currentSnapshot()});
+  },[stage,selected,bet,carromMode,players,game,turn,score,status,roll,positions,hands,activeCard,category,answers,truthType,prompt,gems,shot]);
 
   useEffect(()=>{
     if(stage!=='lobby'||!selected?.timed||bet===0||players.length<2||seconds<=0)return;
@@ -370,12 +461,13 @@ export default function RoomGames({visible,onClose,roomId,creatorName='Host'}) {
   },[stage,selected,seconds,players.length,bet]);
   useEffect(()=>{
     if(stage==='lobby'&&selected?.timed&&bet>0&&seconds===0){
-      if(players.length>=requiredPlayers) startGame();
+      if(players.length>=requiredPlayers)setStatus('Joining time ended. An authorised room owner or admin can start the game.');
       else setStatus('Not enough players joined. Required: '+requiredPlayers+'. The game was not started.');
     }
   },[seconds,stage,selected,players.length,requiredPlayers,bet]);
 
   function reset(){
+    lobbyIdRef.current=null;isHostRef.current=false;pendingLocalActionRef.current=false;
     setSelected(null);setBet(0);setCarromMode(2);setStage('select');setPlayers([]);setSeconds(60);
     setGame(null);setTurn(0);setScore({});setStatus('');setRoll(null);setPositions({});setHands({});
     setActiveCard(null);setAnswers([]);setPrompt('');setShot(0);
@@ -383,34 +475,38 @@ export default function RoomGames({visible,onClose,roomId,creatorName='Host'}) {
   function close(){reset();onClose?.();}
   function choose(g){setSelected(g);setBet(0);setStage('setup');}
   function createLobby(){
-    if(!selected)return;
-    const host={id:'host',name:creatorName||'Host'};
-    setPlayers([host]);setSeconds(60);setStatus(bet===0?'Free practice is ready. Start now with no bet and no coin rewards.':selected.timed?'Waiting for players. The one-minute timer starts when the first player joins.':'Waiting for players. Host starts this game manually.');
+    if(!selected||!userId||!canJoinThisGame){setStatus('Sit in a room seat before creating or joining this game.');return;}
+    const lobbyId=String(Date.now())+'-'+userId;
+    const host={id:userId,name:creatorName||'Player'};
+    lobbyIdRef.current=lobbyId;isHostRef.current=true;
+    setPlayers([host]);setSeconds(60);
+    setStatus(bet===0?'Free game lobby opened. No Good Coins will be collected or awarded.':selected.timed?'Waiting for players. The one-minute joining timer starts when the first other player joins.':'Waiting for players.');
     setStage('lobby');
+    sendGameEvent('create_lobby',{lobbyId,gameName:selected.name,bet,carromMode,players:[host],seconds:60,status:'Waiting for players.'});
   }
-  function joinDemo(){
-    if(!selected||players.length>=maxPlayers)return;
-    if(players.length===0)return;
-    const n=players.length+1;
-    setPlayers(p=>[...p,{id:'local-'+n,name:'Player '+n}]);
-    if(selected.timed&&players.length===1)setStatus('One-minute joining countdown started.');
+  function joinLobby(){
+    if(!selected||!userId||!canJoinThisGame){setStatus('Sit in a room seat before joining this game.');return;}
+    if(players.length>=maxPlayers){setStatus('This game lobby is full.');return;}
+    if(isInLobby){setStatus('You have already joined this game.');return;}
+    sendGameEvent('join_game',{lobbyId:lobbyIdRef.current,gameName:selected.name,player:{id:userId,name:creatorName||'Player'}});
+    setStatus('Joining game…');
   }
   function startGame(roster=players){
-    if(!selected||(bet>0&&roster.length<requiredPlayers)){setStatus('At least '+requiredPlayers+' players are required for a bet match.');return;}
-    setPlayers(roster);
-    setGame(selected.name);setStage('play');setTurn(0);setStatus(bet===0?'Free practice started. No Good Coins will be collected or awarded.':'Game started. Take turns on this device preview.');
-    const init={};roster.forEach(p=>{init[p.id]=0;});setPositions(init);
-    const sc={};roster.forEach(p=>{sc[p.id]=0;});setScore(sc);
+    if(!isAuthorisedStarter){setStatus('Only the room owner or an authorised room admin can start a game.');return;}
+    if(!selected||roster.length<requiredPlayers){setStatus('At least '+requiredPlayers+' players must join before the game can start.');return;}
+    const init={};roster.forEach(p=>{init[p.id]=0;});
+    const sc={};roster.forEach(p=>{sc[p.id]=0;});
+    const dealt={};
     if(['UNO','Playcards – Breez','29'].includes(selected.name)){
       const deck=Array.from({length:52},(_,i)=>({id:i,rank:(i%13)+1,suit:['♠','♥','♦','♣'][Math.floor(i/13)],color:['red','blue','green','yellow'][i%4]}));
-      const h={};roster.forEach(p=>{h[p.id]=deck.splice(0,selected.name==='UNO'?7:5);});setHands(h);
+      roster.forEach(p=>{dealt[p.id]=deck.splice(0,selected.name==='UNO'?7:5);});
     }
-    if(selected.name==='Truth and Dare')setPrompt('Choose Truth or Dare to reveal a prompt.');
-    if(selected.name==='Brainstorm')setCategory(['Things found in a royal palace','Foods beginning with S','Cities in India','Things that shine'][rand(4)]);
-    setGems(Array.from({length:16},()=>rand(4)));
+    const initial={gameName:selected.name,bet,carromMode,players:roster,stage:'play',game:selected.name,turn:0,score:sc,status:bet===0?'Free game started. No Good Coins will be collected or awarded.':'Game started.',roll:null,positions:init,hands:dealt,activeCard:null,category:selected.name==='Brainstorm'?['Things found in a royal palace','Foods beginning with S','Cities in India','Things that shine'][rand(4)]:category,answers:[],truthType:'Truth',prompt:selected.name==='Truth and Dare'?'Choose Truth or Dare to reveal a prompt.':'',gems:Array.from({length:16},()=>rand(4)),shot:0};
+    applyGameSnapshot(initial);
+    sendGameEvent('start_game',{lobbyId:lobbyIdRef.current,gameName:selected.name,snapshot:initial});
   }
-  function nextTurn(){setTurn(t=>(t+1)%Math.max(players.length,1));setRoll(null);setActiveCard(null);setStatus('Next turn: '+players[(turn+1)%Math.max(players.length,1)]?.name);}
-  function updateScore(points){const id=players[turn%players.length]?.id;setScore(s=>({...s,[id]:(s[id]||0)+points}));}
+  function nextTurn(){markLocalAction();setTurn(t=>(t+1)%Math.max(players.length,1));setRoll(null);setActiveCard(null);setStatus('Next turn: '+players[(turn+1)%Math.max(players.length,1)]?.name);}
+  function updateScore(points){markLocalAction();const id=players[turn%players.length]?.id;setScore(s=>({...s,[id]:(s[id]||0)+points}));}
   function rollDice(){
     const d=rand(6)+1;setRoll(d);
     if(['Ludo','Snakes and Ladders','Jackaroo'].includes(game)){
@@ -444,6 +540,7 @@ export default function RoomGames({visible,onClose,roomId,creatorName='Host'}) {
     setAnswers(a=>[...a,v]);setAnswer('');updateScore(1);nextTurn();
   }
   function revealPrompt(type){
+    markLocalAction();
     const truths=['What is one thing you have never told this group?','What is your funniest childhood memory?','Who was your first crush?'];
     const dares=['Sing the chorus of your favourite song.','Speak in a royal accent for one round.','Do your best celebrity impression.'];
     setTruthType(type);setPrompt((type==='Truth'?truths:dares)[rand(3)]);
@@ -467,8 +564,8 @@ export default function RoomGames({visible,onClose,roomId,creatorName='Host'}) {
         </View>
         {stage==='select'&&<ScrollView style={{marginTop:12}}><View style={{flexDirection:'row',flexWrap:'wrap'}}>{GAMES.map(g=><TouchableOpacity key={g.name} onPress={()=>choose(g)} style={{width:'25%',padding:4,alignItems:'center'}}><View style={{width:62,height:62,borderRadius:14,backgroundColor:'#2A1D32',borderWidth:1,borderColor:GOLD,alignItems:'center',justifyContent:'center'}}><RoyalGameArtwork art={g.art} /></View><Text style={{color:text,fontSize:10,textAlign:'center',marginTop:5}}>{g.name}</Text></TouchableOpacity>)}</View></ScrollView>}
         {stage==='setup'&&<View style={{marginTop:16}}><Text style={[label,{fontSize:19,textAlign:'center'}]}>{selected?.name}</Text><Text style={{color:muted,textAlign:'center',marginVertical:9}}>{selected?.rules}</Text><Text style={label}>Players: {requiredPlayers} required • {selected?.max===Infinity?'Unlimited':selected?.max+' maximum'}</Text>{selected?.name==='Carrom'&&<View style={{flexDirection:'row',marginTop:8}}><Action title="2 PLAYERS" onPress={()=>setCarromMode(2)} disabled={carromMode===2}/><Action title="4 PLAYERS" onPress={()=>setCarromMode(4)} disabled={carromMode===4}/></View>}{selected?.bet&&<><Text style={[label,{marginTop:12}]}>Bet amount (Good Coins)</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{BETS.map(v=><CardTile key={v} active={bet===v} onPress={()=>setBet(v)}>{v.toLocaleString()}</CardTile>)}</View></>}<Action title="CREATE GAME" onPress={createLobby}/><Action title="BACK" onPress={()=>setStage('select')}/></View>}
-        {stage==='lobby'&&<View style={{marginTop:14}}><Text style={[label,{fontSize:18,textAlign:'center'}]}>{selected?.name} Lobby</Text><Text style={{color:muted,textAlign:'center',margin:8}}>Bet: {selected?.bet?bet.toLocaleString()+' Good Coins':'No bet'} • {players.length}/{maxPlayers===Infinity?'∞':maxPlayers} players</Text>{selected?.timed&&bet>0&&<Text style={{color:GOLD,textAlign:'center',fontSize:22,fontWeight:'900'}}>{seconds}s</Text>}<View style={{flexDirection:'row',flexWrap:'wrap'}}>{players.map(p=><View key={p.id} style={{width:'50%',padding:6}}><Text style={{color:text,backgroundColor:'#2A2033',padding:12,borderRadius:10}}>{p.name}{p.id==='host'?' (Creator)':''}</Text></View>)}</View><Text style={{color:muted,textAlign:'center',marginVertical:8}}>{status}</Text><Action title="ADD LOCAL TEST PLAYER" onPress={joinDemo} disabled={players.length>=maxPlayers}/>{bet===0?<Action title="START FREE PRACTICE NOW" onPress={()=>startGame([players[0]||{id:'host',name:creatorName||'Host'}])}/>:!selected?.timed&&<Action title="START GAME" onPress={startGame} disabled={players.length<requiredPlayers}/>}<Action title="CLOSE LOBBY" onPress={close}/></View>}
-        {stage==='play'&&<ScrollView style={{marginTop:12}}><Text style={[label,{textAlign:'center',fontSize:18}]}>{game}</Text><Text style={{color:GOLD,textAlign:'center',margin:8}}>Turn: {currentName}</Text><Text style={{color:muted,textAlign:'center'}}>Players: {players.map(p=>p.name+' '+(score[p.id]||0)).join('  •  ')}</Text><View style={{backgroundColor:'#21182B',padding:14,borderRadius:14,marginTop:12}}>{gameControls()}</View><Text style={{color:muted,textAlign:'center',margin:10}}>{status}</Text><Action title="END GAME" onPress={()=>{setStage('result');}}/></ScrollView>}
+        {stage==='lobby'&&<View style={{marginTop:14}}><Text style={[label,{fontSize:18,textAlign:'center'}]}>{selected?.name} Lobby</Text><Text style={{color:muted,textAlign:'center',margin:8}}>Bet: {selected?.bet?bet.toLocaleString()+' Good Coins':'No bet'} • {players.length}/{maxPlayers===Infinity?'∞':maxPlayers} players</Text>{selected?.timed&&bet>0&&<Text style={{color:GOLD,textAlign:'center',fontSize:22,fontWeight:'900'}}>{seconds}s</Text>}<View style={{flexDirection:'row',flexWrap:'wrap'}}>{players.map(p=><View key={p.id} style={{width:'50%',padding:6}}><Text style={{color:text,backgroundColor:'#2A2033',padding:12,borderRadius:10}}>{p.name}{p.id==='host'?' (Creator)':''}</Text></View>)}</View><Text style={{color:muted,textAlign:'center',marginVertical:8}}>{status}</Text>{!isInLobby&&<Action title="JOIN GAME" onPress={joinLobby} disabled={players.length>=maxPlayers||!canJoinThisGame}/ >}{isAuthorisedStarter&&<Action title="START GAME" onPress={()=>startGame()} disabled={players.length<requiredPlayers}/>}<Text style={{color:muted,textAlign:'center',fontSize:10,marginVertical:5}}>{isAuthorisedStarter?'You are authorised to start this game.':'Only the room owner or an authorised admin can start this game.'}</Text><Action title="CLOSE" onPress={()=>{if(isHostRef.current)sendGameEvent('lobby_closed',{lobbyId:lobbyIdRef.current});close();}}/></View>}
+        {stage==='play'&&<ScrollView style={{marginTop:12}}><Text style={[label,{textAlign:'center',fontSize:18}]}>{game}</Text><Text style={{color:GOLD,textAlign:'center',margin:8}}>Turn: {currentName}</Text><Text style={{color:muted,textAlign:'center'}}>Players: {players.map(p=>p.name+' '+(score[p.id]||0)).join('  •  ')}</Text><View style={{backgroundColor:'#21182B',padding:14,borderRadius:14,marginTop:12}}><View pointerEvents={canAct?'auto':'none'} style={{opacity:canAct?1:0.48}}>{gameControls()}</View>{!canAct&&<Text style={{color:muted,textAlign:'center',marginTop:8}}>Waiting for {currentName} to play.</Text>}</View><Text style={{color:muted,textAlign:'center',margin:10}}>{status}</Text><Action title="END GAME" onPress={()=>{setStage('result');}}/></ScrollView>}
         {stage==='result'&&<View style={{marginTop:18}}><Text style={[label,{fontSize:21,textAlign:'center'}]}>GAME RESULT</Text><Text style={{color:GOLD,textAlign:'center',fontSize:18,margin:12}}>{winner?.name||'No winner'} • {score[winner?.id]||0} points</Text>{players.map(p=><Text key={p.id} style={{color:text,padding:7}}>{p.name}: {score[p.id]||0}</Text>)}<Action title="BACK TO GAMES" onPress={reset}/></View>}
       </View>
     </View>
