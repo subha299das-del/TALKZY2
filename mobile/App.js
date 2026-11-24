@@ -604,6 +604,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('Room');
   const [roomSettingsType, setRoomSettingsType] = useState('public');
 const [roomSettingsPassword, setRoomSettingsPassword] = useState('');
+ const [showRoomSettingsPasswordPopup, setShowRoomSettingsPasswordPopup] = useState(false);
 const [roomSettingName, setRoomSettingName] = useState('');
 const [roomSettingAnnouncement, setRoomSettingAnnouncement] = useState('');
 const [roomSettingDp, setRoomSettingDp] = useState(null);
@@ -6029,15 +6030,13 @@ function renderRoomInterior() {
               <Text style={{ color: C.muted, fontSize: 11, fontWeight: '800', marginBottom: 6 }}>ROOM ANNOUNCEMENT</Text>
               <TextInput value={roomSettingAnnouncement} onChangeText={setRoomSettingAnnouncement} multiline placeholder="Write an announcement for your room..." placeholderTextColor="#71809A" style={{ color: C.text, minHeight: 78, textAlignVertical: 'top', backgroundColor: '#0B1221', borderWidth: 1, borderColor: C.line, borderRadius: 12, padding: 13 }} />
             </View>
-            <View style={{ marginTop: 12 }}>
-              <Text style={{ color: C.muted, fontSize: 11, fontWeight: '800', marginBottom: 6 }}>ROOM PASSWORD</Text>
-              <TextInput value={roomSettingsPassword} onChangeText={setRoomSettingsPassword} secureTextEntry placeholder="Set or change room password" placeholderTextColor="#71809A" style={{ color: C.text, backgroundColor: '#0B1221', borderWidth: 1, borderColor: C.line, borderRadius: 12, padding: 13 }} />
-              <Text style={{ color: C.muted, fontSize: 10, marginTop: 6 }}>Room privacy</Text>
-              <View style={{ flexDirection: 'row', marginTop: 7, backgroundColor: '#0A1020', borderRadius: 11, padding: 4 }}>
-                {['public','locked'].map(type => <TouchableOpacity key={type} onPress={() => setRoomSettingsType(type)} style={{ flex: 1, padding: 10, borderRadius: 8, alignItems: 'center', backgroundColor: roomSettingsType === type ? C.accent : 'transparent' }}><Text style={{ color: C.text, fontWeight: '900', fontSize: 12 }}>{type === 'public' ? 'PUBLIC' : 'LOCKED'}</Text></TouchableOpacity>)}
+            <TouchableOpacity onPress={() => { setRoomSettingsPassword(''); setShowRoomSettingsPasswordPopup(true); }} activeOpacity={0.8} style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, paddingVertical: 13, borderTopWidth: 1, borderTopColor: '#26334A' }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: C.text, fontSize: 13, fontWeight: '900' }}>Password</Text>
+                <Text style={{ color: C.muted, fontSize: 11, marginTop: 4 }}>{roomSettingsType === 'locked' ? '🔒 Room is locked' : '🔓 Room is public'}</Text>
               </View>
-
-            </View>
+              <Text style={{ color: C.muted, fontSize: 20 }}>›</Text>
+            </TouchableOpacity>
           </SettingCard>
 
           <SettingCard icon="🛡️" title="2. Room Management" subtitle="Manage trusted people and room access">
@@ -6071,7 +6070,27 @@ function renderRoomInterior() {
             </View>
           </View>
         </Modal>
-        <Modal visible={!!roomSettingsSubpage} transparent animationType="slide" onRequestClose={() => setRoomSettingsSubpage(null)}>
+        <Modal visible={showRoomSettingsPasswordPopup} transparent animationType="fade" onRequestClose={() => { setShowRoomSettingsPasswordPopup(false); setRoomSettingsPassword(''); }}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.78)', justifyContent: 'center', padding: 22 }}>
+            <View style={{ backgroundColor: C.panel, padding: 20, borderRadius: 18, borderWidth: 1, borderColor: C.gold }}>
+              <Text style={{ color: C.text, fontSize: 20, fontWeight: '900', textAlign: 'center', marginBottom: 8 }}>Set Password</Text>
+              <Text style={{ color: C.muted, fontSize: 12, textAlign: 'center', marginBottom: 16 }}>Set a password to make this room private.</Text>
+              <TextInput value={roomSettingsPassword} onChangeText={setRoomSettingsPassword} placeholder="Enter room password" placeholderTextColor={C.muted} secureTextEntry autoCapitalize="none" autoCorrect={false} style={{ color: C.text, backgroundColor: C.bg, borderWidth: 1, borderColor: C.line, borderRadius: 12, padding: 14, marginBottom: 18 }} />
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <TouchableOpacity activeOpacity={0.85} disabled={roomSettingSaving} onPress={() => updateRoomPasswordSetting('public')} style={{ flex: 1, minHeight: 46, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line, opacity: roomSettingSaving ? 0.5 : 1 }}>
+                  <Text style={{ color: C.text, fontSize: 13, fontWeight: '900' }}>Unlock</Text>
+                </TouchableOpacity>
+                <TouchableOpacity activeOpacity={0.85} disabled={roomSettingSaving} onPress={() => updateRoomPasswordSetting('locked')} style={{ flex: 1, minHeight: 46, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: C.accent, borderWidth: 1, borderColor: C.gold, opacity: roomSettingSaving ? 0.5 : 1 }}>
+                  <Text style={{ color: '#17120A', fontSize: 13, fontWeight: '900' }}>{roomSettingSaving ? 'Saving...' : 'Lock'}</Text>
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity onPress={() => { setShowRoomSettingsPasswordPopup(false); setRoomSettingsPassword(''); }} disabled={roomSettingSaving} style={{ padding: 12, alignItems: 'center', marginTop: 4 }}>
+                <Text style={{ color: C.muted, fontWeight: '800' }}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+        <Modal visible={!!roomSettingsSubpage} transparent animationType="slide" onRequestClose={() => setRoomSettingsSubpage(null)>
           <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.82)', justifyContent: 'flex-end' }}>
             <View style={{ height: '78%', backgroundColor: C.panel, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 18 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14 }}>
@@ -12302,6 +12321,35 @@ if (screen === 'profile' || profileIncomplete) {
       setRoomSettingsType(latestRoom.room_type || 'public');
     } catch (e) {
       if (isCurrentRequest()) Alert.alert('Room Settings', e.message || 'Could not load room settings. You can still view the room details already loaded.');
+    }
+  }
+
+  async function updateRoomPasswordSetting(nextType) {
+    if (!selectedRoom?.id || selectedRoom.owner_id !== session?.user?.id) return;
+    const password = roomSettingsPassword.trim();
+    if (nextType === 'locked' && (password.length < 4 || password.length > 64)) {
+      return Alert.alert('Password required', 'Enter a password between 4 and 64 characters to lock this room.');
+    }
+    try {
+      setRoomSettingSaving(true);
+      const payload = nextType === 'locked'
+        ? { roomType: 'locked', password }
+        : { roomType: 'public' };
+      const result = await api(`/api/rooms/${selectedRoom.id}/settings`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      });
+      setRoomSettingsType(result.room?.room_type || nextType);
+      setSelectedRoom(old => ({ ...old, ...result.room }));
+      setRoomDetails(old => old?.id === selectedRoom.id ? { ...old, ...result.room, announcement: result.room.description } : old);
+      setRoomSettingsPassword('');
+      setShowRoomSettingsPasswordPopup(false);
+      await Promise.all([loadMyRooms(), loadPublicRooms()]);
+      Alert.alert(nextType === 'locked' ? 'Room locked' : 'Room unlocked', nextType === 'locked' ? 'A password is now required to enter this room.' : 'This room is now public and no password is required.');
+    } catch (e) {
+      Alert.alert('Password update failed', e.message || 'Could not update room password.');
+    } finally {
+      setRoomSettingSaving(false);
     }
   }
 
