@@ -360,7 +360,7 @@ export default function RoomGames({visible,onClose,roomId,creatorName='Host'}) {
   const [gems,setGems]=useState(Array.from({length:16},()=>rand(4)));
   const [shot,setShot]=useState(0);
   const maxPlayers = selected?.name==='Carrom' ? carromMode : selected?.max;
-  const unlimited = selected && !selected.timed;
+  const requiredPlayers = selected?.name==='Carrom' ? carromMode : selected?.min || 2;
   const currentName = players[turn % Math.max(players.length,1)]?.name || 'Player';
 
   useEffect(()=>{
@@ -370,10 +370,10 @@ export default function RoomGames({visible,onClose,roomId,creatorName='Host'}) {
   },[stage,selected,seconds,players.length]);
   useEffect(()=>{
     if(stage==='lobby'&&selected?.timed&&seconds===0){
-      if(players.length>=selected.min) startGame();
-      else setStatus('Not enough players joined. The game was not started.');
+      if(players.length>=requiredPlayers) startGame();
+      else setStatus('Not enough players joined. Required: '+requiredPlayers+'. The game was not started.');
     }
-  },[seconds,stage,selected,players.length]);
+  },[seconds,stage,selected,players.length,requiredPlayers]);
 
   function reset(){
     setSelected(null);setBet(0);setCarromMode(2);setStage('select');setPlayers([]);setSeconds(60);
@@ -396,7 +396,7 @@ export default function RoomGames({visible,onClose,roomId,creatorName='Host'}) {
     if(selected.timed&&players.length===1)setStatus('One-minute joining countdown started.');
   }
   function startGame(){
-    if(!selected||players.length<selected.min){setStatus('At least '+selected.min+' players are required.');return;}
+    if(!selected||players.length<requiredPlayers){setStatus('At least '+requiredPlayers+' players are required.');return;}
     setGame(selected.name);setStage('play');setTurn(0);setStatus('Game started. Take turns on this device preview.');
     const init={};players.forEach(p=>{init[p.id]=0;});setPositions(init);
     const sc={};players.forEach(p=>{sc[p.id]=0;});setScore(sc);
@@ -465,8 +465,8 @@ export default function RoomGames({visible,onClose,roomId,creatorName='Host'}) {
           <TouchableOpacity onPress={close}><Text style={{color:GOLD,fontSize:22}}>✕</Text></TouchableOpacity>
         </View>
         {stage==='select'&&<ScrollView style={{marginTop:12}}><View style={{flexDirection:'row',flexWrap:'wrap'}}>{GAMES.map(g=><TouchableOpacity key={g.name} onPress={()=>choose(g)} style={{width:'25%',padding:4,alignItems:'center'}}><View style={{width:62,height:62,borderRadius:14,backgroundColor:'#2A1D32',borderWidth:1,borderColor:GOLD,alignItems:'center',justifyContent:'center'}}><RoyalGameArtwork art={g.art} /></View><Text style={{color:text,fontSize:10,textAlign:'center',marginTop:5}}>{g.name}</Text></TouchableOpacity>)}</View></ScrollView>}
-        {stage==='setup'&&<View style={{marginTop:16}}><Text style={[label,{fontSize:19,textAlign:'center'}]}>{selected?.name}</Text><Text style={{color:muted,textAlign:'center',marginVertical:9}}>{selected?.rules}</Text><Text style={label}>Players: {selected?.min} minimum • {selected?.max===Infinity?'Unlimited':selected?.max+' maximum'}</Text>{selected?.name==='Carrom'&&<View style={{flexDirection:'row',marginTop:8}}><Action title="2 PLAYERS" onPress={()=>setCarromMode(2)} disabled={carromMode===2}/><Action title="4 PLAYERS" onPress={()=>setCarromMode(4)} disabled={carromMode===4}/></View>}{selected?.bet&&<><Text style={[label,{marginTop:12}]}>Bet amount (Good Coins)</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{BETS.map(v=><CardTile key={v} active={bet===v} onPress={()=>setBet(v)}>{v.toLocaleString()}</CardTile>)}</View></>}<Action title="CREATE GAME" onPress={createLobby}/><Action title="BACK" onPress={()=>setStage('select')}/></View>}
-        {stage==='lobby'&&<View style={{marginTop:14}}><Text style={[label,{fontSize:18,textAlign:'center'}]}>{selected?.name} Lobby</Text><Text style={{color:muted,textAlign:'center',margin:8}}>Bet: {selected?.bet?bet.toLocaleString()+' Good Coins':'No bet'} • {players.length}/{maxPlayers===Infinity?'∞':maxPlayers} players</Text>{selected?.timed&&<Text style={{color:GOLD,textAlign:'center',fontSize:22,fontWeight:'900'}}>{seconds}s</Text>}<View style={{flexDirection:'row',flexWrap:'wrap'}}>{players.map(p=><View key={p.id} style={{width:'50%',padding:6}}><Text style={{color:text,backgroundColor:'#2A2033',padding:12,borderRadius:10}}>{p.name}{p.id==='host'?' (Creator)':''}</Text></View>)}</View><Text style={{color:muted,textAlign:'center',marginVertical:8}}>{status}</Text><Action title="ADD LOCAL TEST PLAYER" onPress={joinDemo} disabled={players.length>=maxPlayers}/>{!selected?.timed&&<Action title="START GAME" onPress={startGame} disabled={players.length<selected?.min}/>}<Action title="CLOSE LOBBY" onPress={close}/></View>}
+        {stage==='setup'&&<View style={{marginTop:16}}><Text style={[label,{fontSize:19,textAlign:'center'}]}>{selected?.name}</Text><Text style={{color:muted,textAlign:'center',marginVertical:9}}>{selected?.rules}</Text><Text style={label}>Players: {requiredPlayers} required • {selected?.max===Infinity?'Unlimited':selected?.max+' maximum'}</Text>{selected?.name==='Carrom'&&<View style={{flexDirection:'row',marginTop:8}}><Action title="2 PLAYERS" onPress={()=>setCarromMode(2)} disabled={carromMode===2}/><Action title="4 PLAYERS" onPress={()=>setCarromMode(4)} disabled={carromMode===4}/></View>}{selected?.bet&&<><Text style={[label,{marginTop:12}]}>Bet amount (Good Coins)</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{BETS.map(v=><CardTile key={v} active={bet===v} onPress={()=>setBet(v)}>{v.toLocaleString()}</CardTile>)}</View></>}<Action title="CREATE GAME" onPress={createLobby}/><Action title="BACK" onPress={()=>setStage('select')}/></View>}
+        {stage==='lobby'&&<View style={{marginTop:14}}><Text style={[label,{fontSize:18,textAlign:'center'}]}>{selected?.name} Lobby</Text><Text style={{color:muted,textAlign:'center',margin:8}}>Bet: {selected?.bet?bet.toLocaleString()+' Good Coins':'No bet'} • {players.length}/{maxPlayers===Infinity?'∞':maxPlayers} players</Text>{selected?.timed&&<Text style={{color:GOLD,textAlign:'center',fontSize:22,fontWeight:'900'}}>{seconds}s</Text>}<View style={{flexDirection:'row',flexWrap:'wrap'}}>{players.map(p=><View key={p.id} style={{width:'50%',padding:6}}><Text style={{color:text,backgroundColor:'#2A2033',padding:12,borderRadius:10}}>{p.name}{p.id==='host'?' (Creator)':''}</Text></View>)}</View><Text style={{color:muted,textAlign:'center',marginVertical:8}}>{status}</Text><Action title="ADD LOCAL TEST PLAYER" onPress={joinDemo} disabled={players.length>=maxPlayers}/>{!selected?.timed&&<Action title="START GAME" onPress={startGame} disabled={players.length<requiredPlayers}/>}<Action title="CLOSE LOBBY" onPress={close}/></View>}
         {stage==='play'&&<ScrollView style={{marginTop:12}}><Text style={[label,{textAlign:'center',fontSize:18}]}>{game}</Text><Text style={{color:GOLD,textAlign:'center',margin:8}}>Turn: {currentName}</Text><Text style={{color:muted,textAlign:'center'}}>Players: {players.map(p=>p.name+' '+(score[p.id]||0)).join('  •  ')}</Text><View style={{backgroundColor:'#21182B',padding:14,borderRadius:14,marginTop:12}}>{gameControls()}</View><Text style={{color:muted,textAlign:'center',margin:10}}>{status}</Text><Action title="END GAME" onPress={()=>{setStage('result');}}/></ScrollView>}
         {stage==='result'&&<View style={{marginTop:18}}><Text style={[label,{fontSize:21,textAlign:'center'}]}>GAME RESULT</Text><Text style={{color:GOLD,textAlign:'center',fontSize:18,margin:12}}>{winner?.name||'No winner'} • {score[winner?.id]||0} points</Text>{players.map(p=><Text key={p.id} style={{color:text,padding:7}}>{p.name}: {score[p.id]||0}</Text>)}<Action title="BACK TO GAMES" onPress={reset}/></View>}
       </View>
