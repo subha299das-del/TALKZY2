@@ -423,9 +423,9 @@ function applyMove(src,actor,action){
   const ownNewStill=ownNew.filter(x=>board.coins.find(q=>q.id===x.id)?.pocketed).length;
   let invalidQueen=false,missedCover=false,coverThisShot=false,queenReturnedByStriker=false;
   if(strikerFoul){
-   if(queenShot){putQueenBack();s.queenPending=null;queenReturnedByStriker=true;if(hadDueAtStart)invalidQueen=true;}
+   if(queenShot){putQueenBack();s.queenPending=null;queenReturnedByStriker=true;if(hadDueAtStart||(beforeOwn===0&&ownNew.length===0))invalidQueen=true;}
    else if(hadPendingQueen){
-    if(!hadDueAtStart&&ownNew.length>0){s.queenPending={team,playerId:id};}
+    if(ownNew.length>0){s.queenPending={team,playerId:id};}
     else{putQueenBack();s.queenPending=null;missedCover=true;}
    }
   }else if(queenShot){
