@@ -32,6 +32,7 @@ import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { WebView } from 'react-native-webview';
 import RoomMusicPanel from './RoomMusicPanel';
+import RoomGames from './RoomGames';
 
 WebBrowser.maybeCompleteAuthSession();
 const MIC_ON_ICON = require('./assets/mic_on.png');
@@ -4888,49 +4889,7 @@ function renderRoomInterior() {
         </View>
       )}
 
-      {showRoomGamePanel && screen === 'roomInterior' && selectedRoom && (
-        <View style={{
-          position: 'absolute',
-          left: 12,
-          right: 12,
-          bottom: 86,
-          maxHeight: '72%',
-          backgroundColor: '#100D18',
-          borderRadius: 20,
-          padding: 14,
-          borderWidth: 1.5,
-          borderColor: '#B58A49',
-          zIndex: 43,
-          elevation: 25,
-          overflow: 'hidden'
-        }}>
-          <View style={{ position: 'absolute', top: 5, left: 5, right: 5, bottom: 5, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(232,196,119,0.24)' }} />
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
-            <View>
-              <Text style={{ color: '#F4E6C5', fontSize: 17, fontWeight: '900', letterSpacing: 1 }}>♛ ROYAL GAMES</Text>
-              <Text style={{ color: '#B99B67', fontSize: 9, marginTop: 3, letterSpacing: 1.4 }}>TALKZY • GOLD COLLECTION</Text>
-            </View>
-            <TouchableOpacity onPress={() => setShowRoomGamePanel(false)} style={{ paddingHorizontal: 8, paddingVertical: 5 }}>
-              <Text style={{ color: '#E8C477', fontSize: 21 }}>✕</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={{ height: 1, backgroundColor: '#5B452C', marginBottom: 12, marginTop: 8 }} />
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 5 }}>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
-              {ROOM_GAME_OPTIONS.map((game, index) => (
-                <View key={game.name} style={{ width: '25%', alignItems: 'center', paddingHorizontal: 2, paddingBottom: 15 }}>
-                  <View style={{ width: 68, height: 68, borderRadius: 17, backgroundColor: '#21182B', borderWidth: 1.5, borderColor: '#C39A55', alignItems: 'center', justifyContent: 'center', shadowColor: '#D7B36B', shadowOpacity: 0.18, shadowRadius: 6, elevation: 3 }}>
-                    <View style={{ position: 'absolute', top: 3, left: 3, right: 3, bottom: 3, borderRadius: 13, borderWidth: 1, borderColor: 'rgba(232,196,119,0.24)' }} />
-                    <RoyalGameArtwork art={game.art} />
-                  </View>
-                  <Text numberOfLines={2} style={{ color: '#E9D5A8', fontSize: 10, fontWeight: '800', textAlign: 'center', marginTop: 6, minHeight: 26, paddingHorizontal: 1 }}>{game.name}</Text>
-                </View>
-              ))}
-            </View>
-          </ScrollView>
-          <Text style={{ color: '#A88B5C', fontSize: 9, textAlign: 'center', marginTop: 4, letterSpacing: 1 }}>ANTIQUE GOLD  •  BLACK VELVET  •  ROYAL PURPLE</Text>
-        </View>
-      )}
+      <RoomGames visible={showRoomGamePanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowRoomGamePanel(false)} roomId={selectedRoom?.id} creatorName={session?.user?.user_metadata?.full_name || 'Room Host'} />
 
       {showGreedyPanel && screen === 'roomInterior' && selectedRoom && (
         <View style={{
