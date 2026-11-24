@@ -939,7 +939,7 @@ useEffect(() => {
   });
   return () => subscription.remove();
 }, [
-  selectedRoom?.id, screen, showRoomChatComposer,
+  selectedRoom?.id, screen, showRoomChatComposer, showSpecialEffectSettings,
   showYoutubePanel, eventFrontReturnScreen, roomSettingsReturnScreen, activeTab,
   showRoomShortcutsPage,
   showMicEmojiPicker, showMicControlPopup, showRoomUsers, showMicCountPicker,
