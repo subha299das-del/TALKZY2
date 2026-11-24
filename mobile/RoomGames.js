@@ -234,6 +234,7 @@ function applyMove(src,actor,action){
 export default function RoomGames({visible,onClose,onGameAvailable,roomId,creatorName='Player',userId,supabase,isAuthorisedStarter=false,hasRoomSeat=false}){
  const [stage,setStage]=useState('select'),[selected,setSelected]=useState(null),[mode,setMode]=useState(2),[players,setPlayers]=useState([]),[seconds,setSeconds]=useState(60),[state,setState]=useState(null),[bet,setBet]=useState(0),[status,setStatus]=useState('');
  const channelRef=useRef(null),hostRef=useRef(false),lobbyRef=useRef(null),stateRef=useRef(null),stageRef=useRef(stage),timerRef=useRef(null),selectedRef=useRef(selected),playersRef=useRef(players),secondsRef=useRef(seconds),modeRef=useRef(mode);
+ const onGameAvailableRef=useRef(onGameAvailable);onGameAvailableRef.current=onGameAvailable;
  stateRef.current=state;stageRef.current=stage;selectedRef.current=selected;playersRef.current=players;secondsRef.current=seconds;modeRef.current=mode;
  const max=selected?.name==='Carrom'?mode:selected?.max;
  const min=selected?.name==='Carrom'?mode:selected?.min;
@@ -254,7 +255,7 @@ export default function RoomGames({visible,onClose,onGameAvailable,roomId,creato
   ch.on('broadcast',{event:'game_event'},({payload:p})=>{
    if(!p||p.roomId!==roomId||p.userId===userId)return;
    if(p.type==='request_state'&&hostRef.current){publish('lobby_state',{lobbyId:lobbyRef.current,players:playersRef.current,state:stateRef.current,stage:stageRef.current,selected:selectedRef.current?.name,seconds:secondsRef.current,mode:modeRef.current});}
-   if(p.type==='create_lobby'&&!lobbyRef.current){lobbyRef.current=p.lobbyId;hostRef.current=false;setSelected(GAMES.find(g=>g.name===p.gameName));setPlayers(p.players);setSeconds(60);setStage('lobby');setStatus('Join this game from the room.');onGameAvailable?.();}
+   if(p.type==='create_lobby'&&!lobbyRef.current){lobbyRef.current=p.lobbyId;hostRef.current=false;setSelected(GAMES.find(g=>g.name===p.gameName));setPlayers(p.players);setSeconds(60);setStage('lobby');setStatus('Join this game from the room.');onGameAvailableRef.current?.();}
    if(p.type==='join_game'&&hostRef.current&&p.lobbyId===lobbyRef.current){setPlayers(old=>{const cap=selectedRef.current?.name==='Carrom'?modeRef.current:selectedRef.current?.max;if(old.some(x=>x.id===p.player.id)||old.length>=cap)return old;const next=[...old,p.player];playersRef.current=next;publish('lobby_state',{lobbyId:lobbyRef.current,players:next,stage:'lobby',selected:selectedRef.current?.name,seconds:secondsRef.current,mode:modeRef.current});return next;});}
    if(p.type==='lobby_state'&&p.lobbyId===lobbyRef.current){setPlayers(p.players||[]);playersRef.current=p.players||[];if(p.mode)setMode(p.mode);if(p.selected)setSelected(GAMES.find(g=>g.name===p.selected)||null);if(p.stage==='play'&&p.state){setState(p.state);setStage('play');}else setStage('lobby');}
    if(p.type==='start_game'&&p.lobbyId===lobbyRef.current){setState(p.snapshot);setStage('play');}
@@ -265,7 +266,7 @@ export default function RoomGames({visible,onClose,onGameAvailable,roomId,creato
   });
   ch.subscribe(st=>{if(st==='SUBSCRIBED')publish('request_state');});
   return()=>{channelRef.current=null;supabase.removeChannel(ch);};
- },[roomId,userId,supabase,onGameAvailable]);
+ },[roomId,userId,supabase]);
  useEffect(()=>{if(stage!=='lobby'||!selected?.timed||bet!==0||players.length<2||!hostRef.current)return;timerRef.current=setInterval(()=>setSeconds(v=>Math.max(0,v-1)),1000);return()=>clearInterval(timerRef.current);},[stage,selected,bet,players.length]);
  useEffect(()=>{if(stage==='lobby'&&seconds===0&&players.length<min)setStatus('Not enough players joined.');},[seconds,stage,players.length,min]);
  const choose=g=>{if(['Truth and Dare','Brainstorm'].includes(g.name)){setStatus(g.name+' is postponed until its rules are finalised.');return;}setSelected(g);setBet(0);setStage('setup');};
