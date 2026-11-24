@@ -706,7 +706,7 @@ export default function RoomGames({visible,onClose,onGameAvailable,roomId,creato
  const sendGameSnapshots=next=>{publish('game_state',{lobbyId:lobbyRef.current,snapshot:publicGameSnapshot(next)});next?.players?.forEach(pl=>publish('game_private_state',{lobbyId:lobbyRef.current,recipientId:pl.id,snapshot:publicGameSnapshot(next,pl.id)}));};
  const sync=next=>{stateRef.current=next;setState(next);if(next?.winner)setStage('result');sendGameSnapshots(next);};
  const doAction=action=>{if(!isMyTurn||!state)return;if(hostRef.current)sync(applyMove(state,userId,action));else publish('game_action',{lobbyId:lobbyRef.current,action});};
- const reset=()=>{clearInterval(timerRef.current);setStage('select');setSelected(null);setPlayers([]);setState(null);setStatus('');setBet(0);setMinimized(false);minimizedRef.current=false;hostRef.current=false;hostIdRef.current=null;lobbyRef.current=null;};
+ const reset=(notify=true)=>{if(notify&&lobbyRef.current){if(hostRef.current)publish('lobby_closed',{lobbyId:lobbyRef.current});else publish('leave_game',{lobbyId:lobbyRef.current,playerId:userId});}clearInterval(timerRef.current);setStage('select');setSelected(null);setPlayers([]);setState(null);setStatus('');setBet(0);setMinimized(false);minimizedRef.current=false;hostRef.current=false;hostIdRef.current=null;lobbyRef.current=null;};
  const close=()=>{if(canMinimize){setMinimized(true);minimizedRef.current=true;}onClose?.();};
  useEffect(()=>{
   if(!roomId||!userId||!supabase)return;
@@ -721,8 +721,8 @@ export default function RoomGames({visible,onClose,onGameAvailable,roomId,creato
    if(p.type==='game_action'&&hostRef.current&&p.lobbyId===lobbyRef.current){const next=applyMove(stateRef.current,p.userId,p.action);sync(next);}
    if(p.type==='game_state'&&p.userId===hostIdRef.current&&p.lobbyId===lobbyRef.current&&!hostRef.current){setState(p.snapshot);if(p.snapshot?.winner)setStage('result');}
    if(p.type==='game_private_state'&&p.userId===hostIdRef.current&&p.lobbyId===lobbyRef.current&&p.recipientId===userId&&!hostRef.current){setState(p.snapshot);if(p.snapshot?.winner)setStage('result');}
-   if(p.type==='leave_game'&&hostRef.current&&p.lobbyId===lobbyRef.current){setPlayers(old=>old.filter(x=>x.id!==p.playerId));}
-   if(p.type==='lobby_closed'&&p.userId===hostIdRef.current&&p.lobbyId===lobbyRef.current){reset();}
+   if(p.type==='leave_game'&&hostRef.current&&p.lobbyId===lobbyRef.current&&p.playerId===p.userId){setPlayers(old=>{const next=old.filter(x=>x.id!==p.playerId);playersRef.current=next;publish('lobby_state',{lobbyId:lobbyRef.current,players:next,stage:stageRef.current,selected:selectedRef.current?.name,seconds:secondsRef.current,mode:modeRef.current});return next;});}
+   if(p.type==='lobby_closed'&&p.userId===hostIdRef.current&&p.lobbyId===lobbyRef.current){reset(false);}
   });
   ch.subscribe(st=>{if(st==='SUBSCRIBED')publish('request_state');});
   return()=>{channelRef.current=null;supabase.removeChannel(ch);};
