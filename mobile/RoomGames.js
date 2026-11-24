@@ -322,6 +322,7 @@ function gameResults(s){
 }
 function cardPoints(c){return c.rank==='J'?3:c.rank==='9'?2:(c.rank==='A'||c.rank==='10')?1:0;}
 function rank29(r){return ['J','9','A','10','K','Q','8','7'].indexOf(r);}
+function bridgeVulnerability(boardNumber){return [[false,false],[true,false],[false,true],[true,true],[true,false],[false,true],[true,true],[false,false],[false,true],[true,true],[false,false],[true,false],[true,true],[false,false],[true,false],[false,true]][(Math.max(1,Number(boardNumber)||1)-1)%16];}
 function bridgeDuplicateScore(contract,tricks,vulnerable=false){
  const target=contract.level+6,under=target-tricks,m=contract.multiplier||1,suit=contract.suit;
  if(under<=0){
@@ -589,7 +590,7 @@ function applyMove(src,actor,action){
   if(s.phase!=='auction')return s;
   if(action.pass){
    s.bids.push({player:id,kind:'pass'});s.passCount++;
-   if(!s.lastBid&&s.passCount>=4){const next=initialGame('Playcards – Breez',s.players);next.boardNumber=s.boardNumber+1;next.dealer=(s.dealer+1)%4;next.turn=next.dealer;next.status='Passed out. New deal.';return next;}
+   if(!s.lastBid&&s.passCount>=4){const next=initialGame('Playcards – Breez',s.players);next.boardNumber=s.boardNumber+1;next.dealer=(s.dealer+1)%4;next.turn=next.dealer;next.vulnerableTeams=bridgeVulnerability(next.boardNumber);next.status='Passed out. New deal.';return next;}
    if(s.lastBid&&s.passCount>=3){
     const side=s.players.findIndex(p=>p.id===s.lastBidder)%2;
     const declarerBid=s.bids.find(x=>x.kind==='bid'&&x.suit===s.lastBid.suit&&s.players.findIndex(p=>p.id===x.player)%2===side);
@@ -614,7 +615,7 @@ function applyMove(src,actor,action){
  }
  if(s.name==='Playcards – Breez'&&action.type==='bridge_next_deal'){
   if(!s.winner)return s;
-  const next=initialGame('Playcards – Breez',s.players);next.boardNumber=s.boardNumber+1;next.dealer=(s.dealer+1)%4;next.turn=next.dealer;next.vulnerableTeams=[[false,false],[true,false],[false,true],[true,true]][(next.boardNumber-1)%4];next.status='Board '+next.boardNumber+' auction begins.';return next;
+  const next=initialGame('Playcards – Breez',s.players);next.boardNumber=s.boardNumber+1;next.dealer=(s.dealer+1)%4;next.turn=next.dealer;next.vulnerableTeams=bridgeVulnerability(next.boardNumber);next.status='Board '+next.boardNumber+' auction begins.';return next;
  }
 if((s.name==='Playcards – Breez'||s.name==='29')&&action.type==='trick_card'){
   if(s.name==='29'&&s.phase!=='play')return s;
