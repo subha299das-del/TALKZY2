@@ -93,7 +93,7 @@ function RoyalGameArtwork({ art }) {
 const GOLD='#E8C477', panel='#171222', ink='#F5E9CF', muted='#B6A68A';
 const GAMES=[
  {name:'Ludo',art:'ludo',min:2,max:4,bet:true,timed:true,rules:'Ludo King official rules: 2–4 players, six to enter, extra turns for six/capture/home, third consecutive six forfeited, rank by finish order.'},
- {name:'Carrom',art:'carrom',min:2,max:4,bet:true,timed:true,rules:'International Carrom Federation laws: singles/doubles, due pieces, queen cover, each game to 25 or eight boards; match best of three games.'},
+ {name:'Carrom',art:'carrom',min:2,max:4,bet:true,timed:true,rules:'International Carrom Federation laws: singles/doubles, due pieces, queen cover, 15-second stroke limit; each game to 25 or eight boards; match best of three games.'},
  {name:'Playcards – Breez',art:'breez',min:4,max:4,bet:true,timed:true,rules:'World Bridge Federation duplicate Contract Bridge: auction, declarer/dummy, 13 tricks, follow suit and duplicate scoring.'},
  {name:'UNO',art:'uno',min:2,max:10,bet:true,timed:true,rules:'Classic Mattel UNO: 108-card deck, 7 cards each, match colour/number/symbol, action cards, Wild Draw Four challenge, UNO call and 500-point match.'},
  {name:'Monster Crush',art:'monster',min:2,max:4,bet:true,timed:true,rules:'No universal published ruleset identified; postponed under official-rules-only development.'},
