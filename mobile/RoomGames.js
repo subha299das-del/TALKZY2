@@ -148,6 +148,17 @@ function unoDraw(s,playerId,count=1){
  s.hands[playerId]=hand;
 }
 function unoCardPoints(c){return typeof c.rank==='number'?c.rank:['Skip','Reverse','+2'].includes(c.rank)?20:50;}
+function carromReturnDue(board,color,count=1){
+ const spots=Array.from({length:16},(_,i)=>{const radius=i<8?98:72,angle=(Math.PI*2*(i%8))/8;return [500+Math.cos(angle)*radius,500+Math.sin(angle)*radius];});
+ let returned=0;
+ while(returned<count){
+  const coin=board.coins.find(x=>x.color===color&&x.pocketed);if(!coin)break;
+  const spot=spots.find(([x,y])=>Math.hypot(x-500,y-500)>35&&board.coins.every(other=>other.id===coin.id||other.pocketed||Math.hypot(other.x-x,other.y-y)>40));
+  if(!spot)break;coin.pocketed=false;coin.x=spot[0];coin.y=spot[1];coin.vx=0;coin.vy=0;returned++;
+ }
+ board.pocketed={white:0,black:0};board.coins.forEach(x=>{if(x.pocketed&&(x.color==='white'||x.color==='black'))board.pocketed[x.color]++;});
+ return returned;
+}
 function createCarromBoard(){
  const coins=[{id:'Q',color:'queen',x:500,y:500,vx:0,vy:0,pocketed:false}];
  let n=0;
@@ -391,6 +402,12 @@ function applyMove(src,actor,action){
   if(d===6||captured||home){s.status=captured?'Captured an opponent token — roll again.':home?'Token reached home — roll again.':'Rolled a 6 — roll again.';return s;}
   s.status='Token moved '+d+' spaces.';advanceLudo(s);return s;
  }
+ if(s.name==='Carrom'&&action.type==='carrom_timeout'){
+  if(s.boardComplete||s.gameComplete||!s.turnDeadline||Date.now()<s.turnDeadline)return s;
+  const team=s.turn%2,color=s.teamColours[team];s.due[team]=(s.due[team]||0)+1;
+  const placed=carromReturnDue(s.carromBoard,color,1);if(placed)s.due[team]=Math.max(0,s.due[team]-placed);
+  s.fouls[id]=(s.fouls[id]||0)+1;s.turnDeadline=Date.now()+15000;s.status='15-second stroke limit exceeded: technical foul; one due. Your turn continues.';return s;
+ }
  if(s.name==='Carrom'&&action.type==='carrom_shot'){
   if(s.boardComplete)return s;
   const team=s.turn%2,ownColor=s.teamColours[team],oppColor=s.teamColours[1-team],oldBoard=s.carromBoard;
@@ -413,17 +430,17 @@ function applyMove(src,actor,action){
   const returnPriorOwnCoins=count=>{let returned=0;while(returned<count){const prior=board.coins.find(x=>x.color===ownColor&&x.pocketed&&!ownNew.some(n=>n.id===x.id));if(!prior||!putCoinBack(prior))break;returned++;}return returned;};
   if(!s.breakDone&&!board.touchedCoin){
    s.carromBoard=board;
-   if(board.strikerPocketed){s.breakDone=true;s.boardBreaker=(s.turn+1)%s.players.length;s.status='Unmade break with striker pocketed: turn passes without a due.';advance(s);return s;}
-   if(s.breakAttempts<2){s.breakAttempts++;s.status='Break not made. Retry '+(s.breakAttempts+1)+' of 3.';return s;}
-   s.breakDone=true;s.boardBreaker=(s.turn+1)%s.players.length;s.status='Break not made after three attempts. Break passes to the opponent.';advance(s);return s;
+   if(board.strikerPocketed){s.breakDone=true;s.boardBreaker=(s.turn+1)%s.players.length;s.turnDeadline=Date.now()+15000;s.status='Unmade break with striker pocketed: turn passes without a due.';advance(s);return s;}
+   if(s.breakAttempts<2){s.breakAttempts++;s.turnDeadline=Date.now()+15000;s.status='Break not made. Retry '+(s.breakAttempts+1)+' of 3.';return s;}
+   s.breakDone=true;s.boardBreaker=(s.turn+1)%s.players.length;s.turnDeadline=Date.now()+15000;s.status='Break not made after three attempts. Break passes to the opponent.';advance(s);return s;
   }
-  s.breakDone=true;s.breakAttempts=0;
+  s.breakDone=true;s.breakAttempts=0;s.turnDeadline=Date.now()+15000;
   let dueCount=Number(s.due?.[team]||0);
   if(strikerFoul){
    const returnedNew=returnNewOwnCoins();dueCount+=1;dueCount-=returnPriorOwnCoins(dueCount);s.due[team]=Math.max(0,dueCount);
   }else{
    for(const coin of ownNew){if(dueCount<=0)break;if(putCoinBack(coin))dueCount--;}
-   s.due[team]=Math.max(0,dueCount);
+   dueCount-=returnPriorOwnCoins(dueCount);s.due[team]=Math.max(0,dueCount);
   }
   board.pocketed={white:0,black:0};board.coins.forEach(x=>{if(x.pocketed&&(x.color==='white'||x.color==='black'))board.pocketed[x.color]++;});
   const ownNewStill=ownNew.filter(x=>board.coins.find(q=>q.id===x.id)?.pocketed).length;
@@ -462,7 +479,7 @@ function applyMove(src,actor,action){
    boardWinner=1-team;boardPoints=Math.max(0,9-ownCount)+(s.matchPoints[1-team]<22?3:0);
   }
   if(boardWinner!==null){
-   s.matchPoints[boardWinner]+=boardPoints;s.boardsPlayed++;s.boardComplete=true;s.boardWinnerTeam=boardWinner;s.boardPoints=boardPoints;s.due=[0,0];
+   s.matchPoints[boardWinner]+=boardPoints;s.boardsPlayed++;s.turnDeadline=null;s.boardComplete=true;s.boardWinnerTeam=boardWinner;s.boardPoints=boardPoints;s.due=[0,0];
    s.players.forEach((pl,i)=>{s.score[pl.id]=s.matchPoints[i%2];});
    s.status='Board complete. Team '+(boardWinner+1)+' scores '+boardPoints+' points.';
    if(s.matchPoints[boardWinner]>=25||(s.boardsPlayed>=8&&s.matchPoints[0]!==s.matchPoints[1])){
