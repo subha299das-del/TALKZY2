@@ -655,12 +655,30 @@ if((s.name==='Playcards – Breez'||s.name==='29')&&action.type==='trick_card'){
   }else advance(s,s.name==='29'?-1:1);
   return s;
  }
+ if(s.name==='Jackaroo'&&action.type==='jackaroo_discard'){
+  const pending=s.pendingDiscard;if(!pending)return s;
+  if(pending.chooser==='attacker'){
+   if(id!==pending.by||s.players[s.turn]?.id!==pending.by)return s;
+   const targetHand=s.hands[pending.target]||[],index=Number(action.index);
+   if(!targetHand.length){s.pendingDiscard=null;s.status='The next player has no card to discard.';return jackarooAdvance(s);}
+   if(!Number.isInteger(index)||index<0||index>=targetHand.length)return s;
+   s.deckDiscard.push(targetHand.splice(index,1)[0]);s.pendingDiscard=null;s.status='One hidden card was discarded.';return jackarooAdvance(s);
+  }
+  if(pending.chooser==='target'){
+   if(id!==pending.target||s.players[s.turn]?.id!==pending.target)return s;
+   const targetHand=s.hands[id]||[],index=targetHand.findIndex(x=>x.id===action.cardId);if(index<0)return s;
+   s.deckDiscard.push(targetHand.splice(index,1)[0]);s.pendingDiscard=null;s.status='Card discarded. Your turn continues.';return targetHand.length?s:jackarooAdvance(s);
+  }
+  return s;
+ }
  if(s.name==='Jackaroo'&&action.type==='jackaroo_burn'){
+  if(s.pendingDiscard)return s;
   const hand=s.hands[id]||[];if(!hand.length||jackarooHasLegalMove(s,id))return s;
   const burned=hand.find(x=>x.id===action.cardId)||hand[0];s.deckDiscard.push(burned);s.hands[id]=hand.filter(x=>x.id!==burned.id);s.status='No legal move: one card burned.';
   return jackarooAdvance(s);
  }
  if(s.name==='Jackaroo'&&action.type==='jackaroo_play'){
+  if(s.pendingDiscard)return s;
   const hand=s.hands[id]||[],card=hand.find(x=>x.id===action.cardId);if(!card)return s;
   const ownerId=action.ownerId||id,ownerIndex=s.players.findIndex(p=>p.id===ownerId),myIndex=s.players.findIndex(p=>p.id===id);
   const partner=s.players[(myIndex+2)%4].id,allowedOwners=[id,...(s.marbles[id].every(v=>v>=52)?[partner]:[])];
@@ -675,11 +693,9 @@ if((s.name==='Playcards – Breez'||s.name==='29')&&action.type==='trick_card'){
    s.marbles[source.ownerId][source.marble]=(gb-srcIdx*13+52)%52;
    s.marbles[target.ownerId][target.marble]=(ga-dstIdx*13+52)%52;played=true;
   }else if(card.rank==='Q'&&isRed(card.suit)){
-   const next=s.players[(s.turn+1)%4].id,nh=s.hands[next]||[];
-   if(nh.length){const removed=nh.splice(rand(nh.length),1)[0];s.deckDiscard.push(removed);}played=true;
+   const next=s.players[(s.turn+1)%4].id;s.pendingDiscard={by:id,target:next,chooser:'attacker'};played=true;keepTurn=true;
   }else if(card.rank==='10'&&action.effect==='burn'){
-   const next=s.players[(s.turn+1)%4].id,nh=s.hands[next]||[];
-   if(nh.length){const removed=nh.splice(rand(nh.length),1)[0];s.deckDiscard.push(removed);}played=true;
+   const next=s.players[(s.turn+1)%4].id;s.pendingDiscard={by:id,target:next,chooser:'target'};s.turn=(s.turn+1)%4;played=true;keepTurn=true;
   }else if(card.rank==='7'){
    const moves=Array.isArray(action.moves)?action.moves:[{ownerId,marble:action.marble,steps:7}];
    if(moves.length<1||moves.length>2||moves.reduce((n,m)=>n+Number(m.steps||0),0)!==7||(moves.length===2&&moves[0].ownerId===moves[1].ownerId&&moves[0].marble===moves[1].marble))return s;
@@ -704,7 +720,7 @@ if((s.name==='Playcards – Breez'||s.name==='29')&&action.type==='trick_card'){
   s.hands[id]=hand.filter(x=>x.id!==card.id);s.deckDiscard.push(card);
   const team=myIndex%2,teamPlayers=[s.players[team].id,s.players[(team+2)%4].id];
   if(teamPlayers.every(pid=>s.marbles[pid].every(v=>v>=52))){s.winner=id;s.status='All eight team marbles reached safety.';return s;}
-  s.status='Played '+card.rank+'.';return jackarooAdvance(s);
+  if(s.pendingDiscard){s.status=card.rank==='Q'?'Choose one hidden card from the next player.':'Discard one card before taking your turn.';return s;}s.status='Played '+card.rank+'.';return jackarooAdvance(s);
  }
  return s;
 }
