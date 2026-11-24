@@ -116,7 +116,7 @@ function initialGame(name,players,mode=2){
  ids.forEach(id=>s.score[id]=0);
  if(name==='Ludo') {s.tokens={};players.forEach(p=>s.tokens[p.id]=[-1,-1,-1,-1]);s.consecutiveSix=0;s.safe=[0,8,13,21,26,34,39,47];}
  if(name==='Snakes and Ladders'){s.positions={};ids.forEach(id=>s.positions[id]=0);s.ladders={3:22,8:30,20:41,28:55,50:67,71:91,80:100};s.snakes={17:7,54:34,62:19,64:60,87:24,93:73,95:75,99:78};}
- if(name==='Carrom'){s.mode=mode;s.coins={white:9,black:9,queen:true};s.colours={};s.queenCovered=false;s.breakAttempts=0;s.shot=0;s.fouls={};}
+ if(name==='Carrom'){s.mode=mode;s.carromBoard=createCarromBoard();s.colours={};s.teamColours=[null,null];s.queenPending=null;s.queenCoveredBy=null;s.breakAttempts=0;s.shot=0;s.fouls={};s.boardNumber=1;s.boardComplete=false;s.matchPoints=[0,0];s.score={};ids.forEach(id=>s.score[id]=0);s.boardsPlayed=0;}
  if(name==='UNO'){s.deck=[];let cardNo=0;colors.forEach(color=>{s.deck.push({id:'UNO-'+(cardNo++),rank:0,color,suit:'*'});for(let n=1;n<=9;n++)for(let copy=0;copy<2;copy++)s.deck.push({id:'UNO-'+(cardNo++),rank:n,color,suit:'*'});for(const rank of ['Skip','Reverse','+2'])for(let copy=0;copy<2;copy++)s.deck.push({id:'UNO-'+(cardNo++),rank,color,suit:'*'});});for(let copy=0;copy<4;copy++){s.deck.push({id:'UNO-'+(cardNo++),rank:'Wild',color:'wild',suit:'*'});s.deck.push({id:'UNO-'+(cardNo++),rank:'+4',color:'wild',suit:'*'});}for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}s.hands={};players.forEach(p=>s.hands[p.id]=s.deck.splice(0,7));let first=s.deck.shift();while(first?.rank==='+4'){s.deck.push(first);for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}first=s.deck.shift();}s.discard=[first];s.direction=first?.rank==='Reverse'?-1:1;s.activeColor=first?.color||'red';s.drawnCard=null;s.pendingUno=null;s.pendingChallenge=null;s.unoCalled={};s.matchPoints={};s.roundPoints=0;ids.forEach(id=>s.matchPoints[id]=0);if(first?.rank==='+2'){unoDraw(s,players[s.turn].id,2);advance(s);}else if(first?.rank==='Skip')advance(s);}
  if(name==='Playcards – Breez'){s.deck=makeDeck(['A','K','Q','J','10','9','8','7','6','5','4','3','2']);s.deck.sort(()=>Math.random()-.5);s.hands={};players.forEach(p=>s.hands[p.id]=s.deck.splice(0,13));s.bids=[];s.contract=null;s.trump=null;s.trumpChoice=null;s.tricks=[];s.currentTrick=[];s.trickLeader=0;s.declarer=null;s.dummy=null;s.dummyRevealed=false;s.contractTricks=0;}
  if(name==='29'){s.deck=makeDeck(['J','9','A','10','K','Q','8','7']);for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}s.hands={};players.forEach(p=>s.hands[p.id]=s.deck.splice(0,4));s.bids=[];s.bidCount=0;s.highBid=0;s.contract=null;s.trump=null;s.trumpHidden=true;s.trumpRevealed=false;s.tricks=[];s.currentTrick=[];s.trickLeader=0;s.teamPoints=[0,0];s.matchScore=[0,0];s.phase='bidding';s.lastTrickTeam=null;}
@@ -139,6 +139,39 @@ function unoDraw(s,playerId,count=1){
  s.hands[playerId]=hand;
 }
 function unoCardPoints(c){return typeof c.rank==='number'?c.rank:['Skip','Reverse','+2'].includes(c.rank)?20:50;}
+function createCarromBoard(){
+ const coins=[{id:'Q',color:'queen',x:500,y:500,vx:0,vy:0,pocketed:false}];
+ let n=0;
+ for(let i=0;i<6;i++){const a=(Math.PI*2*i)/6;coins.push({id:'C'+(n++),color:i%2?'black':'white',x:500+Math.cos(a)*43,y:500+Math.sin(a)*43,vx:0,vy:0,pocketed:false});}
+ for(let i=0;i<12;i++){const a=(Math.PI*2*i)/12;coins.push({id:'C'+(n++),color:i%2?'white':'black',x:500+Math.cos(a)*91,y:500+Math.sin(a)*91,vx:0,vy:0,pocketed:false});}
+ return {coins,striker:{x:500,y:900,vx:0,vy:0,pocketed:false},pocketed:{white:0,black:0},queenCoveredBy:null,offBoard:false};
+}
+function carromShoot(board,playerIndex,angle,power){
+ const b=clone(board),starts=[{x:500,y:900},{x:100,y:500},{x:500,y:100},{x:900,y:500}],start=starts[playerIndex%4];
+ b.striker={...start,vx:Math.cos(angle*Math.PI/180)*power,vy:Math.sin(angle*Math.PI/180)*power,pocketed:false};
+ const pieces=[...b.coins.filter(x=>!x.pocketed),b.striker],r=18,sr=21,friction=.986;
+ let moving=true,steps=0;
+ while(moving&&steps++<260){
+  moving=false;
+  pieces.forEach(p=>{if(p.pocketed)return;p.x+=p.vx;p.y+=p.vy;p.vx*=friction;p.vy*=friction;if(Math.abs(p.vx)+Math.abs(p.vy)>.16)moving=true;else{p.vx=0;p.vy=0;}
+   const pockets=[[0,0],[1000,0],[0,1000],[1000,1000]];
+   const pocket=pockets.some(q=>Math.hypot(p.x-q[0],p.y-q[1])<58);
+   if(pocket){p.pocketed=true;p.vx=0;p.vy=0;return;}
+   const radius=p===b.striker?sr:r;
+   if(p.x<radius){p.x=radius;p.vx=Math.abs(p.vx)*.82;}if(p.x>1000-radius){p.x=1000-radius;p.vx=-Math.abs(p.vx)*.82;}
+   if(p.y<radius){p.y=radius;p.vy=Math.abs(p.vy)*.82;}if(p.y>1000-radius){p.y=1000-radius;p.vy=-Math.abs(p.vy)*.82;}
+   if(p.x<-30||p.x>1030||p.y<-30||p.y>1030)b.offBoard=true;
+  });
+  for(let i=0;i<pieces.length;i++)for(let j=i+1;j<pieces.length;j++){
+   const a=pieces[i],d=pieces[j];if(a.pocketed||d.pocketed)continue;
+   let dx=d.x-a.x,dy=d.y-a.y,dist=Math.hypot(dx,dy),min=(a===b.striker?sr:r)+(d===b.striker?sr:r);
+   if(dist>0&&dist<min){const nx=dx/dist,ny=dy/dist,overlap=min-dist;a.x-=nx*overlap/2;a.y-=ny*overlap/2;d.x+=nx*overlap/2;d.y+=ny*overlap/2;const rel=(d.vx-a.vx)*nx+(d.vy-a.vy)*ny;if(rel<0){const impulse=-(1+.9)*rel/2;a.vx-=impulse*nx;a.vy-=impulse*ny;d.vx+=impulse*nx;d.vy+=impulse*ny;}}
+  }
+ }
+ b.strikerPocketed=b.striker.pocketed;
+ b.coins.forEach(x=>{if(x.pocketed){if(x.color==='white'||x.color==='black')b.pocketed[x.color]++;}});
+ return b;
+}
 function unoRoundEnd(s,winnerId){
  s.winner=winnerId;s.roundWinner=winnerId;
  const points=s.players.reduce((n,p)=>n+(s.hands[p.id]||[]).reduce((a,c)=>a+unoCardPoints(c),0),0);
