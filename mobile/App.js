@@ -1163,6 +1163,10 @@ const [isRoomSpeakerOn, setIsRoomSpeakerOn] = useState(true);
 const [isRoomBellOn, setIsRoomBellOn] = useState(true);
 const [showRoomMessageMenu, setShowRoomMessageMenu] = useState(false);
 const [showRoomTools, setShowRoomTools] = useState(false);
+const [showSpecialEffectSettings, setShowSpecialEffectSettings] = useState(false);
+const [enterRoomEffectEnabled, setEnterRoomEffectEnabled] = useState(false);
+const [giftEffectEnabled, setGiftEffectEnabled] = useState(false);
+const [giftBannerEnabled, setGiftBannerEnabled] = useState(false);
 const [showLuckyBagPopup, setShowLuckyBagPopup] = useState(false);
 const [luckyBagTab, setLuckyBagTab] = useState('Room');
 const [luckyBagCoins, setLuckyBagCoins] = useState(500);
@@ -4573,6 +4577,8 @@ function renderRoomInterior() {
                         setLuckyBagQuantity(1);
                         setLuckyBagHistoryView(false);
                         setShowLuckyBagPopup(true);
+                      } else if (tool.title === 'Effect') {
+                        setShowSpecialEffectSettings(true);
                       } else {
                         Alert.alert(tool.title, `${tool.title} will be available here soon.`);
                       }
@@ -4588,6 +4594,57 @@ function renderRoomInterior() {
           </ScrollView>
         </View>
       )}
+
+
+      <Modal
+        visible={showSpecialEffectSettings}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowSpecialEffectSettings(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.72)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 }}>
+          <View style={{ width: '100%', maxWidth: 420, backgroundColor: '#11172B', borderRadius: 20, padding: 20, borderWidth: 1, borderColor: '#394568', elevation: 24 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 17 }}>
+              <Text style={{ color: C.text, fontSize: 18, fontWeight: '900' }}>Special effect setting</Text>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Close special effect settings"
+                onPress={() => setShowSpecialEffectSettings(false)}
+                style={{ width: 30, height: 30, borderRadius: 10, backgroundColor: '#252D45', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Text style={{ color: C.text, fontSize: 17 }}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={{ height: 1, backgroundColor: '#293453', marginBottom: 4 }} />
+            {[
+              { label: 'Enter room effect', value: enterRoomEffectEnabled, setter: setEnterRoomEffectEnabled },
+              { label: 'Gift effect', value: giftEffectEnabled, setter: setGiftEffectEnabled },
+              { label: 'Gift banner', value: giftBannerEnabled, setter: setGiftBannerEnabled }
+            ].map((item, index) => (
+              <View key={item.label}>
+                <View style={{ minHeight: 62, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Text style={{ color: C.text, fontSize: 14, fontWeight: '700', flex: 1 }}>{item.label}</Text>
+                  <TouchableOpacity
+                    accessibilityRole="switch"
+                    accessibilityState={{ checked: item.value }}
+                    accessibilityLabel={item.label}
+                    activeOpacity={0.85}
+                    onPress={() => item.setter(value => !value)}
+                    style={{
+                      width: 52, height: 30, borderRadius: 16, padding: 3,
+                      backgroundColor: item.value ? '#20B765' : '#777D89',
+                      justifyContent: 'center', alignItems: item.value ? 'flex-end' : 'flex-start'
+                    }}
+                  >
+                    <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#FFFFFF' }} />
+                  </TouchableOpacity>
+                </View>
+                {index < 2 && <View style={{ height: 1, backgroundColor: '#293453' }} />}
+              </View>
+            ))}
+          </View>
+        </View>
+      </Modal>
 
 
       {showRocketPanel && screen === 'roomInterior' && selectedRoom && (
