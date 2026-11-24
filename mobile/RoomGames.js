@@ -391,6 +391,7 @@ function applyMove(src,actor,action){
   const team=s.turn%2,ownColor=s.teamColours[team],oppColor=s.teamColours[1-team],oldBoard=s.carromBoard;
   const board=carromShoot(oldBoard,(s.turn+(s.seatRotation||0))%s.mode,Number(action.angle)||0,Math.max(4,Math.min(28,Number(action.power)||14)),s.mode);
   const newly=board.coins.filter(x=>x.pocketed&&!oldBoard.coins.find(o=>o.id===x.id)?.pocketed);
+  const rawOwnCount=board.coins.filter(x=>x.color===ownColor&&x.pocketed).length,rawOppCount=board.coins.filter(x=>x.color===oppColor&&x.pocketed).length,queenCoveredBefore=s.queenCoveredBy;
   const ownNew=newly.filter(x=>x.color===ownColor),oppNew=newly.filter(x=>x.color===oppColor),queenShot=newly.some(x=>x.color==='queen');
   const beforeOwn=Number(oldBoard.pocketed?.[ownColor]||0),hadDueAtStart=Number(s.due?.[team]||0)>0,hadPendingQueen=!!s.queenPending;
   const strikerFoul=!!board.strikerPocketed||!!board.offBoard;
@@ -439,12 +440,21 @@ function applyMove(src,actor,action){
   s.carromBoard=board;
   const ownCount=board.pocketed[ownColor]||0,oppCount=board.pocketed[oppColor]||0;
   let boardWinner=null,boardPoints=0;
-  if(coverThisShot&&oppCount>=9){
+  if(strikerFoul&&rawOwnCount>=9&&rawOppCount>=9){
+   boardWinner=1-team;
+   boardPoints=queenShot||queenCoveredBefore===1-team||!queenCoveredBefore?(s.matchPoints[1-team]<22?3:1):1;
+  }else if(strikerFoul&&rawOwnCount>=9&&!queenShot&&queenCoveredBefore!==team){
+   boardWinner=1-team;boardPoints=s.matchPoints[1-team]<22?3:1;
+  }else if(strikerFoul&&rawOppCount>=9&&!queenShot&&!queenCoveredBefore){
+   boardWinner=1-team;boardPoints=Math.max(0,9-rawOwnCount)+(s.matchPoints[1-team]<22?3:0);
+  }else if(coverThisShot&&oppCount>=9){
    if(ownCount>=9){boardWinner=team;boardPoints=s.matchPoints[team]>=22?1:3;}
    else{boardWinner=1-team;boardPoints=Math.max(0,9-ownCount)+(s.matchPoints[1-team]<22?3:0);}
   }else if(ownCount>=9){
    if(s.queenCoveredBy===team){boardWinner=team;boardPoints=Math.max(0,9-oppCount)+(s.matchPoints[team]<22?3:0);}
    else{boardWinner=1-team;boardPoints=s.matchPoints[1-team]<22?3:1;}
+  }else if(!strikerFoul&&oppCount>=9&&!s.queenCoveredBy){
+   boardWinner=1-team;boardPoints=Math.max(0,9-ownCount)+(s.matchPoints[1-team]<22?3:0);
   }
   if(boardWinner!==null){
    s.matchPoints[boardWinner]+=boardPoints;s.boardsPlayed++;s.boardComplete=true;s.boardWinnerTeam=boardWinner;s.boardPoints=boardPoints;s.due=[0,0];
