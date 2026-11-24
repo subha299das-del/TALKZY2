@@ -119,7 +119,7 @@ function initialGame(name,players,mode=2){
  if(name==='Carrom'){s.mode=mode;s.coins={white:9,black:9,queen:true};s.colours={};s.queenCovered=false;s.breakAttempts=0;s.shot=0;s.fouls={};}
  if(name==='UNO'){s.deck=[];let cardNo=0;colors.forEach(color=>{s.deck.push({id:'UNO-'+(cardNo++),rank:0,color,suit:'*'});for(let n=1;n<=9;n++)for(let copy=0;copy<2;copy++)s.deck.push({id:'UNO-'+(cardNo++),rank:n,color,suit:'*'});for(const rank of ['Skip','Reverse','+2'])for(let copy=0;copy<2;copy++)s.deck.push({id:'UNO-'+(cardNo++),rank,color,suit:'*'});});for(let copy=0;copy<4;copy++){s.deck.push({id:'UNO-'+(cardNo++),rank:'Wild',color:'wild',suit:'*'});s.deck.push({id:'UNO-'+(cardNo++),rank:'+4',color:'wild',suit:'*'});}for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}s.hands={};players.forEach(p=>s.hands[p.id]=s.deck.splice(0,7));let first=s.deck.shift();while(first?.rank==='+4'){s.deck.push(first);for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}first=s.deck.shift();}s.discard=[first];s.direction=first?.rank==='Reverse'?-1:1;s.activeColor=first?.color||'red';s.drawnCard=null;s.pendingUno=null;s.pendingChallenge=null;s.unoCalled={};s.matchPoints={};s.roundPoints=0;ids.forEach(id=>s.matchPoints[id]=0);if(first?.rank==='+2'){unoDraw(s,players[s.turn].id,2);advance(s);}else if(first?.rank==='Skip')advance(s);}
  if(name==='Playcards – Breez'){s.deck=makeDeck(['A','K','Q','J','10','9','8','7','6','5','4','3','2']);s.deck.sort(()=>Math.random()-.5);s.hands={};players.forEach(p=>s.hands[p.id]=s.deck.splice(0,13));s.bids=[];s.contract=null;s.trump=null;s.trumpChoice=null;s.tricks=[];s.currentTrick=[];s.trickLeader=0;s.declarer=null;s.dummy=null;s.dummyRevealed=false;s.contractTricks=0;}
- if(name==='29'){s.deck=makeDeck(['J','9','A','10','K','Q','8','7']);s.deck.sort(()=>Math.random()-.5);s.hands={};players.forEach(p=>s.hands[p.id]=s.deck.splice(0,8));s.bids=[];s.contract=null;s.trump=null;s.trumpHidden=true;s.tricks=[];s.currentTrick=[];s.trickLeader=0;s.teamPoints=[0,0];}
+ if(name==='29'){s.deck=makeDeck(['J','9','A','10','K','Q','8','7']);for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}s.hands={};players.forEach(p=>s.hands[p.id]=s.deck.splice(0,4));s.bids=[];s.bidCount=0;s.highBid=0;s.contract=null;s.trump=null;s.trumpHidden=true;s.trumpRevealed=false;s.tricks=[];s.currentTrick=[];s.trickLeader=0;s.teamPoints=[0,0];s.matchScore=[0,0];s.phase='bidding';s.lastTrickTeam=null;}
  if(name==='Jackaroo'){s.deck=makeDeck(['A','K','Q','J','10','9','8','7','6','5','4','3','2']);s.deck.sort(()=>Math.random()-.5);s.hands={};players.forEach(p=>s.hands[p.id]=s.deck.splice(0,4));s.marbles={};players.forEach(p=>s.marbles[p.id]=[-1,-1,-1,-1]);s.teamSafe=[0,0];s.deckDiscard=[];}
  if(name==='Monster Crush'){s.ammo=8;s.board=Array.from({length:5},(_,r)=>Array.from({length:5},(_,c)=>({id:r*5+c,type:Math.random()<.68?'monster':(Math.random()<.5?'barrel':'saw'),alive:true})));s.shots=0;}
  return s;
@@ -288,7 +288,31 @@ function applyMove(src,actor,action){
   if(!s.winner||s.matchWinner)return s;
   const next=initialGame('UNO',s.players);next.round=s.round+1;next.matchPoints={...s.matchPoints};next.status='Round '+next.round+' started.';return next;
  }
- if(s.name==='29'&&action.type==='29_bid'){s.bids.push({player:id,bid:action.bid||0,pass:!!action.pass});if(!action.pass&&action.bid>=16){s.contract={player:id,bid:action.bid};s.trump=action.suit||'♠';s.trumpHidden=true;s.status=p.name+' bid '+action.bid+'. Trump is hidden.';}if(s.bids.slice(-3).every(x=>x.pass)&&s.contract){s.status='Bidding complete. Trump will be revealed when a player cannot follow suit.';}return finish();}
+ if(s.name==='29'&&action.type==='29_bid'){
+  if(s.phase!=='bidding'||s.bidCount>=4)return s;
+  const bid=action.pass?0:Number(action.bid);
+  if(!action.pass&&(!Number.isInteger(bid)||bid<16||bid>28||bid<=s.highBid))return s;
+  s.bids.push({player:id,bid,pass:!!action.pass});s.bidCount++;
+  if(!action.pass){s.highBid=bid;s.contract={player:id,bid};}
+  if(s.bidCount===4){
+   const winning=s.bids.filter(x=>!x.pass).slice(-1)[0];
+   if(!winning){const next=initialGame('29',s.players);next.round=s.round+1;next.matchScore=[...s.matchScore];next.status='All players passed. New deal.';return next;}
+   s.contract=winning;s.phase='deal2';
+   s.players.forEach(p=>{s.hands[p.id]=s.hands[p.id].concat(s.deck.splice(0,4));});
+   s.turn=s.players.findIndex(p=>p.id===s.contract.player);s.status='Second four cards dealt. Bid winner must select hidden trump.';return s;
+  }
+  advance(s,-1);s.status=action.pass?'Passed.':'Bid '+bid+'.';return s;
+ }
+ if(s.name==='29'&&action.type==='29_trump'){
+  if(s.phase!=='deal2'||s.contract?.player!==id||!suits.includes(action.suit))return s;
+  s.trump=action.suit;s.trumpHidden=true;s.phase='play';s.turn=s.players.findIndex(p=>p.id===s.contract.player);s.trickLeader=s.turn;s.status='Trump selected and hidden. Play begins.';return s;
+ }
+ if(s.name==='29'&&action.type==='29_reveal_trump'){
+  if(s.phase!=='play'||!s.trumpHidden||!s.currentTrick.length||s.currentTrick.length!==1)return s;
+  const lead=s.currentTrick[0].card.suit,hand=s.hands[id]||[];
+  if(hand.some(card=>card.suit===lead))return s;
+  s.trumpHidden=false;s.trumpRevealed=true;s.status='Trump revealed: '+s.trump+'.';return s;
+ }
  if(s.name==='Playcards – Breez'&&action.type==='bridge_bid'){
   s.bids.push({player:id,bid:action.bid,level:action.level,suit:action.suit});
   if(action.pass){if(s.bids.filter(x=>x.pass).length>=3){s.contract=s.bids.filter(x=>!x.pass).slice(-1)[0]||null;s.status='Bidding complete. Contract set.';}else advance(s);}
@@ -297,21 +321,32 @@ function applyMove(src,actor,action){
  }
  if(s.name==='Playcards – Breez'&&action.type==='bridge_trump'){s.trump=action.suit;s.declarer=id;s.dummy=s.players[(s.turn+2)%4].id;s.dummyRevealed=true;s.status='Trump selected. Play the opening lead.';return s;}
  if((s.name==='Playcards – Breez'||s.name==='29')&&action.type==='trick_card'){
+  if(s.name==='29'&&s.phase!=='play')return s;
   const hand=s.hands[id]||[],c=hand.find(x=>x.id===action.cardId);if(!c)return s;
   if(s.currentTrick.length&&hand.some(x=>x.suit===s.currentTrick[0].card.suit)&&c.suit!==s.currentTrick[0].card.suit)return s;
+  if(s.name==='29'&&s.currentTrick.length&&s.trumpHidden&&!hand.some(x=>x.suit===s.currentTrick[0].card.suit))return s;
   s.hands[id]=hand.filter(x=>x.id!==c.id);s.currentTrick.push({player:id,card:c});
   if(s.currentTrick.length===4){
-   const lead=s.currentTrick[0].card.suit,trump=s.trump;
+   const lead=s.currentTrick[0].card.suit,trump=s.name==='29'&&!s.trumpRevealed?null:s.trump;
    const eligible=s.currentTrick.filter(x=>trump&&x.card.suit===trump);
    const pool=eligible.length?eligible:s.currentTrick.filter(x=>x.card.suit===lead);
-   const rank=s.name==='29'?rank29: (r=>['2','3','4','5','6','7','8','9','10','J','Q','K','A'].indexOf(String(r)));
-   pool.sort((a,b)=>rank(a.card.rank)-rank(b.card.rank));
+   const rank=s.name==='29'?rank29:(r=>['2','3','4','5','6','7','8','9','10','J','Q','K','A'].indexOf(String(r)));
+   pool.sort((a,b)=>rank(b.card.rank)-rank(a.card.rank));
    const win=pool[0],wi=s.players.findIndex(x=>x.id===win.player);
-   if(s.name==='29'){const team=wi%2;s.teamPoints[team]+=s.currentTrick.reduce((v,x)=>v+cardPoints(x.card),0);if(s.tricks.length===7)s.teamPoints[team]+=1;}
-   else if(win.player===s.declarer||s.players[(wi+2)%4]?.id===s.declarer)s.contractTricks++;
+   if(s.name==='29'){
+    const team=wi%2;s.teamPoints[team]+=s.currentTrick.reduce((v,x)=>v+cardPoints(x.card),0);
+    if(s.tricks.length===7){s.teamPoints[team]+=1;s.lastTrickTeam=team;}
+   }else if(win.player===s.declarer||s.players[(wi+2)%4]?.id===s.declarer)s.contractTricks++;
    s.tricks.push({winner:win.player,cards:s.currentTrick});s.currentTrick=[];s.turn=wi;s.status='Trick won by '+(s.players[wi]?.name||'player')+'.';
-   if(s.tricks.length===13|| (s.name==='29'&&s.tricks.length===8)){s.winner=win.player;s.status=s.name==='29'?'29 complete. Team points: '+s.teamPoints.join(' – '):'Bridge hand complete.';}
-  } else advance(s);
+   if(s.tricks.length===13){s.winner=win.player;s.status='Bridge hand complete.';}
+   if(s.name==='29'&&s.tricks.length===8){
+    const contractTeam=s.players.findIndex(p=>p.id===s.contract.player)%2;
+    const made=s.teamPoints[contractTeam]>=s.contract.bid;
+    s.matchScore[contractTeam]+=made?1:-1;
+    s.phase='complete';s.winner=win.player;s.matchWinner=s.matchScore[contractTeam]>=6?contractTeam:s.matchScore[1-contractTeam]<=-6?1-contractTeam:null;
+    s.status='29 complete. Team points: '+s.teamPoints.join(' – ')+'. Bid '+(made?'made':'failed')+'. Match score: '+s.matchScore.join(' – ');
+   }
+  } else advance(s,s.name==='29'?-1:1);
   return s;
  }
  if(s.name==='Jackaroo'&&action.type==='jackaroo_play'){
@@ -380,7 +415,7 @@ export default function RoomGames({visible,onClose,onGameAvailable,roomId,creato
   if(state.name==='Snakes and Ladders')return <><Text style={{color:ink}}>Position: {state.positions[userId]} / 100</Text><Btn title="ROLL DICE" onPress={roll}/></>;
   if(state.name==='Ludo')return <><Text style={{color:ink}}>Roll a die, then choose one of your four tokens.</Text><Btn title="ROLL DICE" onPress={()=>act({type:'ludo_roll',die:rand(6)+1})}/>{state.tokens[userId]?.map((v,i)=><Tile key={i} onPress={()=>act({type:'ludo_move',token:i})} disabled={!state.pendingDie|| (v===-1&&state.pendingDie!==6)} active>{'Token '+(i+1)+' · '+(v<0?'Base':v===57?'Home':v)}</Tile>)}</>;
   if(state.name==='UNO')return <><Text style={{color:ink}}>Top: {String(state.discard.at(-1)?.rank)} · Colour: {state.activeColor}</Text><Text style={{color:GOLD}}>Match points: {state.matchPoints?.[userId]||0}/500</Text>{state.pendingChallenge?.target===userId&&<><Btn title="ACCEPT +4" onPress={()=>act({type:'uno_accept'})}/><Btn title="CHALLENGE +4" onPress={()=>act({type:'uno_challenge'})}/></>}{state.pendingUno&&state.turn===state.players.findIndex(p=>p.id===userId)&&<Btn title="CATCH MISSED UNO (+2)" onPress={()=>act({type:'uno_catch'})}/>}<Text style={{color:ink}}>Choose wild colour before playing:</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{colors.map(color=><Btn key={color} small title={color.toUpperCase()} onPress={()=>setUnoColor(color)}/>)}</View><Text style={{color:muted}}>Selected: {unoColor}</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{currentHand.map(c=><Tile key={c.id} onPress={()=>act({type:'uno_play',cardId:c.id,wildColor:unoColor,uno:currentHand.length===2&&unoCallSelected})} disabled={state.drawnCard&&state.drawnCard!==c.id}>{String(c.rank)} {c.color==='wild'?'★':c.color}</Tile>)}</View>{state.drawnCard&&<Btn title="PASS AFTER DRAW" onPress={()=>act({type:'uno_pass_drawn'})}/>}<Btn title="DRAW ONE" onPress={()=>act({type:'uno_draw'})} disabled={!!state.drawnCard}/>{currentHand.length===2&&<Btn title={unoCallSelected?'UNO CALL: ON':'UNO CALL: OFF'} onPress={()=>setUnoCallSelected(v=>!v)}/>}</>;
-  if(state.name==='Playcards – Breez'||state.name==='29')return <><Text style={{color:ink}}>Trump: {state.trump||'Not selected'} · Tricks: {state.tricks.length}</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{currentHand.map(c=><Tile key={c.id} onPress={()=>act({type:'trick_card',cardId:c.id})}>{cardLabel(c)}</Tile>)}</View><Btn title="PASS / BID" onPress={()=>act(state.name==='29'?{type:'29_bid',bid:16,suit:'♠'}:{type:'bridge_bid',pass:true})}/></>;
+  if(state.name==='29')return <><Text style={{color:ink}}>Phase: {state.phase} · Trump: {state.trumpHidden?'Hidden':state.trump||'—'} · Tricks: {state.tricks.length}/8</Text><Text style={{color:ink}}>Team points: {state.teamPoints.join(' – ')} · Match: {state.matchScore.join(' – ')}</Text>{state.phase==='bidding'&&<View style={{flexDirection:'row',flexWrap:'wrap'}}>{[16,17,18,19,20,21,22,23,24,25,26,27,28].filter(v=>v>state.highBid).map(v=><Btn key={v} title={'BID '+v} small onPress={()=>act({type:'29_bid',bid:v})}/ >)}<Btn title="PASS" onPress={()=>act({type:'29_bid',pass:true})}/></View>}{state.phase==='deal2'&&state.contract?.player===userId&&<View style={{flexDirection:'row',flexWrap:'wrap'}}>{suits.map(s=><Btn key={s} title={'SELECT '+s} onPress={()=>act({type:'29_trump',suit:s})}/>)}</View>}{state.phase==='play'&&<><View style={{flexDirection:'row',flexWrap:'wrap'}}>{currentHand.map(c=><Tile key={c.id} onPress={()=>act({type:'trick_card',cardId:c.id})}>{cardLabel(c)}</Tile>)}</View>{state.trumpHidden&&state.currentTrick.length===1&&!currentHand.some(x=>x.suit===state.currentTrick[0].card.suit)&&<Btn title="REVEAL TRUMP" onPress={()=>act({type:'29_reveal_trump'})}/>}</>}</>;if(state.name==='Playcards – Breez')return <><Text style={{color:ink}}>Trump: {state.trump||'Not selected'} · Tricks: {state.tricks.length}</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{currentHand.map(c=><Tile key={c.id} onPress={()=>act({type:'trick_card',cardId:c.id})}>{cardLabel(c)}</Tile>)}</View><Btn title="PASS / BID" onPress={()=>act({type:'bridge_bid',pass:true})}/></>;
   if(state.name==='Jackaroo')return <><Text style={{color:ink}}>Select a card, then a marble. A/K bring a marble out; 7 splits; J swaps.</Text>{currentHand.map(c=><Tile key={c.id} onPress={()=>act({type:'jackaroo_play',cardId:c.id,marble:0})}>{c.rank}</Tile>)}</>;
   if(state.name==='Carrom')return <><Text style={{color:ink}}>Coins left — White {state.coins.white}, Black {state.coins.black}, Queen {state.coins.queen?'on board':'pocketed'}</Text><Btn title="POCKET OWN COIN" onPress={()=>act({type:'carrom_shot',pocket:true,own:true,colour:state.colours[userId]||'white'})}/><Btn title="MISS SHOT" onPress={()=>act({type:'carrom_shot'})}/><Btn title="FOUL" onPress={()=>act({type:'carrom_shot',foul:true})}/></>;
   if(state.name==='Monster Crush')return <><Text style={{color:ink}}>Ammo: {state.ammo} · Shots: {state.shots} · Monsters left: {state.board.flat().filter(x=>x.alive&&x.type==='monster').length}</Text><View style={{alignSelf:'center'}}>{state.board.map((row,ri)=><View key={ri} style={{flexDirection:'row'}}>{row.map(cell=><Tile key={cell.id} disabled={!cell.alive||state.ammo===0} onPress={()=>act({type:'monster_shot',cell:cell.id})}>{cell.alive?(cell.type==='monster'?'👾':cell.type==='barrel'?'💣':'⚙️'):'·'}</Tile>)}</View>)}</View></>;
