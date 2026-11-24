@@ -127,6 +127,46 @@ function initialGame(name,players,mode=2){
 
 function advance(s,n=1){s.turn=(s.turn+n+s.players.length)%s.players.length;return s;}
 function clone(s){return JSON.parse(JSON.stringify(s));}
+function gameResults(s){
+ if(!s?.players?.length)return [];
+ const ids=s.players.map(p=>p.id), scoreById={};
+ ids.forEach(id=>{scoreById[id]=Number(s.score?.[id]||0);});
+ let higherIsBetter=true, detail='Points';
+ if(s.name==='Ludo'){
+  ids.forEach(id=>{const tokens=s.tokens?.[id]||[];scoreById[id]=tokens.reduce((n,v)=>n+(v===57?100:v>=0?v:0),0);});
+  detail='Progress points';
+ }else if(s.name==='Snakes and Ladders'){
+  ids.forEach(id=>{scoreById[id]=Number(s.positions?.[id]||0);});detail='Board position';
+ }else if(s.name==='Carrom'){
+  ids.forEach(id=>{const color=s.colours?.[id];scoreById[id]=color?9-Number(s.coins?.[color]??9):0;if(s.queenCovered&&color)scoreById[id]+=3;});detail='Coins pocketed';
+ }else if(s.name==='Jackaroo'){
+  ids.forEach(id=>{scoreById[id]=(s.marbles?.[id]||[]).reduce((n,v)=>n+(v===56?100:v>=0?v:0),0);});detail='Marble progress';
+ }else if(s.name==='UNO'){
+  const winner=s.winner;
+  ids.forEach(id=>{const hand=s.hands?.[id]||[];scoreById[id]=id===winner?hand.reduce((n,c)=>n+(c.rank==='Wild'||c.rank==='+4'?50:['Skip','Reverse','+2'].includes(c.rank)?20:Number(c.rank)||0),0):hand.length;});
+  higherIsBetter=false;detail='Cards remaining (fewer is better)';
+ }else if(s.name==='Playcards – Breez'){
+  const declarer=s.declarer||s.contract?.player;
+  const declarerSide=declarer?s.players.findIndex(p=>p.id===declarer)%2:null;
+  const won=Number(s.contractTricks||0);
+  ids.forEach((id,i)=>{scoreById[id]=declarerSide===null?0:(i%2===declarerSide?won:13-won);});
+  detail='Team tricks';
+ }else if(s.name==='29'){
+  ids.forEach((id,i)=>{scoreById[id]=Number(s.teamPoints?.[i%2]||0);});detail='Team points';
+ }else if(s.name==='Monster Crush'){
+  ids.forEach(id=>{scoreById[id]=Number(s.score?.[id]||0);});detail='Points';
+ }
+ const winner=s.winner;
+ const rows=s.players.map((p,i)=>({id:p.id,name:p.name||'Player',score:scoreById[p.id]||0,seat:i}));
+ rows.sort((a,b)=>{
+  if(a.id===winner&&b.id!==winner)return -1;
+  if(b.id===winner&&a.id!==winner)return 1;
+  const diff=higherIsBetter?b.score-a.score:a.score-b.score;
+  return diff||a.seat-b.seat;
+ });
+ let rank=0,lastScore=null;
+ return rows.map((p,i)=>{if(i===0||p.score!==lastScore)rank=i+1;lastScore=p.score;return {...p,rank,detail};});
+}
 function cardPoints(c){return c.rank==='J'?3:c.rank==='9'?2:(c.rank==='A'||c.rank==='10')?1:0;}
 function rank29(r){return ['J','9','A','10','K','Q','8','7'].indexOf(r);}
 function applyMove(src,actor,action){
@@ -248,7 +288,7 @@ export default function RoomGames({visible,onClose,onGameAvailable,roomId,creato
  const current=state?.players?.[state?.turn];
  const isMyTurn=stage==='play'&&current?.id===userId;
  const publish=(type,extra={})=>channelRef.current?.send({type:'broadcast',event:'game_event',payload:{type,roomId,userId,...extra}});
- const sync=next=>{stateRef.current=next;setState(next);publish('game_state',{lobbyId:lobbyRef.current,snapshot:next});};
+ const sync=next=>{stateRef.current=next;setState(next);if(next?.winner)setStage('result');publish('game_state',{lobbyId:lobbyRef.current,snapshot:next});};
  const doAction=action=>{if(!isMyTurn||!state)return;if(hostRef.current)sync(applyMove(state,userId,action));else publish('game_action',{lobbyId:lobbyRef.current,action});};
  const reset=()=>{clearInterval(timerRef.current);setStage('select');setSelected(null);setPlayers([]);setState(null);setStatus('');setBet(0);setMinimized(false);minimizedRef.current=false;hostRef.current=false;lobbyRef.current=null;};
  const close=()=>{if(canMinimize){setMinimized(true);minimizedRef.current=true;}onClose?.();};
@@ -296,6 +336,25 @@ export default function RoomGames({visible,onClose,onGameAvailable,roomId,creato
   {stage==='setup'&&<View><Text style={{color:GOLD,fontSize:18,textAlign:'center',fontWeight:'900'}}>{selected.name}</Text><Text style={{color:muted,textAlign:'center',margin:8}}>{selected.rules}</Text><Text style={{color:ink}}>Players: {min} required · {max===Infinity?'Unlimited':max+' maximum'}</Text>{selected.name==='Carrom'&&<View style={{flexDirection:'row'}}><Btn title="2 PLAYERS" onPress={()=>setMode(2)}/><Btn title="4 PLAYERS" onPress={()=>setMode(4)}/></View>}{!canJoin&&<Text style={{color:GOLD}}>You can create the lobby without a mic seat. Other players need a mic seat to join this game.</Text>}<Btn title="CREATE GAME" onPress={create}/><Btn title="BACK" onPress={()=>setStage('select')}/></View>}
   {stage==='lobby'&&<View><Text style={{color:GOLD,fontSize:18,textAlign:'center'}}>{selected?.name} Lobby</Text><Text style={{color:ink,textAlign:'center'}}>{players.length}/{max===Infinity?'∞':max} players · Free play (0 Good Coins)</Text>{selected?.timed&&<Text style={{color:GOLD,textAlign:'center'}}>{seconds}s</Text>}{players.map(p=><Text key={p.id} style={{color:ink,padding:7}}>{p.name}</Text>)}<Text style={{color:muted}}>{status}</Text>{!inLobby&&<Btn title="JOIN GAME" onPress={join} disabled={!canJoin||players.length>=max}/>}<Btn title="START GAME" onPress={start} disabled={!isAuthorisedStarter||players.length<min}/><Text style={{color:muted,textAlign:'center'}}>Only room owner or authorised admin can start.</Text></View>}
   {stage==='play'&&<ScrollView><Text style={{color:GOLD,fontSize:18,textAlign:'center'}}>{selected?.name}</Text><Text style={{color:ink,textAlign:'center'}}>Turn: {current?.name||'—'}</Text><Text style={{color:muted,textAlign:'center'}}>{state.status}</Text><View style={{backgroundColor:'#21182B',padding:10,borderRadius:12}}>{isMyTurn?renderControls():<Text style={{color:ink}}>Waiting for {current?.name||'player'}.</Text>}</View>{state.winner&&<Btn title="VIEW RESULT" onPress={()=>setStage('result')}/>}</ScrollView>}
-  {stage==='result'&&<View><Text style={{color:GOLD,fontSize:20,textAlign:'center'}}>GAME RESULT</Text><Text style={{color:ink,textAlign:'center'}}>Winner: {state?.players?.find(p=>p.id===state.winner)?.name||'—'}</Text><Btn title="BACK TO GAMES" onPress={reset}/></View>}
+  {stage==='result'&&<View style={{maxHeight:520}}>
+   <Text style={{color:GOLD,fontSize:20,textAlign:'center',fontWeight:'900'}}>♛ GAME RESULTS</Text>
+   <Text style={{color:muted,textAlign:'center',fontSize:11,marginTop:4,marginBottom:12}}>{state?.name||selected?.name} · Final rankings</Text>
+   <ScrollView style={{maxHeight:390}} showsVerticalScrollIndicator>
+    {gameResults(state).map(row=><View key={row.id} style={{flexDirection:'row',alignItems:'center',backgroundColor:row.id===state?.winner?'#3B2C22':'#251B31',borderColor:row.id===state?.winner?GOLD:'#51415B',borderWidth:1,borderRadius:12,paddingVertical:11,paddingHorizontal:12,marginBottom:8}}>
+     <View style={{width:38,height:38,borderRadius:19,backgroundColor:row.rank===1?'#76572B':'#382B43',borderWidth:1,borderColor:row.rank===1?GOLD:'#66536F',alignItems:'center',justifyContent:'center',marginRight:11}}>
+      <Text style={{color:row.rank===1?GOLD:ink,fontWeight:'900',fontSize:15}}>#{row.rank}</Text>
+     </View>
+     <View style={{flex:1}}>
+      <Text numberOfLines={1} style={{color:ink,fontWeight:'900',fontSize:13}}>{row.name}{row.id===userId?' (You)':''}</Text>
+      {row.id===state?.winner&&<Text style={{color:GOLD,fontSize:10,fontWeight:'900',marginTop:2}}>WINNER</Text>}
+     </View>
+     <View style={{alignItems:'flex-end',marginLeft:8}}>
+      <Text style={{color:GOLD,fontWeight:'900',fontSize:17}}>{row.score}</Text>
+      <Text style={{color:muted,fontSize:9}}>{row.detail}</Text>
+     </View>
+    </View>)}
+   </ScrollView>
+   <Btn title="BACK TO GAMES" onPress={reset}/>
+  </View>}
  </View></View></Modal>{minimized&&canMinimize&&<TouchableOpacity onPress={reopenGame} style={{position:'absolute',right:16,bottom:112,zIndex:999,elevation:20,backgroundColor:'#24152F',borderColor:GOLD,borderWidth:1.5,borderRadius:24,paddingHorizontal:16,paddingVertical:11}}><Text style={{color:GOLD,fontWeight:'900'}}>🎮 OPEN GAME</Text></TouchableOpacity>}</>;
 }
