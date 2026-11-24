@@ -473,8 +473,8 @@ function applyMove(src,actor,action){
    if(ownNew.length>0){s.status='Striker pocketed with own coin(s): due applied; turn continues.';return s;}
    s.status='Striker pocketed. Due applied; turn passes.';advance(s);return s;
   }
-  if(ownNew.length>0){s.status='Own coin pocketed. Shoot again.';return s;}
   if(queenShot&&s.queenPending){s.status='Queen pocketed. Cover it on the immediate next stroke.';return s;}
+  if(ownNew.length>0){s.status='Own coin pocketed. Shoot again.';return s;}
   s.status=oppNew.length>0?'Opponent coin pocketed; turn passes.':'No own coin pocketed. Turn passes.';advance(s);return s;
  }
  if(s.name==='Carrom'&&action.type==='carrom_next_board'){
