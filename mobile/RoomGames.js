@@ -670,7 +670,7 @@ if((s.name==='Playcards – Breez'||s.name==='29')&&action.type==='trick_card'){
    let steps=card.rank==='A'?Number(action.steps||1):card.rank==='K'?13:card.rank==='Q'?12:card.rank==='4'?-4:card.rank==='5'?5:card.rank==='10'?10:Number(card.rank);
    const targetOwner=card.rank==='5'?(action.targetOwnerId||ownerId):ownerId;
    if(card.rank==='A'||card.rank==='K'){
-    if(action.enter){const m=Number(action.marble),arr=s.marbles[ownerId];if(!allowedOwners.includes(ownerId)||arr?.[m]!==-1)return s;arr[m]=0;played=true;}
+    if(action.enter){const m=Number(action.marble),arr=s.marbles[ownerId],seat=s.players.findIndex(p=>p.id===ownerId),baseGlobal=seat*13,occupied=s.players.some((pl,pi)=>s.marbles[pl.id].some(v=>v>=0&&v<52&&jackarooGlobal(pi,v)===baseGlobal));if(!allowedOwners.includes(ownerId)||seat<0||arr?.[m]!==-1||occupied)return s;arr[m]=0;played=true;}
     else if(card.rank==='A'&&![1,11].includes(steps))return s;
     else if(allowedOwners.includes(ownerId))played=jackarooMove(s,ownerId,Number(action.marble),steps,card.rank==='K');
    }else if(card.rank==='5'){
