@@ -97,11 +97,11 @@ const GAMES=[
  {name:'Playcards – Breez',art:'breez',min:4,max:4,bet:true,timed:true,rules:'World Bridge Federation duplicate Contract Bridge: auction, declarer/dummy, 13 tricks, follow suit and duplicate scoring.'},
  {name:'UNO',art:'uno',min:2,max:10,bet:true,timed:true,rules:'Classic Mattel UNO: 108-card deck, 7 cards each, match colour/number/symbol, action cards, Wild Draw Four challenge, UNO call and 500-point match.'},
  {name:'Monster Crush',art:'monster',min:2,max:4,bet:true,timed:true,rules:'No universal published ruleset identified; postponed under official-rules-only development.'},
- {name:'Truth and Dare',art:'truth',min:2,max:Infinity,bet:false,timed:false,rules:'Rules to be finalised later.'},
+ {name:'Truth and Dare',art:'truth',min:2,max:Infinity,bet:false,timed:false,rules:'Unavailable: no single official ruleset; no custom prompts or penalties will be invented.'},
  {name:'Snakes and Ladders',art:'snake',min:2,max:4,bet:true,timed:true,rules:'Hasbro 100-square Chutes and Ladders edition: highest opening spin, exact 100, fixed published ladder/chute board.'},
  {name:'Jackaroo',art:'jackaroo',min:4,max:4,bet:true,timed:true,rules:'Published Jackaroo World rules: four players in opposite partnerships, clockwise card play, legal marble movement and safety lanes.'},
- {name:'Brainstorm',art:'brain',min:2,max:Infinity,bet:false,timed:false,rules:'Rules to be finalised later.'},
- {name:'29',art:'twentynine',min:4,max:4,bet:true,timed:true,rules:'The 29 rule set supplied for TALKZY: four players, fixed partnerships, 32 cards, staged deal, counter-clockwise play and hidden trump.'}
+ {name:'Brainstorm',art:'brain',min:2,max:Infinity,bet:false,timed:false,rules:'Unavailable: no single official Brainstorm ruleset was identified.'},
+ {name:'29',art:'twentynine',min:4,max:4,bet:true,timed:true,rules:'Unavailable until a named 29 scoring variant is selected: the supplied rules leave failed-bid penalties and match target region-dependent.'}
 ];
 const suits=['♠','♥','♦','♣'], bridgeStrains=['♣','♦','♥','♠','NT'], colors=['red','blue','green','yellow'];
 const LUDO_COLORS=['#D94B58','#55B879','#E6B94F','#4E91D6'];
