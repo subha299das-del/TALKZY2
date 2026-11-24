@@ -398,8 +398,9 @@ export default function RoomGames({visible,onClose,roomId,creatorName='Host',use
     if(snapshot.prompt!==undefined)setPrompt(snapshot.prompt);
     if(snapshot.gems)setGems(snapshot.gems);
     if(snapshot.shot!==undefined)setShot(snapshot.shot);
+    if(snapshot.seconds!==undefined)setSeconds(snapshot.seconds);
   };
-  const currentSnapshot=()=>({gameName:selected?.name,bet,carromMode,players,stage,game,turn,score,status,roll,positions,hands,activeCard,category,answers,truthType,prompt,gems,shot});
+  const currentSnapshot=()=>({gameName:selected?.name,bet,carromMode,players,stage,game,turn,score,status,roll,positions,hands,activeCard,category,answers,truthType,prompt,gems,shot,seconds});
   const snapshotRef=useRef(null);
   snapshotRef.current=currentSnapshot();
 
