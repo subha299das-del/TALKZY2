@@ -92,16 +92,16 @@ function RoyalGameArtwork({ art }) {
 
 const GOLD='#E8C477', panel='#171222', ink='#F5E9CF', muted='#B6A68A';
 const GAMES=[
- {name:'Ludo',art:'ludo',min:2,max:4,bet:true,timed:true,rules:'Roll 6 to enter. Race four tokens home; captures and safe squares apply.'},
- {name:'Carrom',art:'carrom',min:2,max:4,bet:true,timed:true,rules:'Singles or doubles. Pocket your colour and legally cover the Queen.'},
- {name:'Playcards – Breez',art:'breez',min:4,max:4,bet:true,timed:true,rules:'Contract Bridge: bid, play 13 tricks, follow suit and fulfil the contract.'},
+ {name:'Ludo',art:'ludo',min:2,max:4,bet:true,timed:true,rules:'Ludo King official rules: 2–4 players, six to enter, extra turns for six/capture/home, third consecutive six forfeited, rank by finish order.'},
+ {name:'Carrom',art:'carrom',min:2,max:4,bet:true,timed:true,rules:'International Carrom Federation laws: legal break, due pieces, queen cover, singles/doubles scoring to 25 or eight boards.'},
+ {name:'Playcards – Breez',art:'breez',min:4,max:4,bet:true,timed:true,rules:'World Bridge Federation duplicate Contract Bridge: auction, declarer/dummy, 13 tricks, follow suit and duplicate scoring.'},
  {name:'UNO',art:'uno',min:2,max:10,bet:true,timed:true,rules:'Classic Mattel UNO: 108-card deck, 7 cards each, match colour/number/symbol, action cards, Wild Draw Four challenge, UNO call and 500-point match.'},
  {name:'Monster Crush',art:'monster',min:2,max:4,bet:true,timed:true,rules:'No universal published ruleset identified; postponed under official-rules-only development.'},
  {name:'Truth and Dare',art:'truth',min:2,max:Infinity,bet:false,timed:false,rules:'Rules to be finalised later.'},
- {name:'Snakes and Ladders',art:'snake',min:2,max:4,bet:true,timed:true,rules:'Roll, climb ladders, slide down snakes. Exact roll to reach 100.'},
- {name:'Jackaroo',art:'jackaroo',min:4,max:4,bet:true,timed:true,rules:'Two partnerships. Use cards to move marbles around the board and into safety.'},
+ {name:'Snakes and Ladders',art:'snake',min:2,max:4,bet:true,timed:true,rules:'Hasbro 100-square Chutes and Ladders edition: highest opening spin, exact 100, fixed published ladder/chute board.'},
+ {name:'Jackaroo',art:'jackaroo',min:4,max:4,bet:true,timed:true,rules:'Published Jackaroo World rules: four players in opposite partnerships, clockwise card play, legal marble movement and safety lanes.'},
  {name:'Brainstorm',art:'brain',min:2,max:Infinity,bet:false,timed:false,rules:'Rules to be finalised later.'},
- {name:'29',art:'twentynine',min:4,max:4,bet:true,timed:true,rules:'Four players, two partnerships, 32 cards, bidding and hidden trump.'}
+ {name:'29',art:'twentynine',min:4,max:4,bet:true,timed:true,rules:'The 29 rule set supplied for TALKZY: four players, fixed partnerships, 32 cards, staged deal, counter-clockwise play and hidden trump.'}
 ];
 const suits=['♠','♥','♦','♣'], bridgeStrains=['♣','♦','♥','♠','NT'], colors=['red','blue','green','yellow'];
 const LUDO_COLORS=['#D94B58','#55B879','#E6B94F','#4E91D6'];
