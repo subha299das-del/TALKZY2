@@ -504,13 +504,14 @@ function applyMove(src,actor,action){
  }
  if(s.name==='UNO'&&action.type==='uno_challenge'){
   const challenge=s.pendingChallenge;if(!challenge||challenge.target!==id)return s;
-  if(challenge.hadMatchingColor){unoDraw(s,challenge.offender,4);s.pendingUno=null;if(!(s.hands[challenge.offender]||[]).length)unoRoundEnd(s,challenge.offender);else{s.turn=s.players.findIndex(p=>p.id===challenge.offender);s.status='Challenge successful. The Wild Draw Four player draws four.';}}
+  s.pendingUno=null;
+  if(challenge.hadMatchingColor){unoDraw(s,challenge.offender,4);if(!(s.hands[challenge.offender]||[]).length)unoRoundEnd(s,challenge.offender);else{s.status='Challenge successful. The Wild Draw Four player draws four; challenger plays.';}}
   else{unoDraw(s,id,6);s.status='Challenge unsuccessful. Draw six cards.';if(!(s.hands[challenge.offender]||[]).length)unoRoundEnd(s,challenge.offender);else advance(s);}
   s.pendingChallenge=null;return s;
  }
  if(s.name==='UNO'&&action.type==='uno_accept'){
   const challenge=s.pendingChallenge;if(!challenge||challenge.target!==id)return s;
-  unoDraw(s,id,4);s.pendingChallenge=null;if(!(s.hands[challenge.offender]||[]).length){unoRoundEnd(s,challenge.offender);return s;}s.status='Drew four cards; turn skipped.';advance(s);return s;
+  s.pendingUno=null;unoDraw(s,id,4);s.pendingChallenge=null;if(!(s.hands[challenge.offender]||[]).length){unoRoundEnd(s,challenge.offender);return s;}s.status='Drew four cards; turn skipped.';advance(s);return s;
  }
  if(s.name==='29'&&action.type==='29_next_hand'){if(!s.winner||s.matchWinner!==null)return s;const next=initialGame('29',s.players);next.round=s.round+1;next.matchScore=[...s.matchScore];next.status='Next hand started.';return next;}
  if(s.name==='UNO'&&action.type==='uno_next_round'){
