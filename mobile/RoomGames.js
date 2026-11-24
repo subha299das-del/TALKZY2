@@ -120,7 +120,7 @@ function initialGame(name,players,mode=2){
  if(name==='UNO'){s.deck=[];let cardNo=0;colors.forEach(color=>{s.deck.push({id:'UNO-'+(cardNo++),rank:0,color,suit:'*'});for(let n=1;n<=9;n++)for(let copy=0;copy<2;copy++)s.deck.push({id:'UNO-'+(cardNo++),rank:n,color,suit:'*'});for(const rank of ['Skip','Reverse','+2'])for(let copy=0;copy<2;copy++)s.deck.push({id:'UNO-'+(cardNo++),rank,color,suit:'*'});});for(let copy=0;copy<4;copy++){s.deck.push({id:'UNO-'+(cardNo++),rank:'Wild',color:'wild',suit:'*'});s.deck.push({id:'UNO-'+(cardNo++),rank:'+4',color:'wild',suit:'*'});}for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}s.hands={};players.forEach(p=>s.hands[p.id]=s.deck.splice(0,7));let first=s.deck.shift();while(first?.rank==='+4'){s.deck.push(first);for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}first=s.deck.shift();}s.discard=[first];s.direction=first?.rank==='Reverse'?-1:1;s.activeColor=first?.color||'red';s.drawnCard=null;s.pendingUno=null;s.pendingChallenge=null;s.unoCalled={};s.matchPoints={};s.roundPoints=0;ids.forEach(id=>s.matchPoints[id]=0);if(first?.rank==='+2'){unoDraw(s,players[s.turn].id,2);advance(s);}else if(first?.rank==='Skip')advance(s);}
  if(name==='Playcards – Breez'){s.deck=makeDeck(['A','K','Q','J','10','9','8','7','6','5','4','3','2']);s.deck.sort(()=>Math.random()-.5);s.hands={};players.forEach(p=>s.hands[p.id]=s.deck.splice(0,13));s.bids=[];s.contract=null;s.trump=null;s.trumpChoice=null;s.tricks=[];s.currentTrick=[];s.trickLeader=0;s.declarer=null;s.dummy=null;s.dummyRevealed=false;s.contractTricks=0;}
  if(name==='29'){s.deck=makeDeck(['J','9','A','10','K','Q','8','7']);for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}s.hands={};players.forEach(p=>s.hands[p.id]=s.deck.splice(0,4));s.bids=[];s.bidCount=0;s.highBid=0;s.contract=null;s.trump=null;s.trumpHidden=true;s.trumpRevealed=false;s.tricks=[];s.currentTrick=[];s.trickLeader=0;s.teamPoints=[0,0];s.matchScore=[0,0];s.phase='bidding';s.lastTrickTeam=null;}
- if(name==='Jackaroo'){s.deck=makeDeck(['A','K','Q','J','10','9','8','7','6','5','4','3','2']);s.deck.sort(()=>Math.random()-.5);s.hands={};players.forEach(p=>s.hands[p.id]=s.deck.splice(0,4));s.marbles={};players.forEach(p=>s.marbles[p.id]=[-1,-1,-1,-1]);s.teamSafe=[0,0];s.deckDiscard=[];}
+ if(name==='Jackaroo'){s.deck=makeDeck(['A','K','Q','J','10','9','8','7','6','5','4','3','2']);for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}s.hands={};s.marbles={};players.forEach(p=>{s.hands[p.id]=[];s.marbles[p.id]=[-1,-1,-1,-1];});s.deckDiscard=[];s.dealer=rand(4);s.handRound=0;s.teamSafe=[0,0];jackarooDeal(s);}
  if(name==='Monster Crush'){s.ammo=8;s.board=Array.from({length:5},(_,r)=>Array.from({length:5},(_,c)=>({id:r*5+c,type:Math.random()<.68?'monster':(Math.random()<.5?'barrel':'saw'),alive:true})));s.shots=0;}
  return s;
 }
@@ -171,6 +171,81 @@ function carromShoot(board,playerIndex,angle,power,mode=4){
  b.strikerPocketed=b.striker.pocketed;b.pocketed={white:0,black:0};
  b.coins.forEach(x=>{if(x.pocketed&&(x.color==='white'||x.color==='black'))b.pocketed[x.color]++;});
  return b;
+}
+function jackarooGlobal(ownerIndex,progress){return (ownerIndex*13+progress)%52;}
+function jackarooMove(s,ownerId,marble,steps,king=false){
+ const ownerIndex=s.players.findIndex(p=>p.id===ownerId),arr=s.marbles?.[ownerId],old=arr?.[marble];
+ if(ownerIndex<0||!Number.isInteger(marble)||marble<0||marble>3||old===undefined||old<0||old>=52||!Number.isInteger(steps)||steps===0)return false;
+ let raw=old+steps,next=raw;
+ if(steps<0)next=(raw+52)%52;
+ if(steps>0&&next>55)return false;
+ const path=[],count=Math.abs(steps);
+ for(let k=1;k<=count;k++){
+  const progress=steps>0?old+k:old-k;
+  if(steps>0&&progress>55)return false;
+  if(progress>=52&&progress<=55)path.push({safeOwner:ownerId,progress});
+  else path.push({global:jackarooGlobal(ownerIndex,(progress+52)%52)});
+ }
+ for(const pl of s.players)for(let mi=0;mi<4;mi++){
+  if(pl.id===ownerId&&mi===marble)continue;
+  const op=s.marbles[pl.id][mi];if(op<0)continue;
+  if(op>=52){
+   if(pl.id===ownerId&&path.some(q=>q.safeOwner===ownerId&&q.progress===op))return false;
+   continue;
+  }
+  const gp=jackarooGlobal(s.players.findIndex(p=>p.id===pl.id),op),onPath=path.some(q=>q.global===gp);
+  if(!onPath)continue;
+  if(op===0)return false;
+  if(king)s.marbles[pl.id][mi]=-1;
+  else if(pl.id===ownerId)return false;
+ }
+ if(next>=52){
+  for(let mi=0;mi<4;mi++){if(mi!==marble){const op=s.marbles[ownerId][mi];if(op>=52&&op<=next)return false;}}
+ }else{
+  const dest=jackarooGlobal(ownerIndex,next);
+  for(const pl of s.players)for(let mi=0;mi<4;mi++){
+   if(pl.id===ownerId&&mi===marble)continue;
+   const op=s.marbles[pl.id][mi];if(op<0||op>=52)continue;
+   if(jackarooGlobal(s.players.findIndex(p=>p.id===pl.id),op)===dest){
+    if(op===0)return false;
+    s.marbles[pl.id][mi]=-1;
+   }
+  }
+ }
+ s.marbles[ownerId][marble]=next;return true;
+}
+function jackarooDeal(s){
+ if(s.handRound>=3||s.deck.length<s.players.length*(s.handRound===2?5:4)){
+  s.deck=[...(s.deck||[]),...(s.deckDiscard||[])];s.deckDiscard=[];
+  for(let i=s.deck.length-1;i>0;i--){const j=rand(i+1);[s.deck[i],s.deck[j]]=[s.deck[j],s.deck[i]];}
+  s.dealer=(s.dealer+1)%s.players.length;s.handRound=0;
+ }
+ const count=s.handRound===2?5:4;
+ s.players.forEach(p=>{s.hands[p.id]=s.deck.splice(0,count);});
+ s.handRound++;s.turn=(s.dealer+1)%s.players.length;s.status='New '+count+'-card deal. Play begins clockwise.';return s;
+}
+function jackarooHasLegalMove(s,playerId){
+ const team=s.players.findIndex(p=>p.id===playerId)%2,own=s.players.findIndex(p=>p.id===playerId),partner=s.players[(own+2)%4].id;
+ const owners=[playerId,...(s.marbles[playerId].every(v=>v>=52)?[partner]:[])];
+ const hand=s.hands[playerId]||[];
+ for(const card of hand){
+  const rank=card.rank;
+  if((rank==='Q'&&isRed(card.suit))||rank==='10')return true;
+  if(rank==='J'){
+   for(const owner of owners)for(let i=0;i<4;i++)if(s.marbles[owner][i]>=0&&s.marbles[owner][i]<52&&s.marbles[owner][i]!==0)
+    for(const op of s.players)if(op.id!==owner)for(let j=0;j<4;j++)if(s.marbles[op.id][j]>0&&s.marbles[op.id][j]<52)return true;
+  }
+  if(rank==='A'||rank==='K'){if(owners.some(owner=>s.marbles[owner].some(v=>v===-1)))return true;}
+  const steps=rank==='A'?1:rank==='K'?13:rank==='Q'?12:rank==='4'?-4:rank==='7'?7:Number(rank);
+  if(rank==='7'){
+   for(const owner of owners)for(let i=0;i<4;i++)if(jackarooMove(clone(s),owner,i,7))return true;
+   for(const owner of owners)for(let i=0;i<4;i++)for(let j=0;j<4;j++)if(i!==j)for(let split=1;split<7;split++){const test=clone(s);if(jackarooMove(test,owner,i,split)&&jackarooMove(test,owner,j,7-split))return true;}
+  }else if(rank!=='J'&&!(rank==='Q'&&isRed(card.suit))&&rank!=='10'){
+   const targetOwners=rank==='5'?s.players.map(p=>p.id):owners;
+   for(const owner of targetOwners)for(let i=0;i<4;i++)if(jackarooMove(clone(s),owner,i,steps,rank==='K'))return true;
+  }
+ }
+ return false;
 }
 function unoRoundEnd(s,winnerId){
  s.winner=winnerId;s.roundWinner=winnerId;
@@ -424,15 +499,58 @@ function applyMove(src,actor,action){
   } else advance(s,s.name==='29'?-1:1);
   return s;
  }
- if(s.name==='Jackaroo'&&action.type==='jackaroo_play'){
-  const c=(s.hands[id]||[]).find(x=>x.id===action.cardId);if(!c)return s;
-  const m=s.marbles[id].slice(),i=action.marble,old=m[i],step=({A:1,K:0,Q:12,J:0,'7':7,'4':-4})[c.rank]??Number(c.rank);
-  if((c.rank==='A'||c.rank==='K')&&old===-1)m[i]=0;else if(c.rank==='J'&&action.swap){const op=s.players.find(x=>x.id===action.swap.player);if(op){const oi=action.swap.marble;s.marbles[op.id][oi]=old;s.marbles[id][i]=s.marbles[op.id][oi];}}
-  else if(old>=0)m[i]=Math.max(0,Math.min(56,old+step));
-  else return s;
-  s.hands[id]=s.hands[id].filter(x=>x.id!==c.id);s.marbles[id]=m;
-  if(m.every(x=>x===56))s.winner=id;
+ if(s.name==='Jackaroo'&&action.type==='jackaroo_burn'){
+  const hand=s.hands[id]||[];if(!hand.length||jackarooHasLegalMove(s,id))return s;
+  s.deckDiscard.push(...hand);s.hands[id]=[];s.status='No legal move: hand burned.';
+  if(s.players.every(pl=>(s.hands[pl.id]||[]).length===0))return jackarooDeal(s);
   return finish();
+ }
+ if(s.name==='Jackaroo'&&action.type==='jackaroo_play'){
+  const hand=s.hands[id]||[],card=hand.find(x=>x.id===action.cardId);if(!card)return s;
+  const ownerId=action.ownerId||id,ownerIndex=s.players.findIndex(p=>p.id===ownerId),myIndex=s.players.findIndex(p=>p.id===id);
+  const partner=s.players[(myIndex+2)%4].id,allowedOwners=[id,...(s.marbles[id].every(v=>v>=52)?[partner]:[])];
+  let played=false,keepTurn=false;
+  if(card.rank==='J'){
+   const source=action.source||{ownerId,marble:action.marble},target=action.target;
+   if(!source||!target||!allowedOwners.includes(source.ownerId)||target.ownerId===source.ownerId)return s;
+   const srcIdx=s.players.findIndex(p=>p.id===source.ownerId),dstIdx=s.players.findIndex(p=>p.id===target.ownerId);
+   const a=s.marbles[source.ownerId]?.[source.marble],b=s.marbles[target.ownerId]?.[target.marble];
+   if(srcIdx<0||dstIdx<0||a<=0||a>=52||b<=0||b>=52)return s;
+   const ga=jackarooGlobal(srcIdx,a),gb=jackarooGlobal(dstIdx,b);
+   s.marbles[source.ownerId][source.marble]=(gb-srcIdx*13+52)%52;
+   s.marbles[target.ownerId][target.marble]=(ga-dstIdx*13+52)%52;played=true;
+  }else if(card.rank==='Q'&&isRed(card.suit)){
+   const next=s.players[(s.turn+1)%4].id,nh=s.hands[next]||[];
+   if(nh.length){const removed=nh.splice(rand(nh.length),1)[0];s.deckDiscard.push(removed);}played=true;
+  }else if(card.rank==='10'&&action.effect==='burn'){
+   const next=s.players[(s.turn+1)%4].id,nh=s.hands[next]||[];
+   if(nh.length){const removed=nh.splice(rand(nh.length),1)[0];s.deckDiscard.push(removed);}played=true;
+  }else if(card.rank==='7'){
+   const moves=Array.isArray(action.moves)?action.moves:[{ownerId,marble:action.marble,steps:7}];
+   if(moves.length<1||moves.length>2||moves.reduce((n,m)=>n+Number(m.steps||0),0)!==7)return s;
+   const test=clone(s);for(const m of moves){if(!allowedOwners.includes(m.ownerId||id)||!jackarooMove(test,m.ownerId||id,m.marble,m.steps))return s;}
+   s.marbles=test.marbles;played=true;
+  }else{
+   let steps=card.rank==='A'?Number(action.steps||1):card.rank==='K'?13:card.rank==='Q'?12:card.rank==='4'?-4:card.rank==='5'?5:card.rank==='10'?10:Number(card.rank);
+   const targetOwner=card.rank==='5'?(action.targetOwnerId||ownerId):ownerId;
+   if(card.rank==='A'||card.rank==='K'){
+    if(action.enter){const m=Number(action.marble),arr=s.marbles[ownerId];if(!allowedOwners.includes(ownerId)||arr?.[m]!==-1)return s;arr[m]=0;played=true;}
+    else if(card.rank==='A'&&![1,11].includes(steps))return s;
+    else if(allowedOwners.includes(ownerId))played=jackarooMove(s,ownerId,Number(action.marble),steps,card.rank==='K');
+   }else if(card.rank==='5'){
+    if(!s.players.some(p=>p.id===targetOwner))return s;
+    played=jackarooMove(s,targetOwner,Number(action.marble),5,false);
+   }else if(card.rank==='10'&&action.effect==='move'||card.rank==='Q'&&!isRed(card.suit)||!['J','7'].includes(card.rank)&&card.rank!=='A'&&card.rank!=='K'&&!(card.rank==='Q'&&isRed(card.suit))&&card.rank!=='10'){
+    if(!allowedOwners.includes(ownerId))return s;
+    played=jackarooMove(s,ownerId,Number(action.marble),steps,false);
+   }
+  }
+  if(!played)return s;
+  s.hands[id]=hand.filter(x=>x.id!==card.id);s.deckDiscard.push(card);
+  const team=myIndex%2,teamPlayers=[s.players[team].id,s.players[(team+2)%4].id];
+  if(teamPlayers.every(pid=>s.marbles[pid].every(v=>v>=52))){s.winner=id;s.status='All eight team marbles reached safety.';return s;}
+  if(s.players.every(pl=>(s.hands[pl.id]||[]).length===0))return jackarooDeal(s);
+  s.status='Played '+card.rank+'.';return finish();
  }
  return s;
 }
