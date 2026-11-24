@@ -180,7 +180,13 @@ function carromShoot(board,playerIndex,angle,power,mode=4){
 function jackarooGlobal(ownerIndex,progress){return (ownerIndex*13+progress)%52;}
 function jackarooMove(s,ownerId,marble,steps,king=false){
  const ownerIndex=s.players.findIndex(p=>p.id===ownerId),arr=s.marbles?.[ownerId],old=arr?.[marble];
- if(ownerIndex<0||!Number.isInteger(marble)||marble<0||marble>3||old===undefined||old<0||old>=52||!Number.isInteger(steps)||steps===0)return false;
+ if(ownerIndex<0||!Number.isInteger(marble)||marble<0||marble>3||old===undefined||old<0||!Number.isInteger(steps)||steps===0)return false;
+ if(old>=52){
+  if(steps<1)return false;
+  const safeNext=old+steps;if(safeNext>55)return false;
+  for(let mi=0;mi<4;mi++){if(mi===marble)continue;const other=arr[mi];if(other>=52&&other>old&&other<=safeNext)return false;}
+  arr[marble]=safeNext;return true;
+ }
  let raw=old+steps,next=raw;
  if(steps<0)next=(raw+52)%52;
  if(steps>0&&next>55)return false;
@@ -248,7 +254,7 @@ function jackarooHasLegalMove(s,playerId){
    for(const owner of owners)for(let i=0;i<4;i++)for(let j=0;j<4;j++)if(i!==j)for(let split=1;split<7;split++){const test=clone(s);if(jackarooMove(test,owner,i,split)&&jackarooMove(test,owner,j,7-split))return true;}
   }else if(rank!=='J'&&!(rank==='Q'&&isRed(card.suit))&&rank!=='10'){
    const targetOwners=rank==='5'?s.players.map(p=>p.id):owners;
-   for(const owner of targetOwners)for(let i=0;i<4;i++)if((rank!=='5'||s.marbles[owner][i]>0)&&jackarooMove(clone(s),owner,i,steps,rank==='K'))return true;
+   for(const owner of targetOwners)for(let i=0;i<4;i++){const progress=s.marbles[owner][i];if(rank==='5'&&(progress<=0||(progress>=52&&owner!==playerId&&owner!==partner)||(owner===partner&&!s.marbles[playerId].every(v=>v>=52))))continue;if(jackarooMove(clone(s),owner,i,steps,rank==='K'))return true;}
   }
  }
  return false;
@@ -657,7 +663,7 @@ if((s.name==='Playcards – Breez'||s.name==='29')&&action.type==='trick_card'){
    if(nh.length){const removed=nh.splice(rand(nh.length),1)[0];s.deckDiscard.push(removed);}played=true;
   }else if(card.rank==='7'){
    const moves=Array.isArray(action.moves)?action.moves:[{ownerId,marble:action.marble,steps:7}];
-   if(moves.length<1||moves.length>2||moves.reduce((n,m)=>n+Number(m.steps||0),0)!==7)return s;
+   if(moves.length<1||moves.length>2||moves.reduce((n,m)=>n+Number(m.steps||0),0)!==7||(moves.length===2&&moves[0].ownerId===moves[1].ownerId&&moves[0].marble===moves[1].marble))return s;
    const test=clone(s);for(const m of moves){if(!allowedOwners.includes(m.ownerId||id)||!jackarooMove(test,m.ownerId||id,m.marble,m.steps))return s;}
    s.marbles=test.marbles;played=true;
   }else{
@@ -669,7 +675,7 @@ if((s.name==='Playcards – Breez'||s.name==='29')&&action.type==='trick_card'){
     else if(allowedOwners.includes(ownerId))played=jackarooMove(s,ownerId,Number(action.marble),steps,card.rank==='K');
    }else if(card.rank==='5'){
     if(!s.players.some(p=>p.id===targetOwner))return s;
-    if(s.marbles[targetOwner]?.[Number(action.marble)]===0)return s;played=jackarooMove(s,targetOwner,Number(action.marble),5,false);
+    const targetProgress=s.marbles[targetOwner]?.[Number(action.marble)];if(targetProgress===0||targetProgress===undefined)return s;if(targetProgress>=52&&targetOwner!==id&&targetOwner!==partner)return s;if(targetOwner===partner&&!s.marbles[id].every(v=>v>=52))return s;played=jackarooMove(s,targetOwner,Number(action.marble),5,false);
    }else if(card.rank==='10'&&action.effect==='move'||card.rank==='Q'&&!isRed(card.suit)||!['J','7'].includes(card.rank)&&card.rank!=='A'&&card.rank!=='K'&&!(card.rank==='Q'&&isRed(card.suit))&&card.rank!=='10'){
     if(!allowedOwners.includes(ownerId))return s;
     played=jackarooMove(s,ownerId,Number(action.marble),steps,false);
