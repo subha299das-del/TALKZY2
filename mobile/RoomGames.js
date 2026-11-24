@@ -744,7 +744,7 @@ if((s.name==='Playcards – Breez'||s.name==='29')&&action.type==='trick_card'){
 }
 
 export default function RoomGames({visible,onClose,onGameAvailable,roomId,creatorName='Player',userId,supabase,isAuthorisedStarter=false,hasRoomSeat=false}){
- const [stage,setStage]=useState('select'),[selected,setSelected]=useState(null),[mode,setMode]=useState(2),[players,setPlayers]=useState([]),[seconds,setSeconds]=useState(60),[state,setState]=useState(null),[bet,setBet]=useState(0),[status,setStatus]=useState(''),[minimized,setMinimized]=useState(false);
+ const [stage,setStage]=useState('select'),[selected,setSelected]=useState(null),[mode,setMode]=useState(2),[players,setPlayers]=useState([]),[seconds,setSeconds]=useState(60),[state,setState]=useState(null),[bet,setBet]=useState(0),[status,setStatus]=useState(''),[minimized,setMinimized]=useState(false),[carromTurnSeconds,setCarromTurnSeconds]=useState(15);
  const [unoColor,setUnoColor]=useState('red'),[unoCallSelected,setUnoCallSelected]=useState(false),[carromAngle,setCarromAngle]=useState(0),[carromPower,setCarromPower]=useState(16),[jackarooCardId,setJackarooCardId]=useState(null),[jackarooSource,setJackarooSource]=useState(null),[jackarooFirst,setJackarooFirst]=useState(null),[jackarooSecond,setJackarooSecond]=useState(null),[jackarooSplit,setJackarooSplit]=useState(3);
  const channelRef=useRef(null),hostRef=useRef(false),hostIdRef=useRef(null),lobbyRef=useRef(null),privateReceiverRef=useRef(null),privateReceiverTopicRef=useRef(null),privateSenderChannelsRef=useRef({}),previousLobbyIdRef=useRef(null),stateRef=useRef(null),stageRef=useRef(stage),timerRef=useRef(null),selectedRef=useRef(selected),playersRef=useRef(players),secondsRef=useRef(seconds),modeRef=useRef(mode);
  const onGameAvailableRef=useRef(onGameAvailable),minimizedRef=useRef(minimized);onGameAvailableRef.current=onGameAvailable;minimizedRef.current=minimized;
@@ -792,6 +792,22 @@ export default function RoomGames({visible,onClose,onGameAvailable,roomId,creato
  },[roomId,userId,supabase]);
  useEffect(()=>{if(stage!=='lobby'||!selected?.timed||bet!==0||players.length<1||!hostRef.current||secondsRef.current<=0)return;timerRef.current=setInterval(()=>{const next=Math.max(0,secondsRef.current-1);secondsRef.current=next;setSeconds(next);publish('lobby_state',{lobbyId:lobbyRef.current,players:playersRef.current,stage:'lobby',selected:selectedRef.current?.name,seconds:next,mode:modeRef.current});if(next===0)clearInterval(timerRef.current);},1000);return()=>clearInterval(timerRef.current);},[stage,selected,bet,players.length]);
  useEffect(()=>{if(stage==='lobby'&&seconds===0)setStatus(players.length<min?'Time expired — not enough players joined.':'Time expired — the game is ready to start.');},[seconds,stage,players.length,min]);
+ useEffect(()=>{
+  if(stage!=='play'||state?.name!=='Carrom'||!state?.turnDeadline){setCarromTurnSeconds(0);return;}
+  const tick=()=>setCarromTurnSeconds(Math.max(0,Math.ceil((Number(stateRef.current?.turnDeadline||0)-Date.now())/1000)));
+  tick();const timer=setInterval(tick,200);return()=>clearInterval(timer);
+ },[stage,state?.name,state?.turnDeadline,state?.turn]);
+ useEffect(()=>{
+  if(stage!=='play'||!hostRef.current||state?.name!=='Carrom'||!state?.turnDeadline||state?.boardComplete||state?.gameComplete||state?.winner)return;
+  const deadline=state.turnDeadline;
+  const timer=setInterval(()=>{
+   const currentState=stateRef.current;
+   if(!currentState||currentState.name!=='Carrom'||currentState.turnDeadline!==deadline||currentState.boardComplete||currentState.gameComplete||currentState.winner){clearInterval(timer);return;}
+   if(Date.now()>=deadline){clearInterval(timer);const actor=currentState.players[currentState.turn]?.id;if(actor){const next=applyMove(currentState,actor,{type:'carrom_timeout'});sync(next);}}
+  },200);
+  return()=>clearInterval(timer);
+ },[stage,state?.name,state?.turnDeadline,state?.turn,state?.boardComplete,state?.gameComplete,state?.winner]);
+
  const choose=g=>{const held={ '29':'29 is held because failed-bid penalties and the match target vary by regional rules and are not specified in the supplied rule set.','Monster Crush':'No single recognised official Monster Crush ruleset is available, so custom rules will not be invented.','Truth and Dare':'No single official Truth and Dare ruleset exists; this game remains unavailable under the official-rules-only requirement.','Brainstorm':'No single official Brainstorm ruleset exists; this game remains unavailable under the official-rules-only requirement.'};if(held[g.name]){setStatus(held[g.name]);return;}setSelected(g);setBet(0);setStage('setup');};
  const create=()=>{if(!selected||!userId){setStatus('Choose a game first.');return;}if(['Truth and Dare','Brainstorm','Monster Crush','29'].includes(selected.name)){setStatus('Rules for this game are still being finalised.');return;}const lid=String(Date.now())+'-'+userId,host={id:userId,name:creatorName};hostRef.current=true;hostIdRef.current=userId;lobbyRef.current=lid;setPlayers([host]);setStage('lobby');setStatus('Free play — no Good Coins are deducted or awarded.');publish('create_lobby',{lobbyId:lid,gameName:selected.name,players:[host],bet:0,mode});};
  const join=()=>{if(stage!=='lobby')return;if(selected?.timed&&seconds<=0){setStatus('The one-minute joining time has ended.');return;}if(!canJoin){setStatus('Take a room mic seat before joining this game.');return;}if(inLobby||players.length>=max)return;publish('join_game',{lobbyId:lobbyRef.current,player:{id:userId,name:creatorName}});setStatus('Join request sent.');};
