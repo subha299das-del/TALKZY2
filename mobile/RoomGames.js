@@ -332,7 +332,8 @@ function bridgeDuplicateScore(contract,tricks,vulnerable=false){
 }
 function applyMove(src,actor,action){
  const s=clone(src), p=s.players[s.turn], id=p?.id;
- if(!p||p.id!==actor||(s.winner&&!((s.name==='UNO'&&action.type==='uno_next_round')||(s.name==='29'&&action.type==='29_next_hand'))))return s;
+ const dummyControl=s.name==='Playcards – Breez'&&s.phase==='play'&&p?.id===s.dummy&&s.declarer===actor;
+ if(!p||(p.id!==actor&&!dummyControl)||(s.winner&&!((s.name==='UNO'&&action.type==='uno_next_round')||(s.name==='29'&&action.type==='29_next_hand')||(s.name==='Playcards – Breez'&&action.type==='bridge_next_deal'))))return s;
  const finish=()=>{advance(s);return s;};
  if(s.name==='Snakes and Ladders'&&action.type==='roll'){
   if(!Number.isInteger(action.die)||action.die<1||action.die>6)return s;
@@ -530,31 +531,41 @@ function applyMove(src,actor,action){
  }
 if((s.name==='Playcards – Breez'||s.name==='29')&&action.type==='trick_card'){
   if(s.name==='29'&&s.phase!=='play')return s;
-  const hand=s.hands[id]||[],c=hand.find(x=>x.id===action.cardId);if(!c)return s;
-  if(s.currentTrick.length&&hand.some(x=>x.suit===s.currentTrick[0].card.suit)&&c.suit!==s.currentTrick[0].card.suit)return s;
+  if(s.name==='Playcards – Breez'&&s.phase!=='play')return s;
+  const handId=s.name==='Playcards – Breez'&&s.players[s.turn]?.id===s.dummy?s.dummy:id;
+  const hand=s.hands[handId]||[],card=hand.find(x=>x.id===action.cardId);if(!card)return s;
+  if(s.currentTrick.length&&hand.some(x=>x.suit===s.currentTrick[0].card.suit)&&card.suit!==s.currentTrick[0].card.suit)return s;
   if(s.name==='29'&&s.currentTrick.length&&s.trumpHidden&&!hand.some(x=>x.suit===s.currentTrick[0].card.suit))return s;
-  s.hands[id]=hand.filter(x=>x.id!==c.id);s.currentTrick.push({player:id,card:c});
+  s.hands[handId]=hand.filter(x=>x.id!==card.id);s.currentTrick.push({player:handId,card});
+  if(s.name==='Playcards – Breez'&&!s.dummyRevealed)s.dummyRevealed=true;
   if(s.currentTrick.length===4){
-   const lead=s.currentTrick[0].card.suit,trump=s.name==='29'&&!s.trumpRevealed?null:s.trump;
+   const lead=s.currentTrick[0].card.suit,trump=s.name==='29'&&!s.trumpRevealed?null:s.name==='Playcards – Breez'?s.trump:s.trump;
    const eligible=s.currentTrick.filter(x=>trump&&x.card.suit===trump);
    const pool=eligible.length?eligible:s.currentTrick.filter(x=>x.card.suit===lead);
-   const rank=s.name==='29'?rank29:(r=>['2','3','4','5','6','7','8','9','10','J','Q','K','A'].indexOf(String(r)));
-   pool.sort((a,b)=>rank(a.card.rank)-rank(b.card.rank));
+   const winRank=s.name==='29'?rank29:(r=>['2','3','4','5','6','7','8','9','10','J','Q','K','A'].indexOf(String(r)));
+   pool.sort((a,b)=>s.name==='29'?winRank(a.card.rank)-winRank(b.card.rank):winRank(b.card.rank)-winRank(a.card.rank));
    const win=pool[0],wi=s.players.findIndex(x=>x.id===win.player);
    if(s.name==='29'){
     const team=wi%2;s.teamPoints[team]+=s.currentTrick.reduce((v,x)=>v+cardPoints(x.card),0);
     if(s.tricks.length===7){s.teamPoints[team]+=1;s.lastTrickTeam=team;}
-   }else if(win.player===s.declarer||s.players[(wi+2)%4]?.id===s.declarer)s.contractTricks++;
+   }else{
+    const declarerTeam=s.players.findIndex(p=>p.id===s.declarer)%2;
+    if(wi%2===declarerTeam)s.contractTricks++;
+   }
    s.tricks.push({winner:win.player,cards:s.currentTrick});s.currentTrick=[];s.turn=wi;s.status='Trick won by '+(s.players[wi]?.name||'player')+'.';
-   if(s.tricks.length===13){s.winner=win.player;s.status='Bridge hand complete.';}
+   if(s.name==='Playcards – Breez'&&s.tricks.length===13){
+    const declarerTeam=s.players.findIndex(p=>p.id===s.declarer)%2,score=bridgeDuplicateScore(s.contract,s.contractTricks,s.vulnerable);
+    s.bridgeScore=score;s.teamScore=[0,0];s.teamScore[declarerTeam]=score;s.teamScore[1-declarerTeam]=-score;
+    const winningTeam=score>=0?declarerTeam:1-declarerTeam;s.winner=s.players.find((p,i)=>i%2===winningTeam)?.id;s.phase='complete';
+    s.status='Bridge complete: '+s.contract.level+s.contract.suit+(s.contract.multiplier===2?' doubled':s.contract.multiplier===4?' redoubled':'')+'. '+s.contractTricks+' tricks by declarer side. Score '+score+'.';
+   }
    if(s.name==='29'&&s.tricks.length===8){
-    const contractTeam=s.players.findIndex(p=>p.id===s.contract.player)%2;
-    const made=s.teamPoints[contractTeam]>=s.contract.bid;
-    s.matchScore[contractTeam]+=made?1:-1;
-    s.phase='complete';s.winner=win.player;s.matchWinner=s.matchScore[contractTeam]>=6?contractTeam:s.matchScore[contractTeam]<=-6?1-contractTeam:null;
+    const contractTeam=s.players.findIndex(p=>p.id===s.contract.player)%2,made=s.teamPoints[contractTeam]>=s.contract.bid;
+    s.matchScore[contractTeam]+=made?1:-1;s.phase='complete';s.winner=win.player;
+    s.matchWinner=s.matchScore[contractTeam]>=6?contractTeam:s.matchScore[contractTeam]<=-6?1-contractTeam:null;
     s.status='29 complete. Team points: '+s.teamPoints.join(' – ')+'. Bid '+(made?'made':'failed')+'. Match score: '+s.matchScore.join(' – ');
    }
-  } else advance(s,s.name==='29'?-1:1);
+  }else advance(s,s.name==='29'?-1:1);
   return s;
  }
  if(s.name==='Jackaroo'&&action.type==='jackaroo_burn'){
@@ -627,7 +638,8 @@ export default function RoomGames({visible,onClose,onGameAvailable,roomId,creato
  const canJoin=seatExempt||seated;
  const inLobby=players.some(p=>p.id===userId);
  const current=state?.players?.[state?.turn];
- const isMyTurn=stage==='play'&&current?.id===userId;
+ const bridgeDummyTurn=stage==='play'&&selected?.name==='Playcards – Breez'&&current?.id===state?.dummy&&state?.declarer===userId;
+ const isMyTurn=stage==='play'&&(current?.id===userId||bridgeDummyTurn);
  const publish=(type,extra={})=>channelRef.current?.send({type:'broadcast',event:'game_event',payload:{type,roomId,userId,...extra}});
  const sendGameSnapshots=next=>{publish('game_state',{lobbyId:lobbyRef.current,snapshot:publicGameSnapshot(next)});next?.players?.forEach(pl=>publish('game_private_state',{lobbyId:lobbyRef.current,recipientId:pl.id,snapshot:publicGameSnapshot(next,pl.id)}));};
  const sync=next=>{stateRef.current=next;setState(next);if(next?.winner)setStage('result');sendGameSnapshots(next);};
@@ -661,13 +673,13 @@ export default function RoomGames({visible,onClose,onGameAvailable,roomId,creato
  const start=()=>{if(!(isAuthorisedStarter||hostRef.current)||players.length<min)return;hostRef.current=true;const s=initialGame(selected.name,players,mode);stateRef.current=s;setState(s);setMinimized(false);minimizedRef.current=false;setStage('play');publish('start_game',{lobbyId:lobbyRef.current,snapshot:publicGameSnapshot(s)});s.players.forEach(pl=>publish('game_private_state',{lobbyId:lobbyRef.current,recipientId:pl.id,snapshot:publicGameSnapshot(s,pl.id)}));};
  const act=action=>doAction(action);
  const roll=()=>act({type:'roll',die:rand(6)+1});
- const currentHand=state?.hands?.[userId]||[];
+ const currentHand=state?.hands?.[bridgeDummyTurn?state.dummy:userId]||[];
  const renderControls=()=>{
   if(!state)return null;
   if(state.name==='Snakes and Ladders')return <><Text style={{color:ink}}>Position: {state.positions[userId]} / 100</Text><Btn title="ROLL DICE" onPress={roll}/></>;
   if(state.name==='Ludo')return <><Text style={{color:ink}}>Roll a die, then choose one of your four tokens.</Text><Btn title="ROLL DICE" onPress={()=>act({type:'ludo_roll',die:rand(6)+1})}/>{state.tokens[userId]?.map((v,i)=><Tile key={i} onPress={()=>act({type:'ludo_move',token:i})} disabled={!state.pendingDie|| (v===-1&&state.pendingDie!==6)} active>{'Token '+(i+1)+' · '+(v<0?'Base':v===57?'Home':v)}</Tile>)}</>;
   if(state.name==='UNO')return <>{state.pendingOpeningWild&&<View style={{flexDirection:'row',flexWrap:'wrap'}}>{colors.map(color=><Btn key={'open'+color} title={'START '+color.toUpperCase()} onPress={()=>act({type:'uno_opening_color',color})}/>)}</View>}<Text style={{color:ink}}>Top: {String(state.discard.at(-1)?.rank)} · Colour: {state.activeColor}</Text><Text style={{color:GOLD}}>Match points: {state.matchPoints?.[userId]||0}/500</Text>{state.pendingChallenge?.target===userId&&<><Btn title="ACCEPT +4" onPress={()=>act({type:'uno_accept'})}/><Btn title="CHALLENGE +4" onPress={()=>act({type:'uno_challenge'})}/></>}{state.pendingUno&&state.turn===state.players.findIndex(p=>p.id===userId)&&<Btn title="CATCH MISSED UNO (+2)" onPress={()=>act({type:'uno_catch'})}/>}<Text style={{color:ink}}>Choose wild colour before playing:</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{colors.map(color=><Btn key={color} small title={color.toUpperCase()} onPress={()=>setUnoColor(color)}/>)}</View><Text style={{color:muted}}>Selected: {unoColor}</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{currentHand.map(c=><Tile key={c.id} onPress={()=>{act({type:'uno_play',cardId:c.id,wildColor:unoColor,uno:currentHand.length===2&&unoCallSelected});setUnoCallSelected(false);}} disabled={state.drawnCard&&state.drawnCard!==c.id}>{String(c.rank)} {c.color==='wild'?'★':c.color}</Tile>)}</View>{state.drawnCard&&<Btn title="PASS AFTER DRAW" onPress={()=>act({type:'uno_pass_drawn'})}/>}<Btn title="DRAW ONE" onPress={()=>act({type:'uno_draw'})} disabled={!!state.drawnCard}/>{currentHand.length===2&&<Btn title={unoCallSelected?'UNO CALL: ON':'UNO CALL: OFF'} onPress={()=>setUnoCallSelected(v=>!v)}/>}</>;
-  if(state.name==='29')return <><Text style={{color:ink}}>Phase: {state.phase} · Trump: {state.trumpHidden?'Hidden':state.trump||'—'} · Tricks: {state.tricks.length}/8</Text><Text style={{color:ink}}>Team points: {state.teamPoints.join(' – ')} · Match: {state.matchScore.join(' – ')}</Text>{state.phase==='bidding'&&<View style={{flexDirection:'row',flexWrap:'wrap'}}>{[16,17,18,19,20,21,22,23,24,25,26,27,28].filter(v=>v>state.highBid).map(v=><Btn key={v} title={'BID '+v} small onPress={()=>act({type:'29_bid',bid:v})}/>)}<Btn title="PASS" onPress={()=>act({type:'29_bid',pass:true})}/></View>}{state.phase==='deal2'&&state.contract?.player===userId&&<View style={{flexDirection:'row',flexWrap:'wrap'}}>{suits.map(s=><Btn key={s} title={'SELECT '+s} onPress={()=>act({type:'29_trump',suit:s})}/>)}</View>}{state.phase==='play'&&<><View style={{flexDirection:'row',flexWrap:'wrap'}}>{currentHand.map(c=><Tile key={c.id} onPress={()=>act({type:'trick_card',cardId:c.id})}>{cardLabel(c)}</Tile>)}</View>{state.trumpHidden&&state.currentTrick.length>0&&!currentHand.some(x=>x.suit===state.currentTrick[0].card.suit)&&<Btn title="REVEAL TRUMP" onPress={()=>act({type:'29_reveal_trump'})}/>}</>}</>;if(state.name==='Playcards – Breez')return <><Text style={{color:ink}}>Trump: {state.trump||'Not selected'} · Tricks: {state.tricks.length}</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{currentHand.map(c=><Tile key={c.id} onPress={()=>act({type:'trick_card',cardId:c.id})}>{cardLabel(c)}</Tile>)}</View><Btn title="PASS / BID" onPress={()=>act({type:'bridge_bid',pass:true})}/></>;
+  if(state.name==='29')return <><Text style={{color:ink}}>Phase: {state.phase} · Trump: {state.trumpHidden?'Hidden':state.trump||'—'} · Tricks: {state.tricks.length}/8</Text><Text style={{color:ink}}>Team points: {state.teamPoints.join(' – ')} · Match: {state.matchScore.join(' – ')}</Text>{state.phase==='bidding'&&<View style={{flexDirection:'row',flexWrap:'wrap'}}>{[16,17,18,19,20,21,22,23,24,25,26,27,28].filter(v=>v>state.highBid).map(v=><Btn key={v} title={'BID '+v} small onPress={()=>act({type:'29_bid',bid:v})}/>)}<Btn title="PASS" onPress={()=>act({type:'29_bid',pass:true})}/></View>}{state.phase==='deal2'&&state.contract?.player===userId&&<View style={{flexDirection:'row',flexWrap:'wrap'}}>{suits.map(s=><Btn key={s} title={'SELECT '+s} onPress={()=>act({type:'29_trump',suit:s})}/>)}</View>}{state.phase==='play'&&<><View style={{flexDirection:'row',flexWrap:'wrap'}}>{currentHand.map(c=><Tile key={c.id} onPress={()=>act({type:'trick_card',cardId:c.id})}>{cardLabel(c)}</Tile>)}</View>{state.trumpHidden&&state.currentTrick.length>0&&!currentHand.some(x=>x.suit===state.currentTrick[0].card.suit)&&<Btn title="REVEAL TRUMP" onPress={()=>act({type:'29_reveal_trump'})}/>}</>}</>;if(state.name==='Playcards – Breez')return <><Text style={{color:ink}}>Board {state.boardNumber} · {state.phase==='auction'?'Auction':state.contract?.level+state.contract?.suit+' · '+state.contract?.multiplier+'×'} · Tricks {state.tricks.length}/13</Text>{state.phase==='auction'&&<><Text style={{color:muted}}>Highest bid: {state.lastBid?state.lastBid.level+state.lastBid.suit:'None'} · Passes: {state.passCount}</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{Array.from({length:7},(_,i)=>i+1).flatMap(level=>bridgeStrains.map(strain=><Btn key={level+strain} small title={level+strain} onPress={()=>act({type:'bridge_bid',level,suit:strain})}/>))}</View><View style={{flexDirection:'row'}}><Btn title="PASS" onPress={()=>act({type:'bridge_bid',pass:true})}/>{state.lastBid&&<Btn title="DOUBLE" onPress={()=>act({type:'bridge_bid',double:true})}/ >}{state.multiplier===2&&<Btn title="REDOUBLE" onPress={()=>act({type:'bridge_bid',redouble:true})}/>}</View></>}{state.phase==='play'&&<><Text style={{color:ink}}>Contract: {state.contract.level}{state.contract.suit} · Declarer: {state.players.find(p=>p.id===state.declarer)?.name} · Dummy: {state.dummyRevealed?state.players.find(p=>p.id===state.dummy)?.name:'Hidden'}</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{currentHand.map(card=><Tile key={card.id} onPress={()=>act({type:'trick_card',cardId:card.id})}>{cardLabel(card)}</Tile>)}</View>{state.dummyRevealed&&<Text style={{color:muted}}>Dummy's hand is exposed.</Text>}</>}</>;
   if(state.name==='Jackaroo'){
   const chosen=currentHand.find(x=>x.id===jackarooCardId),seat=state.players.findIndex(p=>p.id===userId),partner=state.players[(seat+2)%4],owners=[userId,...(state.marbles[userId]?.every(v=>v>=52)?[partner?.id].filter(Boolean):[])],rows=owners.flatMap(owner=>state.marbles[owner].map((v,i)=>({owner,marble:i,progress:v}))),track=rows.filter(m=>m.progress>=0&&m.progress<52);
   const play=(owner,marble,steps,extra={})=>act({type:'jackaroo_play',cardId:chosen.id,ownerId:owner,marble,steps,...extra});
