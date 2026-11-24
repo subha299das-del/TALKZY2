@@ -382,8 +382,8 @@ function applyMove(src,actor,action){
   const ownNew=newly.filter(x=>x.color===ownColor),oppNew=newly.filter(x=>x.color===oppColor),queenShot=newly.some(x=>x.color==='queen');
   const beforeOwn=Number(oldBoard.pocketed?.[ownColor]||0),strikerFoul=!!board.strikerPocketed||!!board.offBoard;
   s.shot++;s.boardShots++;
-  const putQueenBack=()=>{const q=board.coins.find(x=>x.color==='queen');if(q){q.pocketed=false;q.x=500;q.y=500;q.vx=0;q.vy=0;}board.queenCoveredBy=null;};
-  const putCoinBack=coin=>{if(!coin)return false;const target=board.coins.find(x=>x.id===coin.id);if(!target)return false;target.pocketed=false;target.x=500;target.y=500;target.vx=0;target.vy=0;board.pocketed[ownColor]=Math.max(0,(board.pocketed[ownColor]||0)-1);return true;};
+  const putQueenBack=()=>{const q=board.coins.find(x=>x.color==='queen');if(q){q.pocketed=false;q.x=500;q.y=500;q.vx=0;q.vy=0;}board.queenCoveredBy=null;s.queenCoveredBy=null;};
+  const putCoinBack=coin=>{if(!coin)return false;const target=board.coins.find(x=>x.id===coin.id);if(!target)return false;target.pocketed=false;target.x=500;target.y=500;target.vx=0;target.vy=0;return true;};
   const returnOneOwnCoin=()=>{
    const fresh=ownNew.find(x=>board.coins.find(q=>q.id===x.id)?.pocketed);
    if(fresh&&putCoinBack(fresh))return true;
@@ -398,15 +398,6 @@ function applyMove(src,actor,action){
    s.breakDone=true;s.status='Break not made after three attempts. Break passes to the opponent.';advance(s);return s;
   }
   s.breakDone=true;s.breakAttempts=0;
-  let invalidQueen=false,missedCover=false;
-  if(queenShot&&beforeOwn===0&&ownNew.length===0){putQueenBack();invalidQueen=true;s.status='Queen cannot be pocketed before your first coin. Turn passes.';}
-  else if(queenShot){
-   if((beforeOwn>0&&ownNew.length>0)||(beforeOwn===0&&ownNew.length>=2)){s.queenCoveredBy=team;s.queenPending=null;board.queenCoveredBy=team;}
-   else{s.queenPending={team,playerId:id};}
-  }else if(s.queenPending?.team===team){
-   if(ownNew.length>0){s.queenCoveredBy=team;s.queenPending=null;board.queenCoveredBy=team;}
-   else{putQueenBack();s.queenPending=null;missedCover=true;}
-  }
   let dueCount=Number(s.due?.[team]||0);
   if(ownNew.length>0&&dueCount>0){if(returnOneOwnCoin())dueCount--;}
   if(strikerFoul||oppNew.length>0){
@@ -416,8 +407,17 @@ function applyMove(src,actor,action){
   }
   s.due[team]=Math.max(0,dueCount);
   board.pocketed={white:0,black:0};board.coins.forEach(x=>{if(x.pocketed&&(x.color==='white'||x.color==='black'))board.pocketed[x.color]++;});
+  const ownNewStill=ownNew.filter(x=>board.coins.find(q=>q.id===x.id)?.pocketed).length;
+  let invalidQueen=false,missedCover=false;
+  if(queenShot&&beforeOwn===0&&ownNew.length===0){putQueenBack();invalidQueen=true;s.status='Queen cannot be pocketed before your first coin. Turn passes.';}
+  else if(queenShot){
+   if((beforeOwn>0&&ownNewStill>0)||(beforeOwn===0&&ownNewStill>=2)){s.queenCoveredBy=team;s.queenPending=null;board.queenCoveredBy=team;}
+   else{s.queenPending={team,playerId:id};}
+  }else if(s.queenPending?.team===team){
+   if(ownNewStill>0){s.queenCoveredBy=team;s.queenPending=null;board.queenCoveredBy=team;}
+   else{putQueenBack();s.queenPending=null;missedCover=true;}
+  }
   s.carromBoard=board;
-  if(!invalidQueen&&!missedCover&&s.queenPending&&s.queenPending.team===team&&ownNew.length===0&&queenShot===false&&strikerFoul===false&&oppNew.length===0){s.status='Queen pocketed. Cover it with your own coin on the immediate next shot.';}
   const ownCount=board.pocketed[ownColor]||0,oppCount=board.pocketed[oppColor]||0;
   let boardWinner=null,boardPoints=0;
   if(s.queenCoveredBy===team&&oppCount>=9){
@@ -437,10 +437,9 @@ function applyMove(src,actor,action){
    return s;
   }
   if(invalidQueen||missedCover){advance(s);return s;}
-  const ownMade=ownNew.length>0;
   if(strikerFoul&&oppNew.length>0){s.status='Striker due and opponent coin pocketed. Turn passes.';advance(s);return s;}
-  if(oppNew.length>0&&!ownMade){s.status='Opponent coin pocketed. It stays pocketed; due applied and turn passes.';advance(s);return s;}
-  if(ownMade||queenShot){s.status=queenShot&&!s.queenCoveredBy?'Queen pocketed. Cover it on the next stroke.':'Own coin pocketed. Shoot again.';return s;}
+  if(oppNew.length>0&&!ownNew.length){s.status='Opponent coin pocketed. It stays pocketed; due applied and turn passes.';advance(s);return s;}
+  if(ownNew.length>0||queenShot){s.status=queenShot&&!s.queenCoveredBy?'Queen pocketed. Cover it on the immediate next stroke.':'Own coin pocketed. Shoot again.';return s;}
   if(strikerFoul){s.status='Striker pocketed. Due applied; turn passes.';advance(s);return s;}
   s.status='No own coin pocketed. Turn passes.';advance(s);return s;
  }
