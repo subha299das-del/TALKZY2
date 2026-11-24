@@ -161,8 +161,9 @@ function applyMove(src,actor,action){
   s.status=next>100?'Need exact roll to reach 100.':s.ladders[next]?'Climbed a ladder!':s.snakes[next]?'Slid down a snake.':'Moved '+d+' spaces.';
   return finish();
  }
+ if(s.name==='Ludo'&&action.type==='ludo_roll'){s.pendingDie=action.die;const anyOut=(s.tokens[id]||[]).some(v=>v>=0);if(action.die!==6&&!anyOut){s.status='No 6 — turn passes.';delete s.pendingDie;return finish();}s.status='Rolled '+action.die+'. Choose a token.';return s;}
  if(s.name==='Ludo'&&action.type==='ludo_move'){
-  const d=action.die,tokens=s.tokens[id].slice(),i=action.token,old=tokens[i];
+  const d=s.pendingDie||action.die,tokens=s.tokens[id].slice(),i=action.token,old=tokens[i];if(!d)return s;
   if(old===-1&&d!==6){s.status='A 6 is required to leave base.';return finish();}
   const next=old===-1?0:old+d;if(next>57){s.status='Exact count needed to enter home.';return finish();}
   tokens[i]=next;s.tokens[id]=tokens;
@@ -170,7 +171,7 @@ function applyMove(src,actor,action){
   if(tokens.every(v=>v===57))s.winner=id;
   s.consecutiveSix=d===6?(s.consecutiveSix||0)+1:0;
   if(s.consecutiveSix>=3){s.consecutiveSix=0;s.status='Three consecutive sixes: turn forfeited.';return finish();}
-  if(d!==6)advance(s);else s.status='Rolled a 6 — roll again.';
+  delete s.pendingDie;if(d!==6)advance(s);else s.status='Rolled a 6 — roll again.';
   return s;
  }
  if(s.name==='Carrom'&&action.type==='carrom_shot'){
@@ -213,6 +214,7 @@ function applyMove(src,actor,action){
  }
  if(s.name==='UNO'&&action.type==='uno_draw'){const c=s.deck.pop();if(c)s.hands[id].push(c);s.status='Drew one card.';return s;}
  if(s.name==='UNO'&&action.type==='uno_call'){s.unoCalled[id]=true;s.status='UNO called.';return s;}
+ if(s.name==='29'&&action.type==='29_bid'){s.bids.push({player:id,bid:action.bid||0,pass:!!action.pass});if(!action.pass&&action.bid>=16){s.contract={player:id,bid:action.bid};s.trump=action.suit||'♠';s.trumpHidden=true;s.status=p.name+' bid '+action.bid+'. Trump is hidden.';}if(s.bids.slice(-3).every(x=>x.pass)&&s.contract){s.status='Bidding complete. Trump will be revealed when a player cannot follow suit.';}return finish();}
  if(s.name==='Playcards – Breez'&&action.type==='bridge_bid'){
   s.bids.push({player:id,bid:action.bid,level:action.level,suit:action.suit});
   if(action.pass){if(s.bids.filter(x=>x.pass).length>=3){s.contract=s.bids.filter(x=>!x.pass).slice(-1)[0]||null;s.status='Bidding complete. Contract set.';}else advance(s);}
@@ -253,8 +255,8 @@ function applyMove(src,actor,action){
 
 export default function RoomGames({visible,onClose,roomId,creatorName='Player',userId,supabase,isAuthorisedStarter=false,hasRoomSeat=false}){
  const [stage,setStage]=useState('select'),[selected,setSelected]=useState(null),[mode,setMode]=useState(2),[players,setPlayers]=useState([]),[seconds,setSeconds]=useState(60),[state,setState]=useState(null),[bet,setBet]=useState(0),[status,setStatus]=useState('');
- const channelRef=useRef(null),hostRef=useRef(false),lobbyRef=useRef(null),stateRef=useRef(null),stageRef=useRef(stage),timerRef=useRef(null);
- stateRef.current=state;stageRef.current=stage;
+ const channelRef=useRef(null),hostRef=useRef(false),lobbyRef=useRef(null),stateRef=useRef(null),stageRef=useRef(stage),timerRef=useRef(null),selectedRef=useRef(selected),playersRef=useRef(players),secondsRef=useRef(seconds),modeRef=useRef(mode);
+ stateRef.current=state;stageRef.current=stage;selectedRef.current=selected;playersRef.current=players;secondsRef.current=seconds;modeRef.current=mode;
  const max=selected?.name==='Carrom'?mode:selected?.max;
  const min=selected?.name==='Carrom'?mode:selected?.min;
  const seated=hasRoomSeat;
@@ -273,10 +275,10 @@ export default function RoomGames({visible,onClose,roomId,creatorName='Player',u
   const ch=supabase.channel('room-games-'+roomId,{config:{private:true}});channelRef.current=ch;
   ch.on('broadcast',{event:'game_event'},({payload:p})=>{
    if(!p||p.roomId!==roomId||p.userId===userId)return;
-   if(p.type==='request_state'&&hostRef.current){publish('lobby_state',{lobbyId:lobbyRef.current,players,state:stateRef.current,stage:stageRef.current,selected:selected?.name,seconds});}
+   if(p.type==='request_state'&&hostRef.current){publish('lobby_state',{lobbyId:lobbyRef.current,players:playersRef.current,state:stateRef.current,stage:stageRef.current,selected:selectedRef.current?.name,seconds:secondsRef.current,mode:modeRef.current});}
    if(p.type==='create_lobby'&&!lobbyRef.current){lobbyRef.current=p.lobbyId;hostRef.current=false;setSelected(GAMES.find(g=>g.name===p.gameName));setPlayers(p.players);setSeconds(60);setStage('lobby');setStatus('Join this game from the room.');}
-   if(p.type==='join_game'&&hostRef.current&&p.lobbyId===lobbyRef.current){setPlayers(old=>{if(old.some(x=>x.id===p.player.id)||old.length>=max)return old;const next=[...old,p.player];publish('lobby_state',{lobbyId:lobbyRef.current,players:next,stage:'lobby',selected:selected?.name,seconds});return next;});}
-   if(p.type==='lobby_state'&&p.lobbyId===lobbyRef.current){setPlayers(p.players||[]);if(p.stage==='play'&&p.state){setState(p.state);setStage('play');}else setStage('lobby');}
+   if(p.type==='join_game'&&hostRef.current&&p.lobbyId===lobbyRef.current){setPlayers(old=>{const cap=selectedRef.current?.name==='Carrom'?modeRef.current:selectedRef.current?.max;if(old.some(x=>x.id===p.player.id)||old.length>=cap)return old;const next=[...old,p.player];playersRef.current=next;publish('lobby_state',{lobbyId:lobbyRef.current,players:next,stage:'lobby',selected:selectedRef.current?.name,seconds:secondsRef.current,mode:modeRef.current});return next;});}
+   if(p.type==='lobby_state'&&p.lobbyId===lobbyRef.current){setPlayers(p.players||[]);playersRef.current=p.players||[];if(p.mode)setMode(p.mode);if(p.stage==='play'&&p.state){setState(p.state);setStage('play');}else setStage('lobby');}
    if(p.type==='start_game'&&p.lobbyId===lobbyRef.current){setState(p.snapshot);setStage('play');}
    if(p.type==='game_action'&&hostRef.current&&p.lobbyId===lobbyRef.current){const next=applyMove(stateRef.current,p.userId,p.action);sync(next);}
    if(p.type==='game_state'&&p.lobbyId===lobbyRef.current&&!hostRef.current){setState(p.snapshot);if(p.snapshot?.winner)setStage('result');}
@@ -298,9 +300,9 @@ export default function RoomGames({visible,onClose,roomId,creatorName='Player',u
  const renderControls=()=>{
   if(!state)return null;
   if(state.name==='Snakes and Ladders')return <><Text style={{color:ink}}>Position: {state.positions[userId]} / 100</Text><Btn title="ROLL DICE" onPress={roll}/></>;
-  if(state.name==='Ludo')return <><Text style={{color:ink}}>Roll a die, then choose one of your four tokens.</Text><Btn title="ROLL DICE" onPress={()=>act({type:'ludo_roll',die:rand(6)+1})}/>{state.tokens[userId]?.map((v,i)=><Tile key={i} onPress={()=>act({type:'ludo_move',token:i,die:state.pendingDie})} disabled={!state.pendingDie|| (v===-1&&state.pendingDie!==6)} active>{'Token '+(i+1)+' · '+(v<0?'Base':v===57?'Home':v)}</Tile>)}</>;
+  if(state.name==='Ludo')return <><Text style={{color:ink}}>Roll a die, then choose one of your four tokens.</Text><Btn title="ROLL DICE" onPress={()=>act({type:'ludo_roll',die:rand(6)+1})}/>{state.tokens[userId]?.map((v,i)=><Tile key={i} onPress={()=>act({type:'ludo_move',token:i})} disabled={!state.pendingDie|| (v===-1&&state.pendingDie!==6)} active>{'Token '+(i+1)+' · '+(v<0?'Base':v===57?'Home':v)}</Tile>)}</>;
   if(state.name==='UNO')return <><Text style={{color:ink}}>Top: {String(state.discard.at(-1)?.rank)} · Colour: {state.activeColor}</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{currentHand.map(c=><Tile key={c.id} onPress={()=>act({type:'uno_play',cardId:c.id,wildColor:'red',uno:currentHand.length===2})}>{String(c.rank)} {c.color==='wild'?'★':c.color}</Tile>)}</View><Btn title="DRAW ONE" onPress={()=>act({type:'uno_draw'})}/><Btn title="CALL UNO" onPress={()=>act({type:'uno_call'})}/></>;
-  if(state.name==='Playcards – Breez'||state.name==='29')return <><Text style={{color:ink}}>Trump: {state.trump||'Not selected'} · Tricks: {state.tricks.length}</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{currentHand.map(c=><Tile key={c.id} onPress={()=>act({type:'trick_card',cardId:c.id})}>{cardLabel(c)}</Tile>)}</View><Btn title="PASS / BID" onPress={()=>act(state.name==='29'?{type:'29_bid',bid:16}:{type:'bridge_bid',pass:true})}/></>;
+  if(state.name==='Playcards – Breez'||state.name==='29')return <><Text style={{color:ink}}>Trump: {state.trump||'Not selected'} · Tricks: {state.tricks.length}</Text><View style={{flexDirection:'row',flexWrap:'wrap'}}>{currentHand.map(c=><Tile key={c.id} onPress={()=>act({type:'trick_card',cardId:c.id})}>{cardLabel(c)}</Tile>)}</View><Btn title="PASS / BID" onPress={()=>act(state.name==='29'?{type:'29_bid',bid:16,suit:'♠'}:{type:'bridge_bid',pass:true})}/></>;
   if(state.name==='Jackaroo')return <><Text style={{color:ink}}>Select a card, then a marble. A/K bring a marble out; 7 splits; J swaps.</Text>{currentHand.map(c=><Tile key={c.id} onPress={()=>act({type:'jackaroo_play',cardId:c.id,marble:0})}>{c.rank}</Tile>)}</>;
   if(state.name==='Carrom')return <><Text style={{color:ink}}>Coins left — White {state.coins.white}, Black {state.coins.black}, Queen {state.coins.queen?'on board':'pocketed'}</Text><Btn title="POCKET OWN COIN" onPress={()=>act({type:'carrom_shot',pocket:true,own:true,colour:state.colours[userId]||'white'})}/><Btn title="MISS SHOT" onPress={()=>act({type:'carrom_shot'})}/><Btn title="FOUL" onPress={()=>act({type:'carrom_shot',foul:true})}/></>;
   if(state.name==='Monster Crush')return <><Text style={{color:ink}}>Ammo: {state.ammo} · Shots: {state.shots} · Monsters left: {state.board.flat().filter(x=>x.alive&&x.type==='monster').length}</Text><View style={{alignSelf:'center'}}>{state.board.map((row,ri)=><View key={ri} style={{flexDirection:'row'}}>{row.map(cell=><Tile key={cell.id} disabled={!cell.alive||state.ammo===0} onPress={()=>act({type:'monster_shot',cell:cell.id})}>{cell.alive?(cell.type==='monster'?'👾':cell.type==='barrel'?'💣':'⚙️'):'·'}</Tile>)}</View>)}</View></>;
