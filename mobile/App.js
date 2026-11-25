@@ -36,6 +36,7 @@ import RoomGames from './RoomGames';
 import ThunderKingPanel from './ThunderKingPanel';
 import LuckyElephantPanel from './LuckyElephantPanel';
 import WildKingdomPanel from './WildKingdomPanel';
+import Royal77Panel from './Royal77Panel';
 
 WebBrowser.maybeCompleteAuthSession();
 const MIC_ON_ICON = require('./assets/mic_on.png');
@@ -1561,6 +1562,7 @@ const [showGreedyPanel, setShowGreedyPanel] = useState(false);
 const [showThunderKingPanel, setShowThunderKingPanel] = useState(false);
 const [showLuckyElephantPanel, setShowLuckyElephantPanel] = useState(false);
 const [showWildKingdomPanel, setShowWildKingdomPanel] = useState(false);
+const [showRoyal77Panel, setShowRoyal77Panel] = useState(false);
 const [greedySelectedFruit, setGreedySelectedFruit] = useState([]);
 const [greedyBetAmount, setGreedyBetAmount] = useState(10);
 const [greedyView, setGreedyView] = useState('game');
@@ -1662,6 +1664,7 @@ const [isRoomTourist, setIsRoomTourist] = useState(false);
     setShowThunderKingPanel(false);
     setShowLuckyElephantPanel(false);
     setShowWildKingdomPanel(false);
+    setShowRoyal77Panel(false);
     setShowRocketPanel(false);
     setShowMicChatPopup(false);
     setIsRoomMinimized(false);
@@ -4978,6 +4981,7 @@ function renderRoomInterior() {
       <ThunderKingPanel visible={showThunderKingPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowThunderKingPanel(false)} />
       <LuckyElephantPanel visible={showLuckyElephantPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowLuckyElephantPanel(false)} />
       <WildKingdomPanel visible={showWildKingdomPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowWildKingdomPanel(false)} />
+      <Royal77Panel visible={showRoyal77Panel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowRoyal77Panel(false)} />
 
       {showGreedyPanel && screen === 'roomInterior' && selectedRoom && (
         <View style={{ position:'absolute', left:8, right:8, bottom:82, maxHeight:'82%', backgroundColor:'#10251D', borderRadius:18, padding:12, borderWidth:1.5, borderColor:'#D7B45D', zIndex:44, elevation:26 }}>
@@ -5409,6 +5413,21 @@ function renderRoomInterior() {
   >
     <Text style={{ position: 'absolute', top: 0, color: '#F5D27A', fontSize: 13 }}>♛</Text>
     <Text style={{ fontSize: 25, marginTop: 7 }}>🦁🐯</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    accessibilityRole="button"
+    accessibilityLabel="Open Royal 77"
+    onPress={() => {
+      setShowRoomGiftPanel(false); setShowRoomTools(false); setShowGreedyPanel(false);
+      setShowThunderKingPanel(false); setShowLuckyElephantPanel(false); setShowWildKingdomPanel(false);
+      setShowRoomGamePanel(false); setShowRocketPanel(false); setShowHotEventsPopup(false);
+      setShowRoyal77Panel(true);
+    }}
+    style={{ width: 48, height: 48, borderRadius: 16, borderWidth: 1.5, borderColor: '#E8C66B', backgroundColor: '#35105C', alignItems: 'center', justifyContent: 'center', shadowColor: '#F3C64E', shadowOpacity: 0.65, shadowRadius: 10, elevation: 10 }}
+  >
+    <Text style={{ position: 'absolute', top: 0, color: '#F7D56F', fontSize: 12 }}>👑</Text>
+    <Text style={{ color: '#FF536A', fontSize: 21, fontWeight: '900', marginTop: 7 }}>77</Text>
   </TouchableOpacity>
 
   <TouchableOpacity
