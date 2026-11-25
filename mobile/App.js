@@ -5164,6 +5164,9 @@ function renderRoomInterior() {
           <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.10)', justifyContent: 'flex-end', paddingHorizontal: 0 }}>
             <View style={{ borderTopLeftRadius: 32, borderTopRightRadius: 32, overflow: 'hidden', borderWidth: 2, borderBottomWidth: 0, borderColor: '#FFE2A0', backgroundColor: '#F58C67', height: '59%', maxHeight: '66%' }}>
               <View style={{ paddingHorizontal: 18, paddingTop: 12, paddingBottom: 12, backgroundColor: '#F6A16F' }}>
+                <TouchableOpacity onPress={() => Alert.alert('Lucky Bag', 'Choose Room or World, select the gold coins and quantity, then send. The selected amount is deducted from your wallet. Each user, including the creator, can open the shared bag once. Unclaimed coins are refunded when the 3-minute bag expires.')} style={{ position: 'absolute', right: 52, top: 14, zIndex: 2, width: 24, height: 24, borderRadius: 12, backgroundColor: '#FFE7B5', borderWidth: 1, borderColor: '#9A421D', alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ color: '#8A3517', fontSize: 14, fontWeight: '900' }}>?</Text>
+                </TouchableOpacity>
                 <TouchableOpacity onPress={() => setShowLuckyBagPopup(false)} style={{ position: 'absolute', right: 15, top: 14, zIndex: 2, width: 30, height: 30, borderRadius: 15, backgroundColor: '#44266B', alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ color: '#E9D8FF', fontSize: 17, fontWeight: '800' }}>×</Text>
                 </TouchableOpacity>
