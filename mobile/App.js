@@ -1655,6 +1655,7 @@ const [isRoomTourist, setIsRoomTourist] = useState(false);
     setMicGame(null);
     setShowRoomGamePanel(false);
     setShowGreedyPanel(false);
+    setShowThunderKingPanel(false);
     setShowRocketPanel(false);
     setShowMicChatPopup(false);
     setIsRoomMinimized(false);
