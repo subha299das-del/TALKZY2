@@ -3014,7 +3014,7 @@ password: roomType === 'locked' ? roomPassword : null,
     if (gameToStartAfterCreation) {
       const refreshedRooms = await api('/api/rooms/mine');
       if (!isCurrentUserRequest()) return;
-      const createdRoom = (refreshedRooms.rooms || []).find(room => room.owner_id === requestUserId) || refreshedRooms.rooms?.[0];
+      const createdRoom = (refreshedRooms.rooms || []).find(room => room.owner_id === requestUserId);
       if (createdRoom) {
         setRoomName('');
         setRoomDescription('');
@@ -7552,6 +7552,10 @@ function renderEvents() {
   // Enter the creator's own room for a game and automatically take the first available mic.
   async function enterOwnRoomForGame(room, gameName) {
     if (!room?.id || !session?.user?.id) return;
+    if (room.owner_id !== session.user.id) {
+      Alert.alert('Your room is unavailable', 'You can start a game from your own room only.');
+      return;
+    }
     setShowRoomGamePanel(false);
     const requestUserId = session.user.id;
     const isCurrentUserRequest = () => activeAuthUserIdRef.current === requestUserId;
@@ -7625,7 +7629,7 @@ function renderEvents() {
     if (!roomCreationEligibilityLoaded) {
       return Alert.alert('Please wait', 'Your room information is still loading. Try again in a moment.');
     }
-    const ownRoom = myRooms.find(room => room?.owner_id === session?.user?.id) || myRooms[0];
+    const ownRoom = myRooms.find(room => room?.owner_id === session?.user?.id);
     if (!ownRoom) {
       Alert.alert(
         'Create a room first',
