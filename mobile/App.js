@@ -732,6 +732,7 @@ const [memberSearch, setMemberSearch] = useState('');
 
   const [showCreateRoom, setShowCreateRoom] = useState(false);
   const [pendingGameEntryName, setPendingGameEntryName] = useState(null);
+  const [gameToOpenInRoom, setGameToOpenInRoom] = useState(null);
   const [roomDpUri, setRoomDpUri] = useState(null);
 const [roomDpUploading, setRoomDpUploading] = useState(false);
   const [loadingRooms, setLoadingRooms] = useState(false);
@@ -4959,7 +4960,7 @@ function renderRoomInterior() {
           )}
         </View>
       )}
-      <RoomGames visible={showRoomGamePanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowRoomGamePanel(false)} onGameAvailable={() => setShowRoomGamePanel(true)} roomId={selectedRoom?.id} creatorName={profile?.display_name || displayName || session?.user?.user_metadata?.full_name || 'Player'} userId={session?.user?.id} supabase={supabase} isAuthorisedStarter={selectedRoom?.owner_id===session?.user?.id || roomPresence.some(person=>person.user_id===session?.user?.id && person.presence_role==='admin')} hasRoomSeat={micSeats.some(seat=>seat.user_id===session?.user?.id)} roomMembers={roomPresence} selfProfile={profile} />
+      <RoomGames visible={showRoomGamePanel && screen === 'roomInterior' && !!selectedRoom} initialGameName={gameToOpenInRoom} onInitialGameOpened={() => setGameToOpenInRoom(null)} onClose={() => setShowRoomGamePanel(false)} onGameAvailable={() => setShowRoomGamePanel(true)} roomId={selectedRoom?.id} creatorName={profile?.display_name || displayName || session?.user?.user_metadata?.full_name || 'Player'} userId={session?.user?.id} supabase={supabase} isAuthorisedStarter={selectedRoom?.owner_id===session?.user?.id || roomPresence.some(person=>person.user_id===session?.user?.id && person.presence_role==='admin')} hasRoomSeat={micSeats.some(seat=>seat.user_id===session?.user?.id)} roomMembers={roomPresence} selfProfile={profile} />
 
       {showGreedyPanel && screen === 'roomInterior' && selectedRoom && (
         <View style={{
@@ -7551,6 +7552,7 @@ function renderEvents() {
   // Enter the creator's own room for a game and automatically take the first available mic.
   async function enterOwnRoomForGame(room, gameName) {
     if (!room?.id || !session?.user?.id) return;
+    setShowRoomGamePanel(false);
     const requestUserId = session.user.id;
     const isCurrentUserRequest = () => activeAuthUserIdRef.current === requestUserId;
     try {
@@ -7606,6 +7608,8 @@ function renderEvents() {
         setIsOnMic(true);
         setMyMicSeat(nextSeat);
         setIsMicMuted(false);
+        setGameToOpenInRoom(gameName);
+        setShowRoomGamePanel(true);
       } else {
         Alert.alert('No microphone available', 'You have entered your room, but all microphones are occupied or closed.');
       }
