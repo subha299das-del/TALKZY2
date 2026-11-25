@@ -122,12 +122,13 @@ export default function LuckyElephantPanel({ visible, onClose }) {
 
               <View style={styles.board}>
                 {displayedFoods.slice(0, 3).map(renderFood)}
+                {renderFood(displayedFoods[3])}
                 <View style={[styles.centerOrb, { width: orbSize, height: orbSize }]}>
                   <ElephantMark size={Math.round(orbSize * 0.66)} />
                   <Text style={styles.timerLabel}>Bet Time</Text>
                   <Text style={styles.timerValue}>30s</Text>
                 </View>
-                {displayedFoods.slice(3, 5).map(renderFood)}
+                {renderFood(displayedFoods[4])}
                 {displayedFoods.slice(5, 8).map(renderFood)}
               </View>
 
