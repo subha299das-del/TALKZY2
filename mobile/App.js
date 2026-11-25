@@ -731,6 +731,7 @@ const [memberSearch, setMemberSearch] = useState('');
   const [showCreateRoomPasswordPopup, setShowCreateRoomPasswordPopup] = useState(false);
 
   const [showCreateRoom, setShowCreateRoom] = useState(false);
+  const [pendingGameEntryName, setPendingGameEntryName] = useState(null);
   const [roomDpUri, setRoomDpUri] = useState(null);
 const [roomDpUploading, setRoomDpUploading] = useState(false);
   const [loadingRooms, setLoadingRooms] = useState(false);
@@ -2999,6 +3000,8 @@ password: roomType === 'locked' ? roomPassword : null,
         roomDpUrl
       })
     });
+    const gameToStartAfterCreation = pendingGameEntryName;
+    if (gameToStartAfterCreation) setPendingGameEntryName(null);
     if (!isCurrentUserRequest()) return;
 
     // Refresh room lists
@@ -3006,6 +3009,21 @@ password: roomType === 'locked' ? roomPassword : null,
     if (!isCurrentUserRequest()) return;
     await loadMyRooms();
     if (!isCurrentUserRequest()) return;
+
+    if (gameToStartAfterCreation) {
+      const refreshedRooms = await api('/api/rooms/mine');
+      if (!isCurrentUserRequest()) return;
+      const createdRoom = (refreshedRooms.rooms || []).find(room => room.owner_id === requestUserId) || refreshedRooms.rooms?.[0];
+      if (createdRoom) {
+        setRoomName('');
+        setRoomDescription('');
+        setRoomPassword('');
+        setRoomType('public');
+        setRoomDpUri(null);
+        await enterOwnRoomForGame(createdRoom, gameToStartAfterCreation);
+        return;
+      }
+    }
 
     // Clear creation form
     setRoomName('');
@@ -7530,6 +7548,94 @@ function renderEvents() {
     );
           }
     
+  // Enter the creator's own room for a game and automatically take the first available mic.
+  async function enterOwnRoomForGame(room, gameName) {
+    if (!room?.id || !session?.user?.id) return;
+    const requestUserId = session.user.id;
+    const isCurrentUserRequest = () => activeAuthUserIdRef.current === requestUserId;
+    try {
+      const pendingLeave = roomLeaveCleanupRef.current[room.id];
+      if (pendingLeave) await pendingLeave;
+      if (!isCurrentUserRequest()) return;
+      try { await api(`/api/rooms/${room.id}/mic-seats`, { method: 'DELETE' }); } catch (e) {
+        console.log('Previous mic seat cleanup:', e.message);
+      }
+      if (!isCurrentUserRequest()) return;
+      await api(`/api/rooms/${room.id}/presence/ping`, { method: 'POST' });
+      if (!isCurrentUserRequest()) return;
+
+      roomChatActiveRoomIdRef.current = room.id;
+      ++roomChatLoadVersionRef.current;
+      ++micSeatActionVersionRef.current;
+      setShowRoomChatComposer(false);
+      setRoomChatText('');
+      setSelectedRoom(room);
+      setIsRoomTourist(false);
+      setIsRoomMinimized(false);
+      setMicSeats([]);
+      setIsOnMic(false);
+      setMyMicSeat(null);
+      setIsMicMuted(false);
+      setRoomChatMessages(createRoomEntryNotices(room));
+      setScreen('roomInterior');
+
+      const seatState = await api(`/api/rooms/${room.id}/mic-seats`);
+      if (!isCurrentUserRequest() || roomChatActiveRoomIdRef.current !== room.id) return;
+      const seats = Array.isArray(seatState.seats) ? seatState.seats : [];
+      const controls = Array.isArray(seatState.micControls) ? seatState.micControls : [];
+      const micCountValue = Number(seatState.micCount || 8);
+      const occupied = new Set(seats.map(item => Number(item.seat_number)));
+      const closed = new Set(controls.filter(item => item.seat_closed).map(item => Number(item.seat_number)));
+      const nextSeat = Array.from({ length: micCountValue }, (_, index) => index + 1)
+        .find(number => !occupied.has(number) && !closed.has(number));
+      setMicCount(micCountValue);
+      setMicLayout(seatState.micLayout || 'eight');
+      setMicSeats(seats);
+      setMicControls(controls);
+      if (nextSeat) {
+        await api(`/api/rooms/${room.id}/mic-seats/${nextSeat}`, { method: 'POST' });
+        if (!isCurrentUserRequest() || roomChatActiveRoomIdRef.current !== room.id) return;
+        setMicSeats(current => [...current.filter(item => item.user_id !== requestUserId), {
+          room_id: room.id,
+          seat_number: nextSeat,
+          user_id: requestUserId,
+          display_name: profile?.display_name || displayName || 'You',
+          avatar_url: profile?.avatar_url || avatarUri || null,
+          is_muted: false
+        }]);
+        setIsOnMic(true);
+        setMyMicSeat(nextSeat);
+        setIsMicMuted(false);
+      } else {
+        Alert.alert('No microphone available', 'You have entered your room, but all microphones are occupied or closed.');
+      }
+      loadRoomMicSeats(room.id);
+      loadRoomMessages(room.id);
+      loadRoomPresence(room.id);
+    } catch (error) {
+      if (isCurrentUserRequest()) Alert.alert('Unable to enter your room', error.message || 'Please try again.');
+    }
+  }
+
+  function handleMainGamePress(gameName) {
+    if (!roomCreationEligibilityLoaded) {
+      return Alert.alert('Please wait', 'Your room information is still loading. Try again in a moment.');
+    }
+    const ownRoom = myRooms.find(room => room?.owner_id === session?.user?.id) || myRooms[0];
+    if (!ownRoom) {
+      Alert.alert(
+        'Create a room first',
+        'You need to create your own room before starting a game.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Create room', onPress: () => { setPendingGameEntryName(gameName); setScreen('createRoom'); } }
+        ]
+      );
+      return;
+    }
+    enterOwnRoomForGame(ownRoom, gameName);
+  }
+
   // =========================================
   // GAMES SECTION
   // =========================================
@@ -7615,7 +7721,7 @@ function renderEvents() {
           {games.map(game => (
             <TouchableOpacity
               key={game.name}
-              onPress={() => Alert.alert(game.name, 'This game is not connected to the main-page game flow yet.')}
+              onPress={() => handleMainGamePress(game.name)}
               style={{
                 width: 126,
                 marginRight: 10,
