@@ -4843,7 +4843,8 @@ function renderRoomInterior() {
               <View style={{ flexDirection:'row',alignItems:'flex-end',justifyContent:'space-between' }}>
                 <View style={{ flex:1,alignItems:'center',paddingTop:27 }}>
                   <View style={{ width:58,height:58,borderRadius:29,backgroundColor:'#30243E',borderWidth:2,borderColor:'#C5CBD8',alignItems:'center',justifyContent:'center' }}>
-                    <Text style={{ color:'#C5CBD8',fontSize:25 }}>●</Text>
+                    <View style={{ width:15,height:15,borderRadius:8,backgroundColor:'#C5CBD8',marginBottom:3 }} />
+                    <View style={{ width:29,height:14,borderTopLeftRadius:16,borderTopRightRadius:16,backgroundColor:'#C5CBD8' }} />
                   </View>
                   <Text style={{ color:'#C5CBD8',fontSize:15,fontWeight:'900',marginTop:5 }}>2</Text>
                   <Text numberOfLines={1} style={{ color:'#F5EBDD',fontSize:11,fontWeight:'800',marginTop:5,maxWidth:'100%' }}>—</Text>
@@ -4852,7 +4853,8 @@ function renderRoomInterior() {
                 <View style={{ flex:1,alignItems:'center' }}>
                   <Text style={{ color:'#E7C16C',fontSize:22,marginBottom:2 }}>♛</Text>
                   <View style={{ width:78,height:78,borderRadius:39,backgroundColor:'#30243E',borderWidth:3,borderColor:'#E7C16C',alignItems:'center',justifyContent:'center' }}>
-                    <Text style={{ color:'#E7C16C',fontSize:32 }}>●</Text>
+                    <View style={{ width:19,height:19,borderRadius:10,backgroundColor:'#E7C16C',marginBottom:4 }} />
+                    <View style={{ width:39,height:19,borderTopLeftRadius:22,borderTopRightRadius:22,backgroundColor:'#E7C16C' }} />
                   </View>
                   <Text style={{ color:'#E7C16C',fontSize:19,fontWeight:'900',marginTop:4 }}>1</Text>
                   <Text numberOfLines={1} style={{ color:'#F5EBDD',fontSize:12,fontWeight:'900',marginTop:4,maxWidth:'100%' }}>—</Text>
@@ -4860,7 +4862,8 @@ function renderRoomInterior() {
                 </View>
                 <View style={{ flex:1,alignItems:'center',paddingTop:27 }}>
                   <View style={{ width:58,height:58,borderRadius:29,backgroundColor:'#30243E',borderWidth:2,borderColor:'#C58B61',alignItems:'center',justifyContent:'center' }}>
-                    <Text style={{ color:'#C58B61',fontSize:25 }}>●</Text>
+                    <View style={{ width:15,height:15,borderRadius:8,backgroundColor:'#C58B61',marginBottom:3 }} />
+                    <View style={{ width:29,height:14,borderTopLeftRadius:16,borderTopRightRadius:16,backgroundColor:'#C58B61' }} />
                   </View>
                   <Text style={{ color:'#C58B61',fontSize:15,fontWeight:'900',marginTop:5 }}>3</Text>
                   <Text numberOfLines={1} style={{ color:'#F5EBDD',fontSize:11,fontWeight:'800',marginTop:5,maxWidth:'100%' }}>—</Text>
