@@ -38,6 +38,7 @@ import LuckyElephantPanel from './LuckyElephantPanel';
 import WildKingdomPanel from './WildKingdomPanel';
 import Royal77Panel from './Royal77Panel';
 import RubyJackpotPanel from './RubyJackpotPanel';
+import RoyalFruitCrownPanel from './RoyalFruitCrownPanel';
 
 WebBrowser.maybeCompleteAuthSession();
 const MIC_ON_ICON = require('./assets/mic_on.png');
@@ -4986,79 +4987,7 @@ function renderRoomInterior() {
       <Royal77Panel visible={showRoyal77Panel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowRoyal77Panel(false)} />
       <RubyJackpotPanel visible={showRubyJackpotPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowRubyJackpotPanel(false)} />
 
-      {showGreedyPanel && screen === 'roomInterior' && selectedRoom && (
-        <View style={{ position:'absolute', left:8, right:8, bottom:82, maxHeight:'82%', backgroundColor:'#10251D', borderRadius:18, padding:12, borderWidth:1.5, borderColor:'#D7B45D', zIndex:44, elevation:26 }}>
-          <View style={{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', marginBottom:9 }}>
-            <View style={{ flexDirection:'row', alignItems:'center' }}>
-              <Text style={{ fontSize:22, marginRight:7 }}>👑</Text>
-              <View><Text style={{ color:'#FFE4A0', fontSize:15, fontWeight:'900' }}>ROYAL FRUIT CROWN</Text><Text style={{ color:'#A9D7B8', fontSize:9 }}>FRUIT GAME</Text></View>
-            </View>
-            <View style={{ flexDirection:'row', alignItems:'center', gap:12 }}>
-              <TouchableOpacity onPress={()=>setGreedyView('records')}><Text style={{fontSize:19}}>📋</Text></TouchableOpacity>
-              <TouchableOpacity onPress={()=>setGreedyView('ranking')}><Text style={{fontSize:19}}>🏆</Text></TouchableOpacity>
-              <TouchableOpacity onPress={()=>setGreedyView('rules')}><Text style={{fontSize:19}}>❔</Text></TouchableOpacity>
-              <TouchableOpacity onPress={()=>{setShowGreedyPanel(false);setGreedyView('game')}}><Text style={{color:'#F4D99B',fontSize:21}}>✕</Text></TouchableOpacity>
-            </View>
-          </View>
-          {greedyView !== 'game' ? (
-            <View style={{ backgroundColor:'#18392B', borderRadius:13, padding:14, minHeight:190 }}>
-              <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
-                <Text style={{color:'#FFE4A0',fontSize:16,fontWeight:'900'}}>{greedyView==='rules'?'Game Introduction':greedyView==='ranking'?'Ranking Today':'Records'}</Text>
-                <TouchableOpacity onPress={()=>setGreedyView('game')}><Text style={{color:'#F5D99A',fontSize:12,fontWeight:'900'}}>BACK</Text></TouchableOpacity>
-              </View>
-              {greedyView==='rules' ? (
-                <View style={{marginTop:10}}>
-                  {['Select the quantity of gold before selecting fruits.','Select up to 8 kinds of fruit. There is no maximum limitation on the bet.','You have 35 seconds to make a bet before the fruit lottery starts.','If you bet on the selected fruit, you receive the corresponding rewards.'].map((rule,i)=><Text key={i} style={{color:'#F4F0DF',fontSize:11,lineHeight:18,marginBottom:7}}>{i+1}. {rule}</Text>)}
-                </View>
-              ) : greedyView==='ranking' ? (
-                <Text style={{color:'#C5D9CA',fontSize:12,marginTop:18,textAlign:'center'}}>Ranking data will appear here when the Greedy ranking service is connected.</Text>
-              ) : (
-                <Text style={{color:'#C5D9CA',fontSize:12,marginTop:18,textAlign:'center'}}>Your completed round records will appear here.</Text>
-              )}
-            </View>
-          ) : (
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <View style={{flexDirection:'row',justifyContent:'space-between',backgroundColor:'#18392B',padding:9,borderRadius:10,marginBottom:9}}>
-                <View><Text style={{color:'#A9D7B8',fontSize:9}}>ROUND</Text><Text style={{color:'#FFF0C5',fontWeight:'900'}}>Waiting for round</Text></View>
-                <View><Text style={{color:'#A9D7B8',fontSize:9}}>MAIN BALANCE</Text><Text style={{color:'#FFD77A',fontWeight:'900'}}>Account balance</Text></View>
-                <View><Text style={{color:'#A9D7B8',fontSize:9}}>BETTING</Text><Text style={{color:'#FFF0C5',fontWeight:'900'}}>35 seconds</Text></View>
-              </View>
-              <View style={{flexDirection:'row',flexWrap:'wrap',justifyContent:'center',gap:7,backgroundColor:'#18392B',borderRadius:13,padding:9}}>
-                {[
-                  {name:'Cherry',emoji:'🍒',mult:'5×'},
-                  {name:'Plum',emoji:'🟣',mult:'5×'},
-                  {name:'Orange',emoji:'🍊',mult:'5×'},
-                  {name:'Watermelon',emoji:'🍉',mult:'40×'},
-                  {name:'Pear',emoji:'🍐',mult:'5×'},
-                  {name:'Strawberry',emoji:'🍓',mult:'25×'},
-                  {name:'Lemon',emoji:'🍋',mult:'15×'},
-                  {name:'Grapes',emoji:'🍇',mult:'10×'}
-                ].map((fruit)=> {
-                  const selected=greedySelectedFruit.includes(fruit.name);
-                  return <TouchableOpacity key={fruit.name} onPress={()=>setGreedySelectedFruit(old=>selected?old.filter(x=>x!==fruit.name):[...old,fruit.name])} style={{width:'23%',minHeight:77,backgroundColor:selected?'#6A5125':'#244A35',borderWidth:selected?2:1,borderColor:selected?'#FFE08A':'#6D9D75',borderRadius:10,alignItems:'center',justifyContent:'center',padding:4}}>
-                    <Text style={{fontSize:25}}>{fruit.emoji}</Text>
-                    <Text style={{color:'#FFF2D0',fontSize:9,fontWeight:'900',marginTop:2}}>{fruit.name}</Text>
-                    <Text style={{color:'#FFD77A',fontSize:10,fontWeight:'900'}}>{fruit.mult}</Text>
-                    {selected&&<Text style={{color:'#FFF0B5',fontSize:8}}>SELECTED</Text>}
-                  </TouchableOpacity>;
-                })}
-              </View>
-              <Text style={{color:'#FFE4A0',fontSize:11,fontWeight:'900',marginTop:10,marginBottom:6}}>SELECT BET AMOUNT</Text>
-              <View style={{flexDirection:'row',justifyContent:'space-between',gap:5}}>
-                {[10,100,1000,10000,100000].map(amount=><TouchableOpacity key={amount} onPress={()=>setGreedyBetAmount(amount)} style={{flex:1,paddingVertical:9,borderRadius:9,alignItems:'center',backgroundColor:greedyBetAmount===amount?'#D5A94D':'#244A35',borderWidth:1,borderColor:greedyBetAmount===amount?'#FFE6A0':'#6D9D75'}}><Text style={{color:greedyBetAmount===amount?'#241B0D':'#FFF0C5',fontSize:9,fontWeight:'900'}}>{amount.toLocaleString('en-IN')}</Text></TouchableOpacity>)}
-              </View>
-              <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginTop:9}}>
-                <Text style={{color:'#C5D9CA',fontSize:10}}>Selected fruits: {greedySelectedFruit.length}/8</Text>
-                <Text style={{color:'#FFD77A',fontSize:10,fontWeight:'900'}}>Bet amount per selected fruit: {greedyBetAmount.toLocaleString('en-IN')}</Text>
-              </View>
-              <TouchableOpacity onPress={()=>Alert.alert('Greedy betting not activated','The game board and selections are ready. Secure main-balance deductions, round settlement and Founder-controlled winning results will be connected after the winning-control system is defined.')} style={{marginTop:10,backgroundColor:'#725326',borderWidth:1,borderColor:'#E8C77C',borderRadius:11,padding:12,alignItems:'center'}}>
-                <Text style={{color:'#FFF0C5',fontWeight:'900',fontSize:12}}>PLACE BETS</Text>
-              </TouchableOpacity>
-              <Text style={{color:'#A9D7B8',fontSize:9,textAlign:'center',marginTop:7}}>Select any or all 8 fruits. You can add repeated bets when betting is enabled.</Text>
-            </ScrollView>
-          )}
-        </View>
-      )}
+      <RoyalFruitCrownPanel visible={showGreedyPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowGreedyPanel(false)} />
 
       <Modal
         visible={showRoomThemeMenu && selectedRoom?.owner_id === session?.user?.id}
