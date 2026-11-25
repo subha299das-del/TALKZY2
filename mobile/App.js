@@ -7536,14 +7536,16 @@ function renderEvents() {
 
   function renderGames() {
     const games = [
-      { name: 'Greedy', emoji: '🎲' },
       { name: 'Ludo', emoji: '🎯' },
       { name: 'Carrom', emoji: '🔴' },
-      { name: 'Quiz', emoji: '🧠' },
-      { name: 'Lucky Wheel', emoji: '🎡' },
-      { name: 'Fruit Game', emoji: '🍉' },
-      { name: 'Cards', emoji: '🃏' },
-      { name: 'Dice', emoji: '🎲' }
+      { name: 'Playcards – Breez', emoji: '🃏' },
+      { name: 'UNO', emoji: '🎴' },
+      { name: 'Monster Crush', emoji: '👾' },
+      { name: 'Truth and Dare', emoji: '🎭' },
+      { name: 'Snakes and Ladders', emoji: '🐍' },
+      { name: 'Jackaroo', emoji: '♟️' },
+      { name: 'Brainstorm', emoji: '🧠' },
+      { name: '29', emoji: '🂡' }
     ];
 
     return (
@@ -7604,62 +7606,36 @@ function renderEvents() {
           </View>
         </Card>
 
-        {/* HOT SOCIAL GAMES */}
-
-        <Heading>Hot Social Games</Heading>
-
+        {/* HOT SPECIAL GAMES */}
+        <Heading>Hot Special Games</Heading>
         <Text style={{ color: C.muted, marginBottom: 10 }}>
-          Play and enjoy with your TALKZY friends.
+          Slide to explore and choose a game.
         </Text>
-
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 8 }}>
           {games.map(game => (
             <TouchableOpacity
               key={game.name}
-              onPress={() =>
-                Alert.alert(
-                  game.name,
-                  'This game will be available soon.'
-                )
-              }
+              onPress={() => Alert.alert(game.name, 'This game is not connected to the main-page game flow yet.')}
               style={{
-                width: '48%',
-                marginRight: '2%',
-                marginBottom: 10,
+                width: 126,
+                marginRight: 10,
                 backgroundColor: C.panel,
                 borderColor: C.line,
                 borderWidth: 1,
                 borderRadius: 15,
-                paddingVertical: 22,
-                alignItems: 'center'
+                paddingVertical: 18,
+                paddingHorizontal: 8,
+                alignItems: 'center',
+                justifyContent: 'center'
               }}
             >
-              <Text style={{ fontSize: 34 }}>
-                {game.emoji}
-              </Text>
-
-              <Text
-                style={{
-                  color: C.text,
-                  fontWeight: '900',
-                  marginTop: 8
-                }}
-              >
+              <Text style={{ fontSize: 32 }}>{game.emoji}</Text>
+              <Text style={{ color: C.text, fontWeight: '900', marginTop: 8, textAlign: 'center' }} numberOfLines={2}>
                 {game.name}
-              </Text>
-
-              <Text
-                style={{
-                  color: C.gold,
-                  fontSize: 11,
-                  marginTop: 5
-                }}
-              >
-                Coming soon
               </Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
 
         {/* GAME ROOMS */}
 
