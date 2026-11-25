@@ -5375,7 +5375,8 @@ function renderRoomInterior() {
     }}
     style={{ width: 48, height: 48, borderRadius: 16, borderWidth: 1.5, borderColor: '#72DDF5', backgroundColor: '#0C3048', alignItems: 'center', justifyContent: 'center', shadowColor: '#4AC4D6', shadowOpacity: 0.48, shadowRadius: 9, elevation: 9 }}
   >
-    <Text style={{ fontSize: 23 }}>🎮</Text>
+    <Text style={{ fontSize: 21 }}>🎮</Text>
+    <Text style={{ color: '#F5E4B8', fontSize: 6.5, fontWeight: '900', letterSpacing: 0.7, marginTop: 1 }}>GAMES</Text>
   </TouchableOpacity>
 
   <TouchableOpacity
