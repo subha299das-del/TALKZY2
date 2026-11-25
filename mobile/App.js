@@ -5161,9 +5161,9 @@ function renderRoomInterior() {
           animationType="fade"
           onRequestClose={() => setShowLuckyBagPopup(false)}
         >
-          <View style={{ flex: 1, backgroundColor: 'rgba(3,5,14,0.82)', justifyContent: 'center', paddingHorizontal: 15 }}>
-            <View style={{ borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: '#7044B8', backgroundColor: '#120D25', maxHeight: '88%' }}>
-              <View style={{ paddingHorizontal: 18, paddingTop: 20, paddingBottom: 16, backgroundColor: '#28134B' }}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.10)', justifyContent: 'flex-end', paddingHorizontal: 0 }}>
+            <View style={{ borderTopLeftRadius: 32, borderTopRightRadius: 32, overflow: 'hidden', borderWidth: 2, borderBottomWidth: 0, borderColor: '#FFE2A0', backgroundColor: '#F58C67', height: '59%', maxHeight: '66%' }}>
+              <View style={{ paddingHorizontal: 18, paddingTop: 12, paddingBottom: 12, backgroundColor: '#F6A16F' }}>
                 <TouchableOpacity onPress={() => setShowLuckyBagPopup(false)} style={{ position: 'absolute', right: 15, top: 14, zIndex: 2, width: 30, height: 30, borderRadius: 15, backgroundColor: '#44266B', alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ color: '#E9D8FF', fontSize: 17, fontWeight: '800' }}>×</Text>
                 </TouchableOpacity>
@@ -5176,7 +5176,7 @@ function renderRoomInterior() {
                   <Text style={{ color: '#FFE7A8', fontSize: 22, fontWeight: '900', marginTop: 11, letterSpacing: 0.4 }}>LUCKY BAG</Text>
                   <Text style={{ color: '#CBB6F4', fontSize: 12, marginTop: 4 }}>Spread luck. Share the sparkle.</Text>
                 </View>
-                <View style={{ flexDirection: 'row', backgroundColor: '#180D32', borderRadius: 15, padding: 4, marginTop: 18 }}>
+                <View style={{ flexDirection: 'row', backgroundColor: '#E87548', borderRadius: 28, padding: 4, marginTop: 12, borderWidth: 2, borderColor: '#FFE5B2' }}>
                   {['Room', 'World'].map(tab => (
                     <TouchableOpacity key={tab} onPress={() => { setLuckyBagTab(tab); setLuckyBagCoins(tab === 'Room' ? 20000 : 1000000); setLuckyBagQuantity(tab === 'Room' ? 3 : 30); }} style={{ flex: 1, paddingVertical: 11, borderRadius: 12, alignItems: 'center', backgroundColor: luckyBagTab === tab ? '#F04445' : '#F58A35', borderWidth: luckyBagTab === tab ? 2 : 0, borderColor: '#FFE3A6' }}>
                       <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 13 }}>{tab === 'World' ? '🌍  WORLD' : '🏠  ROOM'}</Text>
@@ -5185,7 +5185,7 @@ function renderRoomInterior() {
                 </View>
               </View>
 
-              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 18 }}>
+              <ScrollView showsVerticalScrollIndicator={false} style={{ backgroundColor: '#F58C67' }} contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 12, paddingBottom: 18 }}>
                 {luckyBagHistoryView ? (
                   <View style={{ paddingBottom: 12 }}>
                     <View style={{ flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:12 }}>
