@@ -654,6 +654,16 @@ app.delete('/api/rooms/:roomId/messages', userAuth, async (req, res) => {
       throw error;
     }
 
+    // Keep a visible audit notice in the shared room chat after the clear.
+    // The INSERT realtime event makes every participant refresh and see who cleared it.
+    const { error: noticeError } = await supabase.from('talkzy_room_messages').insert({
+      room_id: room.id,
+      sender_id: req.talkzyUser.id,
+      message_type: 'text',
+      message_text: 'Cleared the room message'
+    });
+    if (noticeError) throw noticeError;
+
     const privateImagePaths = [];
     const legacyPublicImagePaths = [];
     for (const item of Array.isArray(data?.images) ? data.images : []) {
