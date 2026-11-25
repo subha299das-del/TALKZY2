@@ -4412,7 +4412,7 @@ function renderRoomInterior() {
         const isPlainEntryNotice = message.system && (message.entryType === 'guidelines' || message.entryType === 'welcome');
         const hasSenderHeading = Boolean(message.sender?.display_name || message.sender) && !message.entryType;
         return (
-          <View key={message.id} style={{ alignSelf: message.system ? 'center' : 'flex-start', maxWidth: '94%', backgroundColor: isPlainEntryNotice ? 'transparent' : message.system ? 'rgba(15,91,130,0.88)' : 'rgba(7,27,45,0.94)', borderWidth: isPlainEntryNotice ? 0 : 1, borderColor: message.system ? '#58CBEA' : '#24516D', borderRadius: isPlainEntryNotice ? 0 : message.system ? 14 : 12, paddingHorizontal: isPlainEntryNotice ? 0 : 11, paddingVertical: isPlainEntryNotice ? 1 : 7, marginBottom: 6 }}>
+          <View key={message.id} style={{ alignSelf: message.system ? 'center' : 'flex-start', maxWidth: '94%', backgroundColor: 'transparent', borderWidth: 0, borderColor: 'transparent', borderRadius: 0, paddingHorizontal: 0, paddingVertical: 1, marginBottom: 6 }}>
             {hasSenderHeading ? <Text style={{ color: message.system ? '#9CEBFF' : '#79D7EF', fontSize: 11, fontWeight: '900', marginBottom: 3 }}>{message.sender?.display_name || message.sender || 'TALKZY User'}</Text> : null}
             {message.image_url ? <Image source={{ uri: message.image_url }} style={{ width: 150, height: 90, borderRadius: 8 }} resizeMode="cover" /> : <Text style={{ color: C.text, fontSize: 11, lineHeight: 15, fontWeight: message.entryType === 'guidelines' ? '900' : '400' }}>{message.text || message.message_text}</Text>}
           </View>
