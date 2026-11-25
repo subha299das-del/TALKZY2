@@ -4971,8 +4971,8 @@ function renderRoomInterior() {
         <View style={{ position:'absolute', left:8, right:8, bottom:82, maxHeight:'82%', backgroundColor:'#10251D', borderRadius:18, padding:12, borderWidth:1.5, borderColor:'#D7B45D', zIndex:44, elevation:26 }}>
           <View style={{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', marginBottom:9 }}>
             <View style={{ flexDirection:'row', alignItems:'center' }}>
-              <Text style={{ fontSize:22, marginRight:7 }}>🍀</Text>
-              <View><Text style={{ color:'#FFE4A0', fontSize:16, fontWeight:'900' }}>GREEDY</Text><Text style={{ color:'#A9D7B8', fontSize:9 }}>FRUIT GAME</Text></View>
+              <Text style={{ fontSize:22, marginRight:7 }}>👑</Text>
+              <View><Text style={{ color:'#FFE4A0', fontSize:15, fontWeight:'900' }}>ROYAL FRUIT CROWN</Text><Text style={{ color:'#A9D7B8', fontSize:9 }}>FRUIT GAME</Text></View>
             </View>
             <View style={{ flexDirection:'row', alignItems:'center', gap:12 }}>
               <TouchableOpacity onPress={()=>setGreedyView('records')}><Text style={{fontSize:19}}>📋</Text></TouchableOpacity>
@@ -5339,21 +5339,20 @@ function renderRoomInterior() {
 
   <TouchableOpacity
     accessibilityRole="button"
-    accessibilityLabel="Open Greedy"
+    accessibilityLabel="Open Royal Fruit Crown"
     onPress={() => {
       setShowRoomGiftPanel(false); setShowRoomTools(false); setShowRoomGamePanel(false);
       setShowRocketPanel(false); setShowHotEventsPopup(false); setShowGreedyPanel(true);
     }}
     style={{ width: 48, height: 48, borderRadius: 16, borderWidth: 1.5, borderColor: '#72DDF5', backgroundColor: '#0C2B43', alignItems: 'center', justifyContent: 'center', shadowColor: '#31BCE3', shadowOpacity: 0.48, shadowRadius: 9, elevation: 9 }}
   >
-    <View accessibilityLabel="Golden Treasure Chest" style={{ width: 34, height: 30, alignItems: 'center', justifyContent: 'flex-end' }}>
-      <View style={{ position: 'absolute', top: 2, width: 31, height: 10, borderRadius: 5, backgroundColor: '#FFE28A', borderWidth: 1.5, borderColor: '#FFF0B8', transform: [{ rotate: '-5deg' }], shadowColor: '#FFC83D', shadowOpacity: 0.9, shadowRadius: 4, elevation: 4 }} />
-      <View style={{ width: 29, height: 19, borderRadius: 4, backgroundColor: '#D99A24', borderWidth: 1.5, borderColor: '#FFE08A', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-        <View style={{ position: 'absolute', left: 3, right: 3, top: 3, height: 3, backgroundColor: '#F8D66A', borderRadius: 2 }} />
-        <View style={{ width: 6, height: 8, marginTop: 5, backgroundColor: '#FFF0A8', borderRadius: 2, borderWidth: 1, borderColor: '#9B6416' }} />
+    <View accessibilityLabel="Royal Fruit Crown" style={{ width: 38, height: 34, alignItems: 'center', justifyContent: 'center' }}>
+      <Text style={{ position: 'absolute', top: -2, fontSize: 24 }}>👑</Text>
+      <View style={{ position: 'absolute', bottom: 0, flexDirection: 'row', alignItems: 'center' }}>
+        <Text style={{ fontSize: 12, marginRight: -3 }}>🍇</Text>
+        <Text style={{ fontSize: 13 }}>🍓</Text>
+        <Text style={{ fontSize: 12, marginLeft: -3 }}>🍒</Text>
       </View>
-      <View style={{ position: 'absolute', bottom: 0, left: 2, width: 5, height: 4, borderRadius: 2, backgroundColor: '#F4C34F' }} />
-      <View style={{ position: 'absolute', bottom: 0, right: 2, width: 5, height: 4, borderRadius: 2, backgroundColor: '#F4C34F' }} />
     </View>
   </TouchableOpacity>
 
@@ -7105,7 +7104,7 @@ function renderDiscover() {
         fontWeight: '900',
         marginTop: 7
       }}>
-        Greedy Win
+        Royal Fruit Crown
       </Text>
 
       <Text style={{
