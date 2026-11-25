@@ -4774,21 +4774,6 @@ function renderRoomInterior() {
               <Text style={{ color:'#F4E8D2',fontSize:23,fontWeight:'700' }}>×</Text>
             </TouchableOpacity>
           </View>
-          <View style={{ flexDirection:'row',justifyContent:'space-between',marginBottom:12 }}>
-            {[
-              {level:1,color:'#65D58A',name:'EMERALD'},
-              {level:2,color:'#B78BFF',name:'PURPLE'},
-              {level:3,color:'#F06B70',name:'CRIMSON'},
-              {level:4,color:'#69B9F0',name:'SAPPHIRE'},
-              {level:5,color:'#E7C16C',name:'ROYAL'}
-            ].map(item=>(
-              <TouchableOpacity key={item.level} onPress={()=>setTreasureLevel(item.level)} style={{ flex:1,alignItems:'center',paddingVertical:12,marginHorizontal:2,borderRadius:15,backgroundColor:treasureLevel===item.level?'#39254F':'#191225',borderWidth:treasureLevel===item.level?2:1.2,borderColor:treasureLevel===item.level?'#E5C47C':'#574267' }}>
-                <Text style={{ color:item.color,fontSize:13,fontWeight:'900' }}>LV {item.level}</Text>
-                <Text style={{ color:treasureLevel===item.level?'#F3E8D5':'#9D91A9',fontSize:8,marginTop:5,fontWeight:'800',letterSpacing:0.4 }}>{item.name}</Text>
-                {treasureLevel===item.level && <View style={{ width:16,height:2,backgroundColor:item.color,borderRadius:2,marginTop:5 }} />}
-              </TouchableOpacity>
-            ))}
-          </View>
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom:10 }}>
             <View style={{ minHeight:350,borderRadius:23,backgroundColor:'#171025',borderWidth:1.5,borderColor:'#A9864D',alignItems:'center',justifyContent:'center',padding:16,paddingTop:22,overflow:'hidden' }}>
               <View style={{ position:'absolute',top:-55,width:250,height:250,borderRadius:125,borderWidth:1,borderColor:'rgba(211,177,112,0.20)' }} />
@@ -4838,7 +4823,21 @@ function renderRoomInterior() {
                 <View style={{ width:30,height:1,backgroundColor:'#80643C' }} />
               </View>
             </View>
-
+            <View style={{ flexDirection:'row',justifyContent:'space-between',marginTop:14,marginBottom:8 }}>
+              {[
+                {level:1,color:'#65D58A',name:'EMERALD'},
+                {level:2,color:'#B78BFF',name:'PURPLE'},
+                {level:3,color:'#F06B70',name:'CRIMSON'},
+                {level:4,color:'#69B9F0',name:'SAPPHIRE'},
+                {level:5,color:'#E7C16C',name:'ROYAL'}
+              ].map(item=>(
+                <TouchableOpacity key={item.level} onPress={()=>setTreasureLevel(item.level)} style={{ flex:1,alignItems:'center',paddingVertical:12,marginHorizontal:2,borderRadius:15,backgroundColor:treasureLevel===item.level?'#39254F':'#191225',borderWidth:treasureLevel===item.level?2:1.2,borderColor:treasureLevel===item.level?'#E5C47C':'#574267' }}>
+                  <Text style={{ color:item.color,fontSize:13,fontWeight:'900' }}>LV {item.level}</Text>
+                  <Text style={{ color:treasureLevel===item.level?'#F3E8D5':'#9D91A9',fontSize:8,marginTop:5,fontWeight:'800',letterSpacing:0.4 }}>{item.name}</Text>
+                  {treasureLevel===item.level && <View style={{ width:16,height:2,backgroundColor:item.color,borderRadius:2,marginTop:5 }} />}
+                </TouchableOpacity>
+              ))}
+            </View>
           </ScrollView>
         </View>
       )}
