@@ -37,6 +37,7 @@ import ThunderKingPanel from './ThunderKingPanel';
 import LuckyElephantPanel from './LuckyElephantPanel';
 import WildKingdomPanel from './WildKingdomPanel';
 import Royal77Panel from './Royal77Panel';
+import RubyJackpotPanel from './RubyJackpotPanel';
 
 WebBrowser.maybeCompleteAuthSession();
 const MIC_ON_ICON = require('./assets/mic_on.png');
@@ -1563,6 +1564,7 @@ const [showThunderKingPanel, setShowThunderKingPanel] = useState(false);
 const [showLuckyElephantPanel, setShowLuckyElephantPanel] = useState(false);
 const [showWildKingdomPanel, setShowWildKingdomPanel] = useState(false);
 const [showRoyal77Panel, setShowRoyal77Panel] = useState(false);
+const [showRubyJackpotPanel, setShowRubyJackpotPanel] = useState(false);
 const [greedySelectedFruit, setGreedySelectedFruit] = useState([]);
 const [greedyBetAmount, setGreedyBetAmount] = useState(10);
 const [greedyView, setGreedyView] = useState('game');
@@ -4982,6 +4984,7 @@ function renderRoomInterior() {
       <LuckyElephantPanel visible={showLuckyElephantPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowLuckyElephantPanel(false)} />
       <WildKingdomPanel visible={showWildKingdomPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowWildKingdomPanel(false)} />
       <Royal77Panel visible={showRoyal77Panel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowRoyal77Panel(false)} />
+      <RubyJackpotPanel visible={showRubyJackpotPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowRubyJackpotPanel(false)} />
 
       {showGreedyPanel && screen === 'roomInterior' && selectedRoom && (
         <View style={{ position:'absolute', left:8, right:8, bottom:82, maxHeight:'82%', backgroundColor:'#10251D', borderRadius:18, padding:12, borderWidth:1.5, borderColor:'#D7B45D', zIndex:44, elevation:26 }}>
@@ -5428,6 +5431,22 @@ function renderRoomInterior() {
   >
     <Text style={{ position: 'absolute', top: 0, color: '#F7D56F', fontSize: 12 }}>👑</Text>
     <Text style={{ color: '#FF536A', fontSize: 21, fontWeight: '900', marginTop: 7 }}>77</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    accessibilityRole="button"
+    accessibilityLabel="Open Ruby Jackpot"
+    onPress={() => {
+      setShowRoomGiftPanel(false); setShowRoomTools(false); setShowGreedyPanel(false);
+      setShowThunderKingPanel(false); setShowLuckyElephantPanel(false); setShowWildKingdomPanel(false);
+      setShowRoyal77Panel(false); setShowRoomGamePanel(false); setShowRocketPanel(false); setShowHotEventsPopup(false);
+      setShowRubyJackpotPanel(true);
+    }}
+    style={{ width: 48, height: 48, borderRadius: 16, borderWidth: 1.5, borderColor: '#E8C66B', backgroundColor: '#4A0C24', alignItems: 'center', justifyContent: 'center', shadowColor: '#FF334B', shadowOpacity: 0.72, shadowRadius: 10, elevation: 10 }}
+  >
+    <Text style={{ position: 'absolute', top: -1, color: '#F7D56F', fontSize: 12 }}>♛</Text>
+    <Text style={{ color: '#FF536A', fontSize: 18, fontWeight: '900', marginTop: 7 }}>777</Text>
+    <Text style={{ position: 'absolute', bottom: -3, right: 1, fontSize: 12 }}>💰</Text>
   </TouchableOpacity>
 
   <TouchableOpacity
