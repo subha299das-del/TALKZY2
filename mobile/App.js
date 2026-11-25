@@ -987,6 +987,7 @@ useEffect(() => {
     if (showRoomGamePanel) { setShowRoomGamePanel(false); return true; }
     if (showRocketPanel) { setShowRocketPanel(false); return true; }
     if (showRoomThemeMenu) { setShowRoomThemeMenu(false); return true; }
+    if (showLuckyBagOpenPopup) { setShowLuckyBagOpenPopup(false); return true; }
     if (showLuckyBagPopup) { setShowLuckyBagPopup(false); return true; }
     if (showHotEventsPopup) { setShowHotEventsPopup(false); return true; }
     if (showJoinPassword) { setShowJoinPassword(false); return true; }
@@ -1292,9 +1293,11 @@ const [enterRoomEffectEnabled, setEnterRoomEffectEnabled] = useState(false);
 const [giftEffectEnabled, setGiftEffectEnabled] = useState(false);
 const [giftBannerEnabled, setGiftBannerEnabled] = useState(false);
 const [showLuckyBagPopup, setShowLuckyBagPopup] = useState(false);
+const [showLuckyBagOpenPopup, setShowLuckyBagOpenPopup] = useState(false);
+const [selectedLuckyBag, setSelectedLuckyBag] = useState(null);
 const [luckyBagTab, setLuckyBagTab] = useState('Room');
-const [luckyBagCoins, setLuckyBagCoins] = useState(500);
-const [luckyBagQuantity, setLuckyBagQuantity] = useState(1);
+const [luckyBagCoins, setLuckyBagCoins] = useState(20000);
+const [luckyBagQuantity, setLuckyBagQuantity] = useState(3);
 const [luckyBagCustomCoins, setLuckyBagCustomCoins] = useState('500');
 const [luckyBagHistoryView, setLuckyBagHistoryView] = useState(false);
 const [walletBalance, setWalletBalance] = useState(0);
@@ -1302,6 +1305,7 @@ const [luckyBagHistoryItems, setLuckyBagHistoryItems] = useState([]);
 const [luckyBagHistoryLoading, setLuckyBagHistoryLoading] = useState(false);
 const [luckyBagSending, setLuckyBagSending] = useState(false);
 const [activeLuckyBags, setActiveLuckyBags] = useState([]);
+const luckyBagAutoOpenedRef = useRef(new Set());
 const [claimingLuckyBagId, setClaimingLuckyBagId] = useState(null);
 const luckyBagPulse = useRef(new Animated.Value(1)).current;
 useEffect(() => { const pulse = Animated.loop(Animated.sequence([Animated.timing(luckyBagPulse, { toValue: 1.06, duration: 850, useNativeDriver: true }), Animated.timing(luckyBagPulse, { toValue: 1, duration: 850, useNativeDriver: true })])); pulse.start(); return () => pulse.stop(); }, [luckyBagPulse]);
@@ -1386,7 +1390,11 @@ async function refreshActiveLuckyBags() {
     if (!isCurrentRequest()) return;
     const nameMap = new Map((profiles || []).map(p => [p.id,p.display_name]));
     const claimed = new Set((claims || []).map(x => x.bag_id));
-    setActiveLuckyBags(list.map(b => ({...b,senderName:nameMap.get(b.sender_id) || 'TALKZY User',alreadyClaimed:claimed.has(b.id)})));
+    const nextBags = list.map(b => ({...b,senderName:nameMap.get(b.sender_id) || 'TALKZY User',alreadyClaimed:claimed.has(b.id)}));
+    const unseenBag = nextBags.find(b => !luckyBagAutoOpenedRef.current.has(b.id) && !b.alreadyClaimed);
+    nextBags.forEach(b => luckyBagAutoOpenedRef.current.add(b.id));
+    setActiveLuckyBags(nextBags);
+    if (unseenBag && !showLuckyBagOpenPopup) { setSelectedLuckyBag(unseenBag); setShowLuckyBagOpenPopup(true); }
   } catch (error) {
     if (isCurrentRequest()) console.log('Lucky Bag refresh:',error.message);
   }
@@ -1454,6 +1462,9 @@ async function sendLuckyBag() {
   if (!Number.isFinite(amount) || amount < 1 || !Number.isFinite(quantity) || quantity < 1 || quantity > 99) {
     return Alert.alert('Invalid amount', 'Please choose a valid coin amount and bag quantity.');
   }
+  const allowedCoins = luckyBagTab === 'Room' ? [20000,200000,400000,600000] : [1000000,2000000,4000000,6000000];
+  const allowedQuantities = luckyBagTab === 'Room' ? [3,9,12,15] : [30,50,70,100];
+  if (!allowedCoins.includes(amount) || !allowedQuantities.includes(quantity)) return Alert.alert('Invalid selection', 'Choose one of the available coin and quantity options.');
   const total = amount * quantity;
   if (total > walletBalance) return Alert.alert('Insufficient coins', 'Your balance is ' + walletBalance.toLocaleString() + ' coins. You need ' + total.toLocaleString() + ' coins.');
   const requestUserId = session.user.id;
@@ -1472,6 +1483,11 @@ async function sendLuckyBag() {
     if (!isCurrentUserRequest()) return;
     setWalletBalance(Number(data?.balance ?? walletBalance - total));
     setShowLuckyBagPopup(false);
+    luckyBagAutoOpenedRef.current.add(String(data?.bag_id || ''));
+    const { data: createdBag, error: createdBagError } = await supabase.from('talkzy_lucky_bags').select('id,sender_id,room_id,scope,total_coins,remaining_coins,remaining_bags,expires_at,created_at').eq('id',data?.bag_id).maybeSingle();
+    if (createdBagError) throw createdBagError;
+    if (createdBag) { setSelectedLuckyBag({...createdBag,senderName:profile?.display_name || 'TALKZY User',alreadyClaimed:false}); setShowLuckyBagOpenPopup(true); }
+    await refreshActiveLuckyBags();
     if (requestScope === 'world') {
       const tickerChannel = supabase.channel('talkzy-world-lucky-bag-notifications');
       tickerChannel.subscribe(status => {
@@ -1615,6 +1631,8 @@ const [isRoomTourist, setIsRoomTourist] = useState(false);
     setShowMicCountPicker(false);
     setShowRoomShortcutsPage(false);
     setShowLuckyBagPopup(false);
+    setShowLuckyBagOpenPopup(false);
+    setSelectedLuckyBag(null);
     setLuckyBagHistoryView(false);
     setShowYoutubePanel(false);
     setShowYoutubePicker(false);
@@ -3720,9 +3738,7 @@ function renderRoomInterior() {
               <Text style={{ color: '#FFE5A0', fontWeight: '900', fontSize: 12 }} numberOfLines={1}>🎁 {bag.senderName} · {bag.scope.toUpperCase()}</Text>
               <Text style={{ color: '#F8D66C', fontWeight: '900', marginTop: 3 }}>🪙 {Number(bag.remaining_coins).toLocaleString()} coins left</Text>
               <Text style={{ color: '#C7B4DE', fontSize: 10, marginTop: 2 }}>{bag.remaining_bags} claim{bag.remaining_bags===1?'':'s'} · expires in {Math.max(0,Math.ceil((new Date(bag.expires_at).getTime()-Date.now())/1000))}s</Text>
-              <TouchableOpacity disabled={bag.alreadyClaimed || claimingLuckyBagId===bag.id || bag.sender_id===session?.user?.id} onPress={() => claimLuckyBag(bag)} style={{ marginTop: 7, paddingVertical: 7, borderRadius: 9, alignItems: 'center', backgroundColor: bag.alreadyClaimed ? '#51445F' : '#8B51D7', opacity: bag.sender_id===session?.user?.id ? 0.55 : 1 }}>
-                <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 11 }}>{claimingLuckyBagId===bag.id ? 'OPENING…' : bag.alreadyClaimed ? 'ALREADY OPENED' : bag.sender_id===session?.user?.id ? 'YOUR LUCKY BAG' : '🎁 OPEN BAG'}</Text>
-              </TouchableOpacity>
+              <TouchableOpacity disabled={bag.alreadyClaimed || claimingLuckyBagId===bag.id} onPress={() => { setSelectedLuckyBag(bag); setShowLuckyBagOpenPopup(true); }} style={{ marginTop: 7, paddingVertical: 7, borderRadius: 9, alignItems: 'center', backgroundColor: bag.alreadyClaimed ? '#51445F' : '#D9A43A' }}><Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 11 }}>{claimingLuckyBagId===bag.id ? 'OPENING…' : bag.alreadyClaimed ? 'ALREADY OPENED' : '🎁 OPEN BAG'}</Text></TouchableOpacity>
             </View>
           ))}
         </ScrollView>
@@ -5162,8 +5178,8 @@ function renderRoomInterior() {
                 </View>
                 <View style={{ flexDirection: 'row', backgroundColor: '#180D32', borderRadius: 15, padding: 4, marginTop: 18 }}>
                   {['Room', 'World'].map(tab => (
-                    <TouchableOpacity key={tab} onPress={() => setLuckyBagTab(tab)} style={{ flex: 1, paddingVertical: 11, borderRadius: 12, alignItems: 'center', backgroundColor: luckyBagTab === tab ? '#8A55D8' : 'transparent', borderWidth: luckyBagTab === tab ? 1 : 0, borderColor: '#CBA8FF' }}>
-                      <Text style={{ color: luckyBagTab === tab ? '#FFFFFF' : '#B9A5D8', fontWeight: '900', fontSize: 13 }}>{tab === 'World' ? '🌍  WORLD' : '🏠  ROOM'}</Text>
+                    <TouchableOpacity key={tab} onPress={() => { setLuckyBagTab(tab); setLuckyBagCoins(tab === 'Room' ? 20000 : 1000000); setLuckyBagQuantity(tab === 'Room' ? 3 : 30); }} style={{ flex: 1, paddingVertical: 11, borderRadius: 12, alignItems: 'center', backgroundColor: luckyBagTab === tab ? '#F04445' : '#F58A35', borderWidth: luckyBagTab === tab ? 2 : 0, borderColor: '#FFE3A6' }}>
+                      <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 13 }}>{tab === 'World' ? '🌍  WORLD' : '🏠  ROOM'}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -5201,69 +5217,16 @@ function renderRoomInterior() {
                   </View>
                 ) : (
                   <>
-                    <Text style={{ color: '#F1E7FF', fontWeight: '900', fontSize: 14, marginBottom: 11 }}>Choose your bag amount</Text>
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-                      {[250, 500, 1000, 5000].map(amount => (
-                        <TouchableOpacity key={amount} onPress={() => { setLuckyBagCoins(amount); setLuckyBagCustomCoins(String(amount)); }} style={{ width: '48.5%', marginBottom: 10, paddingVertical: 13, paddingHorizontal: 10, borderRadius: 16, borderWidth: luckyBagCoins === amount ? 1.7 : 1, borderColor: luckyBagCoins === amount ? '#E9BD59' : '#49345F', backgroundColor: luckyBagCoins === amount ? '#39264A' : '#1D1531', alignItems: 'center' }}>
-                          <Text style={{ fontSize: 21 }}>{amount >= 1000 ? '💎' : '🪙'}</Text>
-                          <Text style={{ color: luckyBagCoins === amount ? '#FFE39A' : '#D6C6EF', fontSize: 16, fontWeight: '900', marginTop: 5 }}>{amount.toLocaleString()} Coins</Text>
-                          {luckyBagCoins === amount && <View style={{ position: 'absolute', top: 7, right: 8, width: 17, height: 17, borderRadius: 9, backgroundColor: '#D9A93F', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: '#24152D', fontSize: 10, fontWeight: '900' }}>✓</Text></View>}
-                        </TouchableOpacity>
-                      ))}
+                    <Text style={{ color: '#8A3D13', fontWeight: '900', fontSize: 15, textAlign: 'center', marginBottom: 8 }}>Coins</Text>
+                    <View style={{ flexDirection: 'row', backgroundColor: '#F58A35', borderRadius: 28, borderWidth: 3, borderColor: '#FFE3A6', padding: 5, marginBottom: 18 }}>
+                      {(luckyBagTab === 'Room' ? [20000,200000,400000,600000] : [1000000,2000000,4000000,6000000]).map(amount => <TouchableOpacity key={amount} onPress={() => setLuckyBagCoins(amount)} style={{ flex: 1, paddingVertical: 13, marginHorizontal: 2, borderRadius: 24, alignItems: 'center', backgroundColor: luckyBagCoins === amount ? '#FFE8B5' : 'transparent', borderWidth: luckyBagCoins === amount ? 2 : 0, borderColor: '#FFF4D8' }}><Text style={{ color: luckyBagCoins === amount ? '#E74662' : '#FFFFFF', fontSize: 12, fontWeight: '900' }}>{amount.toLocaleString('en-IN')}</Text></TouchableOpacity>)}
                     </View>
-
-                    <View style={{ marginTop: 2, marginBottom: 14, padding: 12, borderRadius: 15, borderWidth: 1, borderColor: '#8B67B5', backgroundColor: '#211433' }}>
-                      <Text style={{ color: '#DCC8FF', fontWeight: '900', fontSize: 12, marginBottom: 8 }}>✨ CUSTOM COINS</Text>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#120D25', borderRadius: 12, borderWidth: 1, borderColor: '#57416F', paddingHorizontal: 12 }}>
-                        <Text style={{ fontSize: 18, marginRight: 8 }}>🪙</Text>
-                        <TextInput value={luckyBagCustomCoins} onChangeText={value => { const digits = value.replace(/[^0-9]/g, '').slice(0, 9); setLuckyBagCustomCoins(digits); if (digits) setLuckyBagCoins(Math.max(1, Number(digits))); }} keyboardType="number-pad" placeholder="Enter coin amount" placeholderTextColor="#8D7BA8" style={{ flex: 1, color: '#FFE39A', fontWeight: '900', fontSize: 17, paddingVertical: 12 }} />
-                      </View>
-                      <Text style={{ color: '#9E8AB9', fontSize: 10, marginTop: 6 }}>Enter any amount of coins to personalize your bag.</Text>
+                    <Text style={{ color: '#8A3D13', fontWeight: '900', fontSize: 15, textAlign: 'center', marginBottom: 8 }}>Quantity</Text>
+                    <View style={{ flexDirection: 'row', backgroundColor: '#F15A3B', borderRadius: 28, borderWidth: 3, borderColor: '#FFE3A6', padding: 5, marginBottom: 18 }}>
+                      {(luckyBagTab === 'Room' ? [3,9,12,15] : [30,50,70,100]).map(quantity => <TouchableOpacity key={quantity} onPress={() => setLuckyBagQuantity(quantity)} style={{ flex: 1, paddingVertical: 13, marginHorizontal: 2, borderRadius: 24, alignItems: 'center', backgroundColor: luckyBagQuantity === quantity ? '#FFE8B5' : 'transparent', borderWidth: luckyBagQuantity === quantity ? 2 : 0, borderColor: '#FFF4D8' }}><Text style={{ color: luckyBagQuantity === quantity ? '#E74662' : '#FFFFFF', fontSize: 14, fontWeight: '900' }}>{quantity}</Text></TouchableOpacity>)}
                     </View>
-
-                    <Text style={{ color: '#F1E7FF', fontWeight: '900', fontSize: 14, marginBottom: 10 }}>Bag quantity</Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8, paddingHorizontal: 10, borderRadius: 16, backgroundColor: '#211632', borderWidth: 1, borderColor: '#49345F' }}>
-                      <TouchableOpacity onPress={() => setLuckyBagQuantity(q => Math.max(1, q - 1))} style={{ width: 42, height: 42, borderRadius: 13, backgroundColor: '#39264A', borderWidth: 1, borderColor: '#76539C', alignItems: 'center', justifyContent: 'center' }}>
-                        <Text style={{ color: '#E8D4FF', fontSize: 25, fontWeight: '900' }}>−</Text>
-                      </TouchableOpacity>
-                      <View style={{ alignItems: 'center', minWidth: 92, marginHorizontal: 20 }}>
-                        <Text style={{ color: '#FFE39A', fontSize: 25, fontWeight: '900' }}>{luckyBagQuantity}</Text>
-                        <Text style={{ color: '#BBA9D4', fontSize: 10, fontWeight: '800' }}>BAGS</Text>
-                      </View>
-                      <TouchableOpacity onPress={() => setLuckyBagQuantity(q => Math.min(99, q + 1))} style={{ width: 42, height: 42, borderRadius: 13, backgroundColor: '#613B8D', borderWidth: 1, borderColor: '#C9A1FF', alignItems: 'center', justifyContent: 'center' }}>
-                        <Text style={{ color: '#FFFFFF', fontSize: 25, fontWeight: '900' }}>+</Text>
-                      </TouchableOpacity>
-                    </View>
-
-                    <View style={{ marginTop: 14, padding: 13, borderRadius: 17, borderWidth: 1, borderColor: '#7C5BA5', backgroundColor: '#24143B', flexDirection: 'row', alignItems: 'center' }}>
-                      <View style={{ width: 58, height: 58, borderRadius: 17, backgroundColor: '#4A2775', borderWidth: 1, borderColor: '#D7B66A', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-                        <Text style={{ fontSize: 32 }}>🧧</Text>
-                        <Text style={{ position: 'absolute', bottom: -5, right: -5, fontSize: 17 }}>✨</Text>
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ color: '#CDB8EE', fontSize: 10, fontWeight: '900', letterSpacing: 1 }}>BAG PREVIEW</Text>
-                        <Text style={{ color: '#FFE39A', fontSize: 17, fontWeight: '900', marginTop: 3 }}>{luckyBagCoins.toLocaleString()} COINS</Text>
-                        <Text style={{ color: '#BBA9D4', fontSize: 11, marginTop: 3 }}>{luckyBagQuantity} bag{luckyBagQuantity === 1 ? '' : 's'} · {luckyBagTab} delivery</Text>
-                      </View>
-                      <View style={{ backgroundColor: '#34204D', paddingHorizontal: 9, paddingVertical: 7, borderRadius: 10, borderWidth: 1, borderColor: '#8E6DB4' }}>
-                        <Text style={{ color: '#F0D9FF', fontSize: 10, fontWeight: '900' }}>READY</Text>
-                      </View>
-                    </View>
-
-                    <View style={{ marginTop: 15, padding: 13, borderRadius: 16, borderWidth: 1, borderColor: '#66502D', backgroundColor: '#30251A', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <View>
-                        <Text style={{ color: '#BFA77D', fontSize: 11, fontWeight: '800' }}>TOTAL COST</Text>
-                        <Text style={{ color: '#FFE19A', fontSize: 20, fontWeight: '900', marginTop: 3 }}>🪙 {(luckyBagCoins * luckyBagQuantity).toLocaleString()}</Text>
-                      </View>
-                      <View style={{ alignItems: 'flex-end' }}>
-                        <Text style={{ color: '#BFA77D', fontSize: 11 }}>BAGS</Text>
-                        <Text style={{ color: '#F5D58A', fontSize: 18, fontWeight: '900', marginTop: 3 }}>{luckyBagQuantity}</Text>
-                      </View>
-                    </View>
-
-                    <TouchableOpacity disabled={luckyBagSending} onPress={sendLuckyBag} style={{ marginTop: 14, paddingVertical: 15, borderRadius: 16, backgroundColor: '#8D51D6', borderWidth: 1, borderColor: '#C99BFF', alignItems: 'center', shadowColor: '#A56BFF', shadowOpacity: 0.35, shadowRadius: 10, elevation: 5 }}>
-                      <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '900' }}>{luckyBagSending ? '⏳ SENDING...' : '🎁  SEND LUCKY BAG'}</Text>
-                    </TouchableOpacity>
+                    <View style={{ backgroundColor: '#FFE3B0', borderRadius: 24, padding: 10, marginBottom: 12, borderWidth: 2, borderColor: '#FFF2D1' }}><Text style={{ color: '#A53D1A', fontWeight: '900', textAlign: 'center', fontSize: 13 }}>TOTAL: {(luckyBagCoins * luckyBagQuantity).toLocaleString('en-IN')} GOLD COINS</Text></View>
+                    <TouchableOpacity disabled={luckyBagSending} onPress={sendLuckyBag} style={{ marginTop: 2, paddingVertical: 15, borderRadius: 32, backgroundColor: '#FFD58A', borderWidth: 3, borderColor: '#FFF0C7', alignItems: 'center' }}><Text style={{ color: '#A52D19', fontSize: 16, fontWeight: '900' }}>{luckyBagSending ? 'SENDING…' : 'Send Lucky Bag'}</Text></TouchableOpacity>
                   </>
                 )}
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#38284C' }}>
@@ -5276,6 +5239,23 @@ function renderRoomInterior() {
                   </TouchableOpacity>
                 </View>
               </ScrollView>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {showLuckyBagOpenPopup && selectedLuckyBag && (
+        <Modal visible={showLuckyBagOpenPopup} transparent animationType="fade" onRequestClose={() => setShowLuckyBagOpenPopup(false)}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(10,3,18,0.78)', justifyContent: 'center', paddingHorizontal: 22 }}>
+            <View style={{ backgroundColor: '#241044', borderRadius: 26, borderWidth: 2, borderColor: '#E7B84F', padding: 20, alignItems: 'center', overflow: 'hidden' }}>
+              <TouchableOpacity onPress={() => setShowLuckyBagOpenPopup(false)} style={{ position: 'absolute', top: 10, right: 12, zIndex: 2, width: 32, height: 32, borderRadius: 16, backgroundColor: '#4B286D', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: '#FFFFFF', fontSize: 21, fontWeight: '900' }}>×</Text></TouchableOpacity>
+              <Animated.View style={{ width: 190, height: 190, alignItems: 'center', justifyContent: 'center', transform: [{ scale: luckyBagPulse }] }}><Text style={{ fontSize: 132 }}>🧧</Text><Text style={{ position: 'absolute', top: 16, right: 12, fontSize: 34 }}>✨</Text></Animated.View>
+              <Text style={{ color: '#FFE6A0', fontSize: 25, fontWeight: '900' }}>LUCKY BAG</Text>
+              <Text style={{ color: '#F6D68A', fontSize: 13, fontWeight: '800', marginTop: 8 }}>{selectedLuckyBag.senderName || 'TALKZY User'}</Text>
+              <Text style={{ color: '#EBDCF8', fontSize: 12, marginTop: 5 }}>{Number(selectedLuckyBag.remaining_coins || 0).toLocaleString('en-IN')} GOLD COINS LEFT</Text>
+              <Text style={{ color: '#F9D879', fontSize: 13, fontWeight: '900', marginTop: 9 }}>{selectedLuckyBag.remaining_bags} BAGS LEFT</Text>
+              <Text style={{ color: '#D9C4EF', fontSize: 12, marginTop: 6 }}>Time left: {Math.max(0,Math.ceil((new Date(selectedLuckyBag.expires_at).getTime()-Date.now())/1000))}s</Text>
+              <TouchableOpacity disabled={selectedLuckyBag.alreadyClaimed || claimingLuckyBagId===selectedLuckyBag.id} onPress={async () => { await claimLuckyBag(selectedLuckyBag); setShowLuckyBagOpenPopup(false); }} style={{ marginTop: 20, width: '100%', paddingVertical: 16, borderRadius: 30, backgroundColor: '#F6C85F', borderWidth: 2, borderColor: '#FFF0B8', alignItems: 'center' }}><Text style={{ color: '#54220D', fontSize: 19, fontWeight: '900' }}>{claimingLuckyBagId===selectedLuckyBag.id ? 'OPENING…' : 'OPEN 🎁'}</Text></TouchableOpacity>
             </View>
           </View>
         </Modal>
