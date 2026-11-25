@@ -5346,7 +5346,15 @@ function renderRoomInterior() {
     }}
     style={{ width: 48, height: 48, borderRadius: 16, borderWidth: 1.5, borderColor: '#72DDF5', backgroundColor: '#0C2B43', alignItems: 'center', justifyContent: 'center', shadowColor: '#31BCE3', shadowOpacity: 0.48, shadowRadius: 9, elevation: 9 }}
   >
-    <Text style={{ fontSize: 24 }}>💰</Text>
+    <View accessibilityLabel="Golden Treasure Chest" style={{ width: 34, height: 30, alignItems: 'center', justifyContent: 'flex-end' }}>
+      <View style={{ position: 'absolute', top: 2, width: 31, height: 10, borderRadius: 5, backgroundColor: '#FFE28A', borderWidth: 1.5, borderColor: '#FFF0B8', transform: [{ rotate: '-5deg' }], shadowColor: '#FFC83D', shadowOpacity: 0.9, shadowRadius: 4, elevation: 4 }} />
+      <View style={{ width: 29, height: 19, borderRadius: 4, backgroundColor: '#D99A24', borderWidth: 1.5, borderColor: '#FFE08A', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+        <View style={{ position: 'absolute', left: 3, right: 3, top: 3, height: 3, backgroundColor: '#F8D66A', borderRadius: 2 }} />
+        <View style={{ width: 6, height: 8, marginTop: 5, backgroundColor: '#FFF0A8', borderRadius: 2, borderWidth: 1, borderColor: '#9B6416' }} />
+      </View>
+      <View style={{ position: 'absolute', bottom: 0, left: 2, width: 5, height: 4, borderRadius: 2, backgroundColor: '#F4C34F' }} />
+      <View style={{ position: 'absolute', bottom: 0, right: 2, width: 5, height: 4, borderRadius: 2, backgroundColor: '#F4C34F' }} />
+    </View>
   </TouchableOpacity>
 
   <TouchableOpacity
