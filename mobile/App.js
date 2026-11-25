@@ -1541,6 +1541,7 @@ const [showRoomGamePanel, setShowRoomGamePanel] = useState(false);
 const [showRocketPanel, setShowRocketPanel] = useState(false);
 const [treasureLevel, setTreasureLevel] = useState(1);
 const [treasureRewardTab, setTreasureRewardTab] = useState('TOP 1');
+const [showTreasureRules, setShowTreasureRules] = useState(false);
 const [showRoomShortcutsPage, setShowRoomShortcutsPage] = useState(false);
 const [roomShortcutCategory, setRoomShortcutCategory] = useState('Treasury');
 const [roomChatText, setRoomChatText] = useState('');
@@ -4770,7 +4771,10 @@ function renderRoomInterior() {
         <View style={{ position:'absolute', left:8, right:8, top:44, bottom:70, backgroundColor:'#0D0918', borderRadius:28, padding:16, borderWidth:2, borderColor:'#D8B66D', zIndex:46, elevation:34 }}>
           <View pointerEvents="none" style={{ position:'absolute',top:6,left:6,right:6,bottom:6,borderRadius:23,borderWidth:1,borderColor:'rgba(239,207,137,0.28)' }} />
           <View style={{ position:'absolute',top:0,left:28,right:28,height:3,backgroundColor:'#F2D99B',borderRadius:3 }} />
-          <View style={{ flexDirection:'row',alignItems:'center',justifyContent:'flex-end',marginBottom:12 }}>
+          <View style={{ flexDirection:'row',alignItems:'center',justifyContent:'flex-end',gap:8,marginBottom:12 }}>
+            <TouchableOpacity onPress={()=>setShowTreasureRules(true)} accessibilityRole="button" accessibilityLabel="Treasure rules" style={{ width:24,height:24,borderRadius:12,backgroundColor:'#241630',borderWidth:1,borderColor:'#A9864D',alignItems:'center',justifyContent:'center' }}>
+              <Text style={{ color:'#E7C16C',fontSize:13,fontWeight:'900',lineHeight:16 }}>?</Text>
+            </TouchableOpacity>
             <TouchableOpacity onPress={()=>setShowRocketPanel(false)} accessibilityRole="button" accessibilityLabel="Close Treasure" style={{ width:38,height:38,borderRadius:13,backgroundColor:'#241630',borderWidth:1.3,borderColor:'#C7A15F',alignItems:'center',justifyContent:'center' }}>
               <Text style={{ color:'#F4E8D2',fontSize:23,fontWeight:'700' }}>×</Text>
             </TouchableOpacity>
@@ -4892,6 +4896,33 @@ function renderRoomInterior() {
               ))}
             </View>
           </ScrollView>
+        {showTreasureRules && (
+            <View style={{ position:'absolute',top:0,left:0,right:0,bottom:0,zIndex:80,elevation:80,backgroundColor:'rgba(5,4,12,0.96)',borderRadius:25,padding:18,borderWidth:1.5,borderColor:'#D8B66D' }}>
+              <View style={{ flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:18 }}>
+                <Text style={{ color:'#F3E5C9',fontSize:17,fontWeight:'900',letterSpacing:1 }}>RULES</Text>
+                <TouchableOpacity onPress={()=>setShowTreasureRules(false)} accessibilityRole="button" accessibilityLabel="Close rules" style={{ width:32,height:32,borderRadius:11,backgroundColor:'#241630',borderWidth:1,borderColor:'#C7A15F',alignItems:'center',justifyContent:'center' }}>
+                  <Text style={{ color:'#F4E8D2',fontSize:21,fontWeight:'700' }}>×</Text>
+                </TouchableOpacity>
+              </View>
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom:12 }}>
+                {[
+                  'You can increase the energy bar of the rocket by sending gifts in the room.',
+                  'When the energy bar of the rocket is full, the rocket will automatically launch and brust various rewards.',
+                  'The top 3 contributors will receive verious rewards and rest of the users in the room will have the opportunity to receive lucky rewards.',
+                  'The higher the level of rocket, the more valuable the reward.',
+                  'The reward will be automatically distributed to the backpack.',
+                  'The energy bar of the rocket will be cleared and reset everyday at 00:00 Indian time (GTM + 5:30)'
+                ].map((rule,index)=>(
+                  <View key={index} style={{ flexDirection:'row',alignItems:'flex-start',marginBottom:16 }}>
+                    <View style={{ width:25,height:25,borderRadius:13,backgroundColor:'#39254F',borderWidth:1,borderColor:'#C7A15F',alignItems:'center',justifyContent:'center',marginRight:10,marginTop:1 }}>
+                      <Text style={{ color:'#E7C16C',fontSize:12,fontWeight:'900' }}>{index+1}</Text>
+                    </View>
+                    <Text style={{ flex:1,color:'#F3EBDD',fontSize:13,lineHeight:20,fontWeight:'500' }}>{rule}</Text>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          )}
         </View>
       )}
       <RoomGames visible={showRoomGamePanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowRoomGamePanel(false)} onGameAvailable={() => setShowRoomGamePanel(true)} roomId={selectedRoom?.id} creatorName={profile?.display_name || displayName || session?.user?.user_metadata?.full_name || 'Player'} userId={session?.user?.id} supabase={supabase} isAuthorisedStarter={selectedRoom?.owner_id===session?.user?.id || roomPresence.some(person=>person.user_id===session?.user?.id && person.presence_role==='admin')} hasRoomSeat={micSeats.some(seat=>seat.user_id===session?.user?.id)} roomMembers={roomPresence} selfProfile={profile} />
