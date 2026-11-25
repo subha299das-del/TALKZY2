@@ -35,6 +35,7 @@ import RoomMusicPanel from './RoomMusicPanel';
 import RoomGames from './RoomGames';
 import ThunderKingPanel from './ThunderKingPanel';
 import LuckyElephantPanel from './LuckyElephantPanel';
+import WildKingdomPanel from './WildKingdomPanel';
 
 WebBrowser.maybeCompleteAuthSession();
 const MIC_ON_ICON = require('./assets/mic_on.png');
@@ -1559,6 +1560,7 @@ const [showRoomGiftQuantityOptions, setShowRoomGiftQuantityOptions] = useState(f
 const [showGreedyPanel, setShowGreedyPanel] = useState(false);
 const [showThunderKingPanel, setShowThunderKingPanel] = useState(false);
 const [showLuckyElephantPanel, setShowLuckyElephantPanel] = useState(false);
+const [showWildKingdomPanel, setShowWildKingdomPanel] = useState(false);
 const [greedySelectedFruit, setGreedySelectedFruit] = useState([]);
 const [greedyBetAmount, setGreedyBetAmount] = useState(10);
 const [greedyView, setGreedyView] = useState('game');
@@ -1659,6 +1661,7 @@ const [isRoomTourist, setIsRoomTourist] = useState(false);
     setShowGreedyPanel(false);
     setShowThunderKingPanel(false);
     setShowLuckyElephantPanel(false);
+    setShowWildKingdomPanel(false);
     setShowRocketPanel(false);
     setShowMicChatPopup(false);
     setIsRoomMinimized(false);
@@ -4974,6 +4977,7 @@ function renderRoomInterior() {
       <RoomGames visible={showRoomGamePanel && screen === 'roomInterior' && !!selectedRoom} initialGameName={gameToOpenInRoom} onInitialGameOpened={() => setGameToOpenInRoom(null)} onClose={() => setShowRoomGamePanel(false)} onGameAvailable={() => setShowRoomGamePanel(true)} roomId={selectedRoom?.id} creatorName={profile?.display_name || displayName || session?.user?.user_metadata?.full_name || 'Player'} userId={session?.user?.id} supabase={supabase} isAuthorisedStarter={selectedRoom?.owner_id===session?.user?.id || roomPresence.some(person=>person.user_id===session?.user?.id && person.presence_role==='admin')} hasRoomSeat={micSeats.some(seat=>seat.user_id===session?.user?.id)} roomMembers={roomPresence} selfProfile={profile} />
       <ThunderKingPanel visible={showThunderKingPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowThunderKingPanel(false)} />
       <LuckyElephantPanel visible={showLuckyElephantPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowLuckyElephantPanel(false)} />
+      <WildKingdomPanel visible={showWildKingdomPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowWildKingdomPanel(false)} />
 
       {showGreedyPanel && screen === 'roomInterior' && selectedRoom && (
         <View style={{ position:'absolute', left:8, right:8, bottom:82, maxHeight:'82%', backgroundColor:'#10251D', borderRadius:18, padding:12, borderWidth:1.5, borderColor:'#D7B45D', zIndex:44, elevation:26 }}>
@@ -5390,6 +5394,21 @@ function renderRoomInterior() {
   >
     <Text style={{ position: 'absolute', top: 0, fontSize: 13 }}>👑</Text>
     <Text style={{ fontSize: 28, marginTop: 7 }}>🐘</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    accessibilityRole="button"
+    accessibilityLabel="Open Wild Kingdom"
+    onPress={() => {
+      setShowRoomGiftPanel(false); setShowRoomTools(false); setShowGreedyPanel(false);
+      setShowThunderKingPanel(false); setShowLuckyElephantPanel(false); setShowRoomGamePanel(false);
+      setShowRocketPanel(false); setShowHotEventsPopup(false);
+      setShowWildKingdomPanel(true);
+    }}
+    style={{ width: 48, height: 48, borderRadius: 16, borderWidth: 1.5, borderColor: '#E8C66B', backgroundColor: '#10284A', alignItems: 'center', justifyContent: 'center', shadowColor: '#58BFFF', shadowOpacity: 0.62, shadowRadius: 10, elevation: 10 }}
+  >
+    <Text style={{ position: 'absolute', top: 0, color: '#F5D27A', fontSize: 13 }}>♛</Text>
+    <Text style={{ fontSize: 25, marginTop: 7 }}>🦁🐯</Text>
   </TouchableOpacity>
 
   <TouchableOpacity
