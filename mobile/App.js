@@ -1540,6 +1540,7 @@ const [showGreedyPanel, setShowGreedyPanel] = useState(false);
 const [showRoomGamePanel, setShowRoomGamePanel] = useState(false);
 const [showRocketPanel, setShowRocketPanel] = useState(false);
 const [treasureLevel, setTreasureLevel] = useState(1);
+const [treasureRewardTab, setTreasureRewardTab] = useState('TOP 1');
 const [showRoomShortcutsPage, setShowRoomShortcutsPage] = useState(false);
 const [roomShortcutCategory, setRoomShortcutCategory] = useState('Treasury');
 const [roomChatText, setRoomChatText] = useState('');
@@ -4774,18 +4775,14 @@ function renderRoomInterior() {
               <Text style={{ color:'#F4E8D2',fontSize:23,fontWeight:'700' }}>×</Text>
             </TouchableOpacity>
           </View>
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom:10 }}>
-            <View style={{ minHeight:350,borderRadius:23,backgroundColor:'#171025',borderWidth:1.5,borderColor:'#A9864D',alignItems:'center',justifyContent:'center',padding:16,paddingTop:22,overflow:'hidden' }}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom:16 }}>
+            <View style={{ borderRadius:23,backgroundColor:'#171025',borderWidth:1.5,borderColor:'#A9864D',alignItems:'center',padding:15,paddingTop:19,overflow:'hidden' }}>
               <View style={{ position:'absolute',top:-55,width:250,height:250,borderRadius:125,borderWidth:1,borderColor:'rgba(211,177,112,0.20)' }} />
               <View style={{ position:'absolute',top:-28,width:195,height:195,borderRadius:98,borderWidth:1,borderColor:'rgba(211,177,112,0.12)' }} />
-              <View style={{ position:'absolute',width:220,height:220,borderRadius:110,borderWidth:1,borderColor:'rgba(232,197,126,0.22)',backgroundColor:'rgba(169,126,64,0.035)' }} />
-              <View style={{ position:'absolute',top:42,left:34,width:4,height:4,borderRadius:2,backgroundColor:'#E8CD91',opacity:0.85 }} />
-              <View style={{ position:'absolute',top:78,right:42,width:3,height:3,borderRadius:2,backgroundColor:'#E8CD91',opacity:0.7 }} />
-              <View style={{ position:'absolute',bottom:76,left:55,width:3,height:3,borderRadius:2,backgroundColor:'#E8CD91',opacity:0.65 }} />
-              <View style={{ position:'absolute',width:158,height:158,borderRadius:79,backgroundColor:treasureLevel===1?'rgba(101,213,138,0.12)':treasureLevel===2?'rgba(183,139,255,0.14)':treasureLevel===3?'rgba(240,107,112,0.13)':treasureLevel===4?'rgba(105,185,240,0.14)':'rgba(231,193,108,0.15)' }} />
+              <View style={{ position:'absolute',width:220,height:220,borderRadius:110,borderWidth:1,borderColor:'rgba(232,197,126,0.18)',backgroundColor:'rgba(169,126,64,0.035)' }} />
               <Text style={{ color:'#D8BD83',fontSize:9,fontWeight:'900',letterSpacing:2.4 }}>THE ROCKET COLLECTION</Text>
               <Text style={{ color:'#F6EBD7',fontSize:16,fontWeight:'900',letterSpacing:1,marginTop:4 }}>LEVEL {treasureLevel}</Text>
-              <View style={{ width:'100%',height:205,alignItems:'center',justifyContent:'center',flexDirection:'row' }}>
+              <View style={{ width:'100%',height:190,alignItems:'center',justifyContent:'center',flexDirection:'row' }}>
                 {(treasureLevel===1
                   ? [{w:48,h:126,accent:'#65D58A',main:true}]
                   : treasureLevel===2
@@ -4811,19 +4808,23 @@ function renderRoomInterior() {
                   </View>
                 ))}
               </View>
-              <Text style={{ color:'#F3E5C9',fontSize:15,fontWeight:'900',letterSpacing:1.15,marginTop:2 }}>
+              <Text style={{ color:'#F3E5C9',fontSize:15,fontWeight:'900',letterSpacing:1.15,marginTop:1 }}>
                 {['','EMERALD IGNITION','PURPLE BOOSTER','CRIMSON CLUSTER','SAPPHIRE SHUTTLE','ROYAL ORBITER'][treasureLevel]}
               </Text>
-              <Text style={{ color:'#B9AFC8',fontSize:10,marginTop:6,textAlign:'center' }}>
+              <Text style={{ color:'#B9AFC8',fontSize:10,marginTop:5,textAlign:'center' }}>
                 {treasureLevel===1?'A sleek emerald-powered launch vehicle':treasureLevel===2?'A three-core booster with royal violet trim':treasureLevel===3?'A powerful triple-engine crimson rocket':treasureLevel===4?'A sapphire space shuttle with gold detailing':'The royal orbiter with twin support boosters'}
               </Text>
-              <View style={{ flexDirection:'row',alignItems:'center',marginTop:10 }}>
-                <View style={{ width:30,height:1,backgroundColor:'#80643C' }} />
-                
-                <View style={{ width:30,height:1,backgroundColor:'#80643C' }} />
+              <View style={{ width:'100%',marginTop:14,paddingHorizontal:4 }}>
+                <View style={{ flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:7 }}>
+                  <Text style={{ color:'#E7C16C',fontSize:15,fontWeight:'900' }}>0%</Text>
+                  <Text style={{ color:'#D6A94F',fontSize:10,fontWeight:'800' }}>DAILY PROGRESS</Text>
+                </View>
+                <View style={{ height:13,width:'100%',borderRadius:10,backgroundColor:'#30243E',borderWidth:1,borderColor:'#80643C',overflow:'hidden' }}>
+                  <View style={{ height:'100%',width:'0%',borderRadius:10,backgroundColor:'#D6A94F' }} />
+                </View>
               </View>
             </View>
-            <View style={{ flexDirection:'row',justifyContent:'space-between',marginTop:14,marginBottom:8 }}>
+            <View style={{ flexDirection:'row',justifyContent:'space-between',marginTop:13,marginBottom:7 }}>
               {[
                 {level:1,color:'#65D58A',name:'EMERALD'},
                 {level:2,color:'#B78BFF',name:'PURPLE'},
@@ -4831,17 +4832,65 @@ function renderRoomInterior() {
                 {level:4,color:'#69B9F0',name:'SAPPHIRE'},
                 {level:5,color:'#E7C16C',name:'ROYAL'}
               ].map(item=>(
-                <TouchableOpacity key={item.level} onPress={()=>setTreasureLevel(item.level)} style={{ flex:1,alignItems:'center',paddingVertical:12,marginHorizontal:2,borderRadius:15,backgroundColor:treasureLevel===item.level?'#39254F':'#191225',borderWidth:treasureLevel===item.level?2:1.2,borderColor:treasureLevel===item.level?'#E5C47C':'#574267' }}>
-                  <Text style={{ color:item.color,fontSize:13,fontWeight:'900' }}>LV {item.level}</Text>
-                  <Text style={{ color:treasureLevel===item.level?'#F3E8D5':'#9D91A9',fontSize:8,marginTop:5,fontWeight:'800',letterSpacing:0.4 }}>{item.name}</Text>
-                  {treasureLevel===item.level && <View style={{ width:16,height:2,backgroundColor:item.color,borderRadius:2,marginTop:5 }} />}
+                <TouchableOpacity key={item.level} onPress={()=>{setTreasureLevel(item.level);setTreasureRewardTab('TOP 1');}} style={{ flex:1,alignItems:'center',paddingVertical:11,marginHorizontal:2,borderRadius:14,backgroundColor:treasureLevel===item.level?'#39254F':'#191225',borderWidth:treasureLevel===item.level?2:1.2,borderColor:treasureLevel===item.level?'#E5C47C':'#574267' }}>
+                  <Text style={{ color:item.color,fontSize:12,fontWeight:'900' }}>LV {item.level}</Text>
+                  <Text style={{ color:treasureLevel===item.level?'#F3E8D5':'#9D91A9',fontSize:7,marginTop:4,fontWeight:'800',letterSpacing:0.25 }}>{item.name}</Text>
                 </TouchableOpacity>
+              ))}
+            </View>
+            <View style={{ marginTop:8,marginBottom:5 }}>
+              <Text style={{ color:'#F3E5C9',fontSize:16,fontWeight:'900',letterSpacing:0.8,marginBottom:13 }}>RANKING</Text>
+              <View style={{ flexDirection:'row',alignItems:'flex-end',justifyContent:'space-between' }}>
+                <View style={{ flex:1,alignItems:'center',paddingTop:27 }}>
+                  <View style={{ width:58,height:58,borderRadius:29,backgroundColor:'#30243E',borderWidth:2,borderColor:'#C5CBD8',alignItems:'center',justifyContent:'center' }}>
+                    <Text style={{ color:'#C5CBD8',fontSize:25 }}>●</Text>
+                  </View>
+                  <Text style={{ color:'#C5CBD8',fontSize:15,fontWeight:'900',marginTop:5 }}>2</Text>
+                  <Text numberOfLines={1} style={{ color:'#F5EBDD',fontSize:11,fontWeight:'800',marginTop:5,maxWidth:'100%' }}>—</Text>
+                  <Text style={{ color:'#E7C16C',fontSize:11,fontWeight:'900',marginTop:3 }}>0</Text>
+                </View>
+                <View style={{ flex:1,alignItems:'center' }}>
+                  <Text style={{ color:'#E7C16C',fontSize:22,marginBottom:2 }}>♛</Text>
+                  <View style={{ width:78,height:78,borderRadius:39,backgroundColor:'#30243E',borderWidth:3,borderColor:'#E7C16C',alignItems:'center',justifyContent:'center' }}>
+                    <Text style={{ color:'#E7C16C',fontSize:32 }}>●</Text>
+                  </View>
+                  <Text style={{ color:'#E7C16C',fontSize:19,fontWeight:'900',marginTop:4 }}>1</Text>
+                  <Text numberOfLines={1} style={{ color:'#F5EBDD',fontSize:12,fontWeight:'900',marginTop:4,maxWidth:'100%' }}>—</Text>
+                  <Text style={{ color:'#E7C16C',fontSize:13,fontWeight:'900',marginTop:3 }}>0</Text>
+                </View>
+                <View style={{ flex:1,alignItems:'center',paddingTop:27 }}>
+                  <View style={{ width:58,height:58,borderRadius:29,backgroundColor:'#30243E',borderWidth:2,borderColor:'#C58B61',alignItems:'center',justifyContent:'center' }}>
+                    <Text style={{ color:'#C58B61',fontSize:25 }}>●</Text>
+                  </View>
+                  <Text style={{ color:'#C58B61',fontSize:15,fontWeight:'900',marginTop:5 }}>3</Text>
+                  <Text numberOfLines={1} style={{ color:'#F5EBDD',fontSize:11,fontWeight:'800',marginTop:5,maxWidth:'100%' }}>—</Text>
+                  <Text style={{ color:'#E7C16C',fontSize:11,fontWeight:'900',marginTop:3 }}>0</Text>
+                </View>
+              </View>
+            </View>
+            <View style={{ height:1,backgroundColor:'#80643C',marginVertical:13 }} />
+            <Text style={{ color:'#F3E5C9',fontSize:16,fontWeight:'900',letterSpacing:0.8,marginBottom:11 }}>REWARDS</Text>
+            <View style={{ flexDirection:'row',gap:8,marginBottom:12 }}>
+              {['TOP 1','TOP 2','TOP 3'].map(tab=>(
+                <TouchableOpacity key={tab} onPress={()=>setTreasureRewardTab(tab)} style={{ flex:1,alignItems:'center',paddingVertical:12,borderRadius:12,backgroundColor:treasureRewardTab===tab?'#49331B':'#191225',borderWidth:treasureRewardTab===tab?2:1,borderColor:treasureRewardTab===tab?'#E7C16C':'#574267' }}>
+                  <Text style={{ color:treasureRewardTab===tab?'#F4D48A':'#C9BBD8',fontSize:12,fontWeight:'900' }}>{tab}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <View style={{ flexDirection:'row',justifyContent:'space-around',alignItems:'center',backgroundColor:'#191225',borderRadius:17,borderWidth:1,borderColor:'#80643C',paddingVertical:13,paddingHorizontal:8 }}>
+              {[
+                {symbol:'♜',color:treasureRewardTab==='TOP 1'?'#E7C16C':'#9A8B75'},
+                {symbol:'♛',color:treasureRewardTab==='TOP 2'?'#C5CBD8':'#9A8B75'},
+                {symbol:'🏆',color:treasureRewardTab==='TOP 3'?'#C58B61':'#9A8B75'}
+              ].map((reward,index)=>(
+                <View key={index} style={{ width:72,height:72,borderRadius:15,backgroundColor:'#241A30',borderWidth:1,borderColor:reward.color,alignItems:'center',justifyContent:'center' }}>
+                  <Text style={{ color:reward.color,fontSize:35 }}>{reward.symbol}</Text>
+                </View>
               ))}
             </View>
           </ScrollView>
         </View>
       )}
-
       <RoomGames visible={showRoomGamePanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowRoomGamePanel(false)} onGameAvailable={() => setShowRoomGamePanel(true)} roomId={selectedRoom?.id} creatorName={profile?.display_name || displayName || session?.user?.user_metadata?.full_name || 'Player'} userId={session?.user?.id} supabase={supabase} isAuthorisedStarter={selectedRoom?.owner_id===session?.user?.id || roomPresence.some(person=>person.user_id===session?.user?.id && person.presence_role==='admin')} hasRoomSeat={micSeats.some(seat=>seat.user_id===session?.user?.id)} roomMembers={roomPresence} selfProfile={profile} />
 
       {showGreedyPanel && screen === 'roomInterior' && selectedRoom && (
