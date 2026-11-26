@@ -21,6 +21,8 @@ export default function RoyalFruitCrownPanel({visible,onClose,api}) {
   const [fruit,setFruit] = useState('cherry');
   const [amount,setAmount] = useState(100);
   const [busy,setBusy] = useState(false);
+  const [pendingBets,setPendingBets] = useState(0);
+  const betQueue = useRef(Promise.resolve());
   const [error,setError] = useState('');
   const [seconds,setSeconds] = useState(37);
   const [spot,setSpot] = useState(0);
@@ -35,6 +37,7 @@ export default function RoyalFruitCrownPanel({visible,onClose,api}) {
   const chosen = FRUITS.find(f => f.id === fruit) || FRUITS[0];
   const myBets = game?.my_bets || [];
   const totalBet = myBets.reduce((n,b) => n + Number(b.amount || 0), 0);
+  const fruitBetTotals = myBets.reduce((totals,b) => { totals[b.fruit]=(totals[b.fruit]||0)+Number(b.amount||0); return totals; },{});
   const myWinnings = winner ? myBets.filter(b => b.fruit === winner.id).reduce((n,b) => n + Number(b.amount || 0) * winner.mult, 0) : 0;
 
   const refresh = async () => {
@@ -83,12 +86,19 @@ export default function RoyalFruitCrownPanel({visible,onClose,api}) {
     catch(e) { setError(e.message || 'Could not set the Founder result.'); }
     finally { setBusy(false); }
   };
-  const placeBet = async () => {
-    if (busy || phase !== 'betting') return;
-    setBusy(true); setError('');
-    try { await api('/api/greedy/fruit-crown/bets',{method:'POST',body:JSON.stringify({fruit,amount})}); await refresh(); }
-    catch(e) { setError(e.message || 'Bet could not be placed.'); }
-    finally { setBusy(false); }
+  const placeBet = (betAmount=amount, betFruit=fruit) => {
+    if (phase !== 'betting') return;
+    setAmount(betAmount);
+    setPendingBets(n=>n+1);
+    setError('');
+    const request = betQueue.current.then(async () => {
+      try {
+        await api('/api/greedy/fruit-crown/bets',{method:'POST',body:JSON.stringify({fruit:betFruit,amount:betAmount})});
+        await refresh();
+      } catch(e) { setError(e.message || 'Bet could not be placed.'); }
+      finally { setPendingBets(n=>Math.max(0,n-1)); }
+    });
+    betQueue.current = request.catch(()=>{});
   };
   const close = () => { if (spotTimer.current) clearTimeout(spotTimer.current); onClose?.(); };
   const history = game?.history || [];
@@ -143,17 +153,15 @@ export default function RoyalFruitCrownPanel({visible,onClose,api}) {
             <View style={s.statusBar}><View style={s.statusDot}/><Text style={s.statusText}>{phase==='betting'?'BETTING IS OPEN':phase==='drawing'?'THE ROYAL DRAW':'ROUND COMPLETE'}</Text><View style={s.timerBox}><Text style={s.timerValue}>{phase==='drawing'?'✦':seconds}</Text><Text style={s.timerUnit}>{phase==='betting'?'SECONDS':phase==='drawing'?'DRAWING':'SECONDS'}</Text></View></View>
             <View style={s.boardFrame}>
               <View style={s.board}>
-                {[FRUITS[0],FRUITS[1],FRUITS[2],FRUITS[3],null,FRUITS[4],FRUITS[5],FRUITS[6],FRUITS[7]].map((f,i)=>f?<FruitTile key={f.id} f={f} active={fruit===f.id} lit={phase==='drawing'&&spot===FRUITS.findIndex(x=>x.id===f.id)} dim={phase==='drawing'&&spot!==FRUITS.findIndex(x=>x.id===f.id)} spinning={phase==='drawing'} animationDelay={i*35} disabled={phase!=='betting'} onPress={()=>setFruit(f.id)}/>:<View key="timer" style={s.centerCell}><Text style={s.centerCrown}>♛</Text><Text style={s.centerTimer}>{phase==='betting'?seconds:phase==='drawing'?'✦':'✓'}</Text><Text style={s.centerSeconds}>{phase==='betting'?'SECONDS':'ROYAL DRAW'}</Text></View>)}
+                {[FRUITS[0],FRUITS[1],FRUITS[2],FRUITS[3],null,FRUITS[4],FRUITS[5],FRUITS[6],FRUITS[7]].map((f,i)=>f?<FruitTile key={f.id} f={f} active={fruit===f.id} lit={phase==='drawing'&&spot===FRUITS.findIndex(x=>x.id===f.id)} dim={phase==='drawing'&&spot!==FRUITS.findIndex(x=>x.id===f.id)} spinning={phase==='drawing'} animationDelay={i*35} disabled={phase!=='betting'} onPress={()=>setFruit(f.id)} betTotal={fruitBetTotals[f.id]||0}/>:<View key="timer" style={s.centerCell}><Text style={s.centerCrown}>♛</Text><Text style={s.centerTimer}>{phase==='betting'?seconds:phase==='drawing'?'✦':'✓'}</Text><Text style={s.centerSeconds}>{phase==='betting'?'SECONDS':'ROYAL DRAW'}</Text></View>)}
               </View>
             </View>
             <View style={s.betSection}>
               <View style={s.betHeader}><Text style={s.sectionTitle}>SELECT YOUR BET</Text><Text style={s.selectedFruit}>SELECTED: {chosen.name.toUpperCase()}</Text></View>
-              <View style={s.chips}>{BETS.map(v=><TouchableOpacity key={v} disabled={phase!=='betting'} onPress={()=>setAmount(v)} style={[s.chip,amount===v&&s.chipActive]}><Text style={[s.chipText,amount===v&&s.chipTextActive]}>{money(v)}</Text></TouchableOpacity>)}</View>
+              <View style={s.chips}>{BETS.map(v=><TouchableOpacity key={v} disabled={phase!=='betting'} onPress={()=>placeBet(v,fruit)} style={[s.chip,amount===v&&s.chipActive]}><Text style={[s.chipText,amount===v&&s.chipTextActive]}>{money(v)}</Text></TouchableOpacity>)}</View>
               <View style={s.betFooter}>
-                <View style={s.betTotals}><Text style={s.totalLabel}>TOTAL BET THIS ROUND</Text><Text style={s.totalValue}>{money(totalBet)} <Text style={s.coin}>◉</Text></Text></View>
-                <TouchableOpacity disabled={busy||phase!=='betting'} onPress={placeBet} style={[s.betButton,(busy||phase!=='betting')&&s.disabledButton]}>
-                  {busy?<ActivityIndicator color="#211504"/>:<Text style={s.betButtonText}>PLACE BET  ·  {money(amount)}</Text>}
-                </TouchableOpacity>
+                <View style={s.betTotals}><Text style={s.totalLabel}>TOTAL BET THIS ROUND</Text><Text style={s.totalValue}>{money(totalBet)} <Text style={s.coin}>◉</Text></Text><Text style={s.totalLabel}>ON {chosen.name.toUpperCase()}: {money(fruitBetTotals[fruit]||0)} COINS</Text></View>
+                <View style={s.betHint}><Text style={s.betButtonText}>{pendingBets>0?'SENDING '+pendingBets+' BET(S)…':phase==='betting'?'TAP AN AMOUNT TO BET':'BETTING CLOSED'}</Text></View>
               </View>
             </View>
             {!!error&&<Text style={s.error}>{error}</Text>}
@@ -184,7 +192,7 @@ function FruitIcon({fruit,size=54}) {
   return <View style={common}><View style={{position:'absolute',top:size*.12,left:size*.48,width:size*.22,height:size*.14,backgroundColor:'#80A64B',borderTopLeftRadius:size,borderBottomRightRadius:size,transform:[{rotate:'-28deg'}]}}/><View style={{position:'absolute',top:size*.12,width:2,height:size*.18,backgroundColor:'#91613A'}}/><View style={[body,shape]}/>{fruit.id==='strawberry'&&<View style={{position:'absolute',top:size*.35,width:3,height:3,borderRadius:4,backgroundColor:'#FFE8A3'}}/>}</View>;
 }
 
-function FruitTile({f,active,lit,dim,spinning,animationDelay=0,disabled,onPress}) {
+function FruitTile({f,active,lit,dim,spinning,animationDelay=0,disabled,onPress,betTotal=0}) {
   const motion = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     if (!spinning) {
@@ -207,6 +215,7 @@ function FruitTile({f,active,lit,dim,spinning,animationDelay=0,disabled,onPress}
   return <TouchableOpacity disabled={disabled} onPress={onPress} style={[s.fruitTile,active&&!disabled&&s.fruitSelected,dim&&s.fruitDim,lit&&s.fruitLit]}>
     <Animated.View style={[s.fruitArt,{transform:[{translateY:floatY},{rotate:tilt},{scale:pulse}]}]}><FruitIcon fruit={f} size={51}/></Animated.View>
     <Text style={s.fruitName}>{f.name.toUpperCase()}</Text>
+    {betTotal>0&&<Text style={s.fruitBetTotal}>{money(betTotal)}</Text>}
     <View style={s.multBadge}><Text style={s.multText}>{f.mult}×</Text></View>
     {lit&&<Text style={s.sparkle}>✦</Text>}
   </TouchableOpacity>;
@@ -240,7 +249,7 @@ const s=StyleSheet.create({
   betHeader:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},sectionTitle:{color:'#F0D99B',fontSize:9,fontWeight:'900',letterSpacing:1},selectedFruit:{fontSize:7,color:'#C5A96A',fontWeight:'900'},
   chips:{flexDirection:'row',justifyContent:'space-between',gap:4,marginTop:8,marginBottom:8},
   chip:{flex:1,minHeight:34,alignItems:'center',justifyContent:'center',backgroundColor:'#17252A',borderWidth:1,borderColor:'#9B8A61',borderRadius:5,paddingHorizontal:2},chipActive:{backgroundColor:'#C69A3C',borderColor:'#FFF0B0',borderWidth:2},chipText:{fontSize:8,color:'#E9DFC5',fontWeight:'900'},chipTextActive:{color:'#211707'},
-  betFooter:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:8},betTotals:{flex:1},totalLabel:{fontSize:7,color:'#BBAA7D',fontWeight:'900'},totalValue:{fontSize:15,color:'#FBE3A0',fontWeight:'900',marginTop:2},
+  betFooter:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:8},betTotals:{flex:1},betHint:{minHeight:39,flex:1,backgroundColor:'#493719',borderWidth:1,borderColor:'#D7B45D',borderRadius:5,paddingHorizontal:7,alignItems:'center',justifyContent:'center},fruitBetTotal:{fontSize:7,color:'#FFE7A2',fontWeight:'900',marginTop:1},totalLabel:{fontSize:7,color:'#BBAA7D',fontWeight:'900'},totalValue:{fontSize:15,color:'#FBE3A0',fontWeight:'900',marginTop:2},
   betButton:{minHeight:39,backgroundColor:'#D9B35D',borderWidth:1.5,borderColor:'#FFF0B4',borderRadius:5,paddingHorizontal:12,alignItems:'center',justifyContent:'center',shadowColor:'#E5BC61',shadowOpacity:.25,shadowRadius:5},disabledButton:{opacity:.4},betButtonText:{fontSize:9,color:'#251908',fontWeight:'900',letterSpacing:.4},
   historyPanel:{marginTop:8,padding:8,backgroundColor:'#111716',borderWidth:1,borderColor:'#80683E',borderRadius:5},historyHeading:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},historyCaption:{fontSize:6,color:'#A99569',letterSpacing:1,fontWeight:'800'},historyItems:{flexDirection:'row',justifyContent:'space-around',alignItems:'center',marginTop:7,minHeight:35},historyItem:{width:34,height:34,alignItems:'center',justifyContent:'center',backgroundColor:'#1A1D19',borderRadius:17,borderWidth:1,borderColor:'#655433'},
   founderAccess:{alignSelf:'center',paddingVertical:6,paddingHorizontal:12},founderAccessText:{fontSize:6,color:'#776743',letterSpacing:1,fontWeight:'900'},
