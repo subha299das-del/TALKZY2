@@ -29,6 +29,9 @@ jobs:
       - name: Syntax check
         working-directory: server
         run: node --check server.js
+      - name: Run backend API tests
+        working-directory: server
+        run: npm test
       - name: Audit backend dependencies
         working-directory: server
         run: npm audit --omit=dev --audit-level=high
