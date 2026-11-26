@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, Image, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal, Image, ActivityIndicator, StyleSheet, TextInput } from 'react-native';
 
 const GOLD = '#FFE078';
 const FRUITS = [
@@ -24,6 +24,10 @@ export default function RoyalFruitCrownPanel({visible,onClose,api}) {
   const [seconds,setSeconds] = useState(37);
   const [spot,setSpot] = useState(0);
   const [spotOn,setSpotOn] = useState(false);
+  const [founderOpen,setFounderOpen] = useState(false);
+  const [ownerEmail,setOwnerEmail] = useState('');
+  const [ownerPassword,setOwnerPassword] = useState('');
+  const [ownerToken,setOwnerToken] = useState('');
   const spotTimer = useRef(null);
   const round = game?.round;
   const phase = round?.phase || 'betting';
@@ -77,6 +81,18 @@ export default function RoyalFruitCrownPanel({visible,onClose,api}) {
     return () => { active = false; if (spotTimer.current) clearTimeout(spotTimer.current); };
   }, [phase,round?.id]);
 
+  const founderLogin = async () => {
+    setBusy(true); setError('');
+    try { const response = await api('/api/admin/login',{method:'POST',body:JSON.stringify({email:ownerEmail,password:ownerPassword})}); setOwnerToken(response.token); setOwnerPassword(''); }
+    catch(e) { setError(e.message || 'Founder sign-in failed.'); }
+    finally { setBusy(false); }
+  };
+  const setFounderWinner = async (id) => {
+    setBusy(true); setError('');
+    try { await api('/api/greedy/fruit-crown/founder-result',{method:'POST',headers:{Authorization:'Bearer '+ownerToken},body:JSON.stringify({fruit:id})}); setFounderOpen(false); await refresh(); }
+    catch(e) { setError(e.message || 'Could not set the Founder result.'); }
+    finally { setBusy(false); }
+  };
   const placeBet = async () => {
     if (busy || phase !== 'betting') return;
     setBusy(true); setError('');
@@ -93,6 +109,7 @@ export default function RoyalFruitCrownPanel({visible,onClose,api}) {
     <View style={s.back}><View style={s.shell}>
       <View style={s.top}>
         <Text style={s.balance}>🪙 GOLD {money(game?.balance)}</Text>
+        <TouchableOpacity onPress={()=>setFounderOpen(v=>!v)}><Text style={s.founderButton}>FOUNDER</Text></TouchableOpacity>
         <Text style={s.round}>ROUND {round?.number || '—'}</Text>
         <TouchableOpacity onPress={close}><Text style={s.close}>×</Text></TouchableOpacity>
       </View>
@@ -115,6 +132,9 @@ export default function RoyalFruitCrownPanel({visible,onClose,api}) {
         <View style={s.banner}><Text style={{fontSize:26}}>👑</Text><View style={{flex:1}}>
           <Text style={s.heading}>ROYAL FRUIT CROWN</Text><Text style={s.subtitle}>CHOOSE YOUR FRUIT · WIN GOLD COINS</Text>
         </View><Text style={{fontSize:24}}>🏆</Text></View>
+        {founderOpen && <View style={s.founderBox}>
+          {ownerToken ? <><Text style={s.founderTitle}>FOUNDER WINNER CONTROL</Text><Text style={s.founderHint}>Choose the winning fruit before betting closes.</Text><View style={s.founderChoices}>{FRUITS.map(f=><TouchableOpacity key={f.id} disabled={busy} onPress={()=>setFounderWinner(f.id)} style={s.founderChoice}><Text style={{fontSize:17}}>{f.emoji}</Text><Text style={s.founderChoiceText}>{f.name}</Text></TouchableOpacity>)}</View><TouchableOpacity onPress={()=>setOwnerToken('')}><Text style={s.founderLogout}>SIGN OUT FOUNDER</Text></TouchableOpacity></> : <><Text style={s.founderTitle}>FOUNDER SIGN IN</Text><TextInput value={ownerEmail} onChangeText={setOwnerEmail} autoCapitalize="none" keyboardType="email-address" placeholder="Owner email" placeholderTextColor="#A6B39D" style={s.founderInput}/><TextInput value={ownerPassword} onChangeText={setOwnerPassword} secureTextEntry placeholder="Owner password" placeholderTextColor="#A6B39D" style={s.founderInput}/><TouchableOpacity disabled={busy} onPress={founderLogin} style={s.founderLogin}><Text style={s.founderChoiceText}>{busy?'PLEASE WAIT':'OWNER SIGN IN'}</Text></TouchableOpacity></>}
+        </View>}
         <View style={s.phaseRow}>
           <Text style={s.phase}>{phase === 'betting' ? 'BETTING OPEN' : phase === 'drawing' ? 'CROWN DRAW' : 'ROUND RESULT'}</Text>
           <Text style={s.timer}>{phase === 'betting' ? seconds + 's' : phase === 'drawing' ? 'DRAWING' : seconds + 's'}</Text>
@@ -149,8 +169,9 @@ function FruitTile({f,active,lit,disabled,onPress}) {
 }
 const s=StyleSheet.create({
   back:{flex:1,backgroundColor:'rgba(0,0,0,.9)',justifyContent:'center',padding:5},shell:{maxHeight:'98%',backgroundColor:'#061D17',borderColor:'#D6AC45',borderWidth:2,borderRadius:13,overflow:'hidden'},
-  top:{height:40,backgroundColor:'#07130F',flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:10},balance:{color:GOLD,fontSize:11,fontWeight:'900'},round:{color:'#D7C28B',fontSize:9,fontWeight:'900'},close:{color:GOLD,fontSize:28},
+  top:{height:40,backgroundColor:'#07130F',flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:10},founderButton:{color:'#F4D58A',fontSize:8,fontWeight:'900',borderWidth:1,borderColor:'#96763D',paddingHorizontal:6,paddingVertical:4},balance:{color:GOLD,fontSize:11,fontWeight:'900'},round:{color:'#D7C28B',fontSize:9,fontWeight:'900'},close:{color:GOLD,fontSize:28},
   content:{padding:7,paddingBottom:12},banner:{height:48,flexDirection:'row',alignItems:'center',gap:8,backgroundColor:'#07532E',borderWidth:1,borderColor:'#C69B37',paddingHorizontal:8},heading:{color:'#FFF0A4',fontSize:17,fontWeight:'900',fontStyle:'italic'},subtitle:{color:'#C6E7B7',fontSize:7,fontWeight:'900'},
+  founderBox:{marginTop:6,padding:9,backgroundColor:'#102D1E',borderWidth:1,borderColor:'#D6B65C',borderRadius:7},founderTitle:{color:GOLD,fontSize:11,fontWeight:'900'},founderHint:{color:'#D8C99F',fontSize:8,marginVertical:5},founderInput:{height:36,backgroundColor:'#06170F',borderWidth:1,borderColor:'#6E633B',borderRadius:5,color:'#FFF3C8',paddingHorizontal:9,marginTop:6,fontSize:11},founderLogin:{alignSelf:'flex-start',backgroundColor:'#D9AB3D',paddingHorizontal:12,paddingVertical:8,borderRadius:5,marginTop:7},founderChoices:{flexDirection:'row',flexWrap:'wrap',gap:5,marginTop:7},founderChoice:{flexDirection:'row',alignItems:'center',gap:4,backgroundColor:'#214A2D',paddingHorizontal:7,paddingVertical:6,borderRadius:5,borderWidth:1,borderColor:'#B99B51'},founderChoiceText:{color:'#FFF0B0',fontSize:8,fontWeight:'900'},founderLogout:{color:'#F1D18B',fontSize:8,fontWeight:'900',marginTop:8},
   phaseRow:{height:31,flexDirection:'row',justifyContent:'space-between',alignItems:'center',paddingHorizontal:10,backgroundColor:'#0B241A'},phase:{color:'#F8E9B8',fontSize:10,fontWeight:'900'},timer:{color:'#FFF2A5',fontSize:16,fontWeight:'900'},
   board:{flexDirection:'row',flexWrap:'wrap',justifyContent:'space-between',backgroundColor:'#07482A',padding:5,gap:4},fruit:{width:'32%',height:81,backgroundColor:'#0B6B3B',borderColor:'#D7C36A',borderWidth:1,borderRadius:7,alignItems:'center',justifyContent:'center'},fruitActive:{backgroundColor:'#A66D19',borderWidth:2,borderColor:'#FFF3A1'},fruitLit:{backgroundColor:'#FFF2A5',borderColor:'#FFFFFF',borderWidth:3,shadowColor:'#FFF0A0',shadowOpacity:1,shadowRadius:22,elevation:18},fruitEmoji:{fontSize:25},fruitName:{color:'#FFF2C5',fontSize:9,fontWeight:'900'},mult:{color:'#FFE27C',fontSize:11,fontWeight:'900'},
   center:{width:'32%',height:81,alignItems:'center',justifyContent:'center',backgroundColor:'#102C20',borderColor:'#E6BE54',borderWidth:1.5,borderRadius:8},centerCrown:{fontSize:19},centerTime:{color:'#FFF1A2',fontSize:17,fontWeight:'900'},centerLabel:{color:'#E8D9A2',fontSize:7,fontWeight:'900'},
