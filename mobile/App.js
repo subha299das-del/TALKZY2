@@ -5001,14 +5001,14 @@ function renderRoomInterior() {
                 <Text style={{ color: '#F6D987', fontSize: 23, fontWeight: '700' }}>×</Text>
               </TouchableOpacity>
             </View>
-            <Text style={{ color: '#C7B99F', fontSize: 10, marginBottom: 14 }}>Five games are currently in the app. Five more slots are reserved for future Greedy games.</Text>
+            <Text style={{ color: '#C7B99F', fontSize: 10, marginBottom: 14 }}>Royal Fruit Crown is the first redesigned Greedy game. The other panels are temporarily closed while they are rebuilt to match their own game designs.</Text>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingBottom: 4 }}>
               {[
-                { name: 'Thunder King', mark: '⚡', key: 'thunder', available: true },
-                { name: 'Lucky Elephant', mark: '🐘', key: 'elephant', available: true },
-                { name: 'Wild Kingdom', mark: '🦁', key: 'wild', available: true },
-                { name: 'Royal 77', mark: '77', key: 'royal77', available: true },
-                { name: 'Ruby Jackpot', mark: '💎', key: 'ruby', available: true },
+                { name: 'Thunder King', mark: '⚡', key: 'thunder', available: false },
+                { name: 'Lucky Elephant', mark: '🐘', key: 'elephant', available: false },
+                { name: 'Wild Kingdom', mark: '🦁', key: 'wild', available: false },
+                { name: 'Royal 77', mark: '77', key: 'royal77', available: false },
+                { name: 'Ruby Jackpot', mark: '💎', key: 'ruby', available: false },
                 { name: 'Royal Fruit Crown', mark: '🍒', key: 'fruitcrown', available: true },
                 { name: 'Coming Soon', mark: '07', key: 'soon7', available: false },
                 { name: 'Coming Soon', mark: '08', key: 'soon8', available: false },
