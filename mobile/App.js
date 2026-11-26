@@ -38,6 +38,7 @@ import LuckyElephantPanel from './LuckyElephantPanel';
 import WildKingdomPanel from './WildKingdomPanel';
 import Royal77Panel from './Royal77Panel';
 import RubyJackpotPanel from './RubyJackpotPanel';
+import RoyalFruitCrownPanel from './RoyalFruitCrownPanel';
 
 WebBrowser.maybeCompleteAuthSession();
 const MIC_ON_ICON = require('./assets/mic_on.png');
@@ -1565,6 +1566,7 @@ const [showLuckyElephantPanel, setShowLuckyElephantPanel] = useState(false);
 const [showWildKingdomPanel, setShowWildKingdomPanel] = useState(false);
 const [showRoyal77Panel, setShowRoyal77Panel] = useState(false);
 const [showRubyJackpotPanel, setShowRubyJackpotPanel] = useState(false);
+const [showRoyalFruitCrownPanel, setShowRoyalFruitCrownPanel] = useState(false);
 const [greedyView, setGreedyView] = useState('game');
 const [greedyHistory, setGreedyHistory] = useState([]);
 
@@ -5007,7 +5009,7 @@ function renderRoomInterior() {
                 { name: 'Wild Kingdom', mark: '🦁', key: 'wild', available: true },
                 { name: 'Royal 77', mark: '77', key: 'royal77', available: true },
                 { name: 'Ruby Jackpot', mark: '💎', key: 'ruby', available: true },
-                { name: 'Coming Soon', mark: '06', key: 'soon6', available: false },
+                { name: 'Royal Fruit Crown', mark: '🍒', key: 'fruitcrown', available: true },
                 { name: 'Coming Soon', mark: '07', key: 'soon7', available: false },
                 { name: 'Coming Soon', mark: '08', key: 'soon8', available: false },
                 { name: 'Coming Soon', mark: '09', key: 'soon9', available: false },
@@ -5026,11 +5028,13 @@ function renderRoomInterior() {
                     setShowWildKingdomPanel(false);
                     setShowRoyal77Panel(false);
                     setShowRubyJackpotPanel(false);
-                    else if (game.key === 'thunder') setShowThunderKingPanel(true);
+                    setShowRoyalFruitCrownPanel(false);
+                    if (game.key === 'thunder') setShowThunderKingPanel(true);
                     else if (game.key === 'elephant') setShowLuckyElephantPanel(true);
                     else if (game.key === 'wild') setShowWildKingdomPanel(true);
                     else if (game.key === 'royal77') setShowRoyal77Panel(true);
                     else if (game.key === 'ruby') setShowRubyJackpotPanel(true);
+                    else if (game.key === 'fruitcrown') setShowRoyalFruitCrownPanel(true);
                   }}
                   style={{ width: '31.5%', minHeight: 100, marginBottom: 10, padding: 8, borderRadius: 14, borderWidth: 1.2, borderColor: game.available ? '#CBA85D' : '#574C43', backgroundColor: game.available ? '#21172A' : '#17131A', alignItems: 'center', justifyContent: 'center', opacity: game.available ? 1 : 0.58 }}
                 >
@@ -5047,6 +5051,7 @@ function renderRoomInterior() {
       </Modal>
 
       <RubyJackpotPanel visible={showRubyJackpotPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowRubyJackpotPanel(false)} />
+      <RoyalFruitCrownPanel visible={showRoyalFruitCrownPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowRoyalFruitCrownPanel(false)} api={api} />
 
 
       <Modal

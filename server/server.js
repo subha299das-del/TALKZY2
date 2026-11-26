@@ -2273,6 +2273,57 @@ app.patch('/api/rooms/:roomId/mic-seats/mute', userAuth, async (req, res) => {
 });
       
 
+
+/* ROYAL FRUIT CROWN — new isolated backend API */
+const ROYAL_FRUIT_IDS = ['cherry','lemon','orange','peach','watermelon','plum','grapes','apple'];
+app.get('/api/greedy/royal-fruit-crown', userAuth, async (req, res) => {
+  try {
+    const { error: advanceError } = await supabase.rpc('talkzy_royal_fruit_advance_round');
+    if (advanceError) throw advanceError;
+    const { data, error } = await supabase.rpc('talkzy_royal_fruit_get_state_for_user', { p_user_id: req.talkzyUser.id });
+    if (error) throw error;
+    res.set('Cache-Control', 'no-store').json(data || {});
+  } catch (error) {
+    console.error('Royal Fruit Crown state error:', error.message);
+    res.status(500).json({ error: 'Could not load Royal Fruit Crown.' });
+  }
+});
+app.post('/api/greedy/royal-fruit-crown/bets', userAuth, async (req, res) => {
+  const fruit = String(req.body?.fruit || '');
+  const amount = Number(req.body?.amount);
+  if (!ROYAL_FRUIT_IDS.includes(fruit)) return res.status(400).json({ error: 'Choose a valid fruit.' });
+  if (![10,100,1000,10000,100000].includes(amount)) return res.status(400).json({ error: 'Choose one of the available coin amounts.' });
+  try {
+    const { data, error } = await supabase.rpc('talkzy_royal_fruit_place_bet', { p_user_id: req.talkzyUser.id, p_fruit: fruit, p_amount: amount });
+    if (error) {
+      if (/BETTING_CLOSED/.test(error.message || '')) return res.status(409).json({ error: 'Betting is closed for this round.' });
+      if (/INSUFFICIENT_COINS/.test(error.message || '')) return res.status(409).json({ error: 'You do not have enough gold coins.' });
+      if (/INVALID_/.test(error.message || '')) return res.status(400).json({ error: 'Invalid bet selection.' });
+      throw error;
+    }
+    res.set('Cache-Control', 'no-store').json(data || { accepted: true });
+  } catch (error) {
+    console.error('Royal Fruit Crown bet error:', error.message);
+    res.status(500).json({ error: 'Your bet could not be placed. Please try again.' });
+  }
+});
+app.post('/api/greedy/royal-fruit-crown/founder-result', ownerAuth, async (req, res) => {
+  const fruit = String(req.body?.fruit || '');
+  if (!ROYAL_FRUIT_IDS.includes(fruit)) return res.status(400).json({ error: 'Choose a valid winning fruit.' });
+  try {
+    const { data, error } = await supabase.rpc('talkzy_royal_fruit_set_forced_result', { p_fruit: fruit });
+    if (error) {
+      if (/NO_ACTIVE_ROUND/.test(error.message || '')) return res.status(409).json({ error: 'There is no active betting round.' });
+      if (/ROUND_LOCKED/.test(error.message || '')) return res.status(409).json({ error: 'The 37-second betting period has ended.' });
+      throw error;
+    }
+    res.set('Cache-Control', 'no-store').json(data || { set: true });
+  } catch (error) {
+    console.error('Royal Fruit Crown Founder result error:', error.message);
+    res.status(500).json({ error: 'Could not set the Founder result.' });
+  }
+});
+
 // Handle unexpected errors.
 app.use((error, req, res, next) => {
   if (res.headersSent) return next(error);
