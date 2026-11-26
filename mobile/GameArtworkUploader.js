@@ -25,6 +25,7 @@ const GAME_OPTIONS = [
   { key: 'wild-kingdom', name: 'Wild Kingdom' },
   { key: 'royal-77', name: 'Royal 77' },
   { key: 'ruby-jackpot', name: 'Ruby Jackpot' },
+  { key: 'royal-fruit-crown', name: 'Royal Fruit Crown' },
   { key: 'greedy-game-7', name: 'Greedy Game 7' },
   { key: 'greedy-game-8', name: 'Greedy Game 8' },
   { key: 'greedy-game-9', name: 'Greedy Game 9' },
