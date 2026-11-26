@@ -42,6 +42,7 @@ import RoyalFruitCrownPanel from './RoyalFruitCrownPanel';
 
 WebBrowser.maybeCompleteAuthSession();
 const MIC_ON_ICON = require('./assets/mic_on.png');
+const ROYAL_FRUIT_CROWN_GREEDY_ICON = require('./assets/3_20261126_203806_0002.png');
 const MIC_REACTION_FACE_LABELS = ["Welcome", "Thanks", "Like", "Happy", "Gosh", "Wronged", "Nausea", "Left kiss", "Right kiss", "Money face", "Party", "Fear", "Silence", "Cry", "Naughty", "Sweat", "LOL", "Cool", "Angry"];
 
 function MicReactionSticker({ emoji, size = 48, direction }) {
@@ -5039,7 +5040,11 @@ function renderRoomInterior() {
                   style={{ width: '31.5%', minHeight: 100, marginBottom: 10, padding: 8, borderRadius: 14, borderWidth: 1.2, borderColor: game.available ? '#CBA85D' : '#574C43', backgroundColor: game.available ? '#21172A' : '#17131A', alignItems: 'center', justifyContent: 'center', opacity: game.available ? 1 : 0.58 }}
                 >
                   <View style={{ width: 48, height: 48, borderRadius: 14, borderWidth: 1.2, borderColor: game.available ? '#E5C577' : '#75685A', backgroundColor: '#100D16', alignItems: 'center', justifyContent: 'center', marginBottom: 7 }}>
+                    {game.key === 'fruitcrown' ? (
+                    <Image source={ROYAL_FRUIT_CROWN_GREEDY_ICON} resizeMode="contain" style={{ width: 43, height: 43 }} />
+                  ) : (
                     <Text style={{ color: '#F4D27A', fontSize: game.key === 'royal77' ? 18 : 24, fontWeight: '900' }}>{game.mark}</Text>
+                  )}
                   </View>
                   <Text numberOfLines={2} style={{ color: game.available ? '#F7EBD1' : '#A89B89', fontSize: 10, fontWeight: '900', textAlign: 'center' }}>{game.name}</Text>
                   {!game.available && <Text style={{ color: '#A89B89', fontSize: 7, marginTop: 3 }}>COMING SOON</Text>}
