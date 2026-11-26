@@ -49,7 +49,8 @@ test('private room and chat APIs reject requests without a user session', async 
     '/api/rooms/test-room/music',
     '/api/rooms/test-room/youtube',
     '/api/rooms/test-room/mic-seats',
-    '/api/greedy/fruit-crown'
+    '/api/greedy/fruit-crown',
+    '/api/admin/game-artwork'
   ];
 
   for (const path of paths) {
@@ -86,6 +87,16 @@ test('owner dashboard login rejects incorrect credentials', async () => {
   });
   assert.equal(response.status, 401);
   assert.match((await response.json()).error, /invalid owner/i);
+});
+
+test('game artwork upload rejects requests without Founder authorization', async () => {
+  const response = await request('/api/admin/game-artwork', {
+    method: 'POST',
+    headers: { 'content-type': 'image/webp', 'x-artwork-game': 'royal-fruit-crown', 'x-artwork-screen': 'main' },
+    body: Buffer.from('not-an-image')
+  });
+  assert.equal(response.status, 401);
+  assert.match((await response.json()).error, /owner sign-in/i);
 });
 
 test('malformed JSON is rejected with a client error', async () => {
