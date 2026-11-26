@@ -368,7 +368,7 @@ app.post('/api/admin/game-artwork', ownerAuth,
     const contentType = String(req.get('content-type') || '').toLowerCase();
     const allowedGames = new Set([
       'thunder-king', 'lucky-elephant', 'wild-kingdom',
-      'royal-77', 'ruby-jackpot', 'greedy-game-7', 'greedy-game-8',
+      'royal-77', 'ruby-jackpot', 'royal-fruit-crown', 'greedy-game-7', 'greedy-game-8',
       'greedy-game-9', 'greedy-game-10', 'room-games'
     ]);
     if (!allowedGames.has(gameKey) || !['main', 'result', 'icon'].includes(screen)) {
