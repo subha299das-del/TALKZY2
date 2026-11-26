@@ -20,9 +20,10 @@ const BET_AMOUNTS = [10, 100, 1000, 10000, 100000];
 const BOARD = ['cherry', 'lemon', 'orange', 'peach', null, 'watermelon', 'plum', 'grapes', 'apple'];
 // Clockwise path around the 3×3 board, starting at the top-left tile.
 const CLOCKWISE_FRUITS = ['cherry', 'lemon', 'orange', 'watermelon', 'apple', 'grapes', 'plum', 'peach'];
-const DESIGN_REFERENCES = {
-  mainPanel: 'https://i.ibb.co/bg6sD1gN/1-20261126-203806-0000.png',
-  winningPopup: 'https://i.ibb.co/KzhWt54v/2-20261126-203806-0001.png'
+const LOCAL_ARTWORK = {
+  mainPanel: require('./assets/1_20261126_203806_0000.png'),
+  winningPopup: require('./assets/2_20261126_203806_0001.png'),
+  fruits: require('./assets/3_20261126_203806_0002.png')
 };
 const GOLD = '#F6D987';
 const money = value => Number(value || 0).toLocaleString('en-IN');
@@ -296,11 +297,12 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
         {BOARD.map((id, index) => {
           if (!id) {
             return (
-              <View key="timer" style={styles.timerCell}>
+              <ImageBackground key="timer" source={LOCAL_ARTWORK.fruits} resizeMode="cover"
+                imageStyle={{ opacity: 0.28, borderRadius: 11 }} style={styles.timerCell}>
                 <Text style={styles.timerCrown}>♛</Text>
                 <Text style={styles.timerNumber}>{phase === 'drawing' ? '✦' : phase === 'result' ? '✓' : seconds}</Text>
                 <Text style={styles.timerCaption}>{phase === 'betting' ? 'SECONDS LEFT' : phase === 'drawing' ? 'DRAWING' : 'RESULT'}</Text>
-              </View>
+              </ImageBackground>
             );
           }
           const fruit = fruitFor(id);
@@ -399,7 +401,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
           {loading && !game ? (
             <View style={styles.loading}><ActivityIndicator color={GOLD} size="large"/><Text style={styles.helperText}>Loading Royal Fruit Crown…</Text></View>
           ) : resultVisible ? (
-            <ImageBackground source={{ uri: artwork?.result?.url || DESIGN_REFERENCES.winningPopup }} resizeMode="stretch" style={styles.referenceBackground} imageStyle={styles.referenceImage}>
+            <ImageBackground source={artwork?.result?.url ? { uri: artwork.result.url } : LOCAL_ARTWORK.winningPopup} resizeMode="stretch" style={styles.referenceBackground} imageStyle={styles.referenceImage}>
             <ScrollView contentContainerStyle={styles.resultContent}>
               <Text style={styles.resultEyebrow}>THE CROWN HAS CHOSEN</Text>
               <Text style={styles.title}>ROYAL FRUIT CROWN</Text>
@@ -433,7 +435,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
             </ScrollView>
             </ImageBackground>
           ) : (
-            <ImageBackground source={{ uri: artwork?.main?.url || DESIGN_REFERENCES.mainPanel }} resizeMode="stretch" style={styles.referenceBackground} imageStyle={styles.referenceImage}>
+            <ImageBackground source={artwork?.main?.url ? { uri: artwork.main.url } : LOCAL_ARTWORK.mainPanel} resizeMode="stretch" style={styles.referenceBackground} imageStyle={styles.referenceImage}>
             <ScrollView contentContainerStyle={styles.mainContent}>
               <Text style={styles.title}>ROYAL FRUIT CROWN</Text>
               <Text style={styles.subtitle}>CHOOSE YOUR FRUIT · CLAIM THE CROWN</Text>
