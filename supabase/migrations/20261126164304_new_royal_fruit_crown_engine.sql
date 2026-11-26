@@ -25,7 +25,8 @@ create index if not exists talkzy_royal_fruit_bets_round_user on public.talkzy_r
 alter table public.talkzy_royal_fruit_rounds enable row level security;
 alter table public.talkzy_royal_fruit_bets enable row level security;
 revoke all on public.talkzy_royal_fruit_rounds,public.talkzy_royal_fruit_bets from anon,authenticated;
-grant select on public.talkzy_royal_fruit_rounds,public.talkzy_royal_fruit_bets to service_role;
+grant all privileges on public.talkzy_royal_fruit_rounds,public.talkzy_royal_fruit_bets to service_role;
+grant usage, select on sequence public.talkzy_royal_fruit_rounds_round_number_seq to service_role;
 
 create or replace function public.talkzy_royal_fruit_place_bet(p_user_id uuid,p_fruit text,p_amount bigint)
 returns jsonb language plpgsql set search_path=''
