@@ -5054,7 +5054,7 @@ function renderRoomInterior() {
 
       <RubyJackpotPanel visible={showRubyJackpotPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowRubyJackpotPanel(false)} />
 
-      <RoyalFruitCrownPanel visible={showGreedyPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowGreedyPanel(false)} />
+      <RoyalFruitCrownPanel visible={showGreedyPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowGreedyPanel(false)} api={api} />
 
       <Modal
         visible={showRoomThemeMenu && selectedRoom?.owner_id === session?.user?.id}
