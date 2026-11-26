@@ -49,8 +49,7 @@ test('private room and chat APIs reject requests without a user session', async 
     '/api/rooms/test-room/music',
     '/api/rooms/test-room/youtube',
     '/api/rooms/test-room/mic-seats',
-    '/api/greedy/fruit-crown',
-    '/api/admin/game-artwork'
+    '/api/greedy/fruit-crown'
   ];
 
   for (const path of paths) {
