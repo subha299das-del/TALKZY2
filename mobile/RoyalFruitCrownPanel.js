@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, Image, ActivityIndicator, StyleSheet, TextInput, useWindowDimensions } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal, Image, ActivityIndicator, StyleSheet, TextInput, useWindowDimensions, Animated, Easing } from 'react-native';
 
 const GOLD = '#F5D77C';
 const FRUITS = [
@@ -143,7 +143,7 @@ export default function RoyalFruitCrownPanel({visible,onClose,api}) {
             <View style={s.statusBar}><View style={s.statusDot}/><Text style={s.statusText}>{phase==='betting'?'BETTING IS OPEN':phase==='drawing'?'THE ROYAL DRAW':'ROUND COMPLETE'}</Text><View style={s.timerBox}><Text style={s.timerValue}>{phase==='drawing'?'✦':seconds}</Text><Text style={s.timerUnit}>{phase==='betting'?'SECONDS':phase==='drawing'?'DRAWING':'SECONDS'}</Text></View></View>
             <View style={s.boardFrame}>
               <View style={s.board}>
-                {[FRUITS[0],FRUITS[1],FRUITS[2],FRUITS[3],null,FRUITS[4],FRUITS[5],FRUITS[6],FRUITS[7]].map((f,i)=>f?<FruitTile key={f.id} f={f} active={fruit===f.id} lit={phase==='drawing'&&spot===FRUITS.findIndex(x=>x.id===f.id)} dim={phase==='drawing'&&spot!==FRUITS.findIndex(x=>x.id===f.id)} disabled={phase!=='betting'} onPress={()=>setFruit(f.id)}/>:<View key="timer" style={s.centerCell}><Text style={s.centerCrown}>♛</Text><Text style={s.centerTimer}>{phase==='betting'?seconds:phase==='drawing'?'✦':'✓'}</Text><Text style={s.centerSeconds}>{phase==='betting'?'SECONDS':'ROYAL DRAW'}</Text></View>)}
+                {[FRUITS[0],FRUITS[1],FRUITS[2],FRUITS[3],null,FRUITS[4],FRUITS[5],FRUITS[6],FRUITS[7]].map((f,i)=>f?<FruitTile key={f.id} f={f} active={fruit===f.id} lit={phase==='drawing'&&spot===FRUITS.findIndex(x=>x.id===f.id)} dim={phase==='drawing'&&spot!==FRUITS.findIndex(x=>x.id===f.id)} spinning={phase==='drawing'} animationDelay={i*35} disabled={phase!=='betting'} onPress={()=>setFruit(f.id)}/>:<View key="timer" style={s.centerCell}><Text style={s.centerCrown}>♛</Text><Text style={s.centerTimer}>{phase==='betting'?seconds:phase==='drawing'?'✦':'✓'}</Text><Text style={s.centerSeconds}>{phase==='betting'?'SECONDS':'ROYAL DRAW'}</Text></View>)}
               </View>
             </View>
             <View style={s.betSection}>
@@ -184,9 +184,28 @@ function FruitIcon({fruit,size=54}) {
   return <View style={common}><View style={{position:'absolute',top:size*.12,left:size*.48,width:size*.22,height:size*.14,backgroundColor:'#80A64B',borderTopLeftRadius:size,borderBottomRightRadius:size,transform:[{rotate:'-28deg'}]}}/><View style={{position:'absolute',top:size*.12,width:2,height:size*.18,backgroundColor:'#91613A'}}/><View style={[body,shape]}/>{fruit.id==='strawberry'&&<View style={{position:'absolute',top:size*.35,width:3,height:3,borderRadius:4,backgroundColor:'#FFE8A3'}}/>}</View>;
 }
 
-function FruitTile({f,active,lit,dim,disabled,onPress}) {
+function FruitTile({f,active,lit,dim,spinning,animationDelay=0,disabled,onPress}) {
+  const motion = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!spinning) {
+      motion.stopAnimation();
+      motion.setValue(0);
+      return undefined;
+    }
+    const cycle = Animated.loop(Animated.sequence([
+      Animated.delay(animationDelay),
+      Animated.timing(motion,{toValue:1,duration:150,easing:Easing.out(Easing.quad),useNativeDriver:true}),
+      Animated.timing(motion,{toValue:-1,duration:260,easing:Easing.inOut(Easing.quad),useNativeDriver:true}),
+      Animated.timing(motion,{toValue:0,duration:170,easing:Easing.out(Easing.quad),useNativeDriver:true})
+    ]));
+    cycle.start();
+    return () => cycle.stop();
+  },[spinning,animationDelay,motion]);
+  const floatY = motion.interpolate({inputRange:[-1,0,1],outputRange:[3,0,-5]});
+  const tilt = motion.interpolate({inputRange:[-1,0,1],outputRange:['-5deg','0deg','5deg']});
+  const pulse = motion.interpolate({inputRange:[-1,0,1],outputRange:[0.96,1,1.05]});
   return <TouchableOpacity disabled={disabled} onPress={onPress} style={[s.fruitTile,active&&!disabled&&s.fruitSelected,dim&&s.fruitDim,lit&&s.fruitLit]}>
-    <View style={s.fruitArt}><FruitIcon fruit={f} size={51}/></View>
+    <Animated.View style={[s.fruitArt,{transform:[{translateY:floatY},{rotate:tilt},{scale:pulse}]}]}><FruitIcon fruit={f} size={51}/></Animated.View>
     <Text style={s.fruitName}>{f.name.toUpperCase()}</Text>
     <View style={s.multBadge}><Text style={s.multText}>{f.mult}×</Text></View>
     {lit&&<Text style={s.sparkle}>✦</Text>}
