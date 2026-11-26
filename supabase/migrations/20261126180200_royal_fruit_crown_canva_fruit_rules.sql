@@ -13,7 +13,7 @@ as $$
 declare u uuid:=auth.uid(); r public.talkzy_fruit_rounds; bal bigint;
 begin
  if u is null then raise exception 'AUTH_REQUIRED' using errcode='42501'; end if;
- if p_fruit not in ('cherry','lemon','orange','peach','watermelon','plum','grapes','apple','pear','strawberry') then raise exception 'INVALID_FRUIT'; end if;
+ if p_fruit not in ('cherry','lemon','orange','peach','watermelon','plum','grapes','apple') then raise exception 'INVALID_FRUIT'; end if;
  if p_amount not in (10,100,1000,10000,100000) then raise exception 'INVALID_BET_AMOUNT'; end if;
  select * into r from public.talkzy_fruit_rounds where phase='betting' order by round_number desc limit 1 for update;
  if not found or now()>=r.bet_closes_at then raise exception 'BETTING_CLOSED'; end if;
@@ -82,7 +82,7 @@ as $$
 declare r public.talkzy_fruit_rounds;
 begin
  if coalesce(auth.role(),'')<>'service_role' then raise exception 'SERVICE_ROLE_REQUIRED' using errcode='42501'; end if;
- if p_fruit not in ('cherry','lemon','orange','peach','watermelon','plum','grapes','apple','pear','strawberry') then raise exception 'INVALID_FRUIT'; end if;
+ if p_fruit not in ('cherry','lemon','orange','peach','watermelon','plum','grapes','apple') then raise exception 'INVALID_FRUIT'; end if;
  select * into r from public.talkzy_fruit_rounds where phase in ('betting','drawing') order by round_number desc limit 1 for update;
  if not found then raise exception 'NO_ACTIVE_ROUND'; end if;
  if now()>=r.bet_closes_at then raise exception 'ROUND_LOCKED'; end if;
@@ -99,7 +99,7 @@ declare r public.talkzy_fruit_rounds; bal bigint;
 begin
  if coalesce(auth.role(),'')<>'service_role' then raise exception 'SERVICE_ROLE_REQUIRED' using errcode='42501'; end if;
  if p_user_id is null then raise exception 'USER_REQUIRED'; end if;
- if p_fruit not in ('cherry','lemon','orange','peach','watermelon','plum','grapes','apple','pear','strawberry') then raise exception 'INVALID_FRUIT'; end if;
+ if p_fruit not in ('cherry','lemon','orange','peach','watermelon','plum','grapes','apple') then raise exception 'INVALID_FRUIT'; end if;
  if p_amount not in (10,100,1000,10000,100000) then raise exception 'INVALID_BET_AMOUNT'; end if;
  select * into r from public.talkzy_fruit_rounds where phase='betting' order by round_number desc limit 1 for update;
  if not found or now()>=r.bet_closes_at then raise exception 'BETTING_CLOSED'; end if;
