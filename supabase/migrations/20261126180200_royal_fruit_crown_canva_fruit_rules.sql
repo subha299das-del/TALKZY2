@@ -60,7 +60,7 @@ begin
  elsif r.phase='drawing' and now()>=r.animation_ends_at then
   f:=coalesce(r.forced_fruit,(array['cherry','plum','orange','watermelon','pear','strawberry','lemon','grapes'])[1+floor(random()*8)::int]);
   update public.talkzy_fruit_rounds set phase='result',winning_fruit=f,result_ends_at=now()+interval '5 seconds' where id=r.id returning * into r;
-  for winner in select user_id,sum(amount*case fruit when 'cherry' then 5 when 'plum' then 5 when 'orange' then 5 when 'watermelon' then 40 when 'pear' then 5 when 'strawberry' then 25 when 'lemon' then 15 when 'grapes' then 10 end)::bigint total from public.talkzy_fruit_bets where round_id=r.id and fruit=f group by user_id loop
+  for winner in select user_id,sum(amount*case fruit when 'cherry' then 5 when 'lemon' then 5 when 'orange' then 5 when 'peach' then 40 when 'watermelon' then 5 when 'plum' then 25 when 'grapes' then 15 when 'apple' then 10 when 'pear' then 5 when 'strawberry' then 25 end)::bigint total from public.talkzy_fruit_bets where round_id=r.id and fruit=f group by user_id loop
    if winner.total>0 then
     insert into public.talkzy_wallets(user_id,balance) values(winner.user_id,0) on conflict(user_id) do nothing;
     update public.talkzy_wallets set balance=balance+winner.total,updated_at=now() where user_id=winner.user_id returning balance into bal;
