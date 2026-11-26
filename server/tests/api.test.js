@@ -64,7 +64,8 @@ test('room mutations reject unauthenticated requests before processing data', as
     ['/api/rooms/test-room/messages', 'POST', { message: 'test message' }],
     ['/api/rooms/test-room/music/me', 'PUT', { queue: [] }],
     ['/api/rooms/test-room/youtube', 'PUT', { video_id: null, queue: [] }],
-    ['/api/greedy/fruit-crown/bets', 'POST', { fruit: 'cherry', amount: 100 }]
+    ['/api/greedy/fruit-crown/bets', 'POST', { fruit: 'cherry', amount: 100 }],
+    ['/api/greedy/fruit-crown/founder-result', 'POST', { fruit: 'cherry' }]
   ];
 
   for (const [path, method, body] of requests) {
