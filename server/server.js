@@ -2244,7 +2244,7 @@ app.get('/api/greedy/fruit-crown', userAuth, async (req, res) => {
 app.post('/api/greedy/fruit-crown/bets', userAuth, async (req, res) => {
   const fruit = String(req.body?.fruit || '');
   const amount = Number(req.body?.amount);
-  if (!['cherry','plum','orange','watermelon','pear','strawberry','lemon','grapes'].includes(fruit)) return res.status(400).json({ error: 'Choose a valid fruit.' });
+  if (!['cherry','lemon','orange','peach','watermelon','plum','grapes','apple'].includes(fruit)) return res.status(400).json({ error: 'Choose a valid fruit.' });
   if (![10,100,1000,10000,100000].includes(amount)) return res.status(400).json({ error: 'Choose one of the available coin amounts.' });
   try {
     const { data, error } = await supabase.rpc('talkzy_fruit_place_bet_service', { p_user_id: req.talkzyUser.id, p_fruit: fruit, p_amount: amount });
@@ -2263,7 +2263,7 @@ app.post('/api/greedy/fruit-crown/bets', userAuth, async (req, res) => {
 
 app.post('/api/greedy/fruit-crown/founder-result', ownerAuth, async (req, res) => {
   const fruit = String(req.body?.fruit || '');
-  if (!['cherry','plum','orange','watermelon','pear','strawberry','lemon','grapes'].includes(fruit)) return res.status(400).json({ error: 'Choose a valid winning fruit.' });
+  if (!['cherry','lemon','orange','peach','watermelon','plum','grapes','apple'].includes(fruit)) return res.status(400).json({ error: 'Choose a valid winning fruit.' });
   try {
     const { data, error } = await supabase.rpc('talkzy_fruit_set_forced_result', { p_fruit: fruit });
     if (error) {
