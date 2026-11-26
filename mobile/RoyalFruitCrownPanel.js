@@ -72,7 +72,7 @@ export default function RoyalFruitCrownPanel({visible,onClose,api}) {
     const spin = () => {
       if (!active) return;
       const elapsed = Date.now() - start;
-      const delay = elapsed < 4200 ? 110 : elapsed < 7000 ? 110 + (elapsed - 4200) * 0.07 : Math.min(850, 310 + (elapsed - 7000) * 0.22);
+      const delay = elapsed < 4000 ? 520 - elapsed * 0.105 : elapsed < 7000 ? 100 + (elapsed - 4000) * 0.07 : Math.min(950, 310 + (elapsed - 7000) * 0.21);
       index = (index + 1) % 8;
       setSpot(index);
       spotTimer.current = setTimeout(spin, delay);
