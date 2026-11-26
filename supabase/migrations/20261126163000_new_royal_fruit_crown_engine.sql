@@ -28,11 +28,11 @@ revoke all on public.talkzy_royal_fruit_rounds,public.talkzy_royal_fruit_bets fr
 grant select on public.talkzy_royal_fruit_rounds,public.talkzy_royal_fruit_bets to service_role;
 
 create or replace function public.talkzy_royal_fruit_place_bet(p_user_id uuid,p_fruit text,p_amount bigint)
-returns jsonb language plpgsql security definer set search_path=''
+returns jsonb language plpgsql set search_path=''
 as $$
 declare r public.talkzy_royal_fruit_rounds; bal bigint;
 begin
- if coalesce(auth.role(),'')<>'service_role' then raise exception 'SERVICE_ROLE_REQUIRED' using errcode='42501'; end if;
+ if coalesce(auth.jwt()->>'role','')<>'service_role' then raise exception 'SERVICE_ROLE_REQUIRED' using errcode='42501'; end if;
  if p_user_id is null then raise exception 'USER_REQUIRED'; end if;
  if p_fruit not in ('cherry','lemon','orange','peach','watermelon','plum','grapes','apple') then raise exception 'INVALID_FRUIT'; end if;
  if p_amount not in (10,100,1000,10000,100000) then raise exception 'INVALID_BET_AMOUNT'; end if;
@@ -51,11 +51,11 @@ revoke all on function public.talkzy_royal_fruit_place_bet(uuid,text,bigint) fro
 grant execute on function public.talkzy_royal_fruit_place_bet(uuid,text,bigint) to service_role;
 
 create or replace function public.talkzy_royal_fruit_get_state_for_user(p_user_id uuid)
-returns jsonb language plpgsql security definer set search_path=''
+returns jsonb language plpgsql set search_path=''
 as $$
 declare r public.talkzy_royal_fruit_rounds; bal bigint; my_bets jsonb; leaders jsonb; history jsonb;
 begin
- if coalesce(auth.role(),'')<>'service_role' then raise exception 'SERVICE_ROLE_REQUIRED' using errcode='42501'; end if;
+ if coalesce(auth.jwt()->>'role','')<>'service_role' then raise exception 'SERVICE_ROLE_REQUIRED' using errcode='42501'; end if;
  select * into r from public.talkzy_royal_fruit_rounds where phase in ('betting','drawing','result') order by round_number desc limit 1;
  select coalesce(w.balance,0) into bal from public.talkzy_wallets w where w.user_id=p_user_id;
  select coalesce(jsonb_agg(jsonb_build_object('fruit',b.fruit,'amount',b.amount) order by b.created_at),'[]'::jsonb)
@@ -83,11 +83,11 @@ revoke all on function public.talkzy_royal_fruit_get_state_for_user(uuid) from p
 grant execute on function public.talkzy_royal_fruit_get_state_for_user(uuid) to service_role;
 
 create or replace function public.talkzy_royal_fruit_advance_round()
-returns jsonb language plpgsql security definer set search_path=''
+returns jsonb language plpgsql set search_path=''
 as $$
 declare r public.talkzy_royal_fruit_rounds; f text; winner record; bal bigint;
 begin
- if coalesce(auth.role(),'')<>'service_role' then raise exception 'SERVICE_ROLE_REQUIRED' using errcode='42501'; end if;
+ if coalesce(auth.jwt()->>'role','')<>'service_role' then raise exception 'SERVICE_ROLE_REQUIRED' using errcode='42501'; end if;
  select * into r from public.talkzy_royal_fruit_rounds where phase in ('betting','drawing','result')
   order by round_number desc limit 1 for update;
  if not found then insert into public.talkzy_royal_fruit_rounds default values returning * into r;
@@ -119,11 +119,11 @@ revoke all on function public.talkzy_royal_fruit_advance_round() from public,ano
 grant execute on function public.talkzy_royal_fruit_advance_round() to service_role;
 
 create or replace function public.talkzy_royal_fruit_set_forced_result(p_fruit text)
-returns jsonb language plpgsql security definer set search_path=''
+returns jsonb language plpgsql set search_path=''
 as $$
 declare r public.talkzy_royal_fruit_rounds;
 begin
- if coalesce(auth.role(),'')<>'service_role' then raise exception 'SERVICE_ROLE_REQUIRED' using errcode='42501'; end if;
+ if coalesce(auth.jwt()->>'role','')<>'service_role' then raise exception 'SERVICE_ROLE_REQUIRED' using errcode='42501'; end if;
  if p_fruit not in ('cherry','lemon','orange','peach','watermelon','plum','grapes','apple') then raise exception 'INVALID_FRUIT'; end if;
  select * into r from public.talkzy_royal_fruit_rounds where phase='betting' order by round_number desc limit 1 for update;
  if not found then raise exception 'NO_ACTIVE_ROUND'; end if;
