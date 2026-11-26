@@ -3,6 +3,7 @@ import {
   ActivityIndicator, Image, ImageBackground, Modal, ScrollView, StyleSheet, Text,
   TextInput, TouchableOpacity, View, useWindowDimensions
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 
 // Fresh Royal Fruit Crown screen. This file does not import or reuse the retired panel.
 const FRUITS = [
@@ -44,6 +45,9 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
   const [ownerEmail, setOwnerEmail] = useState('');
   const [ownerPassword, setOwnerPassword] = useState('');
   const [ownerToken, setOwnerToken] = useState('');
+  const [artworkScreen, setArtworkScreen] = useState('main');
+  const [artworkAsset, setArtworkAsset] = useState(null);
+  const [artworkBusy, setArtworkBusy] = useState(false);
   const refreshLock = useRef(false);
   const phase = game?.round?.phase || 'betting';
   const round = game?.round;
@@ -147,6 +151,72 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
       setError(err?.message || 'Founder sign-in failed.');
     } finally {
       setPending(false);
+    }
+  };
+
+  const chooseArtworkFile = async () => {
+    setError('');
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        setError('Allow photo access to choose your game artwork.');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: false,
+        quality: 1
+      });
+      if (result.canceled || !result.assets?.[0]) return;
+      const picked = result.assets[0];
+      const fileName = String(picked.fileName || picked.uri?.split('/').pop() || '').toLowerCase();
+      const mime = String(picked.mimeType || '').toLowerCase();
+      const isPng = mime === 'image/png' || fileName.endsWith('.png');
+      const isWebp = mime === 'image/webp' || fileName.endsWith('.webp');
+      if ((!isPng && !isWebp) || (mime && mime !== 'image/png' && mime !== 'image/webp')) {
+        setError('Please select a PNG or WebP image.');
+        return;
+      }
+      if (picked.fileSize && picked.fileSize > 15 * 1024 * 1024) {
+        setError('Artwork must be 15 MB or smaller.');
+        return;
+      }
+      setArtworkAsset({
+        ...picked,
+        uploadMimeType: isWebp ? 'image/webp' : 'image/png',
+        uploadName: picked.fileName || fileName || 'Selected artwork'
+      });
+    } catch (err) {
+      setError(err?.message || 'Could not open your phone gallery.');
+    }
+  };
+
+  const uploadFounderArtwork = async () => {
+    if (!ownerToken || !artworkAsset || artworkBusy) return;
+    setArtworkBusy(true);
+    setError('');
+    try {
+      const localFile = await fetch(artworkAsset.uri);
+      const bytes = await localFile.arrayBuffer();
+      const contentType = artworkAsset.uploadMimeType;
+      const uploaded = await api('/api/admin/game-artwork', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + ownerToken,
+          'Content-Type': contentType,
+          'x-artwork-game': 'royal-fruit-crown',
+          'x-artwork-screen': artworkScreen
+        },
+        body: bytes
+      });
+      const config = await api('/api/config');
+      setArtwork(config?.gameArtwork?.['royal-fruit-crown'] || {});
+      setArtworkAsset(null);
+      setError('Artwork uploaded successfully and saved to Royal Fruit Crown.');
+    } catch (err) {
+      setError(err?.message || 'Artwork upload failed. Please try again.');
+    } finally {
+      setArtworkBusy(false);
     }
   };
 
@@ -278,7 +348,36 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
               </TouchableOpacity>
             ))}
           </View>
-          <TouchableOpacity onPress={() => setOwnerToken('')}><Text style={styles.signOut}>SIGN OUT</Text></TouchableOpacity>
+          <View style={styles.artworkUploadBox}>
+            <Text style={styles.artworkUploadTitle}>ROYAL FRUIT CROWN ARTWORK</Text>
+            <View style={styles.artworkScreenRow}>
+              {[
+                { key: 'main', label: 'MAIN PANEL' },
+                { key: 'result', label: 'RESULT' },
+                { key: 'icon', label: 'GAME ICON' }
+              ].map(item => (
+                <TouchableOpacity key={item.key} onPress={() => setArtworkScreen(item.key)}
+                  style={[styles.artworkScreenButton, artworkScreen === item.key && styles.artworkScreenSelected]}>
+                  <Text style={styles.artworkScreenText}>{item.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TouchableOpacity onPress={chooseArtworkFile} disabled={artworkBusy} style={styles.artworkChooseButton}>
+              <Text style={styles.artworkButtonText}>{artworkAsset ? 'CHOOSE A DIFFERENT IMAGE' : 'SELECT PNG / WEBP FROM PHONE'}</Text>
+            </TouchableOpacity>
+            {artworkAsset && (
+              <View style={styles.artworkSelectedRow}>
+                <Image source={{ uri: artworkAsset.uri }} style={styles.artworkThumbnail} resizeMode="contain" />
+                <Text style={styles.artworkFileName} numberOfLines={2}>{artworkAsset.uploadName}</Text>
+              </View>
+            )}
+            <TouchableOpacity onPress={uploadFounderArtwork} disabled={!artworkAsset || artworkBusy}
+              style={[styles.artworkUploadButton, (!artworkAsset || artworkBusy) && styles.artworkUploadDisabled]}>
+              <Text style={styles.artworkUploadButtonText}>{artworkBusy ? 'UPLOADING…' : 'UPLOAD ARTWORK'}</Text>
+            </TouchableOpacity>
+            <Text style={styles.artworkHint}>PNG or WebP · Maximum 15 MB · Saved directly to Royal Fruit Crown</Text>
+          </View>
+          <TouchableOpacity onPress={() => { setOwnerToken(''); setArtworkAsset(null); }}><Text style={styles.signOut}>SIGN OUT</Text></TouchableOpacity>
         </>
       ) : (
         <>
@@ -413,7 +512,7 @@ const styles = StyleSheet.create({
   betSummary: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }, totalBet: { color: '#FBE3A0', fontSize: 18, fontWeight: '900', marginVertical: 3 }, betHint: { flex: 1, minHeight: 44, paddingHorizontal: 8, backgroundColor: '#493719', borderWidth: 1, borderColor: '#D7B45D', borderRadius: 8, color: '#FFE49A', textAlign: 'center', textAlignVertical: 'center', fontSize: 9, fontWeight: '900' },
   historyBox: { marginTop: 10, padding: 10, backgroundColor: '#111716', borderWidth: 1, borderColor: '#80683E', borderRadius: 10, width: '100%' }, historyRow: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', marginTop: 8, minHeight: 38 }, historyFruit: { width: 35, height: 35, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1A1D19', borderRadius: 19, borderWidth: 1, borderColor: '#80683E' }, historyEmoji: { fontSize: 21 }, emptyHistory: { color: '#B9A77B', fontSize: 10 },
   founderToggle: { alignSelf: 'center', paddingVertical: 10, paddingHorizontal: 14 }, founderToggleText: { color: '#A58A55', fontSize: 9, fontWeight: '900', letterSpacing: 1.1 }, founderPanel: { marginTop: 10, padding: 11, backgroundColor: '#17150F', borderWidth: 1, borderColor: '#C19A4E', borderRadius: 9 }, helperText: { color: '#D0C09B', fontSize: 10, textAlign: 'center', marginTop: 6, lineHeight: 16 }, founderInput: { height: 42, backgroundColor: '#0B1010', borderWidth: 1, borderColor: '#76623C', borderRadius: 7, color: '#FFF0C5', paddingHorizontal: 10, marginTop: 8, fontSize: 12 }, loginButton: { alignSelf: 'center', backgroundColor: '#D9B35D', paddingHorizontal: 18, paddingVertical: 11, borderRadius: 7, marginTop: 9 }, loginText: { color: '#251908', fontSize: 10, fontWeight: '900' }, founderChoices: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 9 }, founderChoice: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#262116', padding: 8, borderRadius: 7, borderWidth: 1, borderColor: '#9B7A3D' }, founderEmoji: { fontSize: 20 }, founderChoiceText: { color: '#F7E6B2', fontSize: 10, fontWeight: '900' }, signOut: { color: '#D9C28B', fontSize: 10, textAlign: 'center', marginTop: 9 },
-  error: { color: '#FF9C9C', fontSize: 11, padding: 8, textAlign: 'center' }, footerNote: { color: '#A69A7D', fontSize: 9, textAlign: 'center', marginTop: 10, lineHeight: 14 },
+  artworkUploadBox: { marginTop: 12, padding: 10, backgroundColor: '#100F0C', borderWidth: 1, borderColor: '#80683E', borderRadius: 8 }, artworkUploadTitle: { color: '#F5D77C', fontSize: 10, fontWeight: '900', letterSpacing: 1, textAlign: 'center', marginBottom: 8 }, artworkScreenRow: { flexDirection: 'row', gap: 5 }, artworkScreenButton: { flex: 1, paddingVertical: 8, paddingHorizontal: 3, borderWidth: 1, borderColor: '#675633', borderRadius: 6, alignItems: 'center', backgroundColor: '#1B2029' }, artworkScreenSelected: { backgroundColor: '#59421C', borderColor: '#F5D77C' }, artworkScreenText: { color: '#F1E5C5', fontSize: 8, fontWeight: '900' }, artworkChooseButton: { marginTop: 9, padding: 11, alignItems: 'center', borderWidth: 1, borderStyle: 'dashed', borderColor: '#C49A4D', borderRadius: 7 }, artworkButtonText: { color: '#F5D77C', fontSize: 9, fontWeight: '900' }, artworkSelectedRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }, artworkThumbnail: { width: 58, height: 58, backgroundColor: '#090D13', borderRadius: 5 }, artworkFileName: { flex: 1, color: '#D8C9A7', fontSize: 9 }, artworkUploadButton: { marginTop: 9, padding: 11, alignItems: 'center', backgroundColor: '#D7B15C', borderRadius: 7 }, artworkUploadDisabled: { opacity: 0.45 }, artworkUploadButtonText: { color: '#211707', fontSize: 10, fontWeight: '900' }, artworkHint: { color: '#A9A18F', fontSize: 8, lineHeight: 12, textAlign: 'center', marginTop: 7 }, error: { color: '#FF9C9C', fontSize: 11, padding: 8, textAlign: 'center' }, footerNote: { color: '#A69A7D', fontSize: 9, textAlign: 'center', marginTop: 10, lineHeight: 14 },
   resultEyebrow: { color: '#D4B76D', fontSize: 10, fontWeight: '900', letterSpacing: 2, marginTop: 16 }, resultRound: { color: '#BBA77A', fontSize: 10, letterSpacing: 1, fontWeight: '800', marginTop: 6 }, winnerOrb: { width: 152, height: 152, borderRadius: 77, borderWidth: 2.5, borderColor: '#CBA65A', backgroundColor: '#1A1A13', alignItems: 'center', justifyContent: 'center', marginTop: 16, shadowColor: GOLD, shadowOpacity: 0.55, shadowRadius: 22, elevation: 11 }, winnerEmoji: { fontSize: 84 }, winnerLabel: { color: '#BDA66E', fontSize: 10, letterSpacing: 2, fontWeight: '900', marginTop: 10 }, winnerName: { color: '#FFE5A0', fontSize: 27, fontWeight: '900', letterSpacing: 1.5, marginTop: 4 }, winnerMultiplier: { color: '#FFE5A0', fontSize: 12, fontWeight: '900', letterSpacing: 1, paddingHorizontal: 18, paddingVertical: 8, borderRadius: 18, backgroundColor: '#493719', borderWidth: 1, borderColor: '#D7B45D', marginTop: 8 },
   personalWin: { width: '100%', alignItems: 'center', backgroundColor: '#151913', borderWidth: 1, borderColor: '#B28B47', borderRadius: 9, paddingVertical: 11, paddingHorizontal: 9, marginTop: 14 }, personalAmount: { color: '#FFE078', fontSize: 26, fontWeight: '900', marginTop: 5 }, leaderRow: { width: '100%', flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 6, marginTop: 14 }, leaderCard: { flex: 1, minHeight: 124, alignItems: 'center', justifyContent: 'center', backgroundColor: '#171A17', borderWidth: 1, borderColor: '#78633C', borderRadius: 9, paddingHorizontal: 4, paddingTop: 14, paddingBottom: 8 }, firstLeader: { minHeight: 140, borderColor: '#D9B75F', backgroundColor: '#292116' }, rank: { color: GOLD, fontSize: 12, fontWeight: '900', marginBottom: 5 }, avatar: { width: 43, height: 43, borderRadius: 23, backgroundColor: '#2B2C25', borderWidth: 1.5, borderColor: '#B89A5C', alignItems: 'center', justifyContent: 'center' }, avatarFallback: { color: '#D6BD7B', fontSize: 25 }, leaderName: { color: '#E9DDBD', fontSize: 9, fontWeight: '900', marginTop: 7, maxWidth: '100%' }, leaderCoins: { color: '#F5D77C', fontSize: 9, fontWeight: '900', marginTop: 5 }, nextRound: { color: '#F4D47E', fontSize: 11, fontWeight: '900', letterSpacing: 1, marginTop: 14, marginBottom: 4 },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 }, helpBackdrop: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.84)', padding: 20 }, helpCard: { width: '100%', maxWidth: 390, padding: 20, backgroundColor: '#151913', borderWidth: 1, borderColor: '#B28B47', borderRadius: 12 }
