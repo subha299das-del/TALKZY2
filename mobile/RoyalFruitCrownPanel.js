@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Image, Modal, ScrollView, StyleSheet, Text,
+  ActivityIndicator, Image, ImageBackground, Modal, ScrollView, StyleSheet, Text,
   TextInput, TouchableOpacity, View, useWindowDimensions
 } from 'react-native';
 
@@ -286,6 +286,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
           {loading && !game ? (
             <View style={styles.loading}><ActivityIndicator color={GOLD} size="large"/><Text style={styles.helperText}>Loading Royal Fruit Crown…</Text></View>
           ) : resultVisible ? (
+            <ImageBackground source={{ uri: DESIGN_REFERENCES.winningPopup }} resizeMode="stretch" style={styles.referenceBackground} imageStyle={styles.referenceImage}>
             <ScrollView contentContainerStyle={styles.resultContent}>
               <Text style={styles.resultEyebrow}>THE CROWN HAS CHOSEN</Text>
               <Text style={styles.title}>ROYAL FRUIT CROWN</Text>
@@ -317,7 +318,9 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
               <Text style={styles.nextRound}>NEXT ROUND STARTS IN {seconds}s</Text>
               {renderHistory()}
             </ScrollView>
+            </ImageBackground>
           ) : (
+            <ImageBackground source={{ uri: DESIGN_REFERENCES.mainPanel }} resizeMode="stretch" style={styles.referenceBackground} imageStyle={styles.referenceImage}>
             <ScrollView contentContainerStyle={styles.mainContent}>
               <Text style={styles.title}>ROYAL FRUIT CROWN</Text>
               <Text style={styles.subtitle}>CHOOSE YOUR FRUIT · CLAIM THE CROWN</Text>
@@ -353,6 +356,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
               {renderFounderPanel()}
               <Text style={styles.footerNote}>Every accepted bet is deducted immediately. Payouts are calculated by the game server.</Text>
             </ScrollView>
+            </ImageBackground>
           )}
           {!!error && resultVisible && <Text style={styles.error}>{error}</Text>}
         </View>
@@ -378,6 +382,7 @@ const styles = StyleSheet.create({
   brand: { flexDirection: 'row', alignItems: 'center', gap: 4 }, crown: { fontSize: 25, color: GOLD }, brandName: { color: '#FFE9A9', fontWeight: '900', fontSize: 13, letterSpacing: 1.5 }, brandTag: { color: '#BDA875', fontSize: 5, letterSpacing: 0.5 },
   balance: { paddingHorizontal: 6, paddingVertical: 5, backgroundColor: '#1B1A13', borderWidth: 1, borderColor: '#80663B', borderRadius: 4 }, miniLabel: { color: '#BDA875', fontSize: 6, fontWeight: '900', letterSpacing: 0.6 }, balanceValue: { color: '#FFE9A9', fontWeight: '900', fontSize: 11 }, coin: { color: GOLD },
   roundBox: { alignItems: 'center' }, roundValue: { color: GOLD, fontSize: 12, fontWeight: '900' }, headerAction: { width: 26, height: 26, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#80663B', borderRadius: 14 }, headerActionText: { color: GOLD, fontWeight: '900', fontSize: 15 }, closeText: { color: GOLD, fontSize: 22, lineHeight: 24 },
+  referenceBackground: { flex: 1, width: '100%' }, referenceImage: { opacity: 0.22 },
   mainContent: { paddingHorizontal: 9, paddingBottom: 14 }, resultContent: { paddingHorizontal: 12, paddingBottom: 14, alignItems: 'center' },
   title: { color: '#F9E1A0', fontSize: 23, fontWeight: '900', fontStyle: 'italic', letterSpacing: 1.1, textAlign: 'center', marginTop: 10, textShadowColor: '#946A2A', textShadowRadius: 8 },
   subtitle: { color: '#C9B27C', fontSize: 8, fontWeight: '800', textAlign: 'center', letterSpacing: 1, marginTop: 3, marginBottom: 10 },
