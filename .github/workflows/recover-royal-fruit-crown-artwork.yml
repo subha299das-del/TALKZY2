@@ -1,0 +1,58 @@
+name: Recover Royal Fruit Crown reference artwork
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/recover-royal-fruit-crown-artwork.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  recover-artwork:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download and validate original ImgBB images
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p mobile/assets/royal-fruit-crown
+          curl --fail --location --retry 4 --retry-all-errors --retry-delay 3 \
+            --user-agent "Mozilla/5.0 TALKZY-artwork-recovery/1.0" \
+            "https://i.ibb.co/bg6sD1gN/1-20261126-203806-0000.png" \
+            --output mobile/assets/royal-fruit-crown/main-panel.png
+          curl --fail --location --retry 4 --retry-all-errors --retry-delay 3 \
+            --user-agent "Mozilla/5.0 TALKZY-artwork-recovery/1.0" \
+            "https://i.ibb.co/wNbR7hQk/3-20261126-203806-0002.png" \
+            --output mobile/assets/royal-fruit-crown/fruit-sheet.png
+          curl --fail --location --retry 4 --retry-all-errors --retry-delay 3 \
+            --user-agent "Mozilla/5.0 TALKZY-artwork-recovery/1.0" \
+            "https://i.ibb.co/KzhWt54v/2-20261126-203806-0001.png" \
+            --output mobile/assets/royal-fruit-crown/winning-popup.png
+          for file in mobile/assets/royal-fruit-crown/*.png; do
+            test "$(od -An -tx1 -N8 "$file" | tr -d ' \n')" = "89504e470d0a1a0a"
+            test "$(stat -c%s "$file")" -gt 1024
+            file "$file"
+          done
+
+      - name: Commit recovered original assets to main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mobile/assets/royal-fruit-crown/*.png
+          if git diff --cached --quiet; then
+            echo "No new artwork files to commit."
+            exit 0
+          fi
+          git commit -m "Recover original Royal Fruit Crown artwork assets"
+          git push origin HEAD:main
