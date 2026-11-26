@@ -143,8 +143,7 @@ export default function RoyalFruitCrownPanel({visible,onClose,api}) {
             <View style={s.statusBar}><View style={s.statusDot}/><Text style={s.statusText}>{phase==='betting'?'BETTING IS OPEN':phase==='drawing'?'THE ROYAL DRAW':'ROUND COMPLETE'}</Text><View style={s.timerBox}><Text style={s.timerValue}>{phase==='drawing'?'✦':seconds}</Text><Text style={s.timerUnit}>{phase==='betting'?'SECONDS':phase==='drawing'?'DRAWING':'SECONDS'}</Text></View></View>
             <View style={s.boardFrame}>
               <View style={s.board}>
-                {FRUITS.map((f,i)=><FruitTile key={f.id} f={f} active={fruit===f.id} lit={phase==='drawing'&&spot===i} dim={phase==='drawing'&&spot!==i} disabled={phase!=='betting'} onPress={()=>setFruit(f.id)}/>)}
-                <View style={s.centerCell}><Text style={s.centerCrown}>♛</Text><Text style={s.centerTimer}>{phase==='betting'?seconds:phase==='drawing'?'✦':'✓'}</Text><Text style={s.centerSeconds}>{phase==='betting'?'SECONDS':'ROYAL DRAW'}</Text></View>
+                {[FRUITS[0],FRUITS[1],FRUITS[2],FRUITS[3],null,FRUITS[4],FRUITS[5],FRUITS[6],FRUITS[7]].map((f,i)=>f?<FruitTile key={f.id} f={f} active={fruit===f.id} lit={phase==='drawing'&&spot===FRUITS.findIndex(x=>x.id===f.id)} dim={phase==='drawing'&&spot!==FRUITS.findIndex(x=>x.id===f.id)} disabled={phase!=='betting'} onPress={()=>setFruit(f.id)}/>:<View key="timer" style={s.centerCell}><Text style={s.centerCrown}>♛</Text><Text style={s.centerTimer}>{phase==='betting'?seconds:phase==='drawing'?'✦':'✓'}</Text><Text style={s.centerSeconds}>{phase==='betting'?'SECONDS':'ROYAL DRAW'}</Text></View>)}
               </View>
             </View>
             <View style={s.betSection}>
