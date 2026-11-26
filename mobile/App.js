@@ -5007,6 +5007,7 @@ function renderRoomInterior() {
                 { name: 'Wild Kingdom', mark: '🦁', key: 'wild', available: true },
                 { name: 'Royal 77', mark: '77', key: 'royal77', available: true },
                 { name: 'Ruby Jackpot', mark: '💎', key: 'ruby', available: true },
+                { name: 'Coming Soon', mark: '06', key: 'soon6', available: false },
                 { name: 'Coming Soon', mark: '07', key: 'soon7', available: false },
                 { name: 'Coming Soon', mark: '08', key: 'soon8', available: false },
                 { name: 'Coming Soon', mark: '09', key: 'soon9', available: false },
