@@ -21,7 +21,6 @@ const BOARD = ['cherry', 'lemon', 'orange', 'peach', null, 'watermelon', 'plum',
 const CLOCKWISE_FRUITS = ['cherry', 'lemon', 'orange', 'watermelon', 'apple', 'grapes', 'plum', 'peach'];
 const DESIGN_REFERENCES = {
   mainPanel: 'https://i.ibb.co/bg6sD1gN/1-20261126-203806-0000.png',
-  fruits: 'https://i.ibb.co/wNbR7hQk/3-20261126-203806-0002.png',
   winningPopup: 'https://i.ibb.co/KzhWt54v/2-20261126-203806-0001.png'
 };
 const GOLD = '#F6D987';
@@ -31,6 +30,7 @@ const fruitFor = id => FRUITS.find(item => item.id === id);
 export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
   const { width } = useWindowDimensions();
   const [game, setGame] = useState(null);
+  const [artwork, setArtwork] = useState({});
   const [selectedFruit, setSelectedFruit] = useState('cherry');
   const [betAmount, setBetAmount] = useState(100);
   const [seconds, setSeconds] = useState(37);
@@ -80,6 +80,21 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
     const poll = setInterval(refresh, 1000);
     return () => clearInterval(poll);
   }, [visible, refresh]);
+
+  // Artwork uploads are saved in talkzy_config.gameArtwork by the Founder
+  // upload endpoint. Load the selected URLs whenever the game panel opens.
+  useEffect(() => {
+    if (!visible || !api) return undefined;
+    let active = true;
+    api('/api/config')
+      .then(config => {
+        if (active) setArtwork(config?.gameArtwork?.['royal-fruit-crown'] || {});
+      })
+      .catch(() => {
+        // Keep the last valid artwork and built-in fallback if config is unavailable.
+      });
+    return () => { active = false; };
+  }, [visible, api]);
 
   useEffect(() => {
     if (!round) return undefined;
@@ -285,7 +300,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
           {loading && !game ? (
             <View style={styles.loading}><ActivityIndicator color={GOLD} size="large"/><Text style={styles.helperText}>Loading Royal Fruit Crown…</Text></View>
           ) : resultVisible ? (
-            <ImageBackground source={{ uri: DESIGN_REFERENCES.winningPopup }} resizeMode="stretch" style={styles.referenceBackground} imageStyle={styles.referenceImage}>
+            <ImageBackground source={{ uri: artwork?.result?.url || DESIGN_REFERENCES.winningPopup }} resizeMode="stretch" style={styles.referenceBackground} imageStyle={styles.referenceImage}>
             <ScrollView contentContainerStyle={styles.resultContent}>
               <Text style={styles.resultEyebrow}>THE CROWN HAS CHOSEN</Text>
               <Text style={styles.title}>ROYAL FRUIT CROWN</Text>
@@ -319,7 +334,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
             </ScrollView>
             </ImageBackground>
           ) : (
-            <ImageBackground source={{ uri: DESIGN_REFERENCES.mainPanel }} resizeMode="stretch" style={styles.referenceBackground} imageStyle={styles.referenceImage}>
+            <ImageBackground source={{ uri: artwork?.main?.url || DESIGN_REFERENCES.mainPanel }} resizeMode="stretch" style={styles.referenceBackground} imageStyle={styles.referenceImage}>
             <ScrollView contentContainerStyle={styles.mainContent}>
               <Text style={styles.title}>ROYAL FRUIT CROWN</Text>
               <Text style={styles.subtitle}>CHOOSE YOUR FRUIT · CLAIM THE CROWN</Text>
