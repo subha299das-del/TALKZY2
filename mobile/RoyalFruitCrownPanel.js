@@ -35,6 +35,7 @@ export default function RoyalFruitCrownPanel({visible,onClose,api}) {
   const chosen = FRUITS.find(f => f.id === fruit) || FRUITS[0];
   const myBets = game?.my_bets || [];
   const totalBet = myBets.reduce((n,b) => n + Number(b.amount || 0), 0);
+  const myWinnings = winner ? myBets.filter(b => b.fruit === winner.id).reduce((n,b) => n + Number(b.amount || 0) * winner.mult, 0) : 0;
 
   const refresh = async () => {
     if (!api) return;
@@ -119,6 +120,10 @@ export default function RoyalFruitCrownPanel({visible,onClose,api}) {
         <Text style={s.subheading}>ROUND WINNER</Text>
         <Text style={s.winnerEmoji}>{winner.emoji}</Text>
         <Text style={s.winnerName}>{winner.name.toUpperCase()} · {winner.mult}×</Text>
+        <View style={s.myWinnings}>
+          <Text style={s.myWinningsLabel}>YOUR WINNINGS THIS ROUND</Text>
+          {myBets.length === 0 ? <Text style={s.myWinningsEmpty}>You did not choose any fruit.</Text> : <Text style={s.myWinningsAmount}>+{money(myWinnings)} 🪙</Text>}
+        </View>
         <View style={s.leaders}>
           <Text style={s.leaderTitle}>TOP 3 WINNERS</Text>
           {(game?.leaders || []).length ? game.leaders.map((u,i) => <View key={u.user_id} style={s.leaderRow}>
@@ -178,5 +183,5 @@ const s=StyleSheet.create({
   selectRow:{flexDirection:'row',justifyContent:'space-between',paddingHorizontal:5,paddingTop:9},mini:{color:'#B4D6AE',fontSize:8,fontWeight:'900'},balanceSmall:{color:'#FFE078',fontSize:8,fontWeight:'900'},chips:{flexDirection:'row',justifyContent:'space-around',paddingVertical:8,backgroundColor:'#07341F'},chip:{minWidth:48,height:33,paddingHorizontal:5,borderRadius:17,backgroundColor:'#1771A9',borderColor:'#D8E8C5',borderWidth:1,alignItems:'center',justifyContent:'center'},chipOn:{backgroundColor:'#F3C64E',borderWidth:2,borderColor:'#FFF3A1'},chipText:{color:'#FFF',fontSize:8,fontWeight:'900'},chipTextOn:{color:'#311500'},
   footer:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:8,paddingVertical:7,backgroundColor:'#092419'},total:{color:'#E7D8A4',fontSize:9,fontWeight:'900'},betButton:{backgroundColor:'#D9AB3D',paddingHorizontal:16,paddingVertical:9,borderRadius:6,borderWidth:1,borderColor:'#FFF0A0'},betText:{color:'#382208',fontSize:10,fontWeight:'900'},
   history:{flexDirection:'row',alignItems:'center',justifyContent:'space-around',padding:7,backgroundColor:'#06331F'},historyFruit:{fontSize:19},drawHint:{color:GOLD,fontSize:9,fontWeight:'900',textAlign:'center',paddingVertical:8},
-  resultPanel:{alignItems:'center',padding:12,backgroundColor:'#063D25',minHeight:500},crown:{fontSize:38},subheading:{color:'#E5D4A1',fontSize:10,fontWeight:'900',marginTop:8},winnerEmoji:{fontSize:70,marginTop:10},winnerName:{color:'#FFF0A4',fontSize:17,fontWeight:'900'},leaders:{width:'100%',backgroundColor:'#082D1C',borderColor:'#D4B451',borderWidth:1,borderRadius:8,padding:10,marginTop:18},leaderTitle:{color:GOLD,fontSize:12,fontWeight:'900',marginBottom:7},leaderRow:{flexDirection:'row',alignItems:'center',paddingVertical:6,borderBottomWidth:1,borderColor:'#31553B'},avatar:{width:29,height:29,borderRadius:15,backgroundColor:'#21452D',alignItems:'center',justifyContent:'center',marginRight:8},leaderName:{color:'#F6E9C4',fontSize:10,fontWeight:'800',flex:1},payout:{color:GOLD,fontSize:10,fontWeight:'900'},noWinner:{color:'#D6CBA9',fontSize:10},next:{color:GOLD,fontSize:11,fontWeight:'900',marginTop:18},error:{color:'#FF9C9C',fontSize:10,padding:8,textAlign:'center'}
+  resultPanel:{alignItems:'center',padding:12,backgroundColor:'#063D25',minHeight:500},myWinnings:{width:'100%',alignItems:'center',backgroundColor:'#0B2D1C',borderWidth:1,borderColor:'#D4B451',borderRadius:8,paddingVertical:10,paddingHorizontal:8,marginTop:12},myWinningsLabel:{color:'#D8C58D',fontSize:9,fontWeight:'900',letterSpacing:0.7},myWinningsAmount:{color:'#FFE078',fontSize:22,fontWeight:'900',marginTop:5},myWinningsEmpty:{color:'#F2E5C1',fontSize:12,fontWeight:'800',marginTop:6,textAlign:'center'},crown:{fontSize:38},subheading:{color:'#E5D4A1',fontSize:10,fontWeight:'900',marginTop:8},winnerEmoji:{fontSize:70,marginTop:10},winnerName:{color:'#FFF0A4',fontSize:17,fontWeight:'900'},leaders:{width:'100%',backgroundColor:'#082D1C',borderColor:'#D4B451',borderWidth:1,borderRadius:8,padding:10,marginTop:18},leaderTitle:{color:GOLD,fontSize:12,fontWeight:'900',marginBottom:7},leaderRow:{flexDirection:'row',alignItems:'center',paddingVertical:6,borderBottomWidth:1,borderColor:'#31553B'},avatar:{width:29,height:29,borderRadius:15,backgroundColor:'#21452D',alignItems:'center',justifyContent:'center',marginRight:8},leaderName:{color:'#F6E9C4',fontSize:10,fontWeight:'800',flex:1},payout:{color:GOLD,fontSize:10,fontWeight:'900'},noWinner:{color:'#D6CBA9',fontSize:10},next:{color:GOLD,fontSize:11,fontWeight:'900',marginTop:18},error:{color:'#FF9C9C',fontSize:10,padding:8,textAlign:'center'}
 });
