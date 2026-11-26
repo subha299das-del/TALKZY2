@@ -360,6 +360,52 @@ app.post('/api/admin/login', loginLimiter, (req, res) => {
   res.set('Cache-Control', 'no-store').json({ token, expiresIn: 7200 });
 });
 
+app.post('/api/admin/game-artwork', ownerAuth,
+  express.raw({ type: ['image/png', 'image/webp'], limit: '15mb' }),
+  async (req, res) => {
+    const gameKey = String(req.get('x-artwork-game') || '').trim();
+    const screen = String(req.get('x-artwork-screen') || '').trim();
+    const contentType = String(req.get('content-type') || '').toLowerCase();
+    const allowedGames = new Set([
+      'royal-fruit-crown', 'thunder-king', 'lucky-elephant', 'wild-kingdom',
+      'royal-77', 'ruby-jackpot', 'greedy-game-7', 'greedy-game-8',
+      'greedy-game-9', 'greedy-game-10', 'room-games'
+    ]);
+    if (!allowedGames.has(gameKey) || !['main', 'result', 'icon'].includes(screen)) {
+      return res.status(400).json({ error: 'Choose a valid TALKZY game and artwork type.' });
+    }
+    if (!['image/png', 'image/webp'].includes(contentType) ||
+        !Buffer.isBuffer(req.body) || req.body.length < 16 ||
+        req.body.length > 15 * 1024 * 1024) {
+      return res.status(400).json({ error: 'Upload a PNG or WebP image up to 15 MB.' });
+    }
+    const isPng = req.body.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+    const isWebp = req.body.subarray(0, 4).toString('ascii') === 'RIFF' &&
+      req.body.subarray(8, 12).toString('ascii') === 'WEBP';
+    if ((contentType === 'image/png' && !isPng) || (contentType === 'image/webp' && !isWebp)) {
+      return res.status(415).json({ error: 'The image bytes do not match the declared PNG/WebP format.' });
+    }
+    try {
+      const extension = contentType === 'image/webp' ? 'webp' : 'png';
+      const path = gameKey + '/' + screen + '-' + Date.now() + '.' + extension;
+      const { error: uploadError } = await supabase.storage.from('talkzy-game-artwork').upload(path, req.body, {
+        contentType, upsert: true, cacheControl: '3600'
+      });
+      if (uploadError) throw uploadError;
+      const { data } = supabase.storage.from('talkzy-game-artwork').getPublicUrl(path);
+      const config = await readConfig();
+      const artwork = config.gameArtwork && typeof config.gameArtwork === 'object' ? config.gameArtwork : {};
+      artwork[gameKey] = { ...(artwork[gameKey] || {}), [screen]: { url: data.publicUrl, path, contentType, updatedAt: new Date().toISOString() } };
+      config.gameArtwork = artwork;
+      await writeConfig(config);
+      res.set('Cache-Control', 'no-store').status(201).json({ gameKey, screen, url: data.publicUrl, path });
+    } catch (error) {
+      console.error('Could not upload game artwork:', error.message);
+      res.status(500).json({ error: 'Could not store game artwork. Check Supabase Storage configuration.' });
+    }
+  }
+);
+
 app.put('/api/config', ownerAuth, async (req, res) => {
   if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
     return res.status(400).json({ error: 'Send interface settings as a JSON object.' });
