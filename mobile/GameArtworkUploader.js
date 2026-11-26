@@ -6,7 +6,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 
 /**
- * Founder-only artwork uploader for Greedy and other TALKZY games.
+ * Founder-only PNG and WebP artwork uploader for Greedy and other TALKZY games.
  *
  * Props:
  *   visible: boolean
@@ -45,10 +45,10 @@ export default function GameArtworkUploader({ visible, onClose, supabase, onUplo
   const [asset, setAsset] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  const choosePng = async () => {
+  const chooseArtwork = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Photo permission needed', 'Allow photo access to select your PNG artwork.');
+      Alert.alert('Photo permission needed', 'Allow photo access to select your PNG or WebP artwork.');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -60,12 +60,20 @@ export default function GameArtworkUploader({ visible, onClose, supabase, onUplo
     const picked = result.assets[0];
     const mime = picked.mimeType || '';
     const name = (picked.fileName || picked.uri.split('/').pop() || '').toLowerCase();
-    if (mime !== 'image/png' && !name.endsWith('.png')) {
-      Alert.alert('PNG only', 'Please select a PNG file. JPG and other formats are not accepted.');
+    const isPng = mime === 'image/png' || name.endsWith('.png');
+    const isWebp = mime === 'image/webp' || name.endsWith('.webp');
+    if (!isPng && !isWebp) {
+      Alert.alert('Unsupported format', 'Please select a PNG or WebP file. JPG and other formats are not accepted.');
       return;
     }
+    if (mime && mime !== 'image/png' && mime !== 'image/webp') {
+      Alert.alert('File type mismatch', 'The selected file is not identified as PNG or WebP.');
+      return;
+    }
+    picked.uploadMimeType = isWebp ? 'image/webp' : 'image/png';
+    picked.uploadExtension = isWebp ? 'webp' : 'png';
     if (picked.fileSize && picked.fileSize > 15 * 1024 * 1024) {
-      Alert.alert('File too large', 'Please choose a PNG smaller than 15 MB.');
+      Alert.alert('File too large', 'Please choose a PNG or WebP smaller than 15 MB.');
       return;
     }
     setAsset(picked);
@@ -77,16 +85,18 @@ export default function GameArtworkUploader({ visible, onClose, supabase, onUplo
       return;
     }
     if (!asset) {
-      Alert.alert('Choose artwork', 'Select a PNG before uploading.');
+      Alert.alert('Choose artwork', 'Select a PNG or WebP file before uploading.');
       return;
     }
     setBusy(true);
     try {
       const response = await fetch(asset.uri);
       const bytes = await response.arrayBuffer();
-      const path = gameKey + '/' + screen + '-' + Date.now() + '.png';
+      const contentType = asset.uploadMimeType || (asset.fileName?.toLowerCase().endsWith('.webp') ? 'image/webp' : 'image/png');
+      const extension = asset.uploadExtension || (contentType === 'image/webp' ? 'webp' : 'png');
+      const path = gameKey + '/' + screen + '-' + Date.now() + '.' + extension;
       const { error } = await supabase.storage.from(BUCKET).upload(path, bytes, {
-        contentType: 'image/png',
+        contentType,
         upsert: true,
         cacheControl: '3600'
       });
@@ -94,7 +104,7 @@ export default function GameArtworkUploader({ visible, onClose, supabase, onUplo
       const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
       const payload = { gameKey, screen, url: data.publicUrl, path };
       onUploaded?.(payload);
-      Alert.alert('Artwork uploaded', 'PNG uploaded successfully. Save the returned artwork URL in the game configuration to display it.');
+      Alert.alert('Artwork uploaded', ((contentType === 'image/webp' ? 'WebP' : 'PNG') + ' uploaded successfully. Save the returned artwork URL in the game configuration to display it.'));
       setAsset(null);
     } catch (error) {
       Alert.alert('Upload failed', error?.message || 'Could not upload artwork. Check the bucket and its Storage policies.');
@@ -129,18 +139,18 @@ export default function GameArtworkUploader({ visible, onClose, supabase, onUplo
               </TouchableOpacity>
             ))}
           </View>
-          <TouchableOpacity style={styles.choose} onPress={choosePng} disabled={busy}>
-            <Text style={styles.chooseText}>{asset ? 'CHOOSE A DIFFERENT PNG' : 'SELECT PNG FROM PHONE'}</Text>
+          <TouchableOpacity style={styles.choose} onPress={chooseArtwork} disabled={busy}>
+            <Text style={styles.chooseText}>{asset ? 'CHOOSE DIFFERENT ARTWORK' : 'SELECT PNG / WEBP FROM PHONE'}</Text>
           </TouchableOpacity>
           {asset && <View style={styles.previewWrap}>
             <Image source={{ uri: asset.uri }} style={styles.preview} resizeMode="contain" />
-            <Text style={styles.fileName}>{asset.fileName || 'Selected PNG'}</Text>
+            <Text style={styles.fileName}>{asset.fileName || 'Selected artwork'}</Text>
           </View>}
           <TouchableOpacity style={[styles.upload, (!asset || busy) && styles.disabled]}
             onPress={upload} disabled={!asset || busy}>
             {busy ? <ActivityIndicator color="#211707" /> : <Text style={styles.uploadText}>UPLOAD ARTWORK</Text>}
           </TouchableOpacity>
-          <Text style={styles.note}>PNG only · Maximum 15 MB · Uploading stores the artwork; the game screen must be configured to use its URL.</Text>
+          <Text style={styles.note}>PNG + WebP · Maximum 15 MB · Uploading stores the artwork; the game screen must be configured to use its URL.</Text>
         </View>
       </View>
     </Modal>
