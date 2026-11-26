@@ -17,6 +17,8 @@ const FRUITS = [
 ];
 const BET_AMOUNTS = [10, 100, 1000, 10000, 100000];
 const BOARD = ['cherry', 'lemon', 'orange', 'peach', null, 'watermelon', 'plum', 'grapes', 'apple'];
+// Clockwise path around the 3×3 board, starting at the top-left tile.
+const CLOCKWISE_FRUITS = ['cherry', 'lemon', 'orange', 'watermelon', 'apple', 'grapes', 'plum', 'peach'];
 const DESIGN_REFERENCES = {
   mainPanel: 'https://i.ibb.co/bg6sD1gN/1-20261126-203806-0000.png',
   fruits: 'https://i.ibb.co/wNbR7hQk/3-20261126-203806-0002.png',
@@ -32,7 +34,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
   const [selectedFruit, setSelectedFruit] = useState('cherry');
   const [betAmount, setBetAmount] = useState(100);
   const [seconds, setSeconds] = useState(37);
-  const [spotIndex, setSpotIndex] = useState(0);
+  const [lightIndex, setLightIndex] = useState(0);
   const [loading, setLoading] = useState(false);
   const [pending, setPending] = useState(false);
   const betRequestCounter = useRef(0);
@@ -90,14 +92,15 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
     return () => clearInterval(timer);
   }, [round?.id, round?.phase, round?.bet_closes_at, round?.animation_ends_at, round?.result_ends_at]);
 
+  // A continuous golden light travels clockwise across every fruit tile.
+  // It speeds up during the 10-second draw, but never determines the result.
   useEffect(() => {
-    if (phase !== 'drawing') {
-      setSpotIndex(0);
-      return undefined;
-    }
-    const spin = setInterval(() => setSpotIndex(index => (index + 1) % 8), 145);
+    if (!visible) return undefined;
+    setLightIndex(0);
+    const speed = phase === 'drawing' ? 220 : 420;
+    const spin = setInterval(() => setLightIndex(index => (index + 1) % CLOCKWISE_FRUITS.length), speed);
     return () => clearInterval(spin);
-  }, [phase, round?.id]);
+  }, [visible, phase, round?.id]);
 
   const placeBet = async (fruitId, amount) => {
     if (phase !== 'betting') return;
@@ -216,9 +219,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
             );
           }
           const fruit = fruitFor(id);
-          const fruitIndex = FRUITS.findIndex(item => item.id === id);
-          const lit = phase === 'drawing' && spotIndex === fruitIndex;
-          const dim = phase === 'drawing' && !lit;
+          const lit = CLOCKWISE_FRUITS[lightIndex] === id;
           return (
             <TouchableOpacity
               key={id}
@@ -227,8 +228,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
               style={[
                 styles.fruitTile,
                 selectedFruit === id && phase === 'betting' && styles.selectedTile,
-                lit && styles.litTile,
-                dim && styles.dimTile
+                lit && styles.litTile
               ]}
             >
               <Text style={styles.fruitEmoji}>{fruit.symbol}</Text>
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
   boardFrame: { padding: 5, backgroundColor: '#171610', borderWidth: 1.5, borderColor: '#A9894B', borderRadius: 8 }, board: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 5 },
   fruitTile: { width: '31.9%', height: 103, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1A1D1A', borderWidth: 1, borderColor: '#887247', borderRadius: 7, paddingVertical: 3 },
   selectedTile: { backgroundColor: '#3C2C15', borderWidth: 2, borderColor: '#FFE7A2', shadowColor: GOLD, shadowOpacity: 0.6, shadowRadius: 8, elevation: 6 },
-  litTile: { backgroundColor: '#5C461E', borderColor: '#FFF1B9', borderWidth: 2, shadowColor: '#FFE69A', shadowOpacity: 1, shadowRadius: 15, elevation: 12 }, dimTile: { opacity: 0.36 },
+  litTile: { backgroundColor: '#5C461E', borderColor: '#FFF1B9', borderWidth: 2, shadowColor: '#FFE69A', shadowOpacity: 1, shadowRadius: 15, elevation: 12, transform: [{ scale: 1.035 }] },
   fruitEmoji: { fontSize: 35, marginBottom: 1 }, fruitName: { color: '#EADDBD', fontSize: 8, fontWeight: '900', letterSpacing: 0.7 }, multiplier: { marginTop: 3, color: '#FFE49A', backgroundColor: '#59421D', borderWidth: 1, borderColor: '#C9A65E', borderRadius: 10, overflow: 'hidden', paddingHorizontal: 9, paddingVertical: 2, fontSize: 10, fontWeight: '900' }, betOnFruit: { color: '#FFE7A2', fontSize: 7, fontWeight: '900', marginTop: 2 },
   timerCell: { width: '31.9%', height: 103, alignItems: 'center', justifyContent: 'center', backgroundColor: '#211B11', borderWidth: 1.5, borderColor: '#D1AC5D', borderRadius: 7 }, timerCrown: { color: GOLD, fontSize: 22 }, timerNumber: { color: '#FFF0B0', fontSize: 25, lineHeight: 28, fontWeight: '900' }, timerCaption: { color: '#D6C18D', fontSize: 6, fontWeight: '900', letterSpacing: 0.7 },
   betPanel: { marginTop: 9, padding: 8, backgroundColor: '#111716', borderWidth: 1, borderColor: '#8E7545', borderRadius: 6 }, sectionHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, sectionTitle: { color: '#F0D99B', fontSize: 9, fontWeight: '900', letterSpacing: 1 }, miniLabel: { color: '#BBAA7D', fontSize: 7, fontWeight: '900' }, selectedFruit: { color: '#C5A96A', fontSize: 7, fontWeight: '900' },
