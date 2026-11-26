@@ -38,7 +38,6 @@ import LuckyElephantPanel from './LuckyElephantPanel';
 import WildKingdomPanel from './WildKingdomPanel';
 import Royal77Panel from './Royal77Panel';
 import RubyJackpotPanel from './RubyJackpotPanel';
-import RoyalFruitCrownPanel from './RoyalFruitCrownPanel';
 
 WebBrowser.maybeCompleteAuthSession();
 const MIC_ON_ICON = require('./assets/mic_on.png');
@@ -992,7 +991,6 @@ useEffect(() => {
     if (showRoomInfo) { setShowRoomInfo(false); return true; }
     if (showRoomGiftQuantityOptions) { setShowRoomGiftQuantityOptions(false); return true; }
     if (showRoomGiftPanel) { setShowRoomGiftPanel(false); return true; }
-    if (showGreedyPanel) { setShowGreedyPanel(false); return true; }
     if (showRoomGamePanel) { setShowRoomGamePanel(false); return true; }
     if (showRocketPanel) { setShowRocketPanel(false); return true; }
     if (showRoomThemeMenu) { setShowRoomThemeMenu(false); return true; }
@@ -1065,7 +1063,7 @@ useEffect(() => {
   showRoomTools, showSpecialEffectSettings, showRoomChatComposer, showRoomChatActionMenu,
   showRoomShortcutsPage, showGreedyMenu, showMicEmojiPicker, showMicControlPopup, showRoomUsers,
   showMicCountPicker, showRoomMessageMenu, showRoomInfo, showRoomGiftQuantityOptions,
-  showRoomGiftPanel, showGreedyPanel, showRoomGamePanel, showRocketPanel,
+  showRoomGiftPanel, showRoomGamePanel, showRocketPanel,
   showRoomThemeMenu, showLuckyBagPopup, showHotEventsPopup, showJoinPassword,
   roomDetailsVisible, showRoomMenu, showMicChatPopup, showYoutubeVolumePopup,
   showYoutubeQueuePopup, showYoutubePicker, showYoutubePanel, showMusicPanel,
@@ -1561,15 +1559,12 @@ const [selectedRoomGift, setSelectedRoomGift] = useState('Rose');
 const [roomGiftCategory, setRoomGiftCategory] = useState('Popular');
 const [roomGiftQuantity, setRoomGiftQuantity] = useState('1');
 const [showRoomGiftQuantityOptions, setShowRoomGiftQuantityOptions] = useState(false);
-const [showGreedyPanel, setShowGreedyPanel] = useState(false);
 const [showGreedyMenu, setShowGreedyMenu] = useState(false);
 const [showThunderKingPanel, setShowThunderKingPanel] = useState(false);
 const [showLuckyElephantPanel, setShowLuckyElephantPanel] = useState(false);
 const [showWildKingdomPanel, setShowWildKingdomPanel] = useState(false);
 const [showRoyal77Panel, setShowRoyal77Panel] = useState(false);
 const [showRubyJackpotPanel, setShowRubyJackpotPanel] = useState(false);
-const [greedySelectedFruit, setGreedySelectedFruit] = useState([]);
-const [greedyBetAmount, setGreedyBetAmount] = useState(10);
 const [greedyView, setGreedyView] = useState('game');
 const [greedyHistory, setGreedyHistory] = useState([]);
 
@@ -1665,7 +1660,7 @@ const [isRoomTourist, setIsRoomTourist] = useState(false);
     setShowPosterEditor(false);
     setMicGame(null);
     setShowRoomGamePanel(false);
-    setShowGreedyPanel(false);
+    
     setShowThunderKingPanel(false);
     setShowLuckyElephantPanel(false);
     setShowWildKingdomPanel(false);
@@ -5004,10 +4999,9 @@ function renderRoomInterior() {
                 <Text style={{ color: '#F6D987', fontSize: 23, fontWeight: '700' }}>×</Text>
               </TouchableOpacity>
             </View>
-            <Text style={{ color: '#C7B99F', fontSize: 10, marginBottom: 14 }}>Six games are currently in the app. Four more slots are reserved for the remaining Greedy games.</Text>
+            <Text style={{ color: '#C7B99F', fontSize: 10, marginBottom: 14 }}>Five games are currently in the app. Five more slots are reserved for future Greedy games.</Text>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingBottom: 4 }}>
               {[
-                { name: 'Royal Fruit Crown', mark: '👑', key: 'fruit', available: true },
                 { name: 'Thunder King', mark: '⚡', key: 'thunder', available: true },
                 { name: 'Lucky Elephant', mark: '🐘', key: 'elephant', available: true },
                 { name: 'Wild Kingdom', mark: '🦁', key: 'wild', available: true },
@@ -5025,13 +5019,12 @@ function renderRoomInterior() {
                   accessibilityLabel={game.available ? 'Open ' + game.name : 'Greedy game coming soon'}
                   onPress={() => {
                     setShowGreedyMenu(false);
-                    setShowGreedyPanel(false);
+                    
                     setShowThunderKingPanel(false);
                     setShowLuckyElephantPanel(false);
                     setShowWildKingdomPanel(false);
                     setShowRoyal77Panel(false);
                     setShowRubyJackpotPanel(false);
-                    if (game.key === 'fruit') setShowGreedyPanel(true);
                     else if (game.key === 'thunder') setShowThunderKingPanel(true);
                     else if (game.key === 'elephant') setShowLuckyElephantPanel(true);
                     else if (game.key === 'wild') setShowWildKingdomPanel(true);
@@ -5054,7 +5047,6 @@ function renderRoomInterior() {
 
       <RubyJackpotPanel visible={showRubyJackpotPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowRubyJackpotPanel(false)} />
 
-      <RoyalFruitCrownPanel visible={showGreedyPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowGreedyPanel(false)} api={api} />
 
       <Modal
         visible={showRoomThemeMenu && selectedRoom?.owner_id === session?.user?.id}
@@ -5340,7 +5332,7 @@ function renderRoomInterior() {
     accessibilityRole="button"
     accessibilityLabel="Open Hot Events"
     onPress={() => {
-      setShowRoomGiftPanel(false); setShowRoomTools(false); setShowGreedyPanel(false);
+      setShowRoomGiftPanel(false); setShowRoomTools(false); 
       setShowRoomGamePanel(false); setShowRocketPanel(false);
       setShowHotEventsPopup(true);
       if (!loadingOfficialEvents) loadOfficialEvents();
@@ -5370,7 +5362,7 @@ function renderRoomInterior() {
     accessibilityRole="button"
     accessibilityLabel="Open room games"
     onPress={() => {
-      setShowRoomGiftPanel(false); setShowRoomTools(false); setShowGreedyPanel(false);
+      setShowRoomGiftPanel(false); setShowRoomTools(false); 
       setShowRocketPanel(false); setShowHotEventsPopup(false); setShowRoomGamePanel(true);
     }}
     style={{ width: 48, height: 48, borderRadius: 16, borderWidth: 1.5, borderColor: '#72DDF5', backgroundColor: '#0C3048', alignItems: 'center', justifyContent: 'center', shadowColor: '#4AC4D6', shadowOpacity: 0.48, shadowRadius: 9, elevation: 9 }}
@@ -5383,7 +5375,7 @@ function renderRoomInterior() {
     accessibilityRole="button"
     accessibilityLabel="Open Treasure"
     onPress={() => {
-      setShowRoomGiftPanel(false); setShowRoomTools(false); setShowGreedyPanel(false);
+      setShowRoomGiftPanel(false); setShowRoomTools(false); 
       setShowRoomGamePanel(false); setShowRocketPanel(false); setShowHotEventsPopup(false);
       setShowRocketPanel(true);
     }}
@@ -5769,7 +5761,7 @@ function renderRoomInterior() {
     accessibilityLabel="Open gifts"
     onPress={() => {
       setShowRoomTools(false);
-      setShowGreedyPanel(false);
+      
       setShowRoomGamePanel(false);
       setShowRocketPanel(false);
       setShowHotEventsPopup(false);
@@ -7082,64 +7074,7 @@ function renderDiscover() {
       <Text style={{ color: C.text, fontSize: 17, fontWeight: '900', marginBottom: 3 }}>Explore Communities</Text>
       <Text style={{ color: C.muted, fontSize: 11, marginBottom: 8 }}>Discover people, rooms and activities from around the world.</Text>
       
-{/* HISTORY BIG WIN */}
-
-<Text style={{
-  color: C.text,
-  fontSize: 19,
-  fontWeight: '900',
-  marginBottom: 12
-}}>
-  🏆 History Big Win
-</Text>
-
-<ScrollView
-  horizontal
-  showsHorizontalScrollIndicator={false}
-  style={{ marginBottom: 18 }}
->
-  {[1, 2, 3, 4, 5].map((item) => (
-    <Card
-      key={item}
-      style={{
-        width: 145,
-        padding: 12,
-        marginRight: 10,
-        alignItems: 'center'
-      }}
-    >
-      <Text style={{ fontSize: 27 }}>💰</Text>
-
-      <Text style={{
-        color: C.text,
-        fontWeight: '900',
-        marginTop: 7
-      }}>
-        Royal Fruit Crown
-      </Text>
-
-      <Text style={{
-        color: C.primary,
-        fontSize: 15,
-        fontWeight: '900',
-        marginTop: 5
-      }}>
-        🪙 Winner
-      </Text>
-
-      <Text style={{
-        color: C.muted,
-        fontSize: 10,
-        marginTop: 4
-      }}>
-        Win history
-      </Text>
-    </Card>
-  ))}
-</ScrollView>
-
-
-      
+{/* TALKZY RANKING POSTER */}
 {/* TALKZY RANKING POSTER */}
 
 <Pressable

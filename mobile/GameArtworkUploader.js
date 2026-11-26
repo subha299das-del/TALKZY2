@@ -20,7 +20,6 @@ import * as ImagePicker from 'expo-image-picker';
  *   Founder identity in Storage policies; do not rely only on hiding this UI).
  */
 const GAME_OPTIONS = [
-  { key: 'royal-fruit-crown', name: 'Royal Fruit Crown' },
   { key: 'thunder-king', name: 'Thunder King' },
   { key: 'lucky-elephant', name: 'Lucky Elephant' },
   { key: 'wild-kingdom', name: 'Wild Kingdom' },

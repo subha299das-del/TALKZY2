@@ -49,7 +49,6 @@ test('private room and chat APIs reject requests without a user session', async 
     '/api/rooms/test-room/music',
     '/api/rooms/test-room/youtube',
     '/api/rooms/test-room/mic-seats',
-    '/api/greedy/fruit-crown'
   ];
 
   for (const path of paths) {
@@ -64,8 +63,6 @@ test('room mutations reject unauthenticated requests before processing data', as
     ['/api/rooms/test-room/messages', 'POST', { message: 'test message' }],
     ['/api/rooms/test-room/music/me', 'PUT', { queue: [] }],
     ['/api/rooms/test-room/youtube', 'PUT', { video_id: null, queue: [] }],
-    ['/api/greedy/fruit-crown/bets', 'POST', { fruit: 'cherry', amount: 100 }],
-    ['/api/greedy/fruit-crown/founder-result', 'POST', { fruit: 'cherry' }]
   ];
 
   for (const [path, method, body] of requests) {
@@ -91,7 +88,7 @@ test('owner dashboard login rejects incorrect credentials', async () => {
 test('game artwork upload rejects requests without Founder authorization', async () => {
   const response = await request('/api/admin/game-artwork', {
     method: 'POST',
-    headers: { 'content-type': 'image/webp', 'x-artwork-game': 'royal-fruit-crown', 'x-artwork-screen': 'main' },
+    headers: { 'content-type': 'image/webp', 'x-artwork-game': 'thunder-king', 'x-artwork-screen': 'main' },
     body: Buffer.from('not-an-image')
   });
   assert.equal(response.status, 401);

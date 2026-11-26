@@ -367,7 +367,7 @@ app.post('/api/admin/game-artwork', ownerAuth,
     const screen = String(req.get('x-artwork-screen') || '').trim();
     const contentType = String(req.get('content-type') || '').toLowerCase();
     const allowedGames = new Set([
-      'royal-fruit-crown', 'thunder-king', 'lucky-elephant', 'wild-kingdom',
+      'thunder-king', 'lucky-elephant', 'wild-kingdom',
       'royal-77', 'ruby-jackpot', 'greedy-game-7', 'greedy-game-8',
       'greedy-game-9', 'greedy-game-10', 'room-games'
     ]);
@@ -2273,57 +2273,6 @@ app.patch('/api/rooms/:roomId/mic-seats/mute', userAuth, async (req, res) => {
 });
       
 
-// ROYAL FRUIT CROWN — secure game API and server-authoritative round scheduler
-app.get('/api/greedy/fruit-crown', userAuth, async (req, res) => {
-  try {
-    const { error: advanceError } = await supabase.rpc('talkzy_fruit_advance_round');
-    if (advanceError) throw advanceError;
-    const { data, error } = await supabase.rpc('talkzy_fruit_get_state_for_user', { p_user_id: req.talkzyUser.id });
-    if (error) throw error;
-    res.set('Cache-Control', 'no-store').json(data || {});
-  } catch (error) {
-    console.error('Fruit Crown state error:', error.message);
-    res.status(500).json({ error: 'Could not load Royal Fruit Crown.' });
-  }
-});
-
-app.post('/api/greedy/fruit-crown/bets', userAuth, async (req, res) => {
-  const fruit = String(req.body?.fruit || '');
-  const amount = Number(req.body?.amount);
-  if (!['cherry','lemon','orange','peach','watermelon','plum','grapes','apple'].includes(fruit)) return res.status(400).json({ error: 'Choose a valid fruit.' });
-  if (![10,100,1000,10000,100000].includes(amount)) return res.status(400).json({ error: 'Choose one of the available coin amounts.' });
-  try {
-    const { data, error } = await supabase.rpc('talkzy_fruit_place_bet_service', { p_user_id: req.talkzyUser.id, p_fruit: fruit, p_amount: amount });
-    if (error) {
-      if (/BETTING_CLOSED/.test(error.message || '')) return res.status(409).json({ error: 'Betting is closed for this round.' });
-      if (/INSUFFICIENT_COINS/.test(error.message || '')) return res.status(409).json({ error: 'You do not have enough gold coins.' });
-      if (/INVALID_/.test(error.message || '')) return res.status(400).json({ error: 'Invalid bet selection.' });
-      throw error;
-    }
-    res.set('Cache-Control', 'no-store').json(data || { accepted: true });
-  } catch (error) {
-    console.error('Fruit Crown bet error:', error.message);
-    res.status(500).json({ error: 'Your bet could not be placed. Please try again.' });
-  }
-});
-
-app.post('/api/greedy/fruit-crown/founder-result', ownerAuth, async (req, res) => {
-  const fruit = String(req.body?.fruit || '');
-  if (!['cherry','lemon','orange','peach','watermelon','plum','grapes','apple'].includes(fruit)) return res.status(400).json({ error: 'Choose a valid winning fruit.' });
-  try {
-    const { data, error } = await supabase.rpc('talkzy_fruit_set_forced_result', { p_fruit: fruit });
-    if (error) {
-      if (/NO_ACTIVE_ROUND/.test(error.message || '')) return res.status(409).json({ error: 'There is no active betting round.' });
-      if (/ROUND_LOCKED/.test(error.message || '')) return res.status(409).json({ error: 'The 37-second betting period has ended.' });
-      throw error;
-    }
-    res.set('Cache-Control', 'no-store').json(data || { set: true });
-  } catch (error) {
-    console.error('Fruit Crown Founder result error:', error.message);
-    res.status(500).json({ error: 'Could not set the Founder result.' });
-  }
-});
-
 // Handle unexpected errors.
 app.use((error, req, res, next) => {
   if (res.headersSent) return next(error);
@@ -2341,11 +2290,6 @@ app.use((error, req, res, next) => {
 });
 
 if (require.main === module) {
-  const fruitAdvanceTimer = setInterval(async () => {
-    try { await supabase.rpc('talkzy_fruit_advance_round'); }
-    catch (error) { console.error('Fruit Crown round scheduler:', error.message); }
-  }, 1000);
-  if (typeof fruitAdvanceTimer.unref === 'function') fruitAdvanceTimer.unref();
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`TALKZY owner backend listening on port ${PORT}`);
   });
