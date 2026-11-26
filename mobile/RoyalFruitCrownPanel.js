@@ -35,6 +35,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
   const [spotIndex, setSpotIndex] = useState(0);
   const [loading, setLoading] = useState(false);
   const [pending, setPending] = useState(false);
+  const betRequestCounter = useRef(0);
   const [error, setError] = useState('');
   const [founderOpen, setFounderOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -98,21 +99,19 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
     return () => clearInterval(spin);
   }, [phase, round?.id]);
 
-  const placeBet = async amount => {
-    if (phase !== 'betting' || pending) return;
-    setPending(true);
-    setBetAmount(amount);
+  const placeBet = async (fruitId, amount) => {
+    if (phase !== 'betting') return;
+    const requestKey = `${Date.now().toString(36)}-${(++betRequestCounter.current).toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+    setSelectedFruit(fruitId);
     setError('');
     try {
       await api('/api/greedy/royal-fruit-crown/bets', {
         method: 'POST',
-        body: JSON.stringify({ fruit: selectedFruit, amount })
+        body: JSON.stringify({ fruit: fruitId, amount, request_key: requestKey })
       });
       await refresh();
     } catch (err) {
       setError(err?.message || 'Your bet could not be placed.');
-    } finally {
-      setPending(false);
     }
   };
 
@@ -224,7 +223,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
             <TouchableOpacity
               key={id}
               disabled={phase !== 'betting'}
-              onPress={() => setSelectedFruit(id)}
+              onPress={() => placeBet(id, betAmount)}
               style={[
                 styles.fruitTile,
                 selectedFruit === id && phase === 'betting' && styles.selectedTile,
@@ -235,7 +234,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
               <Text style={styles.fruitEmoji}>{fruit.symbol}</Text>
               <Text style={styles.fruitName}>{fruit.name.toUpperCase()}</Text>
               <Text style={styles.multiplier}>{fruit.multiplier}×</Text>
-              {!!totalsByFruit[id] && <Text style={styles.betOnFruit}>{money(totalsByFruit[id])} BET</Text>}
+              <Text style={styles.betOnFruit}>{money(totalsByFruit[id] || 0)} BET</Text>
             </TouchableOpacity>
           );
         })}
@@ -337,7 +336,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
                 </View>
                 <View style={styles.betAmounts}>
                   {BET_AMOUNTS.map(amount => (
-                    <TouchableOpacity key={amount} disabled={phase !== 'betting' || pending} onPress={() => placeBet(amount)} style={[styles.betButton, betAmount === amount && styles.activeBetButton, (phase !== 'betting' || pending) && styles.disabled]}>
+                    <TouchableOpacity key={amount} disabled={phase !== 'betting'} onPress={() => setBetAmount(amount)} style={[styles.betButton, betAmount === amount && styles.activeBetButton, phase !== 'betting' && styles.disabled]}>
                       <Text style={[styles.betButtonText, betAmount === amount && styles.activeBetText]}>{money(amount)}</Text>
                     </TouchableOpacity>
                   ))}
@@ -348,7 +347,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
                     <Text style={styles.totalBet}>{money(totalBet)} <Text style={styles.coin}>◉</Text></Text>
                     <Text style={styles.miniLabel}>ON {selected.name.toUpperCase()}: {money(totalsByFruit[selectedFruit] || 0)} COINS</Text>
                   </View>
-                  <Text style={styles.betHint}>{pending ? 'PROCESSING BET…' : phase === 'betting' ? 'TAP AN AMOUNT TO BET' : 'BETTING CLOSED'}</Text>
+                  <Text style={styles.betHint}>{phase === 'betting' ? 'TAP A FRUIT TO PLACE BET' : 'BETTING CLOSED'}</Text>
                 </View>
               </View>
               {!!error && <Text style={styles.error}>{error}</Text>}
@@ -364,7 +363,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
           <View style={styles.helpBackdrop}>
             <View style={styles.helpCard}>
               <Text style={styles.title}>HOW TO PLAY</Text>
-              <Text style={styles.helperText}>Choose a fruit, then tap a coin amount to place a bet. You may bet on any or all eight fruits and place repeated bets during the 37-second betting window.</Text>
+              <Text style={styles.helperText}>Choose a coin amount first, then tap any fruit tile to place that amount. Every fruit tap creates a separate bet. You may change the amount at any time, repeat taps on the same fruit, and bet on all eight fruits during the 37-second betting window. Each fruit tile shows your running total for this round; those totals clear when the round ends.</Text>
               <Text style={styles.helperText}>The draw animation lasts 10 seconds. The result and top winners appear for 5 seconds. Winning payouts are credited to your main balance.</Text>
               <TouchableOpacity onPress={() => setHelpOpen(false)} style={styles.loginButton}><Text style={styles.loginText}>GOT IT</Text></TouchableOpacity>
             </View>
