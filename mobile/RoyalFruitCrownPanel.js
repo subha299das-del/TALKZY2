@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
   brand: { flexDirection: 'row', alignItems: 'center', gap: 6 }, crown: { fontSize: 31, color: GOLD, textShadowColor: '#B77D26', textShadowRadius: 9 }, brandName: { color: '#FFE9A9', fontWeight: '900', fontSize: 16, letterSpacing: 1.8 }, brandTag: { color: '#BDA875', fontSize: 7, letterSpacing: 0.7, marginTop: 2 },
   balance: { paddingHorizontal: 9, paddingVertical: 7, backgroundColor: '#211D12', borderWidth: 1, borderColor: '#A98545', borderRadius: 8 }, miniLabel: { color: '#C7AE79', fontSize: 8, fontWeight: '900', letterSpacing: 0.7 }, balanceValue: { color: '#FFE9A9', fontWeight: '900', fontSize: 13 }, coin: { color: GOLD },
   roundBox: { alignItems: 'center', paddingHorizontal: 3 }, roundValue: { color: GOLD, fontSize: 15, fontWeight: '900' }, headerAction: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#A98545', borderRadius: 17, backgroundColor: '#211D12' }, headerActionText: { color: GOLD, fontWeight: '900', fontSize: 18 }, closeText: { color: GOLD, fontSize: 25, lineHeight: 27 },
-  referenceBackground: { flex: 1, width: '100%' }, referenceImage: { opacity: 0.10 },
+  referenceBackground: { flex: 1, width: '100%' }, referenceImage: { opacity: 0.92 },
   mainContent: { paddingHorizontal: 12, paddingBottom: 20 }, resultContent: { paddingHorizontal: 14, paddingBottom: 20, alignItems: 'center' },
   title: { color: '#F9E1A0', fontSize: 25, fontWeight: '900', fontStyle: 'italic', letterSpacing: 1.2, textAlign: 'center', marginTop: 13, textShadowColor: '#946A2A', textShadowRadius: 10 },
   subtitle: { color: '#D7C18D', fontSize: 10, fontWeight: '800', textAlign: 'center', letterSpacing: 1.1, marginTop: 4, marginBottom: 12 },
