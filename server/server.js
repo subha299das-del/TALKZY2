@@ -2291,10 +2291,12 @@ app.get('/api/greedy/royal-fruit-crown', userAuth, async (req, res) => {
 app.post('/api/greedy/royal-fruit-crown/bets', userAuth, async (req, res) => {
   const fruit = String(req.body?.fruit || '');
   const amount = Number(req.body?.amount);
+  const requestKey = String(req.body?.request_key || '');
+  if (!/^[a-zA-Z0-9-]{12,100}$/.test(requestKey)) return res.status(400).json({ error: 'A unique bet request key is required.' });
   if (!ROYAL_FRUIT_IDS.includes(fruit)) return res.status(400).json({ error: 'Choose a valid fruit.' });
   if (![10,100,1000,10000,100000].includes(amount)) return res.status(400).json({ error: 'Choose one of the available coin amounts.' });
   try {
-    const { data, error } = await supabase.rpc('talkzy_royal_fruit_place_bet', { p_user_id: req.talkzyUser.id, p_fruit: fruit, p_amount: amount });
+    const { data, error } = await supabase.rpc('talkzy_royal_fruit_place_bet', { p_user_id: req.talkzyUser.id, p_fruit: fruit, p_amount: amount, p_request_key: requestKey });
     if (error) {
       if (/BETTING_CLOSED/.test(error.message || '')) return res.status(409).json({ error: 'Betting is closed for this round.' });
       if (/INSUFFICIENT_COINS/.test(error.message || '')) return res.status(409).json({ error: 'You do not have enough gold coins.' });
