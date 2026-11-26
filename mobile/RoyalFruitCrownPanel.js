@@ -194,16 +194,16 @@ function FruitTile({f,active,lit,dim,spinning,animationDelay=0,disabled,onPress}
     }
     const cycle = Animated.loop(Animated.sequence([
       Animated.delay(animationDelay),
-      Animated.timing(motion,{toValue:1,duration:150,easing:Easing.out(Easing.quad),useNativeDriver:true}),
-      Animated.timing(motion,{toValue:-1,duration:260,easing:Easing.inOut(Easing.quad),useNativeDriver:true}),
-      Animated.timing(motion,{toValue:0,duration:170,easing:Easing.out(Easing.quad),useNativeDriver:true})
+      Animated.timing(motion,{toValue:1,duration:260,easing:Easing.out(Easing.back(1.5)),useNativeDriver:true}),
+      Animated.timing(motion,{toValue:-1,duration:360,easing:Easing.inOut(Easing.quad),useNativeDriver:true}),
+      Animated.timing(motion,{toValue:0,duration:240,easing:Easing.out(Easing.quad),useNativeDriver:true})
     ]));
     cycle.start();
     return () => cycle.stop();
   },[spinning,animationDelay,motion]);
-  const floatY = motion.interpolate({inputRange:[-1,0,1],outputRange:[3,0,-5]});
-  const tilt = motion.interpolate({inputRange:[-1,0,1],outputRange:['-5deg','0deg','5deg']});
-  const pulse = motion.interpolate({inputRange:[-1,0,1],outputRange:[0.96,1,1.05]});
+  const floatY = motion.interpolate({inputRange:[-1,0,1],outputRange:[10,0,-15]});
+  const tilt = motion.interpolate({inputRange:[-1,0,1],outputRange:['-14deg','0deg','14deg']});
+  const pulse = motion.interpolate({inputRange:[-1,0,1],outputRange:[0.88,1,1.18]});
   return <TouchableOpacity disabled={disabled} onPress={onPress} style={[s.fruitTile,active&&!disabled&&s.fruitSelected,dim&&s.fruitDim,lit&&s.fruitLit]}>
     <Animated.View style={[s.fruitArt,{transform:[{translateY:floatY},{rotate:tilt},{scale:pulse}]}]}><FruitIcon fruit={f} size={51}/></Animated.View>
     <Text style={s.fruitName}>{f.name.toUpperCase()}</Text>
