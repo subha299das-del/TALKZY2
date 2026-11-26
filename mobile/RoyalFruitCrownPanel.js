@@ -140,11 +140,11 @@ export default function RoyalFruitCrownPanel({visible,onClose,api}) {
           <Text style={s.timer}>{phase === 'betting' ? seconds + 's' : phase === 'drawing' ? 'DRAWING' : seconds + 's'}</Text>
         </View>
         <View style={s.board}>
-          {FRUITS.slice(0,3).map((f,i)=><FruitTile key={f.id} f={f} active={fruit===f.id} lit={phase==='drawing'&&spot===i} disabled={phase!=='betting'} onPress={()=>setFruit(f.id)}/>)}
-          <FruitTile f={FRUITS[3]} active={fruit===FRUITS[3].id} lit={phase==='drawing'&&spot===3} disabled={phase!=='betting'} onPress={()=>setFruit(FRUITS[3].id)}/>
+          {FRUITS.slice(0,3).map((f,i)=><FruitTile key={f.id} f={f} active={fruit===f.id} lit={phase==='drawing'&&spot===i} dim={phase==='drawing'&&spot!==i} disabled={phase!=='betting'} onPress={()=>setFruit(f.id)}/>)}
+          <FruitTile f={FRUITS[3]} active={fruit===FRUITS[3].id} lit={phase==='drawing'&&spot===3} dim={phase==='drawing'&&spot!==3} disabled={phase!=='betting'} onPress={()=>setFruit(FRUITS[3].id)}/>
           <View style={s.center}><Text style={s.centerCrown}>👑</Text><Text style={s.centerTime}>{phase==='betting'?seconds:phase==='drawing'?'✦':'✓'}</Text><Text style={s.centerLabel}>{phase==='betting'?'BET TIME':'CROWN'}</Text></View>
-          <FruitTile f={FRUITS[4]} active={fruit===FRUITS[4].id} lit={phase==='drawing'&&spot===4} disabled={phase!=='betting'} onPress={()=>setFruit(FRUITS[4].id)}/>
-          {FRUITS.slice(5).map((f,i)=><FruitTile key={f.id} f={f} active={fruit===f.id} lit={phase==='drawing'&&spot===i+5} disabled={phase!=='betting'} onPress={()=>setFruit(f.id)}/>)}
+          <FruitTile f={FRUITS[4]} active={fruit===FRUITS[4].id} lit={phase==='drawing'&&spot===4} dim={phase==='drawing'&&spot!==4} disabled={phase!=='betting'} onPress={()=>setFruit(FRUITS[4].id)}/>
+          {FRUITS.slice(5).map((f,i)=><FruitTile key={f.id} f={f} active={fruit===f.id} lit={phase==='drawing'&&spot===i+5} dim={phase==='drawing'&&spot!==i+5} disabled={phase!=='betting'} onPress={()=>setFruit(f.id)}/>)}
         </View>
         <View style={s.selectRow}><Text style={s.mini}>SELECT BET AMOUNT</Text><Text style={s.balanceSmall}>BALANCE {money(game?.balance)}</Text></View>
         <View style={s.chips}>{BETS.map(v=><TouchableOpacity key={v} disabled={phase!=='betting'} onPress={()=>setAmount(v)} style={[s.chip,amount===v&&s.chipOn]}><Text style={[s.chipText,amount===v&&s.chipTextOn]}>{money(v)}</Text></TouchableOpacity>)}</View>
@@ -162,9 +162,9 @@ export default function RoyalFruitCrownPanel({visible,onClose,api}) {
     </View></View>
   </Modal>;
 }
-function FruitTile({f,active,lit,disabled,onPress}) {
-  return <TouchableOpacity disabled={disabled} onPress={onPress} style={[s.fruit,active&&!disabled&&s.fruitActive,lit&&s.fruitLit]}>
-    <Text style={s.fruitEmoji}>{f.emoji}</Text><Text style={s.fruitName}>{f.name}</Text><Text style={s.mult}>{f.mult}×</Text>
+function FruitTile({f,active,lit,dim,disabled,onPress}) {
+  return <TouchableOpacity disabled={disabled} onPress={onPress} style={[s.fruit,active&&!disabled&&s.fruitActive,dim&&{opacity:0.42},lit&&s.fruitLit]}>
+    <Text style={s.fruitEmoji}>{f.emoji}</Text><Text style={s.fruitName}>{f.name}</Text><Text style={s.mult}>{f.mult}×</Text>{lit&&<Text style={s.sparkle}>✦ ✧</Text>}
   </TouchableOpacity>;
 }
 const s=StyleSheet.create({
@@ -173,7 +173,7 @@ const s=StyleSheet.create({
   content:{padding:7,paddingBottom:12},banner:{height:48,flexDirection:'row',alignItems:'center',gap:8,backgroundColor:'#07532E',borderWidth:1,borderColor:'#C69B37',paddingHorizontal:8},heading:{color:'#FFF0A4',fontSize:17,fontWeight:'900',fontStyle:'italic'},subtitle:{color:'#C6E7B7',fontSize:7,fontWeight:'900'},
   founderBox:{marginTop:6,padding:9,backgroundColor:'#102D1E',borderWidth:1,borderColor:'#D6B65C',borderRadius:7},founderTitle:{color:GOLD,fontSize:11,fontWeight:'900'},founderHint:{color:'#D8C99F',fontSize:8,marginVertical:5},founderInput:{height:36,backgroundColor:'#06170F',borderWidth:1,borderColor:'#6E633B',borderRadius:5,color:'#FFF3C8',paddingHorizontal:9,marginTop:6,fontSize:11},founderLogin:{alignSelf:'flex-start',backgroundColor:'#D9AB3D',paddingHorizontal:12,paddingVertical:8,borderRadius:5,marginTop:7},founderChoices:{flexDirection:'row',flexWrap:'wrap',gap:5,marginTop:7},founderChoice:{flexDirection:'row',alignItems:'center',gap:4,backgroundColor:'#214A2D',paddingHorizontal:7,paddingVertical:6,borderRadius:5,borderWidth:1,borderColor:'#B99B51'},founderChoiceText:{color:'#FFF0B0',fontSize:8,fontWeight:'900'},founderLogout:{color:'#F1D18B',fontSize:8,fontWeight:'900',marginTop:8},
   phaseRow:{height:31,flexDirection:'row',justifyContent:'space-between',alignItems:'center',paddingHorizontal:10,backgroundColor:'#0B241A'},phase:{color:'#F8E9B8',fontSize:10,fontWeight:'900'},timer:{color:'#FFF2A5',fontSize:16,fontWeight:'900'},
-  board:{flexDirection:'row',flexWrap:'wrap',justifyContent:'space-between',backgroundColor:'#07482A',padding:5,gap:4},fruit:{width:'32%',height:81,backgroundColor:'#0B6B3B',borderColor:'#D7C36A',borderWidth:1,borderRadius:7,alignItems:'center',justifyContent:'center'},fruitActive:{backgroundColor:'#A66D19',borderWidth:2,borderColor:'#FFF3A1'},fruitLit:{backgroundColor:'#FFF2A5',borderColor:'#FFFFFF',borderWidth:3,shadowColor:'#FFF0A0',shadowOpacity:1,shadowRadius:22,elevation:18},fruitEmoji:{fontSize:25},fruitName:{color:'#FFF2C5',fontSize:9,fontWeight:'900'},mult:{color:'#FFE27C',fontSize:11,fontWeight:'900'},
+  board:{flexDirection:'row',flexWrap:'wrap',justifyContent:'space-between',backgroundColor:'#07482A',padding:5,gap:4},fruit:{width:'32%',height:81,backgroundColor:'#0B6B3B',borderColor:'#D7C36A',borderWidth:1,borderRadius:7,alignItems:'center',justifyContent:'center'},fruitActive:{backgroundColor:'#A66D19',borderWidth:2,borderColor:'#FFF3A1'},fruitLit:{backgroundColor:'#FFF2A5',borderColor:'#FFFFFF',borderWidth:3,shadowColor:'#FFF0A0',shadowOpacity:1,shadowRadius:22,elevation:18},fruitEmoji:{fontSize:25},sparkle:{position:'absolute',top:2,right:5,color:'#FFF8C8',fontSize:14,fontWeight:'900'},fruitName:{color:'#FFF2C5',fontSize:9,fontWeight:'900'},mult:{color:'#FFE27C',fontSize:11,fontWeight:'900'},
   center:{width:'32%',height:81,alignItems:'center',justifyContent:'center',backgroundColor:'#102C20',borderColor:'#E6BE54',borderWidth:1.5,borderRadius:8},centerCrown:{fontSize:19},centerTime:{color:'#FFF1A2',fontSize:17,fontWeight:'900'},centerLabel:{color:'#E8D9A2',fontSize:7,fontWeight:'900'},
   selectRow:{flexDirection:'row',justifyContent:'space-between',paddingHorizontal:5,paddingTop:9},mini:{color:'#B4D6AE',fontSize:8,fontWeight:'900'},balanceSmall:{color:'#FFE078',fontSize:8,fontWeight:'900'},chips:{flexDirection:'row',justifyContent:'space-around',paddingVertical:8,backgroundColor:'#07341F'},chip:{minWidth:48,height:33,paddingHorizontal:5,borderRadius:17,backgroundColor:'#1771A9',borderColor:'#D8E8C5',borderWidth:1,alignItems:'center',justifyContent:'center'},chipOn:{backgroundColor:'#F3C64E',borderWidth:2,borderColor:'#FFF3A1'},chipText:{color:'#FFF',fontSize:8,fontWeight:'900'},chipTextOn:{color:'#311500'},
   footer:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:8,paddingVertical:7,backgroundColor:'#092419'},total:{color:'#E7D8A4',fontSize:9,fontWeight:'900'},betButton:{backgroundColor:'#D9AB3D',paddingHorizontal:16,paddingVertical:9,borderRadius:6,borderWidth:1,borderColor:'#FFF0A0'},betText:{color:'#382208',fontSize:10,fontWeight:'900'},
