@@ -1,35 +1,161 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, Animated, Easing, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal, Image, ActivityIndicator, StyleSheet } from 'react-native';
 
-const GOLD='#FFE078', FRUITS=[['🍒','Cherry','5×'],['🍇','Grape','5×'],['🍊','Orange','5×'],['🍉','Watermelon','40×'],['🍐','Pear','5×'],['🍓','Strawberry','25×'],['🍋','Lemon','15×'],['🥭','Mango','10×'],['🍎','Apple','8×']];
-const COINS=[10,50,100,500,1000,5000];
-export default function RoyalFruitCrownPanel({visible,onClose}) {
- const [selected,setSelected]=useState([]),[coin,setCoin]=useState(100),[tab,setTab]=useState('game'),[seconds,setSeconds]=useState(35),[phase,setPhase]=useState('BETTING'),[result,setResult]=useState(null),[history,setHistory]=useState(['🍋','🍒','🍉','🍇','🍓','🍐']);
- const pulse=useRef(new Animated.Value(0)).current;
- useEffect(()=>{if(!visible||phase!=='BETTING')return; const t=setInterval(()=>setSeconds(s=>{if(s<=1){setPhase('DRAWING');return 0;}return s-1;}),1000);return()=>clearInterval(t)},[visible,phase]);
- useEffect(()=>{if(!visible)return;const loop=Animated.loop(Animated.sequence([Animated.timing(pulse,{toValue:1,duration:650,useNativeDriver:true}),Animated.timing(pulse,{toValue:0,duration:650,useNativeDriver:true})]));loop.start();return()=>loop.stop()},[visible,pulse]);
- useEffect(()=>{if(phase!=='DRAWING')return;const t=setTimeout(()=>{const f=FRUITS[Math.floor(Math.random()*FRUITS.length)];setResult(f);setHistory(h=>[f[0],...h].slice(0,8));setPhase('RESULT');},2200);return()=>clearTimeout(t)},[phase]);
- const reset=()=>{setResult(null);setSeconds(35);setPhase('BETTING')};
- const toggle=n=>setSelected(a=>a.includes(n)?a.filter(x=>x!==n):[...a,n]);
- const selectedTotal=selected.length*coin;
- return <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent><View style={s.back}><View style={s.shell}>
- <View style={s.top}><Text style={s.balance}>🪙  TALKZY GOLD</Text><View style={s.icons}>{[['▤','records'],['♛','ranking'],['?','rules']].map(([x,t])=><TouchableOpacity key={t} onPress={()=>setTab(t)}><Text style={s.icon}>{x}</Text></TouchableOpacity>)}<TouchableOpacity onPress={onClose}><Text style={s.close}>×</Text></TouchableOpacity></View></View>
- {tab!=='game'?<View style={s.info}><View style={s.row}><Text style={s.heading}>{tab==='rules'?'GAME INTRODUCTION':tab==='ranking'?'RANKING TODAY':'RECORDS'}</Text><TouchableOpacity onPress={()=>setTab('game')}><Text style={s.icon}>BACK</Text></TouchableOpacity></View><Text style={s.infoText}>{tab==='rules'?'Select a gold amount, then choose any fruit. Bets close when the countdown ends. A matching result wins according to the displayed multiplier.':tab==='ranking'?'Rankings will appear when the official game service is connected.':'Completed round records will appear when the official game service is connected.'}</Text></View>:<ScrollView contentContainerStyle={s.content}>
- <View style={s.title}><Text style={{fontSize:26}}>👑</Text><View style={{flex:1}}><Text style={s.gameName}>FRUIT GAME</Text><Text style={s.subtitle}>ROYAL FRUIT CROWN • GOLD LOTTERY</Text></View><Text style={s.jackpot}>🏆</Text></View>
- <View style={s.totals}><View><Text style={s.mini}>TOTAL BET</Text><Text style={s.total}>1,198,678</Text></View><View><Text style={s.mini}>PRIZE POOL</Text><Text style={s.total}>2,330,050</Text></View></View>
- <View style={s.round}><Text style={s.roundText}>Round 1174  {phase}</Text><Animated.Text style={[s.timer,{opacity:pulse.interpolate({inputRange:[0,1],outputRange:[1,.45]})}]}>{phase==='BETTING'?seconds+'s':phase==='DRAWING'?'DRAWING': 'RESULT'}</Animated.Text></View>
- <View style={s.board}>{FRUITS.map(([emoji,name,mult],i)=>{const active=selected.includes(name);return <TouchableOpacity key={name} onPress={()=>phase==='BETTING'&&toggle(name)} style={[s.fruit,active&&s.fruitActive]}><Text style={s.fruitEmoji}>{emoji}</Text><Text style={s.fruitName}>{name}</Text><Text style={s.mult}>{mult}</Text>{active&&<Text style={s.betMark}>BET {coin}</Text>}</TouchableOpacity>})}</View>
- <View style={s.chips}>{COINS.map(v=><TouchableOpacity key={v} onPress={()=>setCoin(v)} style={[s.chip,coin===v&&s.chipOn]}><Text style={[s.chipText,coin===v&&{color:'#311500'}]}>{v>=1000?v/1000+'K':v}</Text></TouchableOpacity>)}</View>
- <View style={s.footer}><Text style={s.totalBet}>Selected {selected.length} • {selectedTotal.toLocaleString('en-IN')} 🪙</Text><TouchableOpacity style={s.place} onPress={()=>{}}><Text style={s.placeText}>PLACE BET</Text></TouchableOpacity></View>
- <View style={s.history}><Text style={s.mini}>HISTORY</Text>{history.map((x,i)=><Text key={i} style={{fontSize:18}}>{x}</Text>)}</View>
- {result&&<View style={s.result}><Text style={s.resultTitle}>ROUND RESULT</Text><Text style={{fontSize:34}}>{result[0]}</Text><Text style={s.total}>{result[1]} • {result[2]}</Text><TouchableOpacity onPress={reset} style={s.place}><Text style={s.placeText}>NEXT ROUND</Text></TouchableOpacity></View>}
- <Text style={s.note}>VISUAL RECREATION • LIVE BETTING AND SETTLEMENT REQUIRE THE SECURE GAME SERVICE</Text>
- </ScrollView>}
- </View></View></Modal>
+const GOLD = '#FFE078';
+const FRUITS = [
+  {id:'cherry',emoji:'🍒',name:'Cherry',mult:5},
+  {id:'plum',emoji:'🍑',name:'Plum',mult:5},
+  {id:'orange',emoji:'🍊',name:'Orange',mult:5},
+  {id:'watermelon',emoji:'🍉',name:'Watermelon',mult:40},
+  {id:'pear',emoji:'🍐',name:'Pear',mult:5},
+  {id:'strawberry',emoji:'🍓',name:'Strawberry',mult:25},
+  {id:'lemon',emoji:'🍋',name:'Lemon',mult:15},
+  {id:'grapes',emoji:'🍇',name:'Grapes',mult:10}
+];
+const BETS = [10,100,1000,10000,100000];
+const money = n => Number(n || 0).toLocaleString('en-IN');
+
+export default function RoyalFruitCrownPanel({visible,onClose,api}) {
+  const [game,setGame] = useState(null);
+  const [fruit,setFruit] = useState('cherry');
+  const [amount,setAmount] = useState(100);
+  const [busy,setBusy] = useState(false);
+  const [error,setError] = useState('');
+  const [seconds,setSeconds] = useState(37);
+  const [spot,setSpot] = useState(0);
+  const [spotOn,setSpotOn] = useState(false);
+  const spotTimer = useRef(null);
+  const round = game?.round;
+  const phase = round?.phase || 'betting';
+  const winner = FRUITS.find(f => f.id === round?.winning_fruit);
+  const chosen = FRUITS.find(f => f.id === fruit) || FRUITS[0];
+  const myBets = game?.my_bets || [];
+  const totalBet = myBets.reduce((n,b) => n + Number(b.amount || 0), 0);
+
+  const refresh = async () => {
+    if (!api) return;
+    try { const data = await api('/api/greedy/fruit-crown'); setGame(data); setError(''); }
+    catch (e) { setError(e.message || 'Could not connect to the game server.'); }
+  };
+  useEffect(() => {
+    if (!visible) return;
+    refresh();
+    const timer = setInterval(refresh, 1000);
+    return () => clearInterval(timer);
+  }, [visible]);
+
+  useEffect(() => {
+    if (!round) return;
+    const end = phase === 'betting' ? round.bet_closes_at : phase === 'drawing' ? round.animation_ends_at : round.result_ends_at;
+    if (!end) return;
+    const tick = () => setSeconds(Math.max(0, Math.ceil((new Date(end).getTime() - Date.now()) / 1000)));
+    tick();
+    const timer = setInterval(tick, 200);
+    return () => clearInterval(timer);
+  }, [round?.id,round?.phase,round?.bet_closes_at,round?.animation_ends_at,round?.result_ends_at]);
+
+  useEffect(() => {
+    if (phase !== 'drawing') {
+      setSpotOn(false);
+      setSpot(0);
+      if (spotTimer.current) clearTimeout(spotTimer.current);
+      return;
+    }
+    setSpotOn(true);
+    let active = true;
+    let index = 0;
+    const start = Date.now();
+    const spin = () => {
+      if (!active) return;
+      const elapsed = Date.now() - start;
+      const delay = elapsed < 4200 ? 110 : elapsed < 7000 ? 110 + (elapsed - 4200) * 0.07 : Math.min(850, 310 + (elapsed - 7000) * 0.22);
+      index = (index + 1) % 8;
+      setSpot(index);
+      spotTimer.current = setTimeout(spin, delay);
+    };
+    spotTimer.current = setTimeout(spin, 110);
+    return () => { active = false; if (spotTimer.current) clearTimeout(spotTimer.current); };
+  }, [phase,round?.id]);
+
+  const placeBet = async () => {
+    if (busy || phase !== 'betting') return;
+    setBusy(true); setError('');
+    try {
+      await api('/api/greedy/fruit-crown/bets',{method:'POST',body:JSON.stringify({fruit,amount})});
+      await refresh();
+    } catch (e) { setError(e.message || 'Bet could not be placed.'); }
+    finally { setBusy(false); }
+  };
+  const close = () => { if (spotTimer.current) clearTimeout(spotTimer.current); onClose?.(); };
+  const history = game?.history || [];
+
+  return <Modal visible={visible} transparent animationType="fade" onRequestClose={close} statusBarTranslucent>
+    <View style={s.back}><View style={s.shell}>
+      <View style={s.top}>
+        <Text style={s.balance}>🪙 GOLD {money(game?.balance)}</Text>
+        <Text style={s.round}>ROUND {round?.number || '—'}</Text>
+        <TouchableOpacity onPress={close}><Text style={s.close}>×</Text></TouchableOpacity>
+      </View>
+      {phase === 'result' && winner ? <View style={s.resultPanel}>
+        <Text style={s.crown}>👑</Text>
+        <Text style={s.heading}>ROYAL FRUIT CROWN</Text>
+        <Text style={s.subheading}>ROUND WINNER</Text>
+        <Text style={s.winnerEmoji}>{winner.emoji}</Text>
+        <Text style={s.winnerName}>{winner.name.toUpperCase()} · {winner.mult}×</Text>
+        <View style={s.leaders}>
+          <Text style={s.leaderTitle}>TOP 3 WINNERS</Text>
+          {(game?.leaders || []).length ? game.leaders.map((u,i) => <View key={u.user_id} style={s.leaderRow}>
+            {u.avatar_url ? <Image source={{uri:u.avatar_url}} style={s.avatar}/> : <View style={s.avatar}><Text>👤</Text></View>}
+            <Text style={s.leaderName}>{i+1}. {u.display_name || 'TALKZY User'}</Text>
+            <Text style={s.payout}>+{money(u.coins)} 🪙</Text>
+          </View>) : <Text style={s.noWinner}>No winning bets this round.</Text>}
+        </View>
+        <Text style={s.next}>NEXT ROUND IN {seconds}s</Text>
+      </View> : <ScrollView contentContainerStyle={s.content}>
+        <View style={s.banner}><Text style={{fontSize:26}}>👑</Text><View style={{flex:1}}>
+          <Text style={s.heading}>ROYAL FRUIT CROWN</Text><Text style={s.subtitle}>CHOOSE YOUR FRUIT · WIN GOLD COINS</Text>
+        </View><Text style={{fontSize:24}}>🏆</Text></View>
+        <View style={s.phaseRow}>
+          <Text style={s.phase}>{phase === 'betting' ? 'BETTING OPEN' : phase === 'drawing' ? 'CROWN DRAW' : 'ROUND RESULT'}</Text>
+          <Text style={s.timer}>{phase === 'betting' ? seconds + 's' : phase === 'drawing' ? 'DRAWING' : seconds + 's'}</Text>
+        </View>
+        <View style={s.board}>
+          {FRUITS.slice(0,3).map((f,i)=><FruitTile key={f.id} f={f} active={fruit===f.id} lit={phase==='drawing'&&spot===i} disabled={phase!=='betting'} onPress={()=>setFruit(f.id)}/>)}
+          <FruitTile f={FRUITS[3]} active={fruit===FRUITS[3].id} lit={phase==='drawing'&&spot===3} disabled={phase!=='betting'} onPress={()=>setFruit(FRUITS[3].id)}/>
+          <View style={s.center}><Text style={s.centerCrown}>👑</Text><Text style={s.centerTime}>{phase==='betting'?seconds:phase==='drawing'?'✦':'✓'}</Text><Text style={s.centerLabel}>{phase==='betting'?'BET TIME':'CROWN'}</Text></View>
+          <FruitTile f={FRUITS[4]} active={fruit===FRUITS[4].id} lit={phase==='drawing'&&spot===4} disabled={phase!=='betting'} onPress={()=>setFruit(FRUITS[4].id)}/>
+          {FRUITS.slice(5).map((f,i)=><FruitTile key={f.id} f={f} active={fruit===f.id} lit={phase==='drawing'&&spot===i+5} disabled={phase!=='betting'} onPress={()=>setFruit(f.id)}/>)}
+        </View>
+        <View style={s.selectRow}><Text style={s.mini}>SELECT BET AMOUNT</Text><Text style={s.balanceSmall}>BALANCE {money(game?.balance)}</Text></View>
+        <View style={s.chips}>{BETS.map(v=><TouchableOpacity key={v} disabled={phase!=='betting'} onPress={()=>setAmount(v)} style={[s.chip,amount===v&&s.chipOn]}><Text style={[s.chipText,amount===v&&s.chipTextOn]}>{money(v)}</Text></TouchableOpacity>)}</View>
+        <View style={s.footer}>
+          <View style={{flex:1}}><Text style={s.total}>Selected: {chosen.name}</Text><Text style={s.total}>Your bets: {money(totalBet)} 🪙</Text></View>
+          <TouchableOpacity disabled={busy||phase!=='betting'} onPress={placeBet} style={[s.betButton,(busy||phase!=='betting')&&{opacity:.45}]}>
+            {busy?<ActivityIndicator color="#382208"/>:<Text style={s.betText}>BET {money(amount)}</Text>}
+          </TouchableOpacity>
+        </View>
+        {!!error&&<Text style={s.error}>{error}</Text>}
+        <View style={s.history}><Text style={s.mini}>RECENT RESULTS</Text>{history.map((h,i)=><Text key={i} style={s.historyFruit}>{FRUITS.find(f=>f.id===h.fruit)?.emoji||'•'}</Text>)}</View>
+        {phase==='drawing'&&<Text style={s.drawHint}>THE GOLDEN LIGHT IS CHOOSING THE CROWN…</Text>}
+      </ScrollView>}
+      {!!error&&phase==='result'&&<Text style={s.error}>{error}</Text>}
+    </View></View>
+  </Modal>;
+}
+function FruitTile({f,active,lit,disabled,onPress}) {
+  return <TouchableOpacity disabled={disabled} onPress={onPress} style={[s.fruit,active&&!disabled&&s.fruitActive,lit&&s.fruitLit]}>
+    <Text style={s.fruitEmoji}>{f.emoji}</Text><Text style={s.fruitName}>{f.name}</Text><Text style={s.mult}>{f.mult}×</Text>
+  </TouchableOpacity>;
 }
 const s=StyleSheet.create({
- back:{flex:1,backgroundColor:'rgba(0,0,0,.88)',justifyContent:'center',padding:5},shell:{maxHeight:'98%',backgroundColor:'#062D20',borderColor:'#D6AC45',borderWidth:2,borderRadius:12,overflow:'hidden'},
- top:{height:38,backgroundColor:'#071B16',flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:9},balance:{color:GOLD,fontSize:11,fontWeight:'900'},icons:{flexDirection:'row',alignItems:'center',gap:13},icon:{color:GOLD,fontSize:19,fontWeight:'900'},close:{color:GOLD,fontSize:28},
- content:{padding:7,paddingBottom:12},title:{height:45,flexDirection:'row',alignItems:'center',gap:8,backgroundColor:'#07532E',borderWidth:1,borderColor:'#C69B37',paddingHorizontal:8},gameName:{color:'#FFF0A4',fontSize:18,fontWeight:'900',fontStyle:'italic'},subtitle:{color:'#C6E7B7',fontSize:7,fontWeight:'900'},jackpot:{fontSize:24},totals:{flexDirection:'row',justifyContent:'space-between',paddingHorizontal:12,paddingVertical:6,backgroundColor:'#0A4229'},mini:{color:'#B4D6AE',fontSize:8,fontWeight:'900'},total:{color:GOLD,fontSize:13,fontWeight:'900'},round:{height:28,flexDirection:'row',justifyContent:'space-between',alignItems:'center',paddingHorizontal:10,backgroundColor:'#0B241A'},roundText:{color:'#F8E9B8',fontSize:10,fontWeight:'900'},timer:{color:'#FFF2A5',fontSize:14,fontWeight:'900'},
- board:{flexDirection:'row',flexWrap:'wrap',justifyContent:'space-between',backgroundColor:'#07482A',padding:5,gap:4},fruit:{width:'32%',height:83,backgroundColor:'#0B6B3B',borderColor:'#D7C36A',borderWidth:1,borderRadius:7,alignItems:'center',justifyContent:'center'},fruitActive:{backgroundColor:'#B47A19',borderWidth:2,borderColor:'#FFF3A1'},fruitEmoji:{fontSize:25},fruitName:{color:'#FFF2C5',fontSize:9,fontWeight:'900'},mult:{color:'#FFE27C',fontSize:11,fontWeight:'900'},betMark:{color:'#FFF',fontSize:7,fontWeight:'900'},chips:{flexDirection:'row',justifyContent:'space-around',paddingVertical:8,backgroundColor:'#07341F'},chip:{width:42,height:34,borderRadius:17,backgroundColor:'#1771A9',borderColor:'#D8E8C5',borderWidth:1,alignItems:'center',justifyContent:'center'},chipOn:{backgroundColor:'#F3C64E',borderWidth:2,borderColor:'#FFF3A1'},chipText:{color:'#FFF',fontSize:10,fontWeight:'900'},footer:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:8,paddingVertical:5,backgroundColor:'#092419'},totalBet:{color:'#E7D8A4',fontSize:10,fontWeight:'900'},place:{backgroundColor:'#D9AB3D',paddingHorizontal:18,paddingVertical:7,borderRadius:6,borderWidth:1,borderColor:'#FFF0A0'},placeText:{color:'#382208',fontSize:10,fontWeight:'900'},history:{flexDirection:'row',alignItems:'center',justifyContent:'space-around',padding:7,backgroundColor:'#06331F'},note:{color:'#A6C7AE',fontSize:7,textAlign:'center',paddingTop:5},info:{margin:12,padding:14,backgroundColor:'#0B422B',borderRadius:10,minHeight:250},row:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},heading:{color:GOLD,fontSize:16,fontWeight:'900'},infoText:{color:'#F5EBD1',fontSize:12,lineHeight:21,marginTop:22},result:{alignItems:'center',padding:10,backgroundColor:'#164D2A',borderWidth:1,borderColor:GOLD},resultTitle:{color:GOLD,fontWeight:'900'}
+  back:{flex:1,backgroundColor:'rgba(0,0,0,.9)',justifyContent:'center',padding:5},shell:{maxHeight:'98%',backgroundColor:'#061D17',borderColor:'#D6AC45',borderWidth:2,borderRadius:13,overflow:'hidden'},
+  top:{height:40,backgroundColor:'#07130F',flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:10},balance:{color:GOLD,fontSize:11,fontWeight:'900'},round:{color:'#D7C28B',fontSize:9,fontWeight:'900'},close:{color:GOLD,fontSize:28},
+  content:{padding:7,paddingBottom:12},banner:{height:48,flexDirection:'row',alignItems:'center',gap:8,backgroundColor:'#07532E',borderWidth:1,borderColor:'#C69B37',paddingHorizontal:8},heading:{color:'#FFF0A4',fontSize:17,fontWeight:'900',fontStyle:'italic'},subtitle:{color:'#C6E7B7',fontSize:7,fontWeight:'900'},
+  phaseRow:{height:31,flexDirection:'row',justifyContent:'space-between',alignItems:'center',paddingHorizontal:10,backgroundColor:'#0B241A'},phase:{color:'#F8E9B8',fontSize:10,fontWeight:'900'},timer:{color:'#FFF2A5',fontSize:16,fontWeight:'900'},
+  board:{flexDirection:'row',flexWrap:'wrap',justifyContent:'space-between',backgroundColor:'#07482A',padding:5,gap:4},fruit:{width:'32%',height:81,backgroundColor:'#0B6B3B',borderColor:'#D7C36A',borderWidth:1,borderRadius:7,alignItems:'center',justifyContent:'center'},fruitActive:{backgroundColor:'#A66D19',borderWidth:2,borderColor:'#FFF3A1'},fruitLit:{backgroundColor:'#FFF2A5',borderColor:'#FFFFFF',borderWidth:3,shadowColor:'#FFF0A0',shadowOpacity:1,shadowRadius:22,elevation:18},fruitEmoji:{fontSize:25},fruitName:{color:'#FFF2C5',fontSize:9,fontWeight:'900'},mult:{color:'#FFE27C',fontSize:11,fontWeight:'900'},
+  center:{width:'32%',height:81,alignItems:'center',justifyContent:'center',backgroundColor:'#102C20',borderColor:'#E6BE54',borderWidth:1.5,borderRadius:8},centerCrown:{fontSize:19},centerTime:{color:'#FFF1A2',fontSize:17,fontWeight:'900'},centerLabel:{color:'#E8D9A2',fontSize:7,fontWeight:'900'},
+  selectRow:{flexDirection:'row',justifyContent:'space-between',paddingHorizontal:5,paddingTop:9},mini:{color:'#B4D6AE',fontSize:8,fontWeight:'900'},balanceSmall:{color:'#FFE078',fontSize:8,fontWeight:'900'},chips:{flexDirection:'row',justifyContent:'space-around',paddingVertical:8,backgroundColor:'#07341F'},chip:{minWidth:48,height:33,paddingHorizontal:5,borderRadius:17,backgroundColor:'#1771A9',borderColor:'#D8E8C5',borderWidth:1,alignItems:'center',justifyContent:'center'},chipOn:{backgroundColor:'#F3C64E',borderWidth:2,borderColor:'#FFF3A1'},chipText:{color:'#FFF',fontSize:8,fontWeight:'900'},chipTextOn:{color:'#311500'},
+  footer:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:8,paddingVertical:7,backgroundColor:'#092419'},total:{color:'#E7D8A4',fontSize:9,fontWeight:'900'},betButton:{backgroundColor:'#D9AB3D',paddingHorizontal:16,paddingVertical:9,borderRadius:6,borderWidth:1,borderColor:'#FFF0A0'},betText:{color:'#382208',fontSize:10,fontWeight:'900'},
+  history:{flexDirection:'row',alignItems:'center',justifyContent:'space-around',padding:7,backgroundColor:'#06331F'},historyFruit:{fontSize:19},drawHint:{color:GOLD,fontSize:9,fontWeight:'900',textAlign:'center',paddingVertical:8},
+  resultPanel:{alignItems:'center',padding:12,backgroundColor:'#063D25',minHeight:500},crown:{fontSize:38},subheading:{color:'#E5D4A1',fontSize:10,fontWeight:'900',marginTop:8},winnerEmoji:{fontSize:70,marginTop:10},winnerName:{color:'#FFF0A4',fontSize:17,fontWeight:'900'},leaders:{width:'100%',backgroundColor:'#082D1C',borderColor:'#D4B451',borderWidth:1,borderRadius:8,padding:10,marginTop:18},leaderTitle:{color:GOLD,fontSize:12,fontWeight:'900',marginBottom:7},leaderRow:{flexDirection:'row',alignItems:'center',paddingVertical:6,borderBottomWidth:1,borderColor:'#31553B'},avatar:{width:29,height:29,borderRadius:15,backgroundColor:'#21452D',alignItems:'center',justifyContent:'center',marginRight:8},leaderName:{color:'#F6E9C4',fontSize:10,fontWeight:'800',flex:1},payout:{color:GOLD,fontSize:10,fontWeight:'900'},noWinner:{color:'#D6CBA9',fontSize:10},next:{color:GOLD,fontSize:11,fontWeight:'900',marginTop:18},error:{color:'#FF9C9C',fontSize:10,padding:8,textAlign:'center'}
 });
