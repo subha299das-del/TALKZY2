@@ -2228,12 +2228,6 @@ app.patch('/api/rooms/:roomId/mic-seats/mute', userAuth, async (req, res) => {
       
 
 // ROYAL FRUIT CROWN — secure game API and server-authoritative round scheduler
-const fruitAdvanceTimer = setInterval(async () => {
-  try { await supabase.rpc('talkzy_fruit_advance_round'); }
-  catch (error) { console.error('Fruit Crown round scheduler:', error.message); }
-}, 1000);
-if (typeof fruitAdvanceTimer.unref === 'function') fruitAdvanceTimer.unref();
-
 app.get('/api/greedy/fruit-crown', userAuth, async (req, res) => {
   try {
     const { error: advanceError } = await supabase.rpc('talkzy_fruit_advance_round');
@@ -2301,6 +2295,11 @@ app.use((error, req, res, next) => {
 });
 
 if (require.main === module) {
+  const fruitAdvanceTimer = setInterval(async () => {
+    try { await supabase.rpc('talkzy_fruit_advance_round'); }
+    catch (error) { console.error('Fruit Crown round scheduler:', error.message); }
+  }, 1000);
+  if (typeof fruitAdvanceTimer.unref === 'function') fruitAdvanceTimer.unref();
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`TALKZY owner backend listening on port ${PORT}`);
   });
