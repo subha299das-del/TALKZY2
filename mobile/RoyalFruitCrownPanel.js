@@ -166,7 +166,7 @@ const money = n => Number(n || 0).toLocaleString('en-IN');
               </View>
             </View>
             {!!error&&<Text style={s.error}>{error}</Text>}
-            <View style={s.historyPanel}><View style={s.historyHeading}><Text style={s.sectionTitle}>RECENT RESULTS</Text><Text style={s.historyCaption}>LATEST FIRST</Text></View><View style={s.historyItems}>{history.slice(0,8).map((h,i)=>{const f=FRUITS.find(x=>x.id===h.fruit);return <View key={i} style={s.historyItem}>{f?<FruitIcon fruit={f} size={27}/>:null}</View>;})}</View></View>
+            <View style={s.historyPanel}><View style={s.historyHeading}><Text style={s.sectionTitle}>RECENT WINNING FRUITS</Text><Text style={s.historyCaption}>LATEST FIRST</Text></View><View style={s.historyItems}>{history.slice(0,8).map((h,i)=>{const f=FRUITS.find(x=>x.id===h.fruit);return <View key={i} style={s.historyItem}>{f?<FruitIcon fruit={f} size={27}/>:null}</View>;})}</View></View>
             <TouchableOpacity onPress={()=>setFounderOpen(v=>!v)} style={s.founderAccess}><Text style={s.founderAccessText}>FOUNDER ACCESS</Text></TouchableOpacity>
             <Ornament/>
           </ScrollView>}
