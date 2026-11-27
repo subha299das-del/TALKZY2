@@ -113,13 +113,18 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
     return () => clearInterval(timer);
   }, [round?.id, round?.phase, round?.bet_closes_at, round?.animation_ends_at, round?.result_ends_at]);
 
-  // A continuous golden light travels clockwise across every fruit tile.
-  // It speeds up during the 10-second draw, but never determines the result.
+  // Fast golden selector runs only during the 10-second drawing phase.
+  // One tile lights every 312.5 ms: 8 tiles × 312.5 ms = one 2.5 s
+  // clockwise circuit, for four complete circuits during the draw.
   useEffect(() => {
-    if (!visible) return undefined;
+    if (!visible || phase !== 'drawing') {
+      setLightIndex(0);
+      return undefined;
+    }
     setLightIndex(0);
-    const speed = phase === 'drawing' ? 220 : 420;
-    const spin = setInterval(() => setLightIndex(index => (index + 1) % CLOCKWISE_FRUITS.length), speed);
+    const spin = setInterval(() => {
+      setLightIndex(index => (index + 1) % CLOCKWISE_FRUITS.length);
+    }, 312.5);
     return () => clearInterval(spin);
   }, [visible, phase, round?.id]);
 
@@ -307,7 +312,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
             );
           }
           const fruit = fruitFor(id);
-          const lit = CLOCKWISE_FRUITS[lightIndex] === id;
+          const lit = phase === 'drawing' && CLOCKWISE_FRUITS[lightIndex] === id;
           return (
             <TouchableOpacity
               key={id}
