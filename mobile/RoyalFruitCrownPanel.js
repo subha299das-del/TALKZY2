@@ -25,6 +25,7 @@ const LOCAL_ARTWORK = {
   winningPopup: require('./assets/2_20261126_203806_0001.png'),
   fruits: require('./assets/3_20261126_203806_0002.png')
 };
+const DESIGNED_MAIN_ARTWORK_URL = 'https://i.ibb.co/bg6sD1gN/1-20261126-203806-0000.png';
 const GOLD = '#F6D987';
 const money = value => Number(value || 0).toLocaleString('en-IN');
 const fruitFor = id => FRUITS.find(item => item.id === id);
@@ -435,7 +436,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
             </ScrollView>
             </ImageBackground>
           ) : (
-            <ImageBackground source={artwork?.main?.url ? { uri: artwork.main.url } : LOCAL_ARTWORK.mainPanel} resizeMode="stretch" style={styles.referenceBackground} imageStyle={styles.referenceImage}>
+            <ImageBackground source={artwork?.main?.url ? { uri: artwork.main.url } : { uri: DESIGNED_MAIN_ARTWORK_URL }} resizeMode="stretch" style={styles.referenceBackground} imageStyle={styles.referenceImage}>
             <ScrollView contentContainerStyle={styles.mainContent}>
               <Text style={styles.title}>ROYAL FRUIT CROWN</Text>
               <Text style={styles.subtitle}>CHOOSE YOUR FRUIT · CLAIM THE CROWN</Text>
