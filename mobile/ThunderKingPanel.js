@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
   reelHeading: { height: 21, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderBottomWidth: 1, borderBottomColor: '#9B713C' },
   reelHeadingText: { color: '#FFE9AC', fontSize: 9, fontWeight: '900', letterSpacing: 2 },
   reelCount: { position: 'absolute', right: 4, color: '#D8B978', fontSize: 6, fontWeight: '900' },
-  reelFrame: { flex: 1, marginVertical: 3, borderWidth: 2, borderColor: '#A87935', borderRadius: 7, padding: 3, backgroundColor: '#10091E', justifyContent: 'center' },
+  reelFrame: { flex: 1, marginVertical: 3, borderWidth: 2, borderColor: '#A87935', borderRadius: 7, padding: 3, backgroundColor: '#10091E', justifyContent: 'center', overflow: 'hidden' },
   reelBoard: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignContent: 'center' },
   tile: { margin: 1, borderRadius: 5, borderWidth: 1.5, borderColor: '#D5AA5A', backgroundColor: '#392052', padding: 2, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   tileTopLine: { position: 'absolute', top: 2, left: 4, right: 4, height: 2, backgroundColor: '#FFF0B4', opacity: 0.75 },
