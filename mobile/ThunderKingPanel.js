@@ -60,6 +60,7 @@ export default function ThunderKingPanel({ visible, onClose, api }) {
   const [view, setView] = useState('game');
   const [artwork, setArtwork] = useState(null);
   const [spinning, setSpinning] = useState(false);
+  const [resultPreviewVisible, setResultPreviewVisible] = useState(false);
   const reelAnimations = useRef(Array.from({ length: 6 }, () => new Animated.Value(0))).current;
   const { width, height } = useWindowDimensions();
   const landscape = width >= height;
@@ -95,10 +96,7 @@ export default function ThunderKingPanel({ visible, onClose, api }) {
       })
     ]))).start(() => {
       setSpinning(false);
-      Alert.alert(
-        'Thunder King design preview',
-        'The six-reel stop animation is a visual preview only. Real spins, cascade results, free-spin awards and gold settlement must come from the secure TALKZY game service.'
-      );
+      setResultPreviewVisible(true);
     });
   };
 
@@ -250,6 +248,28 @@ export default function ThunderKingPanel({ visible, onClose, api }) {
             <Text style={styles.bottomRight}>THE TEMPLE OF IMMORTALS</Text>
           </View>
 
+          <Modal visible={resultPreviewVisible} transparent animationType="fade" onRequestClose={() => setResultPreviewVisible(false)}>
+            <View style={styles.previewResultBackdrop}>
+              <View style={styles.previewResultCard}>
+                <Text style={styles.previewResultEyebrow}>THUNDER KING · SAMPLE STATE</Text>
+                <Text style={styles.previewResultTitle}>THE TEMPLE AWAKENS</Text>
+                <Text style={styles.previewResultSubtitle}>CASCADE & SCATTER BONUS PREVIEW</Text>
+                <View style={styles.previewScatterRow}>
+                  {['⚡','⚡','⚡','⚡'].map((mark,index)=><View key={index} style={styles.previewScatter}><Text style={styles.previewScatterMark}>{mark}</Text><Text style={styles.previewScatterLabel}>SCATTER</Text></View>)}
+                </View>
+                <View style={styles.previewFreeSpins}>
+                  <Text style={styles.previewFreeSpinsNumber}>15</Text>
+                  <Text style={styles.previewFreeSpinsLabel}>FREE SPINS AWAKENED</Text>
+                </View>
+                <View style={styles.previewResultStats}>
+                  <View style={styles.previewResultStat}><Text style={styles.previewResultStatLabel}>TOTAL WIN</Text><Text style={styles.previewResultStatValue}>—</Text></View>
+                  <View style={styles.previewResultStat}><Text style={styles.previewResultStatLabel}>MULTIPLIER</Text><Text style={styles.previewResultStatValue}>—</Text></View>
+                </View>
+                <Text style={styles.previewResultNote}>VISUAL DESIGN PREVIEW ONLY · NO BET OR COIN BALANCE WAS CHANGED</Text>
+                <TouchableOpacity onPress={() => setResultPreviewVisible(false)} style={styles.previewResultButton}><Text style={styles.previewResultButtonText}>RETURN TO THE TEMPLE</Text></TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
           <Modal visible={settingsOpen} transparent animationType="fade" onRequestClose={() => setSettingsOpen(false)}>
             <View style={styles.settingsBackdrop}>
               <View style={styles.settingsBox}>
@@ -387,6 +407,25 @@ const styles = StyleSheet.create({
   historyPlaceholderCopy: { color: '#C9B4D8', fontSize: 10, lineHeight: 16, textAlign: 'center', marginTop: 6 },
   backToGame: { alignSelf: 'flex-start', paddingHorizontal: 16, paddingVertical: 11, borderRadius: 8, marginTop: 20 },
   backToGameText: { color: '#351B48', fontSize: 10, fontWeight: '900' },
+  previewResultBackdrop: { flex: 1, backgroundColor: 'rgba(4,1,10,0.92)', alignItems: 'center', justifyContent: 'center', padding: 18 },
+  previewResultCard: { width: '100%', maxWidth: 390, padding: 18, borderRadius: 18, borderWidth: 2, borderColor: '#F5D477', backgroundColor: '#211137', alignItems: 'center', shadowColor: '#8BD8FF', shadowOpacity: 0.55, shadowRadius: 22, elevation: 18 },
+  previewResultEyebrow: { color: '#A9DFFF', fontSize: 8, fontWeight: '900', letterSpacing: 1.8 },
+  previewResultTitle: { color: '#FFF0BE', fontSize: 23, fontWeight: '900', letterSpacing: 1.2, textAlign: 'center', marginTop: 8 },
+  previewResultSubtitle: { color: '#D7AC5A', fontSize: 9, fontWeight: '900', letterSpacing: 1, textAlign: 'center', marginTop: 4 },
+  previewScatterRow: { flexDirection: 'row', justifyContent: 'center', gap: 7, marginTop: 18 },
+  previewScatter: { width: 58, height: 68, borderRadius: 8, borderWidth: 1.5, borderColor: '#A9DFFF', backgroundColor: '#26365A', alignItems: 'center', justifyContent: 'center' },
+  previewScatterMark: { color: '#C5F2FF', fontSize: 25, textShadowColor: '#42BFFF', textShadowRadius: 10 },
+  previewScatterLabel: { color: '#E3F8FF', fontSize: 6, fontWeight: '900', marginTop: 3 },
+  previewFreeSpins: { width: '100%', marginTop: 15, paddingVertical: 12, borderRadius: 10, borderWidth: 1.5, borderColor: '#F5D477', backgroundColor: '#48235D', alignItems: 'center' },
+  previewFreeSpinsNumber: { color: '#FFF0AD', fontSize: 34, fontWeight: '900', lineHeight: 38 },
+  previewFreeSpinsLabel: { color: '#FFE8A3', fontSize: 9, fontWeight: '900', letterSpacing: 1.5 },
+  previewResultStats: { width: '100%', flexDirection: 'row', gap: 8, marginTop: 12 },
+  previewResultStat: { flex: 1, padding: 10, borderWidth: 1, borderColor: '#8E673B', borderRadius: 8, backgroundColor: '#11091E', alignItems: 'center' },
+  previewResultStatLabel: { color: '#CFAE6D', fontSize: 7, fontWeight: '900', letterSpacing: 1 },
+  previewResultStatValue: { color: '#FFF0C3', fontSize: 18, fontWeight: '900', marginTop: 4 },
+  previewResultNote: { color: '#C9B4D8', fontSize: 7, fontWeight: '800', lineHeight: 12, textAlign: 'center', marginTop: 12 },
+  previewResultButton: { width: '100%', marginTop: 14, paddingVertical: 13, borderRadius: 9, backgroundColor: '#E7B944', borderWidth: 1.5, borderColor: '#FFF0AD', alignItems: 'center' },
+  previewResultButtonText: { color: '#351B48', fontSize: 10, fontWeight: '900', letterSpacing: 1 },
   settingsBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.84)', alignItems: 'center', justifyContent: 'center', padding: 22 },
   settingsBox: { width: '100%', maxWidth: 360, backgroundColor: '#211137', borderWidth: 2, borderColor: '#D4A64A', borderRadius: 14, padding: 17 },
   settingsEyebrow: { color: PALETTE.gold, fontSize: 8, fontWeight: '900', letterSpacing: 1.5 },
