@@ -33,7 +33,6 @@ import * as WebBrowser from 'expo-web-browser';
 import { WebView } from 'react-native-webview';
 import RoomMusicPanel from './RoomMusicPanel';
 import RoomGames from './RoomGames';
-import RoyalFruitCrownPanel from './RoyalFruitCrownPanel';
 
 WebBrowser.maybeCompleteAuthSession();
 const MIC_ON_ICON = require('./assets/mic_on.png');
@@ -978,7 +977,6 @@ useEffect(() => {
     }
     if (showRoomChatActionMenu) { setShowRoomChatActionMenu(false); return true; }
     if (showRoomShortcutsPage) { setShowRoomShortcutsPage(false); return true; }
-    if (showRoyalFruitCrownPanel) { setShowRoyalFruitCrownPanel(false); return true; }
     if (showGreedyMenu) { setShowGreedyMenu(false); return true; }
     if (showMicEmojiPicker) { setShowMicEmojiPicker(false); return true; }
     if (showMicControlPopup) { setShowMicControlPopup(false); return true; }
@@ -1556,7 +1554,6 @@ const [roomGiftCategory, setRoomGiftCategory] = useState('Popular');
 const [roomGiftQuantity, setRoomGiftQuantity] = useState('1');
 const [showRoomGiftQuantityOptions, setShowRoomGiftQuantityOptions] = useState(false);
 const [showGreedyMenu, setShowGreedyMenu] = useState(false);
-const [showRoyalFruitCrownPanel, setShowRoyalFruitCrownPanel] = useState(false);
 
 const [showRoomGamePanel, setShowRoomGamePanel] = useState(false);
 const [showRocketPanel, setShowRocketPanel] = useState(false);
@@ -1636,7 +1633,6 @@ const [isRoomTourist, setIsRoomTourist] = useState(false);
     setShowMicCountPicker(false);
     setShowRoomShortcutsPage(false);
     setShowGreedyMenu(false);
-    setShowRoyalFruitCrownPanel(false);
     setShowLuckyBagPopup(false);
     setShowLuckyBagOpenPopup(false);
     setSelectedLuckyBag(null);
@@ -4974,10 +4970,10 @@ function renderRoomInterior() {
               <View><Text style={{ color: '#F6D987', fontSize: 20, fontWeight: '900', letterSpacing: 1.1 }}>TALKZY GREEDY</Text><Text style={{ color: '#BBAA8A', fontSize: 9, letterSpacing: 1.2, marginTop: 3 }}>SELECT A GAME</Text></View>
               <TouchableOpacity onPress={() => setShowGreedyMenu(false)} accessibilityRole="button" accessibilityLabel="Close Greedy games" style={{ width: 36, height: 36, borderRadius: 12, borderWidth: 1, borderColor: '#8D7144', alignItems: 'center', justifyContent: 'center', backgroundColor: '#24182B' }}><Text style={{ color: '#F6D987', fontSize: 23, fontWeight: '700' }}>×</Text></TouchableOpacity>
             </View>
-            <Text style={{ color: '#C7B99F', fontSize: 10, marginBottom: 14 }}>Royal Fruit Crown is ready to play. Other Greedy games will appear here when their panels are rebuilt.</Text>
+            <Text style={{ color: '#C7B99F', fontSize: 10, marginBottom: 14 }}>Greedy games are being rebuilt. New games will appear here when ready.</Text>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingBottom: 4 }}>
               {[
-                { name: 'Royal Fruit Crown', mark: '🍒', key: 'fruitcrown', available: true },
+                { name: 'Coming Soon', mark: '01', key: 'soon1', available: false },
                 { name: 'Thunder King', mark: '⚡', key: 'thunder', available: false },
                 { name: 'Lucky Elephant', mark: '🐘', key: 'elephant', available: false },
                 { name: 'Wild Kingdom', mark: '🦁', key: 'wild', available: false },
@@ -4988,7 +4984,7 @@ function renderRoomInterior() {
                 { name: 'Coming Soon', mark: '09', key: 'soon9', available: false },
                 { name: 'Coming Soon', mark: '10', key: 'soon10', available: false }
               ].map(game => (
-                <TouchableOpacity key={game.key} disabled={!game.available} accessibilityRole="button" accessibilityLabel={game.available ? 'Open ' + game.name : 'Greedy game coming soon'} onPress={() => { if (game.available) { setShowGreedyMenu(false); setShowRoyalFruitCrownPanel(true); } }} style={{ width: '31.5%', minHeight: 100, marginBottom: 10, padding: 8, borderRadius: 14, borderWidth: 1.2, borderColor: game.available ? '#CBA85D' : '#574C43', backgroundColor: game.available ? '#21172A' : '#17131A', alignItems: 'center', justifyContent: 'center', opacity: game.available ? 1 : 0.58 }}>
+                <TouchableOpacity key={game.key} disabled={!game.available} accessibilityRole="button" accessibilityLabel={game.available ? 'Open ' + game.name : 'Greedy game coming soon'} onPress={() => { if (game.available) setShowGreedyMenu(false); }} style={{ width: '31.5%', minHeight: 100, marginBottom: 10, padding: 8, borderRadius: 14, borderWidth: 1.2, borderColor: game.available ? '#CBA85D' : '#574C43', backgroundColor: game.available ? '#21172A' : '#17131A', alignItems: 'center', justifyContent: 'center', opacity: game.available ? 1 : 0.58 }}>
                   <View style={{ width: 48, height: 48, borderRadius: 14, borderWidth: 1.2, borderColor: game.available ? '#E5C577' : '#75685A', backgroundColor: '#100D16', alignItems: 'center', justifyContent: 'center', marginBottom: 7 }}><Text style={{ color: '#F4D27A', fontSize: game.key === 'royal77' ? 18 : 24, fontWeight: '900' }}>{game.mark}</Text></View>
                   <Text numberOfLines={2} style={{ color: game.available ? '#F7EBD1' : '#A89B89', fontSize: 10, fontWeight: '900', textAlign: 'center' }}>{game.name}</Text>
                   {!game.available && <Text style={{ color: '#A89B89', fontSize: 7, marginTop: 3 }}>COMING SOON</Text>}
@@ -4998,7 +4994,6 @@ function renderRoomInterior() {
           </View>
         </View>
       </Modal>
-      <RoyalFruitCrownPanel visible={showRoyalFruitCrownPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowRoyalFruitCrownPanel(false)} api={api} />
 
       <Modal
         visible={showRoomThemeMenu && selectedRoom?.owner_id === session?.user?.id}
