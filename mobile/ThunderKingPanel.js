@@ -1,229 +1,181 @@
 import React, { useMemo, useState } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, Modal, Alert,
-  Dimensions, StyleSheet
+  Dimensions, StyleSheet,
 } from 'react-native';
 
 const C = {
-  bg: '#070B16',
-  surface: '#10182A',
-  surface2: '#151F36',
-  tile: '#111D32',
-  cyan: '#56DFFF',
-  blue: '#278BFF',
-  violet: '#9A72FF',
-  gold: '#F6D47B',
-  white: '#F4F7FF',
-  muted: '#8D9CB8',
-  line: '#263B5C',
+  bg: '#170D20',
+  deep: '#24102A',
+  plum: '#351437',
+  panel: '#3A1B36',
+  gold: '#F8D66D',
+  gold2: '#C58A27',
+  cream: '#FFF0B7',
+  red: '#A83228',
+  orange: '#F58B35',
+  white: '#FFF9EA',
+  muted: '#D4BFA1',
+  line: '#8E5A2C',
 };
 
-const SYMBOLS = ['💎', '🔱', '⚡', '👑', '🟣', '🔷', '🔺', '🪙', '🟡', '🟢'];
+const SYMBOLS = ['💠', '🔱', '⏳', '🔺', '👑', '💎', '🔱', '💍', '⏳', '🔺', '💠', '👑', '💍', '🔱', '💎', '⏳', '🔺', '💠', '👑', '💍', '🔱', '⏳', '💎', '🔺', '💍', '👑', '💠', '🔱', '⏳', '💎'];
 
-function ThunderCrest({ size = 42 }) {
+function GoldButton({ children, onPress, style }) {
   return (
-    <View style={[styles.crest, { width: size, height: size, borderRadius: size * 0.28 }]}>
-      <Text style={{ fontSize: size * 0.56 }}>👑</Text>
-      <Text style={[styles.crestBolt, { fontSize: size * 0.38 }]}>ϟ</Text>
-    </View>
+    <TouchableOpacity activeOpacity={0.82} onPress={onPress} style={[styles.goldButton, style]}>
+      {children}
+    </TouchableOpacity>
   );
 }
 
-function HudCard({ label, value, accent = C.white }) {
+function Stat({ label, value, wide }) {
   return (
-    <View style={styles.hudCard}>
-      <Text style={styles.hudLabel}>{label}</Text>
-      <Text style={[styles.hudValue, { color: accent }]} numberOfLines={1}>{value}</Text>
+    <View style={[styles.stat, wide && styles.statWide]}>
+      <Text style={styles.statLabel}>{label}</Text>
+      <Text numberOfLines={1} style={styles.statValue}>{value}</Text>
     </View>
   );
 }
 
 export default function ThunderKingPanel({ visible, onClose }) {
   const [bet, setBet] = useState(100);
-  const [view, setView] = useState('game');
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [autoPlay, setAutoPlay] = useState(false);
+  const [freeSpins] = useState(0);
   const [soundOn, setSoundOn] = useState(true);
-  const [freeSpins, setFreeSpins] = useState(0);
-  const board = useMemo(() => [
-    '💎','🔱','⚡','👑','🟣','🔷',
-    '🔺','🪙','💎','🟢','⚡','👑',
-    '🟣','🔷','🔺','💎','🪙','🔱',
-    '👑','⚡','🟢','🔺','💎','🟣',
-    '🪙','🔱','🔷','👑','⚡','🟢'
-  ], []);
-  const { width } = Dimensions.get('window');
-  const cell = Math.max(34, Math.min(49, (width - 72) / 6));
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [view, setView] = useState('game');
+  const board = useMemo(() => SYMBOLS, []);
+  const width = Dimensions.get('window').width;
+  const cell = Math.max(37, Math.min(54, (width - 48) / 6.25));
 
-  const showNotConnected = () => Alert.alert(
-    'Thunder King',
-    'This is the redesigned game display. The secure spin engine, gold-balance settlement and Founder-controlled outcome service are not connected yet.'
+  const previewOnly = () => Alert.alert(
+    'Thunder King preview',
+    'This panel is a visual preview. The secure spin engine, live gold balance settlement, cascades and Founder outcome service are not connected yet.'
   );
 
-  const infoTitle = view === 'rules' ? 'HOW TO PLAY' : view === 'ranking' ? 'STORM RANKING' : 'ROUND RECORDS';
+  const title = view === 'rules' ? 'HOW TO PLAY' : view === 'ranking' ? 'STORM RANKING' : 'ROUND RECORDS';
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
       <View style={styles.backdrop}>
         <View style={styles.shell}>
-          <View style={styles.topBar}>
-            <View style={styles.brand}>
-              <ThunderCrest size={43} />
-              <View style={{ marginLeft: 10, flex: 1 }}>
-                <Text style={styles.brandEyebrow}>TALKZY GREEDY  /  GAME 02</Text>
-                <Text style={styles.brandTitle}>THUNDER KING</Text>
-                <Text style={styles.brandSub}>AWAKEN THE STORM</Text>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+            <View style={styles.roomHeader}>
+              <View style={styles.homeMark}><Text style={styles.homeGlyph}>♛</Text></View>
+              <View style={styles.roomIdentity}>
+                <Text style={styles.roomName}>THUNDER KING <Text style={styles.roomTag}>✦ GREEDY 02</Text></Text>
+                <Text style={styles.roomId}>TALKZY ROYAL STORM ARENA</Text>
               </View>
+              <TouchableOpacity onPress={onClose} style={styles.headerIcon}><Text style={styles.headerIconText}>×</Text></TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <Text style={styles.closeText}>×</Text>
-            </TouchableOpacity>
-          </View>
 
-          {view !== 'game' ? (
-            <View style={styles.infoPanel}>
-              <View style={styles.infoHeader}>
-                <View>
-                  <Text style={styles.infoEyebrow}>THUNDER KING</Text>
-                  <Text style={styles.infoTitle}>{infoTitle}</Text>
+            <View style={styles.micStrip}>
+              {[0, 1, 2, 3, 4].map((item) => (
+                <View key={item} style={styles.micSlot}>
+                  <Text style={styles.micGlyph}>{item === 1 || item === 2 ? '♩' : '♙'}</Text>
                 </View>
-                <TouchableOpacity style={styles.backButton} onPress={() => setView('game')}>
-                  <Text style={styles.backText}>‹  GAME</Text>
-                </TouchableOpacity>
-              </View>
-              <ScrollView showsVerticalScrollIndicator={false}>
+              ))}
+            </View>
+
+            {view === 'game' ? (
+              <>
+                <View style={styles.hero}>
+                  <View style={styles.templeGlow} />
+                  <Text style={styles.templeRoof}>⌁  ♜  ⌁  ♜  ⌁</Text>
+                  <Text style={styles.heroLightningLeft}>ϟ</Text>
+                  <View style={styles.heroCopy}>
+                    <Text style={styles.heroKicker}>THE GOD OF THUNDER</Text>
+                    <Text style={styles.heroName}>THUNDER{ '\n' }KING</Text>
+                    <Text style={styles.heroSub}>AWAKEN THE DIVINE POWER</Text>
+                  </View>
+                  <View style={styles.deity}>
+                    <Text style={styles.deityHalo}>✦</Text>
+                    <Text style={styles.deityEmoji}>🧙🏻‍♂️</Text>
+                    <Text style={styles.deityBolt}>ϟ</Text>
+                  </View>
+                  <View style={styles.heroPillarLeft}><Text style={styles.pillarGlyph}>♜</Text></View>
+                  <View style={styles.heroPillarRight}><Text style={styles.pillarGlyph}>♜</Text></View>
+                  <View style={styles.totalWin}>
+                    <Text style={styles.totalWinLabel}>TOTAL WIN</Text>
+                    <Text style={styles.totalWinValue}>0</Text>
+                  </View>
+                  <View style={styles.freeSpinRibbon}><Text style={styles.freeSpinText}>{freeSpins} FREE SPINS</Text></View>
+                </View>
+
+                <View style={styles.boardFrame}>
+                  <View style={styles.boardTopTrim}><Text style={styles.boardTitle}>✦  THUNDER REELS  ✦</Text><Text style={styles.boardCount}>6 × 5</Text></View>
+                  <View style={styles.board}>
+                    {board.map((symbol, index) => (
+                      <View key={index} style={[styles.cell, { width: cell, height: cell }]}>
+                        <View style={styles.cellTop} />
+                        <Text style={[styles.symbol, { fontSize: Math.max(23, cell * 0.59) }]}>{symbol}</Text>
+                      </View>
+                    ))}
+                  </View>
+                  <View style={styles.boardBottomTrim}><Text style={styles.scatterText}>4+ SCATTERS  •  15 FREE SPINS</Text></View>
+                </View>
+
+                <View style={styles.controls}>
+                  <View style={styles.controlTop}>
+                    <TouchableOpacity onPress={() => setSettingsOpen(true)} style={styles.roundUtility}><Text style={styles.utilityGlyph}>⚙</Text></TouchableOpacity>
+                    <View style={styles.betPanel}>
+                      <Text style={styles.controlLabel}>TOTAL BET</Text>
+                      <View style={styles.betRow}>
+                        <TouchableOpacity style={styles.betAdjust} onPress={() => setBet(v => Math.max(1, Math.floor(v / 2)))}><Text style={styles.adjustText}>−</Text></TouchableOpacity>
+                        <Text style={styles.betValue}>{bet.toLocaleString('en-IN')}</Text>
+                        <TouchableOpacity style={styles.betAdjust} onPress={() => setBet(v => v * 2)}><Text style={styles.adjustText}>+</Text></TouchableOpacity>
+                      </View>
+                    </View>
+                    <GoldButton onPress={previewOnly} style={styles.spinButton}>
+                      <Text style={styles.spinArrow}>⟳</Text><Text style={styles.spinText}>SPIN</Text>
+                    </GoldButton>
+                    <TouchableOpacity onPress={previewOnly} style={styles.autoButton}><Text style={styles.autoGlyph}>▶</Text><Text style={styles.autoText}>AUTO</Text></TouchableOpacity>
+                  </View>
+                  <View style={styles.balanceRow}>
+                    <Stat label="TOTAL BET" value={bet.toLocaleString('en-IN')} />
+                    <Text style={styles.previewLabel}>PREVIEW ONLY</Text>
+                    <Stat label="BALANCE" value="—" />
+                  </View>
+                  <View style={styles.links}>
+                    <TouchableOpacity onPress={() => setView('rules')}><Text style={styles.linkText}>RULES</Text></TouchableOpacity>
+                    <Text style={styles.linkDot}>•</Text>
+                    <TouchableOpacity onPress={() => setView('records')}><Text style={styles.linkText}>RECORDS</Text></TouchableOpacity>
+                    <Text style={styles.linkDot}>•</Text>
+                    <TouchableOpacity onPress={() => setView('ranking')}><Text style={styles.linkText}>RANKING</Text></TouchableOpacity>
+                  </View>
+                </View>
+              </>
+            ) : (
+              <View style={styles.infoPanel}>
+                <Text style={styles.infoEyebrow}>TALKZY • THUNDER KING</Text>
+                <Text style={styles.infoTitle}>{title}</Text>
                 {view === 'rules' ? (
-                  <View>
-                    <Text style={styles.rule}>01  The reels use a 6-column × 5-row grid. Matching symbols can pay anywhere on the screen.</Text>
-                    <Text style={styles.rule}>02  Winning symbols disappear. Remaining symbols tumble down and new symbols enter from above.</Text>
-                    <Text style={styles.rule}>03  Cascades continue until no new winning combination appears. The round win is totalled after the tumble sequence.</Text>
-                    <Text style={styles.rule}>04  4 or more Scatter symbols trigger 15 Free Spins.</Text>
-                    <Text style={styles.rule}>05  Multipliers can accumulate during Free Spins and increase the total win.</Text>
-                    <Text style={styles.rule}>06  The Founder controls the official paytable, probabilities, fees, game settings and winning outcomes.</Text>
-                    <Text style={styles.rule}>07  Autoplay can be started from the game screen.</Text>
-                  </View>
-                ) : (
-                  <View style={styles.emptyState}>
-                    <ThunderCrest size={58} />
-                    <Text style={styles.emptyTitle}>{view === 'ranking' ? 'RANKINGS NOT AVAILABLE' : 'NO COMPLETED ROUNDS YET'}</Text>
-                    <Text style={styles.emptyCopy}>{view === 'ranking' ? 'Player rankings will appear when the secure game service is connected.' : 'Your verified round history will appear here after the game service is connected.'}</Text>
-                  </View>
-                )}
-              </ScrollView>
-            </View>
-          ) : (
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-              <View style={styles.stormBanner}>
-                <View style={styles.bannerOrb} />
-                <View style={styles.bannerLeft}>
-                  <Text style={styles.bannerKicker}>THE ROYAL STORM</Text>
-                  <Text style={styles.bannerHeadline}>RULE THE{ '\n' }THUNDER.</Text>
-                  <Text style={styles.bannerCaption}>MATCH • TUMBLE • MULTIPLY</Text>
-                </View>
-                <View style={styles.bannerEmblem}>
-                  <Text style={styles.bannerBolt}>ϟ</Text>
-                  <ThunderCrest size={65} />
-                  <Text style={styles.bannerCrownLine}>♛  THUNDER KING  ♛</Text>
-                </View>
-                <Text style={styles.bannerLightning}>ϟ</Text>
+                  <>
+                    <Text style={styles.rule}>01  The reels use a 6-column × 5-row grid. Matching symbols can pay anywhere.</Text>
+                    <Text style={styles.rule}>02  Winning symbols disappear; remaining symbols tumble and new symbols enter from above.</Text>
+                    <Text style={styles.rule}>03  Cascades continue until no new winning combination appears.</Text>
+                    <Text style={styles.rule}>04  Four or more Scatter symbols trigger 15 Free Spins.</Text>
+                    <Text style={styles.rule}>05  Multipliers can accumulate during Free Spins.</Text>
+                    <Text style={styles.rule}>06  The Founder controls the official paytable, probabilities, fees, settings and winning outcomes.</Text>
+                  </>
+                ) : <Text style={styles.emptyCopy}>Verified {view === 'ranking' ? 'player rankings' : 'round history'} will appear here after the secure game service is connected.</Text>}
+                <GoldButton onPress={() => setView('game')} style={styles.backToGame}><Text style={styles.backToGameText}>‹  BACK TO GAME</Text></GoldButton>
               </View>
-
-              <View style={styles.utilityRow}>
-                <View style={styles.liveTag}><View style={styles.liveDot} /><Text style={styles.liveText}>STORM ARENA</Text></View>
-                <View style={styles.payTag}><Text style={styles.payTagText}>PAY ANYWHERE</Text></View>
-                <Text style={styles.gridTag}>6 × 5</Text>
-              </View>
-
-              <View style={styles.hudRow}>
-                <HudCard label="TOTAL WIN" value="0" accent={C.gold} />
-                <HudCard label="MULTIPLIER" value="1×" accent={C.cyan} />
-                <HudCard label="FREE SPINS" value={String(freeSpins)} accent={C.violet} />
-                <HudCard label="BALANCE" value="—" accent={C.white} />
-              </View>
-
-              <View style={styles.boardOuter}>
-                <View style={styles.boardHeader}>
-                  <View style={styles.boardHeaderLeft}>
-                    <View style={styles.miniBolt}><Text style={styles.miniBoltText}>ϟ</Text></View>
-                    <Text style={styles.boardTitle}>THUNDER REELS</Text>
-                  </View>
-                  <Text style={styles.boardHint}>30 SYMBOLS</Text>
-                </View>
-                <View style={styles.board}>
-                  {board.map((symbol, index) => (
-                    <View key={index} style={[styles.cell, { width: cell, height: cell }]}>
-                      <View style={styles.cellShine} />
-                      <Text style={{ fontSize: Math.max(19, cell * 0.53) }}>{symbol}</Text>
-                    </View>
-                  ))}
-                </View>
-                <View style={styles.scatterBar}>
-                  <Text style={styles.scatterIcon}>✦</Text>
-                  <Text style={styles.scatterCopy}>4+ SCATTERS  <Text style={styles.scatterGold}>→  15 FREE SPINS</Text></Text>
-                  <Text style={styles.scatterIcon}>✦</Text>
-                </View>
-              </View>
-
-              <View style={styles.console}>
-                <View style={styles.consoleTop}>
-                  <TouchableOpacity style={styles.settingsButton} onPress={() => setSettingsOpen(true)}>
-                    <Text style={styles.settingsGlyph}>⚙</Text>
-                  </TouchableOpacity>
-                  <View style={styles.betControl}>
-                    <Text style={styles.consoleLabel}>TOTAL BET</Text>
-                    <View style={styles.betLine}>
-                      <TouchableOpacity style={styles.betAdjust} onPress={() => setBet(v => Math.max(1, Math.floor(v / 2)))}>
-                        <Text style={styles.adjustGlyph}>−</Text>
-                      </TouchableOpacity>
-                      <Text style={styles.betAmount}>{bet.toLocaleString('en-IN')}</Text>
-                      <TouchableOpacity style={styles.betAdjust} onPress={() => setBet(v => v * 2)}>
-                        <Text style={styles.adjustGlyph}>+</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                  <TouchableOpacity style={styles.spinButton} onPress={showNotConnected}>
-                    <View style={styles.spinInner}>
-                      <Text style={styles.spinGlyph}>ϟ</Text>
-                      <Text style={styles.spinLabel}>SPIN</Text>
-                    </View>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.autoButton} onPress={() => setAutoPlay(v => !v)}>
-                    <Text style={[styles.autoGlyph, autoPlay && { color: '#FF8E9B' }]}>{autoPlay ? '■' : '↻'}</Text>
-                    <Text style={styles.autoLabel}>{autoPlay ? 'STOP' : 'AUTO'}</Text>
-                  </TouchableOpacity>
-                </View>
-                <View style={styles.consoleDivider} />
-                <View style={styles.quickLinks}>
-                  <TouchableOpacity onPress={() => setView('rules')}><Text style={styles.quickLink}>RULES</Text></TouchableOpacity>
-                  <View style={styles.quickDot} />
-                  <TouchableOpacity onPress={() => setView('records')}><Text style={styles.quickLink}>RECORDS</Text></TouchableOpacity>
-                  <View style={styles.quickDot} />
-                  <TouchableOpacity onPress={() => setView('ranking')}><Text style={styles.quickLink}>RANKING</Text></TouchableOpacity>
-                  <Text style={styles.previewNote}>PREVIEW BUILD</Text>
-                </View>
-              </View>
-            </ScrollView>
-          )}
+            )}
+          </ScrollView>
 
           <Modal visible={settingsOpen} transparent animationType="fade" onRequestClose={() => setSettingsOpen(false)}>
             <View style={styles.settingsBackdrop}>
               <View style={styles.settingsBox}>
                 <Text style={styles.settingsEyebrow}>THUNDER KING</Text>
-                <Text style={styles.infoTitle}>GAME SETTINGS</Text>
+                <Text style={styles.settingsTitle}>GAME SETTINGS</Text>
                 <TouchableOpacity style={styles.settingRow} onPress={() => setSoundOn(v => !v)}>
-                  <Text style={styles.settingName}>Sound effects</Text>
-                  <Text style={styles.settingValue}>{soundOn ? 'ON' : 'OFF'}</Text>
+                  <Text style={styles.settingName}>Sound effects</Text><Text style={styles.settingValue}>{soundOn ? 'ON' : 'OFF'}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.settingRow} onPress={() => { setSettingsOpen(false); setView('rules'); }}>
-                  <Text style={styles.settingName}>Game rules</Text>
-                  <Text style={styles.settingValue}>OPEN  ›</Text>
+                  <Text style={styles.settingName}>Game rules</Text><Text style={styles.settingValue}>OPEN  ›</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.exitButton} onPress={() => { setSettingsOpen(false); onClose(); }}>
-                  <Text style={styles.exitText}>EXIT GAME</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.dismissButton} onPress={() => setSettingsOpen(false)}>
-                  <Text style={styles.backText}>CLOSE SETTINGS</Text>
-                </TouchableOpacity>
+                <TouchableOpacity style={styles.closeSettings} onPress={() => setSettingsOpen(false)}><Text style={styles.closeSettingsText}>CLOSE</Text></TouchableOpacity>
               </View>
             </View>
           </Modal>
@@ -234,92 +186,91 @@ export default function ThunderKingPanel({ visible, onClose }) {
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(1,4,12,0.94)', justifyContent: 'center', paddingHorizontal: 7, paddingVertical: 16 },
-  shell: { maxHeight: '97%', borderRadius: 22, overflow: 'hidden', borderWidth: 1, borderColor: '#315D8C', backgroundColor: C.bg, elevation: 32 },
-  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 13, paddingVertical: 11, backgroundColor: '#0B1426', borderBottomWidth: 1, borderBottomColor: '#203A5B' },
-  brand: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  crest: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#172D4C', borderWidth: 1.5, borderColor: C.gold, shadowColor: C.cyan, shadowOpacity: 0.8, shadowRadius: 10, elevation: 9 },
-  crestBolt: { position: 'absolute', right: -5, top: -7, color: C.cyan, fontWeight: '900', textShadowColor: C.blue, textShadowRadius: 8 },
-  brandEyebrow: { color: C.cyan, fontSize: 7, fontWeight: '900', letterSpacing: 1.4 },
-  brandTitle: { color: C.white, fontSize: 16, fontWeight: '900', letterSpacing: 1.8, marginTop: 1 },
-  brandSub: { color: C.muted, fontSize: 7, fontWeight: '800', letterSpacing: 1.8, marginTop: 2 },
-  closeButton: { width: 34, height: 34, borderRadius: 12, backgroundColor: '#17243A', borderWidth: 1, borderColor: '#355477', alignItems: 'center', justifyContent: 'center' },
-  closeText: { color: C.white, fontSize: 25, lineHeight: 27 },
-  scrollContent: { paddingBottom: 10 },
-  stormBanner: { minHeight: 137, marginHorizontal: 9, marginTop: 10, borderRadius: 17, overflow: 'hidden', backgroundColor: '#111E39', borderWidth: 1, borderColor: '#426D9C', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14 },
-  bannerOrb: { position: 'absolute', width: 190, height: 190, borderRadius: 95, right: 10, top: -25, backgroundColor: '#293F7C', opacity: 0.5 },
-  bannerLeft: { flex: 1, zIndex: 1 },
-  bannerKicker: { color: C.cyan, fontSize: 8, fontWeight: '900', letterSpacing: 2 },
-  bannerHeadline: { color: C.white, fontSize: 25, lineHeight: 25, fontWeight: '900', letterSpacing: 1, marginTop: 5, textShadowColor: '#236BC0', textShadowRadius: 10 },
-  bannerCaption: { color: '#A8B9D5', fontSize: 7, fontWeight: '900', letterSpacing: 1, marginTop: 8 },
-  bannerEmblem: { width: 122, alignItems: 'center', justifyContent: 'center', zIndex: 1 },
-  bannerBolt: { position: 'absolute', color: '#5DDFFF', fontSize: 105, fontWeight: '900', opacity: 0.18 },
-  bannerCrownLine: { color: C.gold, fontSize: 6, fontWeight: '900', letterSpacing: 1, marginTop: 5 },
-  bannerLightning: { position: 'absolute', left: '48%', top: 4, color: C.cyan, fontSize: 35, opacity: 0.25 },
-  utilityRow: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 10, marginTop: 9 },
-  liveTag: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#102C38', borderRadius: 5, paddingHorizontal: 7, paddingVertical: 5 },
-  liveDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: '#4BE5C2', marginRight: 5 },
-  liveText: { color: '#8DF4E2', fontSize: 7, fontWeight: '900', letterSpacing: 0.8 },
-  payTag: { marginLeft: 6, backgroundColor: '#17233A', borderRadius: 5, paddingHorizontal: 7, paddingVertical: 5 },
-  payTagText: { color: '#A7C7F7', fontSize: 7, fontWeight: '900', letterSpacing: 0.6 },
-  gridTag: { marginLeft: 'auto', color: C.cyan, fontSize: 9, fontWeight: '900', letterSpacing: 1 },
-  hudRow: { flexDirection: 'row', marginHorizontal: 9, marginTop: 8 },
-  hudCard: { flex: 1, minWidth: 0, backgroundColor: C.surface, borderRadius: 9, borderWidth: 1, borderColor: C.line, paddingVertical: 7, paddingHorizontal: 4, alignItems: 'center', marginHorizontal: 2 },
-  hudLabel: { color: C.muted, fontSize: 6, fontWeight: '900', letterSpacing: 0.4 },
-  hudValue: { fontSize: 13, fontWeight: '900', marginTop: 3 },
-  boardOuter: { marginHorizontal: 9, marginTop: 9, padding: 8, borderRadius: 15, backgroundColor: '#0D1729', borderWidth: 1.5, borderColor: '#2E6694', shadowColor: C.blue, shadowOpacity: 0.28, shadowRadius: 9, elevation: 8 },
-  boardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 },
-  boardHeaderLeft: { flexDirection: 'row', alignItems: 'center' },
-  miniBolt: { width: 17, height: 17, borderRadius: 5, backgroundColor: '#143C5A', alignItems: 'center', justifyContent: 'center', marginRight: 6 },
-  miniBoltText: { color: C.cyan, fontSize: 14, fontWeight: '900' },
-  boardTitle: { color: C.white, fontSize: 9, fontWeight: '900', letterSpacing: 1.3 },
-  boardHint: { color: '#7793B8', fontSize: 7, fontWeight: '900', letterSpacing: 0.7 },
-  board: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
-  cell: { backgroundColor: '#14223A', borderRadius: 8, borderWidth: 1, borderColor: '#29486B', alignItems: 'center', justifyContent: 'center', margin: 1.5, overflow: 'hidden', shadowColor: C.cyan, shadowOpacity: 0.12, shadowRadius: 4, elevation: 2 },
-  cellShine: { position: 'absolute', left: 0, right: 0, top: 0, height: 2, backgroundColor: '#4A9FC4', opacity: 0.35 },
-  scatterBar: { marginTop: 7, borderRadius: 7, backgroundColor: '#172A3E', borderWidth: 1, borderColor: '#31546C', paddingVertical: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-  scatterIcon: { color: C.cyan, fontSize: 10, marginHorizontal: 8 },
-  scatterCopy: { color: '#C9D9EC', fontSize: 8, fontWeight: '900', letterSpacing: 0.7 },
-  scatterGold: { color: C.gold },
-  console: { marginHorizontal: 9, marginTop: 9, paddingHorizontal: 9, paddingTop: 9, paddingBottom: 7, borderRadius: 14, backgroundColor: '#101A2C', borderWidth: 1, borderColor: '#2B486B' },
-  consoleTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  settingsButton: { width: 33, height: 38, borderRadius: 9, backgroundColor: '#1A2A42', borderWidth: 1, borderColor: '#385879', alignItems: 'center', justifyContent: 'center' },
-  settingsGlyph: { color: C.cyan, fontSize: 19 },
-  betControl: { flex: 1, alignItems: 'center', marginHorizontal: 5 },
-  consoleLabel: { color: C.muted, fontSize: 7, fontWeight: '900', letterSpacing: 1 },
-  betLine: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
-  betAdjust: { width: 22, height: 22, borderRadius: 7, backgroundColor: '#203B5B', borderWidth: 1, borderColor: '#4D8AB8', alignItems: 'center', justifyContent: 'center' },
-  adjustGlyph: { color: C.white, fontSize: 17, lineHeight: 20, fontWeight: '900' },
-  betAmount: { color: C.gold, fontSize: 12, fontWeight: '900', minWidth: 48, textAlign: 'center', marginHorizontal: 4 },
-  spinButton: { width: 66, height: 66, borderRadius: 33, padding: 4, backgroundColor: '#287FC0', borderWidth: 1.5, borderColor: '#7DEAFF', alignItems: 'center', justifyContent: 'center', shadowColor: C.cyan, shadowOpacity: 0.85, shadowRadius: 12, elevation: 12 },
-  spinInner: { flex: 1, width: '100%', borderRadius: 28, backgroundColor: '#153C62', alignItems: 'center', justifyContent: 'center' },
-  spinGlyph: { color: C.cyan, fontSize: 24, lineHeight: 25, fontWeight: '900' },
-  spinLabel: { color: C.white, fontSize: 8, fontWeight: '900', letterSpacing: 1 },
-  autoButton: { width: 43, height: 43, borderRadius: 12, backgroundColor: '#1B2940', borderWidth: 1, borderColor: '#385675', alignItems: 'center', justifyContent: 'center', marginLeft: 5 },
-  autoGlyph: { color: C.cyan, fontSize: 19, fontWeight: '900' },
-  autoLabel: { color: '#B6C7DC', fontSize: 6, fontWeight: '900', marginTop: 1 },
-  consoleDivider: { height: 1, backgroundColor: '#263A55', marginTop: 8, marginBottom: 7 },
-  quickLinks: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-  quickLink: { color: '#8FAFD2', fontSize: 7, fontWeight: '900', letterSpacing: 0.8, paddingHorizontal: 5, paddingVertical: 3 },
-  quickDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: '#4D7197' },
-  previewNote: { marginLeft: 'auto', color: '#667B99', fontSize: 6, fontWeight: '900' },
-  infoPanel: { backgroundColor: C.surface, margin: 10, padding: 14, borderRadius: 15, borderWidth: 1, borderColor: '#315D8C', minHeight: 250, maxHeight: 480 },
-  infoHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 15 },
-  infoEyebrow: { color: C.cyan, fontSize: 7, fontWeight: '900', letterSpacing: 1.5 },
-  infoTitle: { color: C.white, fontSize: 17, fontWeight: '900', letterSpacing: 1, marginTop: 3 },
-  backButton: { borderWidth: 1, borderColor: '#3A638B', backgroundColor: '#172A42', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
-  backText: { color: C.cyan, fontSize: 9, fontWeight: '900', letterSpacing: 0.6 },
-  rule: { color: '#D6E0EF', fontSize: 11, lineHeight: 19, marginBottom: 12, paddingBottom: 9, borderBottomWidth: 1, borderBottomColor: '#233A56' },
-  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 35, paddingHorizontal: 12 },
-  emptyTitle: { color: C.gold, fontSize: 11, fontWeight: '900', letterSpacing: 1, marginTop: 14, textAlign: 'center' },
-  emptyCopy: { color: C.muted, fontSize: 10, lineHeight: 17, textAlign: 'center', marginTop: 8 },
-  settingsBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.78)', justifyContent: 'center', alignItems: 'center', padding: 24 },
-  settingsBox: { width: '100%', backgroundColor: '#101A2C', borderRadius: 16, borderWidth: 1.5, borderColor: '#3C719C', padding: 17 },
-  settingsEyebrow: { color: C.cyan, fontSize: 7, fontWeight: '900', letterSpacing: 1.5 },
-  settingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: '#293D58', paddingVertical: 13 },
-  settingName: { color: C.white, fontSize: 11, fontWeight: '700' },
+  backdrop: { flex: 1, backgroundColor: 'rgba(5,2,9,0.96)', justifyContent: 'center', paddingHorizontal: 3, paddingVertical: 8 },
+  shell: { maxHeight: '99%', overflow: 'hidden', backgroundColor: C.bg, borderWidth: 1, borderColor: C.gold2, elevation: 30 },
+  scroll: { paddingBottom: 7 },
+  roomHeader: { minHeight: 62, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, backgroundColor: '#21152B', borderBottomWidth: 1, borderBottomColor: '#60402C' },
+  homeMark: { width: 37, height: 37, borderRadius: 9, backgroundColor: '#D8B64C', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#FFF0A8' },
+  homeGlyph: { color: '#4B251C', fontSize: 23, fontWeight: '900' },
+  roomIdentity: { flex: 1, marginLeft: 10 },
+  roomName: { color: C.white, fontSize: 13, fontWeight: '900', letterSpacing: 0.7 },
+  roomTag: { color: C.gold, fontSize: 8 },
+  roomId: { color: '#C9A77E', fontSize: 8, marginTop: 3, letterSpacing: 1.1 },
+  headerIcon: { width: 34, height: 34, borderRadius: 9, borderWidth: 1, borderColor: '#8B643B', alignItems: 'center', justifyContent: 'center', backgroundColor: '#392338' },
+  headerIconText: { color: C.white, fontSize: 24, lineHeight: 26 },
+  micStrip: { height: 65, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', backgroundColor: '#30203A', borderBottomWidth: 2, borderBottomColor: '#9C6A3A' },
+  micSlot: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#57415A', borderWidth: 1, borderColor: '#9E8666', alignItems: 'center', justifyContent: 'center' },
+  micGlyph: { color: '#F6E5BE', fontSize: 22 },
+  hero: { height: 204, marginTop: 0, overflow: 'hidden', backgroundColor: '#A74734', borderBottomWidth: 3, borderBottomColor: '#E9B84C' },
+  templeGlow: { ...StyleSheet.absoluteFillObject, backgroundColor: '#D87949', opacity: 0.55 },
+  templeRoof: { color: '#FFE0A0', fontSize: 28, textAlign: 'center', marginTop: 1, opacity: 0.9, letterSpacing: 4 },
+  heroCopy: { position: 'absolute', left: 13, top: 50, zIndex: 3 },
+  heroKicker: { color: '#FFE7A6', fontSize: 8, fontWeight: '900', letterSpacing: 1.4 },
+  heroName: { color: '#FFF2C5', fontSize: 25, lineHeight: 26, fontWeight: '900', textShadowColor: '#77261F', textShadowRadius: 8 },
+  heroSub: { color: '#FFE3B0', fontSize: 6, fontWeight: '900', letterSpacing: 0.7, marginTop: 5 },
+  deity: { position: 'absolute', right: '27%', top: 17, width: 130, height: 135, alignItems: 'center', justifyContent: 'center' },
+  deityHalo: { position: 'absolute', color: '#FFF1B0', fontSize: 112, opacity: 0.35 },
+  deityEmoji: { fontSize: 91, textShadowColor: '#6B261E', textShadowRadius: 12 },
+  deityBolt: { position: 'absolute', right: 1, top: 13, color: '#FFF27D', fontSize: 56, fontWeight: '900', textShadowColor: '#FF9D20', textShadowRadius: 12 },
+  heroLightningLeft: { position: 'absolute', left: '31%', top: 22, color: '#FFF16E', fontSize: 70, textShadowColor: '#FFB21E', textShadowRadius: 15 },
+  heroPillarLeft: { position: 'absolute', left: 3, bottom: 19, width: 25, height: 88, backgroundColor: '#E6B65D', borderWidth: 2, borderColor: '#FFF0B4', alignItems: 'center', justifyContent: 'center' },
+  heroPillarRight: { position: 'absolute', right: 4, bottom: 19, width: 25, height: 88, backgroundColor: '#E6B65D', borderWidth: 2, borderColor: '#FFF0B4', alignItems: 'center', justifyContent: 'center' },
+  pillarGlyph: { color: '#87502C', fontSize: 23 },
+  totalWin: { position: 'absolute', bottom: 27, left: '25%', right: '25%', height: 39, backgroundColor: '#381024', borderWidth: 2, borderColor: '#F4CB52', borderRadius: 8, alignItems: 'center', justifyContent: 'center', zIndex: 5, elevation: 6 },
+  totalWinLabel: { color: '#FFE7A2', fontSize: 7, fontWeight: '900', letterSpacing: 1 },
+  totalWinValue: { color: '#FFF5C9', fontSize: 18, fontWeight: '900', lineHeight: 20 },
+  freeSpinRibbon: { position: 'absolute', bottom: 4, left: '25%', right: '25%', height: 20, borderRadius: 10, backgroundColor: '#2D1029', borderWidth: 1, borderColor: '#D8A83F', alignItems: 'center', justifyContent: 'center' },
+  freeSpinText: { color: C.gold, fontSize: 8, fontWeight: '900', letterSpacing: 1 },
+  boardFrame: { marginHorizontal: 7, marginTop: 0, paddingHorizontal: 5, paddingBottom: 5, backgroundColor: '#4A241F', borderWidth: 4, borderColor: '#E5B63F', borderRadius: 12, shadowColor: '#FFCB4C', shadowOpacity: 0.5, shadowRadius: 8, elevation: 9 },
+  boardTopTrim: { height: 23, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderBottomWidth: 1, borderBottomColor: '#A9772F' },
+  boardTitle: { color: '#FFE9A5', fontSize: 9, fontWeight: '900', letterSpacing: 1.4 },
+  boardCount: { position: 'absolute', right: 4, color: '#E9C66C', fontSize: 7, fontWeight: '900' },
+  board: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', backgroundColor: '#2B1230', paddingVertical: 3 },
+  cell: { margin: 1, borderRadius: 7, backgroundColor: '#421C3C', borderWidth: 1, borderColor: '#A96A43', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  cellTop: { position: 'absolute', top: 0, left: 2, right: 2, height: 2, backgroundColor: '#F8D98B', opacity: 0.65 },
+  symbol: { textShadowColor: '#FFCF63', textShadowRadius: 5 },
+  boardBottomTrim: { height: 21, alignItems: 'center', justifyContent: 'center', borderTopWidth: 1, borderTopColor: '#A9772F' },
+  scatterText: { color: '#FFE5A0', fontSize: 8, fontWeight: '900', letterSpacing: 0.8 },
+  controls: { marginHorizontal: 7, marginTop: 5, paddingHorizontal: 7, paddingTop: 6, paddingBottom: 5, backgroundColor: '#39202F', borderTopWidth: 2, borderColor: '#C18B37' },
+  controlTop: { minHeight: 66, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  roundUtility: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#5B3D2A', borderWidth: 1.5, borderColor: '#EAC25E', alignItems: 'center', justifyContent: 'center' },
+  utilityGlyph: { color: '#FFE7A4', fontSize: 19 },
+  betPanel: { flex: 1, alignItems: 'center' },
+  controlLabel: { color: '#E8C77F', fontSize: 7, fontWeight: '900', letterSpacing: 1 },
+  betRow: { flexDirection: 'row', alignItems: 'center', marginTop: 3 },
+  betAdjust: { width: 27, height: 27, borderRadius: 14, backgroundColor: '#6A492E', borderWidth: 1.5, borderColor: '#F4D26D', alignItems: 'center', justifyContent: 'center' },
+  adjustText: { color: '#FFF1C4', fontSize: 20, lineHeight: 23, fontWeight: '900' },
+  betValue: { minWidth: 48, textAlign: 'center', color: '#FFF0B3', fontSize: 12, fontWeight: '900' },
+  goldButton: { backgroundColor: '#F0C34D', borderWidth: 2, borderColor: '#FFF0A5', alignItems: 'center', justifyContent: 'center', shadowColor: '#FFC844', shadowOpacity: 0.6, shadowRadius: 7, elevation: 7 },
+  spinButton: { width: 67, height: 67, borderRadius: 34, marginHorizontal: 3, borderWidth: 3, borderColor: '#FFF0A5' },
+  spinArrow: { color: '#4B241E', fontSize: 33, lineHeight: 35, fontWeight: '900' },
+  spinText: { color: '#4B241E', fontSize: 8, fontWeight: '900', letterSpacing: 1 },
+  autoButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#62432C', borderWidth: 1.5, borderColor: '#EAC25E', alignItems: 'center', justifyContent: 'center' },
+  autoGlyph: { color: '#FFE6A1', fontSize: 16 },
+  autoText: { color: '#FCE6AD', fontSize: 6, fontWeight: '900' },
+  balanceRow: { minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 3 },
+  stat: { minWidth: 91, backgroundColor: '#2A1426', borderWidth: 1.5, borderColor: '#C58D39', borderRadius: 7, paddingVertical: 3, paddingHorizontal: 8, alignItems: 'center' },
+  statWide: { flex: 1 },
+  statLabel: { color: '#E9C77B', fontSize: 7, fontWeight: '900', letterSpacing: 0.8 },
+  statValue: { color: '#FFF4D0', fontSize: 11, fontWeight: '900', marginTop: 1 },
+  previewLabel: { color: '#C7A879', fontSize: 6, fontWeight: '900', letterSpacing: 0.6 },
+  links: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingTop: 5, borderTopWidth: 1, borderTopColor: '#76502F', marginTop: 4 },
+  linkText: { color: '#EED18A', fontSize: 8, fontWeight: '900', letterSpacing: 1, paddingHorizontal: 8, paddingVertical: 2 },
+  linkDot: { color: '#A97A3E', fontSize: 9 },
+  infoPanel: { margin: 10, padding: 16, minHeight: 320, backgroundColor: '#3A1B36', borderWidth: 2, borderColor: '#C58D39', borderRadius: 12 },
+  infoEyebrow: { color: C.gold, fontSize: 8, fontWeight: '900', letterSpacing: 1.5 },
+  infoTitle: { color: C.white, fontSize: 20, fontWeight: '900', marginTop: 4, marginBottom: 14 },
+  rule: { color: '#F6E8D0', fontSize: 11, lineHeight: 18, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#68405A' },
+  emptyCopy: { color: '#E1CBAE', fontSize: 11, lineHeight: 18, marginTop: 15 },
+  backToGame: { alignSelf: 'flex-start', paddingHorizontal: 15, paddingVertical: 10, borderRadius: 8, marginTop: 20 },
+  backToGameText: { color: '#4B241E', fontSize: 10, fontWeight: '900' },
+  settingsBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', alignItems: 'center', justifyContent: 'center', padding: 22 },
+  settingsBox: { width: '100%', backgroundColor: '#32182F', borderWidth: 2, borderColor: '#D4A64A', borderRadius: 14, padding: 17 },
+  settingsEyebrow: { color: C.gold, fontSize: 8, fontWeight: '900', letterSpacing: 1.5 },
+  settingsTitle: { color: C.white, fontSize: 18, fontWeight: '900', marginTop: 4, marginBottom: 12 },
+  settingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: '#68405A' },
+  settingName: { color: C.white, fontSize: 12, fontWeight: '700' },
   settingValue: { color: C.gold, fontSize: 10, fontWeight: '900' },
-  exitButton: { backgroundColor: '#402738', borderRadius: 9, alignItems: 'center', padding: 11, marginTop: 16 },
-  exitText: { color: '#FFB7C2', fontSize: 10, fontWeight: '900', letterSpacing: 1 },
-  dismissButton: { alignItems: 'center', paddingTop: 13 },
+  closeSettings: { alignItems: 'center', marginTop: 15, padding: 11, backgroundColor: '#F0C34D', borderRadius: 8 },
+  closeSettingsText: { color: '#4B241E', fontSize: 10, fontWeight: '900', letterSpacing: 1 },
 });
