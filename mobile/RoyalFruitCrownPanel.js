@@ -483,7 +483,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
           <View style={styles.helpBackdrop}>
             <View style={styles.helpCard}>
               <Text style={styles.title}>HOW TO PLAY</Text>
-              <Text style={styles.helperText}>Choose a coin amount first, then tap any fruit tile to place that amount. Every fruit tap creates a separate bet. You may change the amount at any time, repeat taps on the same fruit, and bet on all eight fruits during the 37-second betting window. Each fruit tile shows your running total for this round; those totals clear when the round ends.</Text>
+              <Text style={styles.helperText}>Choose a coin amount first, then tap any fruit tile to place that amount. Every fruit tap creates a separate bet. You may change the amount at any time, repeat taps on the same fruit, and bet on all eight fruits during the 37-second betting window. Your selected fruit and its running bet total are shown in the betting summary below the board.</Text>
               <Text style={styles.helperText}>The draw animation lasts 10 seconds. The result and top winners appear for 5 seconds. Winning payouts are credited to your main balance.</Text>
               <TouchableOpacity onPress={() => setHelpOpen(false)} style={styles.loginButton}><Text style={styles.loginText}>GOT IT</Text></TouchableOpacity>
             </View>
