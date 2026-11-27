@@ -213,7 +213,34 @@ export default function ThunderKingPanel({ visible, onClose, api }) {
                   <Text style={styles.rule}>05  Free-spin multipliers can increase the final reward.</Text>
                   <Text style={styles.rule}>06  The Founder controls official fees, paytable, probabilities and outcomes.</Text>
                 </>
-              ) : <Text style={styles.emptyCopy}>Verified player rankings and round history will appear when the secure game service is connected.</Text>}
+              ) : view === 'ranking' ? (
+                <>
+                  <View style={styles.infoFeatureCard}>
+                    <Text style={styles.infoFeatureGlyph}>♛</Text>
+                    <Text style={styles.infoFeatureTitle}>STORM LEGENDS LEADERBOARD</Text>
+                    <Text style={styles.infoFeatureCopy}>The champions of the Temple of Immortals</Text>
+                  </View>
+                  <View style={styles.infoMetricRow}>
+                    <View style={styles.infoMetric}><Text style={styles.infoMetricLabel}>TOP PLAYER</Text><Text style={styles.infoMetricValue}>—</Text></View>
+                    <View style={styles.infoMetric}><Text style={styles.infoMetricLabel}>TOP WIN</Text><Text style={styles.infoMetricValue}>—</Text></View>
+                    <View style={styles.infoMetric}><Text style={styles.infoMetricLabel}>SEASON</Text><Text style={styles.infoMetricValue}>—</Text></View>
+                  </View>
+                  <Text style={styles.emptyCopy}>Verified rankings will appear here after the secure Thunder King game service is connected.</Text>
+                </>
+              ) : (
+                <>
+                  <View style={styles.infoFeatureCard}>
+                    <Text style={styles.infoFeatureGlyph}>⚡</Text>
+                    <Text style={styles.infoFeatureTitle}>ROUND CHRONICLES</Text>
+                    <Text style={styles.infoFeatureCopy}>Your recent storms and divine rewards</Text>
+                  </View>
+                  <View style={styles.historyPlaceholder}>
+                    <Text style={styles.historyPlaceholderGlyph}>◷</Text>
+                    <Text style={styles.historyPlaceholderTitle}>NO VERIFIED ROUNDS YET</Text>
+                    <Text style={styles.historyPlaceholderCopy}>Your completed rounds, cascades and payouts will be listed here.</Text>
+                  </View>
+                </>
+              )}
               <GoldButton onPress={() => setView('game')} style={styles.backToGame}><Text style={styles.backToGameText}>‹  RETURN TO THE TEMPLE</Text></GoldButton>
             </ScrollView>
           )}
@@ -346,6 +373,18 @@ const styles = StyleSheet.create({
   infoTitle: { color: PALETTE.white, fontSize: 22, fontWeight: '900', marginTop: 4, marginBottom: 14 },
   rule: { color: '#F6E8D0', fontSize: 12, lineHeight: 19, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#49305B' },
   emptyCopy: { color: '#D1C3DC', fontSize: 12, lineHeight: 19, marginTop: 15 },
+  infoFeatureCard: { marginTop: 12, padding: 18, borderRadius: 12, borderWidth: 1.5, borderColor: '#B98542', backgroundColor: '#28153B', alignItems: 'center' },
+  infoFeatureGlyph: { color: '#FFE39A', fontSize: 42, textShadowColor: '#7CCFFF', textShadowRadius: 12 },
+  infoFeatureTitle: { color: '#FFE9B3', fontSize: 13, fontWeight: '900', letterSpacing: 1.4, textAlign: 'center', marginTop: 8 },
+  infoFeatureCopy: { color: '#C9B4D8', fontSize: 10, textAlign: 'center', marginTop: 5 },
+  infoMetricRow: { flexDirection: 'row', gap: 7, marginTop: 12 },
+  infoMetric: { flex: 1, paddingVertical: 12, paddingHorizontal: 5, borderWidth: 1, borderColor: '#765536', borderRadius: 8, backgroundColor: '#140B22', alignItems: 'center' },
+  infoMetricLabel: { color: '#CFAE6D', fontSize: 7, fontWeight: '900', letterSpacing: 0.7 },
+  infoMetricValue: { color: '#FFF0C3', fontSize: 16, fontWeight: '900', marginTop: 5 },
+  historyPlaceholder: { marginTop: 12, minHeight: 150, padding: 18, borderWidth: 1, borderStyle: 'dashed', borderColor: '#765536', borderRadius: 10, backgroundColor: '#140B22', alignItems: 'center', justifyContent: 'center' },
+  historyPlaceholderGlyph: { color: '#E7C875', fontSize: 34 },
+  historyPlaceholderTitle: { color: '#FFE9B3', fontSize: 11, fontWeight: '900', letterSpacing: 1, marginTop: 8 },
+  historyPlaceholderCopy: { color: '#C9B4D8', fontSize: 10, lineHeight: 16, textAlign: 'center', marginTop: 6 },
   backToGame: { alignSelf: 'flex-start', paddingHorizontal: 16, paddingVertical: 11, borderRadius: 8, marginTop: 20 },
   backToGameText: { color: '#351B48', fontSize: 10, fontWeight: '900' },
   settingsBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.84)', alignItems: 'center', justifyContent: 'center', padding: 22 },
