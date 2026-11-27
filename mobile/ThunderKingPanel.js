@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, Modal, Alert,
-  Dimensions, StyleSheet,
+  useWindowDimensions, StyleSheet,
 } from 'react-native';
 
 const PALETTE = {
@@ -58,10 +58,9 @@ export default function ThunderKingPanel({ visible, onClose }) {
   const [soundOn, setSoundOn] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [view, setView] = useState('game');
-  const [autoOn, setAutoOn] = useState(false);
-  const { width, height } = Dimensions.get('window');
+  const { width, height } = useWindowDimensions();
   const landscape = width >= height;
-  const tileSize = Math.max(27, Math.min(58, (Math.min(width, height) * (landscape ? 0.115 : 0.105))));
+  const tileSize = Math.max(30, Math.min(landscape ? 66 : 48, Math.min(width, height) * (landscape ? 0.12 : 0.105)));
   const board = useMemo(() => Array.from({ length: 30 }, (_, i) => DIVINE_SYMBOLS[(i * 5 + Math.floor(i / 6) * 3) % DIVINE_SYMBOLS.length]), []);
 
   const previewOnly = () => Alert.alert(
@@ -89,8 +88,8 @@ export default function ThunderKingPanel({ visible, onClose }) {
           </View>
 
           {view === 'game' ? (
-            <View style={[styles.stage, !landscape && styles.portraitStage]}>
-              <View style={styles.zeusPanel}>
+            <ScrollView style={styles.stageScroll} contentContainerStyle={[styles.stage, !landscape && styles.portraitStage]} scrollEnabled={!landscape} showsVerticalScrollIndicator={false}>
+              <View style={[styles.zeusPanel, !landscape && styles.portraitZeusPanel]}>
                 <View style={styles.stormAura} />
                 <Text style={styles.templeCaption}>THE GOD OF THUNDER</Text>
                 <View style={styles.laurel}><Text style={styles.laurelText}>✦  ⚡  ✦</Text></View>
@@ -114,7 +113,7 @@ export default function ThunderKingPanel({ visible, onClose }) {
                 <View style={styles.freeSpins}><Text style={styles.freeSpinsText}>0  FREE SPINS</Text></View>
               </View>
 
-              <View style={styles.reelColumn}>
+              <View style={[styles.reelColumn, !landscape && styles.portraitReelColumn]}>
                 <View style={styles.reelHeading}>
                   <Text style={styles.reelHeadingText}>✦  DIVINE REELS  ✦</Text>
                   <Text style={styles.reelCount}>6 REELS  /  5 ROWS</Text>
@@ -129,7 +128,7 @@ export default function ThunderKingPanel({ visible, onClose }) {
                 </View>
               </View>
 
-              <View style={styles.controlPanel}>
+              <View style={[styles.controlPanel, !landscape && styles.portraitControlPanel]}>
                 <View style={styles.controlTopLine}>
                   <Text style={styles.controlPanelTitle}>DIVINE CONTROL</Text>
                   <TouchableOpacity onPress={() => setSettingsOpen(true)} style={styles.settingsButton}><Text style={styles.settingsGlyph}>⚙</Text></TouchableOpacity>
@@ -145,8 +144,8 @@ export default function ThunderKingPanel({ visible, onClose }) {
                 <GoldButton onPress={previewOnly} style={styles.spinButton}>
                   <Text style={styles.spinGlyph}>⟳</Text><Text style={styles.spinText}>SPIN</Text>
                 </GoldButton>
-                <TouchableOpacity onPress={() => setAutoOn(v => !v)} style={[styles.autoButton, autoOn && styles.autoButtonActive]}>
-                  <Text style={styles.autoGlyph}>▶</Text><Text style={styles.autoText}>{autoOn ? 'AUTO ON' : 'AUTO PLAY'}</Text>
+                <TouchableOpacity onPress={previewOnly} style={styles.autoButton}>
+                  <Text style={styles.autoGlyph}>▶</Text><Text style={styles.autoText}>AUTO PLAY</Text>
                 </TouchableOpacity>
                 <View style={styles.balanceCard}>
                   <Stat label="TOTAL BET" value={bet.toLocaleString('en-IN')} />
@@ -160,7 +159,7 @@ export default function ThunderKingPanel({ visible, onClose }) {
                   <TouchableOpacity onPress={() => setView('ranking')}><Text style={styles.linkText}>RANK</Text></TouchableOpacity>
                 </View>
               </View>
-            </View>
+            </ScrollView>
           ) : (
             <ScrollView style={styles.infoScroll} contentContainerStyle={styles.infoPanel}>
               <Text style={styles.infoEyebrow}>TALKZY  •  THUNDER KING</Text>
@@ -220,8 +219,12 @@ const styles = StyleSheet.create({
   jackpotValue: { color: PALETTE.gold, fontSize: 12, fontWeight: '900', letterSpacing: 1 },
   closeButton: { width: 30, height: 30, borderRadius: 8, borderWidth: 1, borderColor: '#A77835', alignItems: 'center', justifyContent: 'center', backgroundColor: '#29153D' },
   closeText: { color: PALETTE.cream, fontSize: 23, lineHeight: 25 },
-  stage: { flex: 1, flexDirection: 'row', padding: 7, gap: 7, minHeight: 250, backgroundColor: '#10091F' },
-  portraitStage: { flexDirection: 'column', overflow: 'scroll' },
+  stageScroll: { flex: 1, backgroundColor: '#10091F' },
+  stage: { flexGrow: 1, flexDirection: 'row', padding: 7, gap: 7, minHeight: 250, backgroundColor: '#10091F' },
+  portraitStage: { flexDirection: 'column', alignItems: 'stretch', padding: 9, gap: 9 },
+  portraitZeusPanel: { width: '100%', minWidth: 0, height: 255 },
+  portraitReelColumn: { flex: 0, width: '100%', minWidth: 0, height: 390 },
+  portraitControlPanel: { width: '100%', minWidth: 0, minHeight: 270, padding: 12 },
   zeusPanel: { width: '25%', minWidth: 125, borderWidth: 2, borderColor: '#D5A74B', borderRadius: 10, overflow: 'hidden', backgroundColor: '#26113D', alignItems: 'center', justifyContent: 'flex-start' },
   stormAura: { ...StyleSheet.absoluteFillObject, backgroundColor: '#45236B', opacity: 0.8 },
   templeCaption: { color: '#F9DFA0', fontSize: 7, fontWeight: '900', letterSpacing: 1.5, marginTop: 9, zIndex: 3 },
