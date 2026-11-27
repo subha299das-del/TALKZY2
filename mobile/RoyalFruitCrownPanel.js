@@ -325,9 +325,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
               ]}
             >
               <Text style={styles.fruitEmoji}>{fruit.symbol}</Text>
-              <Text style={styles.fruitName}>{fruit.name.toUpperCase()}</Text>
               <Text style={styles.multiplier}>{fruit.multiplier}×</Text>
-              <Text style={styles.betOnFruit}>{money(totalsByFruit[id] || 0)} BET</Text>
             </TouchableOpacity>
           );
         })}
@@ -513,7 +511,7 @@ const styles = StyleSheet.create({
   fruitTile: { width: '31.8%', height: 116, alignItems: 'center', justifyContent: 'center', backgroundColor: '#20251D', borderWidth: 1.2, borderColor: '#927746', borderRadius: 11, paddingVertical: 5, shadowColor: '#000000', shadowOpacity: 0.3, shadowRadius: 4, elevation: 2 },
   selectedTile: { backgroundColor: '#49351A', borderWidth: 2, borderColor: '#FFE7A2', shadowColor: GOLD, shadowOpacity: 0.75, shadowRadius: 10, elevation: 8 },
   litTile: { backgroundColor: '#66501F', borderColor: '#FFF1B9', borderWidth: 2.5, shadowColor: '#FFE69A', shadowOpacity: 1, shadowRadius: 18, elevation: 13, transform: [{ scale: 1.025 }] },
-  fruitEmoji: { fontSize: 45, marginBottom: 2 }, fruitName: { color: '#F3E6C7', fontSize: 10, fontWeight: '900', letterSpacing: 0.8 }, multiplier: { marginTop: 4, color: '#FFE49A', backgroundColor: '#59421D', borderWidth: 1, borderColor: '#D5B36B', borderRadius: 12, overflow: 'hidden', paddingHorizontal: 11, paddingVertical: 3, fontSize: 12, fontWeight: '900' }, betOnFruit: { color: '#FFE7A2', fontSize: 8, fontWeight: '900', marginTop: 3 },
+  fruitEmoji: { fontSize: 58, marginBottom: 7 }, fruitName: { color: '#F3E6C7', fontSize: 10, fontWeight: '900', letterSpacing: 0.8 }, multiplier: { marginTop: 0, color: '#FFE49A', backgroundColor: '#59421D', borderWidth: 1, borderColor: '#D5B36B', borderRadius: 12, overflow: 'hidden', paddingHorizontal: 11, paddingVertical: 3, fontSize: 12, fontWeight: '900' }, betOnFruit: { color: '#FFE7A2', fontSize: 8, fontWeight: '900', marginTop: 3 },
   timerCell: { width: '31.8%', height: 116, alignItems: 'center', justifyContent: 'center', backgroundColor: '#292014', borderWidth: 1.8, borderColor: '#E1BD70', borderRadius: 11, shadowColor: '#E1BD70', shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 }, timerCrown: { color: GOLD, fontSize: 27 }, timerNumber: { color: '#FFF0B0', fontSize: 31, lineHeight: 35, fontWeight: '900' }, timerCaption: { color: '#E2CF9E', fontSize: 8, fontWeight: '900', letterSpacing: 0.8 },
   betPanel: { marginTop: 11, padding: 11, backgroundColor: '#121A16', borderWidth: 1.2, borderColor: '#A9894B', borderRadius: 11 }, sectionHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 5 }, sectionTitle: { color: '#F0D99B', fontSize: 11, fontWeight: '900', letterSpacing: 1 }, selectedFruit: { color: '#D5B878', fontSize: 9, fontWeight: '900' },
   betAmounts: { flexDirection: 'row', justifyContent: 'space-between', gap: 5, marginTop: 10, marginBottom: 10 }, betButton: { flex: 1, minHeight: 40, alignItems: 'center', justifyContent: 'center', backgroundColor: '#17252A', borderWidth: 1, borderColor: '#9B8A61', borderRadius: 8, paddingHorizontal: 2 }, activeBetButton: { backgroundColor: '#D4A94E', borderColor: '#FFF0B0', borderWidth: 2, shadowColor: GOLD, shadowOpacity: 0.35, shadowRadius: 7, elevation: 4 }, disabled: { opacity: 0.45 }, betButtonText: { color: '#E9DFC5', fontSize: 10, fontWeight: '900' }, activeBetText: { color: '#211707' },
