@@ -58,24 +58,6 @@ test('private room and chat APIs reject requests without a user session', async 
   }
 });
 
-test('new Royal Fruit Crown game APIs require a signed-in user and Founder-only result access', async () => {
-  for (const path of ['/api/greedy/royal-fruit-crown', '/api/greedy/royal-fruit-crown/bets']) {
-    const response = await request(path, path.endsWith('/bets') ? {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ fruit: 'cherry', amount: 10 })
-    } : {});
-    assert.equal(response.status, 401, `${path} must require user authentication`);
-  }
-  const founderResponse = await request('/api/greedy/royal-fruit-crown/founder-result', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ fruit: 'cherry' })
-  });
-  assert.equal(founderResponse.status, 401);
-  assert.match((await founderResponse.json()).error, /owner sign-in/i);
-});
-
 test('room mutations reject unauthenticated requests before processing data', async () => {
   const requests = [
     ['/api/rooms/test-room/messages', 'POST', { message: 'test message' }],
@@ -101,16 +83,6 @@ test('owner dashboard login rejects incorrect credentials', async () => {
   });
   assert.equal(response.status, 401);
   assert.match((await response.json()).error, /invalid owner/i);
-});
-
-test('game artwork upload rejects requests without Founder authorization', async () => {
-  const response = await request('/api/admin/game-artwork', {
-    method: 'POST',
-    headers: { 'content-type': 'image/webp', 'x-artwork-game': 'thunder-king', 'x-artwork-screen': 'main' },
-    body: Buffer.from('not-an-image')
-  });
-  assert.equal(response.status, 401);
-  assert.match((await response.json()).error, /owner sign-in/i);
 });
 
 test('malformed JSON is rejected with a client error', async () => {

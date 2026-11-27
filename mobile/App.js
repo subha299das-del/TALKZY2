@@ -33,16 +33,9 @@ import * as WebBrowser from 'expo-web-browser';
 import { WebView } from 'react-native-webview';
 import RoomMusicPanel from './RoomMusicPanel';
 import RoomGames from './RoomGames';
-import ThunderKingPanel from './ThunderKingPanel';
-import LuckyElephantPanel from './LuckyElephantPanel';
-import WildKingdomPanel from './WildKingdomPanel';
-import Royal77Panel from './Royal77Panel';
-import RubyJackpotPanel from './RubyJackpotPanel';
-import RoyalFruitCrownPanel from './RoyalFruitCrownPanel';
 
 WebBrowser.maybeCompleteAuthSession();
 const MIC_ON_ICON = require('./assets/mic_on.png');
-const ROYAL_FRUIT_CROWN_GREEDY_ICON = require('./assets/3_20261126_203806_0002.png');
 const MIC_REACTION_FACE_LABELS = ["Welcome", "Thanks", "Like", "Happy", "Gosh", "Wronged", "Nausea", "Left kiss", "Right kiss", "Money face", "Party", "Fear", "Silence", "Cry", "Naughty", "Sweat", "LOL", "Cool", "Angry"];
 
 function MicReactionSticker({ emoji, size = 48, direction }) {
@@ -984,7 +977,6 @@ useEffect(() => {
     }
     if (showRoomChatActionMenu) { setShowRoomChatActionMenu(false); return true; }
     if (showRoomShortcutsPage) { setShowRoomShortcutsPage(false); return true; }
-    if (showGreedyMenu) { setShowGreedyMenu(false); return true; }
     if (showMicEmojiPicker) { setShowMicEmojiPicker(false); return true; }
     if (showMicControlPopup) { setShowMicControlPopup(false); return true; }
     if (showRoomUsers) { setShowRoomUsers(false); return true; }
@@ -1063,7 +1055,6 @@ useEffect(() => {
 }, [
   selectedRoom?.id, screen, eventFrontReturnScreen, roomSettingsReturnScreen, activeTab,
   showRoomTools, showSpecialEffectSettings, showRoomChatComposer, showRoomChatActionMenu,
-  showRoomShortcutsPage, showGreedyMenu, showMicEmojiPicker, showMicControlPopup, showRoomUsers,
   showMicCountPicker, showRoomMessageMenu, showRoomInfo, showRoomGiftQuantityOptions,
   showRoomGiftPanel, showRoomGamePanel, showRocketPanel,
   showRoomThemeMenu, showLuckyBagPopup, showHotEventsPopup, showJoinPassword,
@@ -1561,15 +1552,6 @@ const [selectedRoomGift, setSelectedRoomGift] = useState('Rose');
 const [roomGiftCategory, setRoomGiftCategory] = useState('Popular');
 const [roomGiftQuantity, setRoomGiftQuantity] = useState('1');
 const [showRoomGiftQuantityOptions, setShowRoomGiftQuantityOptions] = useState(false);
-const [showGreedyMenu, setShowGreedyMenu] = useState(false);
-const [showThunderKingPanel, setShowThunderKingPanel] = useState(false);
-const [showLuckyElephantPanel, setShowLuckyElephantPanel] = useState(false);
-const [showWildKingdomPanel, setShowWildKingdomPanel] = useState(false);
-const [showRoyal77Panel, setShowRoyal77Panel] = useState(false);
-const [showRubyJackpotPanel, setShowRubyJackpotPanel] = useState(false);
-const [showRoyalFruitCrownPanel, setShowRoyalFruitCrownPanel] = useState(false);
-const [greedyView, setGreedyView] = useState('game');
-const [greedyHistory, setGreedyHistory] = useState([]);
 
 const [showRoomGamePanel, setShowRoomGamePanel] = useState(false);
 const [showRocketPanel, setShowRocketPanel] = useState(false);
@@ -1663,11 +1645,6 @@ const [isRoomTourist, setIsRoomTourist] = useState(false);
     setShowPosterEditor(false);
     setMicGame(null);
     setShowRoomGamePanel(false);
-    
-    setShowThunderKingPanel(false);
-    setShowLuckyElephantPanel(false);
-    setShowWildKingdomPanel(false);
-    setShowRoyal77Panel(false);
     setShowRocketPanel(false);
     setShowMicChatPopup(false);
     setIsRoomMinimized(false);
@@ -4981,83 +4958,6 @@ function renderRoomInterior() {
         </View>
       )}
       <RoomGames visible={showRoomGamePanel && screen === 'roomInterior' && !!selectedRoom} initialGameName={gameToOpenInRoom} onInitialGameOpened={() => setGameToOpenInRoom(null)} onClose={() => setShowRoomGamePanel(false)} onGameAvailable={() => setShowRoomGamePanel(true)} roomId={selectedRoom?.id} creatorName={profile?.display_name || displayName || session?.user?.user_metadata?.full_name || 'Player'} userId={session?.user?.id} supabase={supabase} isAuthorisedStarter={selectedRoom?.owner_id===session?.user?.id || roomPresence.some(person=>person.user_id===session?.user?.id && person.presence_role==='admin')} hasRoomSeat={micSeats.some(seat=>seat.user_id===session?.user?.id)} roomMembers={roomPresence} selfProfile={profile} />
-      <ThunderKingPanel visible={showThunderKingPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowThunderKingPanel(false)} api={api} />
-      <LuckyElephantPanel visible={showLuckyElephantPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowLuckyElephantPanel(false)} />
-      <WildKingdomPanel visible={showWildKingdomPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowWildKingdomPanel(false)} />
-      <Royal77Panel visible={showRoyal77Panel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowRoyal77Panel(false)} />
-      <Modal
-        visible={showGreedyMenu && screen === 'roomInterior' && !!selectedRoom}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowGreedyMenu(false)}
-      >
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.84)', justifyContent: 'center', padding: 16 }}>
-          <View style={{ maxHeight: '82%', backgroundColor: '#100B18', borderWidth: 1.8, borderColor: '#D8B66A', borderRadius: 22, padding: 16, shadowColor: '#D8B66A', shadowOpacity: 0.35, shadowRadius: 16, elevation: 20 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
-              <View>
-                <Text style={{ color: '#F6D987', fontSize: 20, fontWeight: '900', letterSpacing: 1.1 }}>TALKZY GREEDY</Text>
-                <Text style={{ color: '#BBAA8A', fontSize: 9, letterSpacing: 1.2, marginTop: 3 }}>SELECT A GAME</Text>
-              </View>
-              <TouchableOpacity onPress={() => setShowGreedyMenu(false)} accessibilityRole="button" accessibilityLabel="Close Greedy games" style={{ width: 36, height: 36, borderRadius: 12, borderWidth: 1, borderColor: '#8D7144', alignItems: 'center', justifyContent: 'center', backgroundColor: '#24182B' }}>
-                <Text style={{ color: '#F6D987', fontSize: 23, fontWeight: '700' }}>×</Text>
-              </TouchableOpacity>
-            </View>
-            <Text style={{ color: '#C7B99F', fontSize: 10, marginBottom: 14 }}>Royal Fruit Crown is the first redesigned Greedy game. The other panels are temporarily closed while they are rebuilt to match their own game designs.</Text>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingBottom: 4 }}>
-              {[
-                { name: 'Thunder King', mark: '⚡', key: 'thunder', available: false },
-                { name: 'Lucky Elephant', mark: '🐘', key: 'elephant', available: false },
-                { name: 'Wild Kingdom', mark: '🦁', key: 'wild', available: false },
-                { name: 'Royal 77', mark: '77', key: 'royal77', available: false },
-                { name: 'Ruby Jackpot', mark: '💎', key: 'ruby', available: false },
-                { name: 'Royal Fruit Crown', mark: '🍒', key: 'fruitcrown', available: true },
-                { name: 'Coming Soon', mark: '07', key: 'soon7', available: false },
-                { name: 'Coming Soon', mark: '08', key: 'soon8', available: false },
-                { name: 'Coming Soon', mark: '09', key: 'soon9', available: false },
-                { name: 'Coming Soon', mark: '10', key: 'soon10', available: false }
-              ].map(game => (
-                <TouchableOpacity
-                  key={game.key}
-                  disabled={!game.available}
-                  accessibilityRole="button"
-                  accessibilityLabel={game.available ? 'Open ' + game.name : 'Greedy game coming soon'}
-                  onPress={() => {
-                    setShowGreedyMenu(false);
-                    
-                    setShowThunderKingPanel(false);
-                    setShowLuckyElephantPanel(false);
-                    setShowWildKingdomPanel(false);
-                    setShowRoyal77Panel(false);
-                    setShowRubyJackpotPanel(false);
-                    setShowRoyalFruitCrownPanel(false);
-                    if (game.key === 'thunder') setShowThunderKingPanel(true);
-                    else if (game.key === 'elephant') setShowLuckyElephantPanel(true);
-                    else if (game.key === 'wild') setShowWildKingdomPanel(true);
-                    else if (game.key === 'royal77') setShowRoyal77Panel(true);
-                    else if (game.key === 'ruby') setShowRubyJackpotPanel(true);
-                    else if (game.key === 'fruitcrown') setShowRoyalFruitCrownPanel(true);
-                  }}
-                  style={{ width: '31.5%', minHeight: 100, marginBottom: 10, padding: 8, borderRadius: 14, borderWidth: 1.2, borderColor: game.available ? '#CBA85D' : '#574C43', backgroundColor: game.available ? '#21172A' : '#17131A', alignItems: 'center', justifyContent: 'center', opacity: game.available ? 1 : 0.58 }}
-                >
-                  <View style={{ width: 48, height: 48, borderRadius: 14, borderWidth: 1.2, borderColor: game.available ? '#E5C577' : '#75685A', backgroundColor: '#100D16', alignItems: 'center', justifyContent: 'center', marginBottom: 7 }}>
-                    {game.key === 'fruitcrown' ? (
-                    <Image source={ROYAL_FRUIT_CROWN_GREEDY_ICON} resizeMode="contain" style={{ width: 43, height: 43 }} />
-                  ) : (
-                    <Text style={{ color: '#F4D27A', fontSize: game.key === 'royal77' ? 18 : 24, fontWeight: '900' }}>{game.mark}</Text>
-                  )}
-                  </View>
-                  <Text numberOfLines={2} style={{ color: game.available ? '#F7EBD1' : '#A89B89', fontSize: 10, fontWeight: '900', textAlign: 'center' }}>{game.name}</Text>
-                  {!game.available && <Text style={{ color: '#A89B89', fontSize: 7, marginTop: 3 }}>COMING SOON</Text>}
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
-
-      <RubyJackpotPanel visible={showRubyJackpotPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowRubyJackpotPanel(false)} />
-      <RoyalFruitCrownPanel visible={showRoyalFruitCrownPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowRoyalFruitCrownPanel(false)} api={api} />
-
 
       <Modal
         visible={showRoomThemeMenu && selectedRoom?.owner_id === session?.user?.id}
@@ -5355,19 +5255,7 @@ function renderRoomInterior() {
     <Text style={{ color: '#B9F4FF', fontSize: 7, fontWeight: '900', letterSpacing: 0.7 }}>HOT</Text>
   </TouchableOpacity>
 
-  <TouchableOpacity
-    accessibilityRole="button"
-    accessibilityLabel="Open Greedy games"
-    onPress={() => {
-      setShowRoomGiftPanel(false); setShowRoomTools(false); setShowRoomGamePanel(false);
-      setShowRocketPanel(false); setShowHotEventsPopup(false);
-      setShowGreedyMenu(true);
-    }}
-    style={{ width: 48, height: 48, borderRadius: 16, borderWidth: 1.5, borderColor: '#E8C66B', backgroundColor: '#211329', alignItems: 'center', justifyContent: 'center', shadowColor: '#D9A94E', shadowOpacity: 0.62, shadowRadius: 10, elevation: 10 }}
-  >
-    <Text style={{ color: '#F7D56F', fontSize: 22, fontWeight: '900', lineHeight: 24 }}>♛</Text>
-    <Text style={{ color: '#F5E4B8', fontSize: 6.5, fontWeight: '900', letterSpacing: 0.7 }}>GREEDY</Text>
-  </TouchableOpacity>
+
 
   <TouchableOpacity
     accessibilityRole="button"
