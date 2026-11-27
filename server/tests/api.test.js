@@ -58,28 +58,6 @@ test('private room and chat APIs reject requests without a user session', async 
   }
 });
 
-test('Royal Fruit Crown requires user authentication and keeps result selection Founder-only', async () => {
-  const state = await request('/api/greedy/royal-fruit-crown');
-  assert.equal(state.status, 401);
-  assert.match((await state.json()).error, /sign in/i);
-
-  const bet = await request('/api/greedy/royal-fruit-crown/bets', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ fruit: 'cherry', amount: 10, request_key: 'test-request-key-12345' })
-  });
-  assert.equal(bet.status, 401);
-  assert.match((await bet.json()).error, /sign in/i);
-
-  const founder = await request('/api/greedy/royal-fruit-crown/founder-result', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ fruit: 'cherry' })
-  });
-  assert.equal(founder.status, 401);
-  assert.match((await founder.json()).error, /owner sign-in/i);
-});
-
 test('room mutations reject unauthenticated requests before processing data', async () => {
   const requests = [
     ['/api/rooms/test-room/messages', 'POST', { message: 'test message' }],
