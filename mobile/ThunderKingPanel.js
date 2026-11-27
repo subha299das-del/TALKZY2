@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
-  View, Text, TouchableOpacity, ScrollView, Modal, Alert,
+  View, Text, TouchableOpacity, ScrollView, Modal, Alert, ImageBackground,
   useWindowDimensions, StyleSheet,
 } from 'react-native';
 
@@ -53,15 +53,25 @@ function Stat({ label, value }) {
   );
 }
 
-export default function ThunderKingPanel({ visible, onClose }) {
+export default function ThunderKingPanel({ visible, onClose, api }) {
   const [bet, setBet] = useState(100);
   const [soundOn, setSoundOn] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [view, setView] = useState('game');
+  const [artwork, setArtwork] = useState(null);
   const { width, height } = useWindowDimensions();
   const landscape = width >= height;
   const tileSize = Math.max(30, Math.min(landscape ? 66 : 48, Math.min(width, height) * (landscape ? 0.12 : 0.105)));
   const board = useMemo(() => Array.from({ length: 30 }, (_, i) => DIVINE_SYMBOLS[(i * 5 + Math.floor(i / 6) * 3) % DIVINE_SYMBOLS.length]), []);
+
+  React.useEffect(() => {
+    if (!visible || !api) return undefined;
+    let active = true;
+    api('/api/config').then(config => {
+      if (active) setArtwork(config?.gameArtwork?.['thunder-king'] || null);
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [visible, api]);
 
   const previewOnly = () => Alert.alert(
     'Thunder King preview',
@@ -82,13 +92,14 @@ export default function ThunderKingPanel({ visible, onClose }) {
             </View>
             <View style={styles.jackpot}>
               <Text style={styles.jackpotLabel}>GRAND JACKPOT</Text>
-              <Text style={styles.jackpotValue}>✦  9,999,999  ✦</Text>
+              <Text style={styles.jackpotValue}>NOT CONNECTED</Text>
             </View>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}><Text style={styles.closeText}>×</Text></TouchableOpacity>
           </View>
 
           {view === 'game' ? (
-            <ScrollView style={styles.stageScroll} contentContainerStyle={[styles.stage, !landscape && styles.portraitStage]} scrollEnabled={!landscape} showsVerticalScrollIndicator={false}>
+            <ImageBackground source={artwork?.main?.url ? { uri: artwork.main.url } : undefined} resizeMode="cover" imageStyle={styles.stageArtwork} style={styles.stageScroll}>
+            <ScrollView style={styles.stageScrollInner} contentContainerStyle={[styles.stage, !landscape && styles.portraitStage]} scrollEnabled={!landscape} showsVerticalScrollIndicator={false}>
               <View style={[styles.zeusPanel, !landscape && styles.portraitZeusPanel]}>
                 <View style={styles.stormAura} />
                 <Text style={styles.templeCaption}>THE GOD OF THUNDER</Text>
@@ -160,6 +171,7 @@ export default function ThunderKingPanel({ visible, onClose }) {
                 </View>
               </View>
             </ScrollView>
+            </ImageBackground>
           ) : (
             <ScrollView style={styles.infoScroll} contentContainerStyle={styles.infoPanel}>
               <Text style={styles.infoEyebrow}>TALKZY  •  THUNDER KING</Text>
@@ -220,7 +232,9 @@ const styles = StyleSheet.create({
   closeButton: { width: 30, height: 30, borderRadius: 8, borderWidth: 1, borderColor: '#A77835', alignItems: 'center', justifyContent: 'center', backgroundColor: '#29153D' },
   closeText: { color: PALETTE.cream, fontSize: 23, lineHeight: 25 },
   stageScroll: { flex: 1, backgroundColor: '#10091F' },
-  stage: { flexGrow: 1, flexDirection: 'row', padding: 7, gap: 7, minHeight: 250, backgroundColor: '#10091F' },
+  stageScrollInner: { flex: 1, backgroundColor: 'rgba(16,9,31,0.28)' },
+  stageArtwork: { opacity: 0.34 },
+  stage: { flexGrow: 1, flexDirection: 'row', padding: 7, gap: 7, minHeight: 250, backgroundColor: 'transparent' },
   portraitStage: { flexDirection: 'column', alignItems: 'stretch', padding: 9, gap: 9 },
   portraitZeusPanel: { width: '100%', minWidth: 0, height: 255 },
   portraitReelColumn: { flex: 0, width: '100%', minWidth: 0, height: 390 },
