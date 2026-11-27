@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, Modal, Alert, ImageBackground,
-  useWindowDimensions, StyleSheet,
+  useWindowDimensions, StyleSheet, Animated, Easing,
 } from 'react-native';
 
 const PALETTE = {
@@ -59,6 +59,8 @@ export default function ThunderKingPanel({ visible, onClose, api }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [view, setView] = useState('game');
   const [artwork, setArtwork] = useState(null);
+  const [spinning, setSpinning] = useState(false);
+  const reelAnimations = useRef(Array.from({ length: 6 }, () => new Animated.Value(0))).current;
   const { width, height } = useWindowDimensions();
   const landscape = width >= height;
   const tileSize = Math.max(30, Math.min(landscape ? 66 : 48, Math.min(width, height) * (landscape ? 0.12 : 0.105)));
@@ -73,10 +75,32 @@ export default function ThunderKingPanel({ visible, onClose, api }) {
     return () => { active = false; };
   }, [visible, api]);
 
-  const previewOnly = () => Alert.alert(
-    'Thunder King preview',
-    'The visual panel is ready for review. Secure spins, live gold settlement, cascade results and Founder-controlled outcomes still require the game service.'
-  );
+  const previewOnly = () => {
+    if (spinning) return;
+    setSpinning(true);
+    reelAnimations.forEach(value => value.setValue(0));
+    Animated.parallel(reelAnimations.map((value, index) => Animated.sequence([
+      Animated.delay(index * 135),
+      Animated.timing(value, {
+        toValue: -tileSize * 0.72,
+        duration: 360 + index * 35,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true
+      }),
+      Animated.spring(value, {
+        toValue: 0,
+        speed: 18,
+        bounciness: 8,
+        useNativeDriver: true
+      })
+    ]))).start(() => {
+      setSpinning(false);
+      Alert.alert(
+        'Thunder King design preview',
+        'The six-reel stop animation is a visual preview only. Real spins, cascade results, free-spin awards and gold settlement must come from the secure TALKZY game service.'
+      );
+    });
+  };
 
   const title = view === 'rules' ? 'THE DIVINE RULES' : view === 'ranking' ? 'STORM LEGENDS' : 'ROUND CHRONICLES';
 
@@ -119,7 +143,7 @@ export default function ThunderKingPanel({ visible, onClose, api }) {
                 </View>
                 <View style={styles.totalWinPlate}>
                   <Text style={styles.totalWinLabel}>TOTAL WIN</Text>
-                  <Text style={styles.totalWinValue}>0.00</Text>
+                  <Text style={styles.totalWinValue}>—</Text>
                 </View>
                 <View style={styles.freeSpins}><Text style={styles.freeSpinsText}>0  FREE SPINS</Text></View>
               </View>
@@ -131,7 +155,11 @@ export default function ThunderKingPanel({ visible, onClose, api }) {
                 </View>
                 <View style={styles.reelFrame}>
                   <View style={styles.reelBoard}>
-                    {board.map((symbol, index) => <SymbolTile key={index} symbol={symbol} size={tileSize} index={index} />)}
+                    {board.map((symbol, index) => (
+                      <Animated.View key={index} style={{ transform: [{ translateY: reelAnimations[Math.floor(index / 5)] }] }}>
+                        <SymbolTile symbol={symbol} size={tileSize} index={index} />
+                      </Animated.View>
+                    ))}
                   </View>
                 </View>
                 <View style={styles.reelFooter}>
@@ -152,11 +180,11 @@ export default function ThunderKingPanel({ visible, onClose, api }) {
                     <TouchableOpacity style={styles.betAdjust} onPress={() => setBet(v => v * 2)}><Text style={styles.adjustText}>+</Text></TouchableOpacity>
                   </View>
                 </View>
-                <GoldButton onPress={previewOnly} style={styles.spinButton}>
-                  <Text style={styles.spinGlyph}>⟳</Text><Text style={styles.spinText}>SPIN</Text>
+                <GoldButton onPress={previewOnly} style={[styles.spinButton, spinning && styles.spinButtonActive]}>
+                  <Text style={styles.spinGlyph}>{spinning ? '⚡' : '⟳'}</Text><Text style={styles.spinText}>{spinning ? 'SPINNING' : 'SPIN'}</Text>
                 </GoldButton>
-                <TouchableOpacity onPress={previewOnly} style={styles.autoButton}>
-                  <Text style={styles.autoGlyph}>▶</Text><Text style={styles.autoText}>AUTO PLAY</Text>
+                <TouchableOpacity onPress={previewOnly} disabled={spinning} style={[styles.autoButton, spinning && styles.autoButtonActive]}>
+                  <Text style={styles.autoGlyph}>▶</Text><Text style={styles.autoText}>AUTO PREVIEW</Text>
                 </TouchableOpacity>
                 <View style={styles.balanceCard}>
                   <Stat label="TOTAL BET" value={bet.toLocaleString('en-IN')} />
@@ -295,6 +323,7 @@ const styles = StyleSheet.create({
   betValue: { minWidth: 43, textAlign: 'center', color: '#FFF0BD', fontSize: 10, fontWeight: '900' },
   goldButton: { backgroundColor: '#E7B944', borderWidth: 2, borderColor: '#FFF0AD', alignItems: 'center', justifyContent: 'center', shadowColor: '#FFD15A', shadowOpacity: 0.65, shadowRadius: 9, elevation: 9 },
   spinButton: { width: 68, height: 68, borderRadius: 34, borderWidth: 4, borderColor: '#FFF0AD' },
+  spinButtonActive: { backgroundColor: '#A8E9FF', borderColor: '#FFFFFF' },
   spinGlyph: { color: '#351B48', fontSize: 32, lineHeight: 34, fontWeight: '900' },
   spinText: { color: '#351B48', fontSize: 9, fontWeight: '900', letterSpacing: 2 },
   autoButton: { width: '100%', minHeight: 33, borderRadius: 7, borderWidth: 1.5, borderColor: '#C49A54', backgroundColor: '#39234F', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5 },
