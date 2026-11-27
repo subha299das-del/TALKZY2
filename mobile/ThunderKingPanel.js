@@ -5,21 +5,13 @@ import {
 } from 'react-native';
 
 const C = {
-  bg: '#170D20',
-  deep: '#24102A',
-  plum: '#351437',
-  panel: '#3A1B36',
-  gold: '#F8D66D',
-  gold2: '#C58A27',
-  cream: '#FFF0B7',
-  red: '#A83228',
-  orange: '#F58B35',
-  white: '#FFF9EA',
-  muted: '#D4BFA1',
-  line: '#8E5A2C',
+  bg: '#071323', deep: '#0B1E35', plum: '#102B49', panel: '#102642',
+  gold: '#F8D66D', gold2: '#C58A27', cream: '#FFF0B7', red: '#9E2536',
+  orange: '#F5A33B', white: '#FFF9EA', muted: '#AFC4D8', line: '#3476A7',
 };
 
-const SYMBOLS = ['💠', '🔱', '⏳', '🔺', '👑', '💎', '🔱', '💍', '⏳', '🔺', '💠', '👑', '💍', '🔱', '💎', '⏳', '🔺', '💠', '👑', '💍', '🔱', '⏳', '💎', '🔺', '💍', '👑', '💠', '🔱', '⏳', '💎'];
+const SYMBOL_SET = ['♛', '🔱', 'ϟ', '🦅', '🛡', '⚒', '❤️', '◉'];
+const SYMBOLS = Array.from({ length: 30 }, (_, i) => SYMBOL_SET[(i * 5 + Math.floor(i / 6)) % SYMBOL_SET.length]);
 
 function GoldButton({ children, onPress, style }) {
   return (
@@ -46,7 +38,7 @@ export default function ThunderKingPanel({ visible, onClose }) {
   const [view, setView] = useState('game');
   const board = useMemo(() => SYMBOLS, []);
   const width = Dimensions.get('window').width;
-  const cell = Math.max(37, Math.min(54, (width - 48) / 6.25));
+  const cell = Math.max(34, Math.min(58, (width * 0.54 - 34) / 6.25));
 
   const previewOnly = () => Alert.alert(
     'Thunder King preview',
@@ -79,7 +71,7 @@ export default function ThunderKingPanel({ visible, onClose }) {
 
             {view === 'game' ? (
               <>
-                <View style={styles.hero}>
+                <View style={styles.gameStage}><View style={styles.hero}>
                   <View style={styles.templeGlow} />
                   <Text style={styles.templeRoof}>⌁  ♜  ⌁  ♜  ⌁</Text>
                   <Text style={styles.heroLightningLeft}>ϟ</Text>
@@ -143,7 +135,7 @@ export default function ThunderKingPanel({ visible, onClose }) {
                     <Text style={styles.linkDot}>•</Text>
                     <TouchableOpacity onPress={() => setView('ranking')}><Text style={styles.linkText}>RANKING</Text></TouchableOpacity>
                   </View>
-                </View>
+                </View></View>
               </>
             ) : (
               <View style={styles.infoPanel}>
@@ -186,91 +178,92 @@ export default function ThunderKingPanel({ visible, onClose }) {
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(5,2,9,0.96)', justifyContent: 'center', paddingHorizontal: 3, paddingVertical: 8 },
-  shell: { maxHeight: '99%', overflow: 'hidden', backgroundColor: C.bg, borderWidth: 1, borderColor: C.gold2, elevation: 30 },
-  scroll: { paddingBottom: 7 },
-  roomHeader: { minHeight: 62, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, backgroundColor: '#21152B', borderBottomWidth: 1, borderBottomColor: '#60402C' },
-  homeMark: { width: 37, height: 37, borderRadius: 9, backgroundColor: '#D8B64C', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#FFF0A8' },
-  homeGlyph: { color: '#4B251C', fontSize: 23, fontWeight: '900' },
-  roomIdentity: { flex: 1, marginLeft: 10 },
-  roomName: { color: C.white, fontSize: 13, fontWeight: '900', letterSpacing: 0.7 },
+  backdrop: { flex: 1, backgroundColor: 'rgba(2,8,18,0.98)', justifyContent: 'center', padding: 0 },
+  shell: { flex: 1, width: '100%', maxHeight: '100%', overflow: 'hidden', backgroundColor: C.bg, borderWidth: 2, borderColor: C.gold2 },
+  scroll: { flexGrow: 1, paddingBottom: 2 },
+  roomHeader: { minHeight: 43, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, backgroundColor: '#091A2E', borderBottomWidth: 1, borderBottomColor: '#A77A32' },
+  homeMark: { width: 30, height: 30, borderRadius: 8, backgroundColor: '#D8B64C', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#FFF0A8' },
+  homeGlyph: { color: '#17283A', fontSize: 20, fontWeight: '900' },
+  roomIdentity: { flex: 1, marginLeft: 9 },
+  roomName: { color: C.white, fontSize: 12, fontWeight: '900', letterSpacing: 1 },
   roomTag: { color: C.gold, fontSize: 8 },
-  roomId: { color: '#C9A77E', fontSize: 8, marginTop: 3, letterSpacing: 1.1 },
-  headerIcon: { width: 34, height: 34, borderRadius: 9, borderWidth: 1, borderColor: '#8B643B', alignItems: 'center', justifyContent: 'center', backgroundColor: '#392338' },
-  headerIconText: { color: C.white, fontSize: 24, lineHeight: 26 },
-  micStrip: { height: 65, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', backgroundColor: '#30203A', borderBottomWidth: 2, borderBottomColor: '#9C6A3A' },
-  micSlot: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#57415A', borderWidth: 1, borderColor: '#9E8666', alignItems: 'center', justifyContent: 'center' },
-  micGlyph: { color: '#F6E5BE', fontSize: 22 },
-  hero: { height: 204, marginTop: 0, overflow: 'hidden', backgroundColor: '#A74734', borderBottomWidth: 3, borderBottomColor: '#E9B84C' },
-  templeGlow: { ...StyleSheet.absoluteFillObject, backgroundColor: '#D87949', opacity: 0.55 },
-  templeRoof: { color: '#FFE0A0', fontSize: 28, textAlign: 'center', marginTop: 1, opacity: 0.9, letterSpacing: 4 },
-  heroCopy: { position: 'absolute', left: 13, top: 50, zIndex: 3 },
-  heroKicker: { color: '#FFE7A6', fontSize: 8, fontWeight: '900', letterSpacing: 1.4 },
-  heroName: { color: '#FFF2C5', fontSize: 25, lineHeight: 26, fontWeight: '900', textShadowColor: '#77261F', textShadowRadius: 8 },
-  heroSub: { color: '#FFE3B0', fontSize: 6, fontWeight: '900', letterSpacing: 0.7, marginTop: 5 },
-  deity: { position: 'absolute', right: '27%', top: 17, width: 130, height: 135, alignItems: 'center', justifyContent: 'center' },
-  deityHalo: { position: 'absolute', color: '#FFF1B0', fontSize: 112, opacity: 0.35 },
-  deityEmoji: { fontSize: 91, textShadowColor: '#6B261E', textShadowRadius: 12 },
-  deityBolt: { position: 'absolute', right: 1, top: 13, color: '#FFF27D', fontSize: 56, fontWeight: '900', textShadowColor: '#FF9D20', textShadowRadius: 12 },
-  heroLightningLeft: { position: 'absolute', left: '31%', top: 22, color: '#FFF16E', fontSize: 70, textShadowColor: '#FFB21E', textShadowRadius: 15 },
-  heroPillarLeft: { position: 'absolute', left: 3, bottom: 19, width: 25, height: 88, backgroundColor: '#E6B65D', borderWidth: 2, borderColor: '#FFF0B4', alignItems: 'center', justifyContent: 'center' },
-  heroPillarRight: { position: 'absolute', right: 4, bottom: 19, width: 25, height: 88, backgroundColor: '#E6B65D', borderWidth: 2, borderColor: '#FFF0B4', alignItems: 'center', justifyContent: 'center' },
-  pillarGlyph: { color: '#87502C', fontSize: 23 },
-  totalWin: { position: 'absolute', bottom: 27, left: '25%', right: '25%', height: 39, backgroundColor: '#381024', borderWidth: 2, borderColor: '#F4CB52', borderRadius: 8, alignItems: 'center', justifyContent: 'center', zIndex: 5, elevation: 6 },
-  totalWinLabel: { color: '#FFE7A2', fontSize: 7, fontWeight: '900', letterSpacing: 1 },
-  totalWinValue: { color: '#FFF5C9', fontSize: 18, fontWeight: '900', lineHeight: 20 },
-  freeSpinRibbon: { position: 'absolute', bottom: 4, left: '25%', right: '25%', height: 20, borderRadius: 10, backgroundColor: '#2D1029', borderWidth: 1, borderColor: '#D8A83F', alignItems: 'center', justifyContent: 'center' },
-  freeSpinText: { color: C.gold, fontSize: 8, fontWeight: '900', letterSpacing: 1 },
-  boardFrame: { marginHorizontal: 7, marginTop: 0, paddingHorizontal: 5, paddingBottom: 5, backgroundColor: '#4A241F', borderWidth: 4, borderColor: '#E5B63F', borderRadius: 12, shadowColor: '#FFCB4C', shadowOpacity: 0.5, shadowRadius: 8, elevation: 9 },
-  boardTopTrim: { height: 23, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderBottomWidth: 1, borderBottomColor: '#A9772F' },
-  boardTitle: { color: '#FFE9A5', fontSize: 9, fontWeight: '900', letterSpacing: 1.4 },
+  roomId: { color: '#8FB4D2', fontSize: 7, marginTop: 2, letterSpacing: 1.2 },
+  headerIcon: { width: 30, height: 30, borderRadius: 8, borderWidth: 1, borderColor: '#A77A32', alignItems: 'center', justifyContent: 'center', backgroundColor: '#102B49' },
+  headerIconText: { color: C.white, fontSize: 22, lineHeight: 24 },
+  micStrip: { height: 34, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', backgroundColor: '#0B2038', borderBottomWidth: 1, borderBottomColor: '#3976A3' },
+  micSlot: { width: 25, height: 25, borderRadius: 13, backgroundColor: '#163B60', borderWidth: 1, borderColor: '#B28A43', alignItems: 'center', justifyContent: 'center' },
+  micGlyph: { color: '#F6E5BE', fontSize: 14 },
+  gameStage: { flex: 1, minHeight: 310, flexDirection: 'row', alignItems: 'stretch', padding: 5, gap: 5, backgroundColor: '#061426' },
+  hero: { width: '20%', minWidth: 105, overflow: 'hidden', backgroundColor: '#0B3157', borderWidth: 2, borderColor: '#C99B42', borderRadius: 9, justifyContent: 'center' },
+  templeGlow: { ...StyleSheet.absoluteFillObject, backgroundColor: '#17629A', opacity: 0.42 },
+  templeRoof: { color: '#F9D778', fontSize: 18, textAlign: 'center', marginTop: 3, opacity: 0.95 },
+  heroCopy: { position: 'absolute', left: 7, top: 8, zIndex: 3 },
+  heroKicker: { color: '#FFE7A6', fontSize: 6, fontWeight: '900', letterSpacing: 0.8 },
+  heroName: { color: '#FFF2C5', fontSize: 17, lineHeight: 18, fontWeight: '900', textShadowColor: '#06345C', textShadowRadius: 8 },
+  heroSub: { color: '#B9E5FF', fontSize: 5, fontWeight: '900', letterSpacing: 0.5, marginTop: 3 },
+  deity: { position: 'absolute', right: 0, top: '22%', width: '100%', height: '55%', alignItems: 'center', justifyContent: 'center' },
+  deityHalo: { position: 'absolute', color: '#E5F6FF', fontSize: 95, opacity: 0.3 },
+  deityEmoji: { fontSize: 68, textShadowColor: '#061B35', textShadowRadius: 12 },
+  deityBolt: { position: 'absolute', right: 3, top: 8, color: '#FFF27D', fontSize: 42, fontWeight: '900', textShadowColor: '#2BAAFF', textShadowRadius: 12 },
+  heroLightningLeft: { position: 'absolute', left: 5, top: '36%', color: '#FFF16E', fontSize: 48, textShadowColor: '#238DFF', textShadowRadius: 15 },
+  heroPillarLeft: { position: 'absolute', left: 2, bottom: 7, width: 13, height: 55, backgroundColor: '#B68A43', borderWidth: 1, borderColor: '#FFF0B4', alignItems: 'center', justifyContent: 'center' },
+  heroPillarRight: { position: 'absolute', right: 2, bottom: 7, width: 13, height: 55, backgroundColor: '#B68A43', borderWidth: 1, borderColor: '#FFF0B4', alignItems: 'center', justifyContent: 'center' },
+  pillarGlyph: { color: '#173451', fontSize: 13 },
+  totalWin: { position: 'absolute', bottom: 23, left: 5, right: 5, height: 30, backgroundColor: '#07182A', borderWidth: 1.5, borderColor: '#F4CB52', borderRadius: 6, alignItems: 'center', justifyContent: 'center', zIndex: 5 },
+  totalWinLabel: { color: '#FFE7A2', fontSize: 6, fontWeight: '900', letterSpacing: 1 },
+  totalWinValue: { color: '#FFF5C9', fontSize: 14, fontWeight: '900', lineHeight: 15 },
+  freeSpinRibbon: { position: 'absolute', bottom: 3, left: 5, right: 5, height: 16, borderRadius: 8, backgroundColor: '#102B49', borderWidth: 1, borderColor: '#D8A83F', alignItems: 'center', justifyContent: 'center' },
+  freeSpinText: { color: C.gold, fontSize: 6, fontWeight: '900', letterSpacing: 0.6 },
+  boardFrame: { flex: 1, marginHorizontal: 0, marginTop: 0, paddingHorizontal: 3, paddingBottom: 3, backgroundColor: '#0B2541', borderWidth: 3, borderColor: '#E5B63F', borderRadius: 10, shadowColor: '#42B7FF', shadowOpacity: 0.35, shadowRadius: 8, elevation: 9 },
+  boardTopTrim: { height: 19, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderBottomWidth: 1, borderBottomColor: '#A9772F' },
+  boardTitle: { color: '#FFE9A5', fontSize: 8, fontWeight: '900', letterSpacing: 1.2 },
   boardCount: { position: 'absolute', right: 4, color: '#E9C66C', fontSize: 7, fontWeight: '900' },
-  board: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', backgroundColor: '#2B1230', paddingVertical: 3 },
-  cell: { margin: 1, borderRadius: 7, backgroundColor: '#421C3C', borderWidth: 1, borderColor: '#A96A43', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  cellTop: { position: 'absolute', top: 0, left: 2, right: 2, height: 2, backgroundColor: '#F8D98B', opacity: 0.65 },
-  symbol: { textShadowColor: '#FFCF63', textShadowRadius: 5 },
-  boardBottomTrim: { height: 21, alignItems: 'center', justifyContent: 'center', borderTopWidth: 1, borderTopColor: '#A9772F' },
-  scatterText: { color: '#FFE5A0', fontSize: 8, fontWeight: '900', letterSpacing: 0.8 },
-  controls: { marginHorizontal: 7, marginTop: 5, paddingHorizontal: 7, paddingTop: 6, paddingBottom: 5, backgroundColor: '#39202F', borderTopWidth: 2, borderColor: '#C18B37' },
-  controlTop: { minHeight: 66, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  roundUtility: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#5B3D2A', borderWidth: 1.5, borderColor: '#EAC25E', alignItems: 'center', justifyContent: 'center' },
-  utilityGlyph: { color: '#FFE7A4', fontSize: 19 },
-  betPanel: { flex: 1, alignItems: 'center' },
+  board: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignContent: 'center', backgroundColor: '#07182D', paddingVertical: 2 },
+  cell: { margin: 1, borderRadius: 6, backgroundColor: '#12365A', borderWidth: 1, borderColor: '#B8893C', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  cellTop: { position: 'absolute', top: 0, left: 2, right: 2, height: 2, backgroundColor: '#F8D98B', opacity: 0.8 },
+  symbol: { color: '#FFE39A', fontWeight: '900', textShadowColor: '#3CAEFF', textShadowRadius: 6 },
+  boardBottomTrim: { height: 18, alignItems: 'center', justifyContent: 'center', borderTopWidth: 1, borderTopColor: '#A9772F' },
+  scatterText: { color: '#FFE5A0', fontSize: 7, fontWeight: '900', letterSpacing: 0.6 },
+  controls: { width: '21%', minWidth: 102, marginHorizontal: 0, marginTop: 0, paddingHorizontal: 5, paddingTop: 7, paddingBottom: 5, backgroundColor: '#0B2038', borderWidth: 1.5, borderColor: '#C18B37', borderRadius: 9, justifyContent: 'space-between' },
+  controlTop: { flex: 1, flexDirection: 'column', minHeight: 0, alignItems: 'center', justifyContent: 'space-evenly' },
+  roundUtility: { width: 30, height: 30, borderRadius: 15, backgroundColor: '#173B5C', borderWidth: 1.5, borderColor: '#EAC25E', alignItems: 'center', justifyContent: 'center' },
+  utilityGlyph: { color: '#FFE7A4', fontSize: 17 },
+  betPanel: { width: '100%', alignItems: 'center' },
   controlLabel: { color: '#E8C77F', fontSize: 7, fontWeight: '900', letterSpacing: 1 },
   betRow: { flexDirection: 'row', alignItems: 'center', marginTop: 3 },
-  betAdjust: { width: 27, height: 27, borderRadius: 14, backgroundColor: '#6A492E', borderWidth: 1.5, borderColor: '#F4D26D', alignItems: 'center', justifyContent: 'center' },
-  adjustText: { color: '#FFF1C4', fontSize: 20, lineHeight: 23, fontWeight: '900' },
-  betValue: { minWidth: 48, textAlign: 'center', color: '#FFF0B3', fontSize: 12, fontWeight: '900' },
+  betAdjust: { width: 23, height: 23, borderRadius: 12, backgroundColor: '#20486A', borderWidth: 1, borderColor: '#F4D26D', alignItems: 'center', justifyContent: 'center' },
+  adjustText: { color: '#FFF1C4', fontSize: 18, lineHeight: 20, fontWeight: '900' },
+  betValue: { minWidth: 38, textAlign: 'center', color: '#FFF0B3', fontSize: 10, fontWeight: '900' },
   goldButton: { backgroundColor: '#F0C34D', borderWidth: 2, borderColor: '#FFF0A5', alignItems: 'center', justifyContent: 'center', shadowColor: '#FFC844', shadowOpacity: 0.6, shadowRadius: 7, elevation: 7 },
-  spinButton: { width: 67, height: 67, borderRadius: 34, marginHorizontal: 3, borderWidth: 3, borderColor: '#FFF0A5' },
-  spinArrow: { color: '#4B241E', fontSize: 33, lineHeight: 35, fontWeight: '900' },
-  spinText: { color: '#4B241E', fontSize: 8, fontWeight: '900', letterSpacing: 1 },
-  autoButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#62432C', borderWidth: 1.5, borderColor: '#EAC25E', alignItems: 'center', justifyContent: 'center' },
-  autoGlyph: { color: '#FFE6A1', fontSize: 16 },
+  spinButton: { width: 66, height: 66, borderRadius: 33, marginHorizontal: 0, borderWidth: 3, borderColor: '#FFF0A5' },
+  spinArrow: { color: '#173451', fontSize: 31, lineHeight: 33, fontWeight: '900' },
+  spinText: { color: '#173451', fontSize: 8, fontWeight: '900', letterSpacing: 1 },
+  autoButton: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#20486A', borderWidth: 1.5, borderColor: '#EAC25E', alignItems: 'center', justifyContent: 'center' },
+  autoGlyph: { color: '#FFE6A1', fontSize: 14 },
   autoText: { color: '#FCE6AD', fontSize: 6, fontWeight: '900' },
-  balanceRow: { minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 3 },
-  stat: { minWidth: 91, backgroundColor: '#2A1426', borderWidth: 1.5, borderColor: '#C58D39', borderRadius: 7, paddingVertical: 3, paddingHorizontal: 8, alignItems: 'center' },
+  balanceRow: { minHeight: 34, flexDirection: 'column', alignItems: 'stretch', justifyContent: 'center', marginTop: 3, gap: 3 },
+  stat: { minWidth: 0, backgroundColor: '#07182A', borderWidth: 1, borderColor: '#C58D39', borderRadius: 6, paddingVertical: 3, paddingHorizontal: 5, alignItems: 'center' },
   statWide: { flex: 1 },
-  statLabel: { color: '#E9C77B', fontSize: 7, fontWeight: '900', letterSpacing: 0.8 },
-  statValue: { color: '#FFF4D0', fontSize: 11, fontWeight: '900', marginTop: 1 },
-  previewLabel: { color: '#C7A879', fontSize: 6, fontWeight: '900', letterSpacing: 0.6 },
-  links: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingTop: 5, borderTopWidth: 1, borderTopColor: '#76502F', marginTop: 4 },
-  linkText: { color: '#EED18A', fontSize: 8, fontWeight: '900', letterSpacing: 1, paddingHorizontal: 8, paddingVertical: 2 },
-  linkDot: { color: '#A97A3E', fontSize: 9 },
-  infoPanel: { margin: 10, padding: 16, minHeight: 320, backgroundColor: '#3A1B36', borderWidth: 2, borderColor: '#C58D39', borderRadius: 12 },
+  statLabel: { color: '#E9C77B', fontSize: 6, fontWeight: '900', letterSpacing: 0.8 },
+  statValue: { color: '#FFF4D0', fontSize: 10, fontWeight: '900', marginTop: 1 },
+  previewLabel: { color: '#C7A879', fontSize: 6, fontWeight: '900', letterSpacing: 0.6, textAlign: 'center' },
+  links: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingTop: 4, borderTopWidth: 1, borderTopColor: '#76502F', marginTop: 3 },
+  linkText: { color: '#EED18A', fontSize: 7, fontWeight: '900', letterSpacing: 0.5, paddingHorizontal: 3, paddingVertical: 2 },
+  linkDot: { color: '#A97A3E', fontSize: 8 },
+  infoPanel: { margin: 10, padding: 16, minHeight: 250, backgroundColor: '#0B2541', borderWidth: 2, borderColor: '#C58D39', borderRadius: 12 },
   infoEyebrow: { color: C.gold, fontSize: 8, fontWeight: '900', letterSpacing: 1.5 },
   infoTitle: { color: C.white, fontSize: 20, fontWeight: '900', marginTop: 4, marginBottom: 14 },
-  rule: { color: '#F6E8D0', fontSize: 11, lineHeight: 18, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#68405A' },
-  emptyCopy: { color: '#E1CBAE', fontSize: 11, lineHeight: 18, marginTop: 15 },
+  rule: { color: '#F6E8D0', fontSize: 11, lineHeight: 18, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#284D70' },
+  emptyCopy: { color: '#C3D7E9', fontSize: 11, lineHeight: 18, marginTop: 15 },
   backToGame: { alignSelf: 'flex-start', paddingHorizontal: 15, paddingVertical: 10, borderRadius: 8, marginTop: 20 },
-  backToGameText: { color: '#4B241E', fontSize: 10, fontWeight: '900' },
+  backToGameText: { color: '#173451', fontSize: 10, fontWeight: '900' },
   settingsBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', alignItems: 'center', justifyContent: 'center', padding: 22 },
-  settingsBox: { width: '100%', backgroundColor: '#32182F', borderWidth: 2, borderColor: '#D4A64A', borderRadius: 14, padding: 17 },
+  settingsBox: { width: '100%', backgroundColor: '#0B2541', borderWidth: 2, borderColor: '#D4A64A', borderRadius: 14, padding: 17 },
   settingsEyebrow: { color: C.gold, fontSize: 8, fontWeight: '900', letterSpacing: 1.5 },
   settingsTitle: { color: C.white, fontSize: 18, fontWeight: '900', marginTop: 4, marginBottom: 12 },
-  settingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: '#68405A' },
+  settingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: '#284D70' },
   settingName: { color: C.white, fontSize: 12, fontWeight: '700' },
   settingValue: { color: C.gold, fontSize: 10, fontWeight: '900' },
   closeSettings: { alignItems: 'center', marginTop: 15, padding: 11, backgroundColor: '#F0C34D', borderRadius: 8 },
-  closeSettingsText: { color: '#4B241E', fontSize: 10, fontWeight: '900', letterSpacing: 1 },
+  closeSettingsText: { color: '#173451', fontSize: 10, fontWeight: '900', letterSpacing: 1 },
 });
