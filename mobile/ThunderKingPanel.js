@@ -156,7 +156,7 @@ export default function ThunderKingPanel({ visible, onClose, api }) {
                 <View style={styles.reelFrame}>
                   <View style={styles.reelBoard}>
                     {board.map((symbol, index) => (
-                      <Animated.View key={index} style={{ transform: [{ translateY: reelAnimations[Math.floor(index / 5)] }] }}>
+                      <Animated.View key={index} style={{ transform: [{ translateY: reelAnimations[index % 6] }] }}>
                         <SymbolTile symbol={symbol} size={tileSize} index={index} />
                       </Animated.View>
                     ))}
