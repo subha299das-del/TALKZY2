@@ -33,6 +33,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { WebView } from 'react-native-webview';
 import RoomMusicPanel from './RoomMusicPanel';
 import RoomGames from './RoomGames';
+import RoyalFruitCrownPanel from './RoyalFruitCrownPanel';
 
 WebBrowser.maybeCompleteAuthSession();
 const MIC_ON_ICON = require('./assets/mic_on.png');
@@ -977,6 +978,8 @@ useEffect(() => {
     }
     if (showRoomChatActionMenu) { setShowRoomChatActionMenu(false); return true; }
     if (showRoomShortcutsPage) { setShowRoomShortcutsPage(false); return true; }
+    if (showRoyalFruitCrownPanel) { setShowRoyalFruitCrownPanel(false); return true; }
+    if (showGreedyMenu) { setShowGreedyMenu(false); return true; }
     if (showMicEmojiPicker) { setShowMicEmojiPicker(false); return true; }
     if (showMicControlPopup) { setShowMicControlPopup(false); return true; }
     if (showRoomUsers) { setShowRoomUsers(false); return true; }
@@ -1552,6 +1555,8 @@ const [selectedRoomGift, setSelectedRoomGift] = useState('Rose');
 const [roomGiftCategory, setRoomGiftCategory] = useState('Popular');
 const [roomGiftQuantity, setRoomGiftQuantity] = useState('1');
 const [showRoomGiftQuantityOptions, setShowRoomGiftQuantityOptions] = useState(false);
+const [showGreedyMenu, setShowGreedyMenu] = useState(false);
+const [showRoyalFruitCrownPanel, setShowRoyalFruitCrownPanel] = useState(false);
 
 const [showRoomGamePanel, setShowRoomGamePanel] = useState(false);
 const [showRocketPanel, setShowRocketPanel] = useState(false);
@@ -1630,6 +1635,8 @@ const [isRoomTourist, setIsRoomTourist] = useState(false);
     setShowMicEmojiPicker(false);
     setShowMicCountPicker(false);
     setShowRoomShortcutsPage(false);
+    setShowGreedyMenu(false);
+    setShowRoyalFruitCrownPanel(false);
     setShowLuckyBagPopup(false);
     setShowLuckyBagOpenPopup(false);
     setSelectedLuckyBag(null);
@@ -4959,6 +4966,40 @@ function renderRoomInterior() {
       )}
       <RoomGames visible={showRoomGamePanel && screen === 'roomInterior' && !!selectedRoom} initialGameName={gameToOpenInRoom} onInitialGameOpened={() => setGameToOpenInRoom(null)} onClose={() => setShowRoomGamePanel(false)} onGameAvailable={() => setShowRoomGamePanel(true)} roomId={selectedRoom?.id} creatorName={profile?.display_name || displayName || session?.user?.user_metadata?.full_name || 'Player'} userId={session?.user?.id} supabase={supabase} isAuthorisedStarter={selectedRoom?.owner_id===session?.user?.id || roomPresence.some(person=>person.user_id===session?.user?.id && person.presence_role==='admin')} hasRoomSeat={micSeats.some(seat=>seat.user_id===session?.user?.id)} roomMembers={roomPresence} selfProfile={profile} />
 
+
+      <Modal visible={showGreedyMenu && screen === 'roomInterior' && !!selectedRoom} transparent animationType="fade" onRequestClose={() => setShowGreedyMenu(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.84)', justifyContent: 'center', padding: 16 }}>
+          <View style={{ maxHeight: '82%', backgroundColor: '#100B18', borderWidth: 1.8, borderColor: '#D8B66A', borderRadius: 22, padding: 16, shadowColor: '#D8B66A', shadowOpacity: 0.35, shadowRadius: 16, elevation: 20 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+              <View><Text style={{ color: '#F6D987', fontSize: 20, fontWeight: '900', letterSpacing: 1.1 }}>TALKZY GREEDY</Text><Text style={{ color: '#BBAA8A', fontSize: 9, letterSpacing: 1.2, marginTop: 3 }}>SELECT A GAME</Text></View>
+              <TouchableOpacity onPress={() => setShowGreedyMenu(false)} accessibilityRole="button" accessibilityLabel="Close Greedy games" style={{ width: 36, height: 36, borderRadius: 12, borderWidth: 1, borderColor: '#8D7144', alignItems: 'center', justifyContent: 'center', backgroundColor: '#24182B' }}><Text style={{ color: '#F6D987', fontSize: 23, fontWeight: '700' }}>×</Text></TouchableOpacity>
+            </View>
+            <Text style={{ color: '#C7B99F', fontSize: 10, marginBottom: 14 }}>Royal Fruit Crown is ready to play. Other Greedy games will appear here when their panels are rebuilt.</Text>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingBottom: 4 }}>
+              {[
+                { name: 'Royal Fruit Crown', mark: '🍒', key: 'fruitcrown', available: true },
+                { name: 'Thunder King', mark: '⚡', key: 'thunder', available: false },
+                { name: 'Lucky Elephant', mark: '🐘', key: 'elephant', available: false },
+                { name: 'Wild Kingdom', mark: '🦁', key: 'wild', available: false },
+                { name: 'Royal 77', mark: '77', key: 'royal77', available: false },
+                { name: 'Ruby Jackpot', mark: '💎', key: 'ruby', available: false },
+                { name: 'Coming Soon', mark: '07', key: 'soon7', available: false },
+                { name: 'Coming Soon', mark: '08', key: 'soon8', available: false },
+                { name: 'Coming Soon', mark: '09', key: 'soon9', available: false },
+                { name: 'Coming Soon', mark: '10', key: 'soon10', available: false }
+              ].map(game => (
+                <TouchableOpacity key={game.key} disabled={!game.available} accessibilityRole="button" accessibilityLabel={game.available ? 'Open ' + game.name : 'Greedy game coming soon'} onPress={() => { if (game.available) { setShowGreedyMenu(false); setShowRoyalFruitCrownPanel(true); } }} style={{ width: '31.5%', minHeight: 100, marginBottom: 10, padding: 8, borderRadius: 14, borderWidth: 1.2, borderColor: game.available ? '#CBA85D' : '#574C43', backgroundColor: game.available ? '#21172A' : '#17131A', alignItems: 'center', justifyContent: 'center', opacity: game.available ? 1 : 0.58 }}>
+                  <View style={{ width: 48, height: 48, borderRadius: 14, borderWidth: 1.2, borderColor: game.available ? '#E5C577' : '#75685A', backgroundColor: '#100D16', alignItems: 'center', justifyContent: 'center', marginBottom: 7 }}><Text style={{ color: '#F4D27A', fontSize: game.key === 'royal77' ? 18 : 24, fontWeight: '900' }}>{game.mark}</Text></View>
+                  <Text numberOfLines={2} style={{ color: game.available ? '#F7EBD1' : '#A89B89', fontSize: 10, fontWeight: '900', textAlign: 'center' }}>{game.name}</Text>
+                  {!game.available && <Text style={{ color: '#A89B89', fontSize: 7, marginTop: 3 }}>COMING SOON</Text>}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+      <RoyalFruitCrownPanel visible={showRoyalFruitCrownPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowRoyalFruitCrownPanel(false)} api={api} />
+
       <Modal
         visible={showRoomThemeMenu && selectedRoom?.owner_id === session?.user?.id}
         animationType="slide"
@@ -5256,6 +5297,28 @@ function renderRoomInterior() {
   </TouchableOpacity>
 
 
+
+  <TouchableOpacity
+    accessibilityRole="button"
+    accessibilityLabel="Open Greedy games"
+    onPress={() => {
+      setShowRoomGiftPanel(false); setShowRoomTools(false); setShowRoomGamePanel(false);
+      setShowRocketPanel(false); setShowHotEventsPopup(false);
+      setShowGreedyMenu(true);
+    }}
+    style={{ width: 48, height: 48, borderRadius: 16, borderWidth: 1.5, borderColor: '#E8C66B', backgroundColor: '#211329', alignItems: 'center', justifyContent: 'center', shadowColor: '#D9A94E', shadowOpacity: 0.62, shadowRadius: 10, elevation: 10 }}
+  >
+    <View pointerEvents="none" style={{ position: 'absolute', top: 5, left: 5, right: 5, bottom: 5, borderRadius: 11, borderWidth: 1, borderColor: '#8B6A3C' }} />
+    <View style={{ width: 27, height: 25, alignItems: 'center', justifyContent: 'flex-end' }}>
+      <View style={{ position: 'absolute', top: 1, width: 25, height: 8, borderRadius: 5, backgroundColor: '#F0C96B', borderWidth: 1, borderColor: '#FFF0B8' }} />
+      <View style={{ position: 'absolute', top: 7, width: 25, height: 16, borderRadius: 4, backgroundColor: '#A96827', borderWidth: 1.4, borderColor: '#F5D987', alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ width: 6, height: 7, borderRadius: 2, backgroundColor: '#F9E4A1', borderWidth: 1, borderColor: '#7A4B1C' }} />
+      </View>
+      <View style={{ position: 'absolute', top: 8, bottom: 1, left: 6, width: 1, backgroundColor: '#E8B85C' }} />
+      <View style={{ position: 'absolute', top: 8, bottom: 1, right: 6, width: 1, backgroundColor: '#E8B85C' }} />
+    </View>
+    <Text style={{ color: '#F5E4B8', fontSize: 6.5, fontWeight: '900', letterSpacing: 0.7, marginTop: 1 }}>GREEDY</Text>
+  </TouchableOpacity>
 
   <TouchableOpacity
     accessibilityRole="button"
