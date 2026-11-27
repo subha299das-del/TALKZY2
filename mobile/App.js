@@ -4981,7 +4981,7 @@ function renderRoomInterior() {
         </View>
       )}
       <RoomGames visible={showRoomGamePanel && screen === 'roomInterior' && !!selectedRoom} initialGameName={gameToOpenInRoom} onInitialGameOpened={() => setGameToOpenInRoom(null)} onClose={() => setShowRoomGamePanel(false)} onGameAvailable={() => setShowRoomGamePanel(true)} roomId={selectedRoom?.id} creatorName={profile?.display_name || displayName || session?.user?.user_metadata?.full_name || 'Player'} userId={session?.user?.id} supabase={supabase} isAuthorisedStarter={selectedRoom?.owner_id===session?.user?.id || roomPresence.some(person=>person.user_id===session?.user?.id && person.presence_role==='admin')} hasRoomSeat={micSeats.some(seat=>seat.user_id===session?.user?.id)} roomMembers={roomPresence} selfProfile={profile} />
-      <ThunderKingPanel visible={showThunderKingPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowThunderKingPanel(false)} />
+      <ThunderKingPanel visible={showThunderKingPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowThunderKingPanel(false)} api={api} />
       <LuckyElephantPanel visible={showLuckyElephantPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowLuckyElephantPanel(false)} />
       <WildKingdomPanel visible={showWildKingdomPanel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowWildKingdomPanel(false)} />
       <Royal77Panel visible={showRoyal77Panel && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowRoyal77Panel(false)} />
