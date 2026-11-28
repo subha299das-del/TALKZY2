@@ -256,19 +256,6 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
 
           {activeSection === 'game' && (
           <>
-          <View style={{ flexDirection: 'row', gap: 9, marginBottom: 18 }}>
-            <View style={{ flex: 1, minHeight: 82, borderWidth: 1.4, borderColor: '#E0B45E', borderRadius: 17, backgroundColor: '#56301D', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, shadowColor: '#F6C66D', shadowOpacity: 0.55, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 10 }}>
-              <View pointerEvents="none" style={{ position: 'absolute', top: 1, left: 5, right: 5, height: 24, borderTopLeftRadius: 14, borderTopRightRadius: 14, backgroundColor: 'rgba(255,238,190,0.12)' }} />
-              <Text style={{ color: '#DDBB80', fontSize: 11, fontWeight: '900', letterSpacing: 1 }}>TODAY WINS</Text>
-              <Text style={{ color: '#FFE8A4', fontSize: 20, fontWeight: '900', marginTop: 4 }}>{money(todayWins)} coins</Text>
-            </View>
-            <View style={{ flex: 1, minHeight: 82, borderWidth: 1.3, borderColor: GOLD_LINE, borderRadius: 17, backgroundColor: '#351B13', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, shadowColor: '#D99636', shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 8 }}>
-              <View pointerEvents="none" style={{ position: 'absolute', top: 1, left: 5, right: 5, height: 24, borderTopLeftRadius: 14, borderTopRightRadius: 14, backgroundColor: 'rgba(255,238,190,0.10)' }} />
-              <Text style={{ color: '#DDBB80', fontSize: 11, fontWeight: '900', letterSpacing: 1 }}>MY COINS</Text>
-              <Text style={{ color: '#FFE8A4', fontSize: 24, fontWeight: '900', marginTop: 6 }}>{money(balance)}</Text>
-            </View>
-          </View>
-
           <View style={{ borderWidth: 2, borderColor: '#F0C66F', borderRadius: 24, padding: 10, backgroundColor: '#3B2014', shadowColor: '#F4B84F', shadowOpacity: 0.62, shadowRadius: 20, shadowOffset: { width: 0, height: 7 }, elevation: 14 }}>
             <View pointerEvents="none" style={{ position: 'absolute', top: 3, left: 12, right: 12, height: 18, borderTopLeftRadius: 18, borderTopRightRadius: 18, backgroundColor: 'rgba(255,236,183,0.10)' }} />
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
