@@ -71,6 +71,8 @@ function FruitTile({ fruit, selected, active, onPress }) {
 export default function RoyalFruitCrownPanel({ visible, onClose }) {
   const [stake, setStake] = useState(100);
   const [roundBet, setRoundBet] = useState(0);
+  const [myRoundBets, setMyRoundBets] = useState([]);
+  const [winningAmount, setWinningAmount] = useState(0);
   const [timer, setTimer] = useState(37);
   const [phase, setPhase] = useState('betting');
   const [roundNumber, setRoundNumber] = useState(1);
@@ -90,6 +92,8 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
         if (phase === 'result') {
           const resultFruit = FRUITS[Math.floor(Math.random() * FRUITS.length)];
           setWinningFruit(resultFruit);
+          const payout = myRoundBets.reduce((total, bet) => total + (bet.fruitName === resultFruit.name ? bet.amount * resultFruit.multiplier : 0), 0);
+          setWinningAmount(payout);
           setRecent(items => [resultFruit.emoji, ...items].slice(0, 6));
           setPhase('winner');
           return 5;
@@ -97,17 +101,20 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
         setRoundNumber(value => value + 1);
         setPhase('betting');
         setRoundBet(0);
+        setMyRoundBets([]);
+        setWinningAmount(0);
         setSelectedFruit(null);
         return 37;
       });
     }, 1000);
     return () => clearInterval(tick);
-  }, [visible, phase]);
+  }, [visible, phase, myRoundBets]);
 
   const placeBet = (fruit) => {
     if (phase !== 'betting') return;
     setSelectedFruit(fruit.name);
     setRoundBet(value => value + stake);
+    setMyRoundBets(items => [...items, { fruitName: fruit.name, amount: stake }]);
   };
 
   const money = value => Number(value).toLocaleString('en-IN');
@@ -174,7 +181,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
               <Text adjustsFontSizeToFit numberOfLines={1} style={{ color: '#FFE8A6', fontFamily: 'serif', fontWeight: '900', fontSize: 29, textAlign: 'center', marginBottom: 18 }}>👑 WINNING FRUIT</Text>
               <Text style={{ fontSize: 76, textAlign: 'center', marginBottom: 8 }}>{winningFruit.emoji}</Text>
               <Text style={{ color: '#FFE4A6', fontSize: 17, fontWeight: '800', textAlign: 'center', marginBottom: 8 }}>{winningFruit.name} wins at {winningFruit.multiplier}×</Text>
-              <Text style={{ color: '#F1D5A4', fontSize: 17, textAlign: 'center', marginBottom: 20 }}>Total bets: {money(roundBet)} coins</Text>
+              <Text style={{ color: '#F1D5A4', fontSize: 17, textAlign: 'center', marginBottom: 20 }}>Winning amount: {money(winningAmount)} coins</Text>
               {roundWinners.length > 0 ? (
                 <>
                   <Text style={{ color: '#D9B777', fontSize: 14, letterSpacing: 2.2, textAlign: 'center', marginBottom: 14 }}>TOP 3 WINNERS THIS ROUND</Text>
