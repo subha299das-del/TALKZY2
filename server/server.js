@@ -173,6 +173,14 @@ const roomMessageLimiter = rateLimit({
   message: { error: 'You are sending messages too quickly. Please wait a moment.' }
 });
 
+const fruitBetLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 45,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { error: 'Too many bets. Please wait before betting again.' }
+});
+
 function ownerAuth(req, res, next) {
   const header = req.get('authorization') || '';
   const match = /^Bearer\s+(.+)$/i.exec(header);
@@ -322,6 +330,51 @@ async function clearUserRoomChat(roomId, userId) {
   if (error) throw error;
 }
 
+
+// Royal Fruit Crown uses the authenticated TALKZY account and shared wallet.
+app.get('/api/games/royal-fruit/state', userAuth, async (req, res) => {
+  try {
+    const { error: advanceError } = await supabase.rpc('talkzy_royal_fruit_advance_round');
+    if (advanceError) throw advanceError;
+    const { data, error } = await supabase.rpc('talkzy_royal_fruit_get_state_for_user', {
+      p_user_id: req.talkzyUser.id
+    });
+    if (error) throw error;
+    res.set('Cache-Control', 'no-store').json(data || {});
+  } catch (error) {
+    console.error('Royal Fruit Crown state error:', error.message);
+    res.status(503).json({ error: 'Royal Fruit Crown is temporarily unavailable.' });
+  }
+});
+
+app.post('/api/games/royal-fruit/bet', userAuth, fruitBetLimiter, async (req, res) => {
+  const fruit = String(req.body?.fruit || '').trim().toLowerCase();
+  const amount = Number(req.body?.amount);
+  const requestKey = String(req.body?.requestKey || '');
+  const allowedFruits = ['apple','mango','orange','grapes','watermelon','cherries','pineapple','strawberry'];
+  if (!allowedFruits.includes(fruit)) return res.status(400).json({ error: 'Invalid fruit selection.' });
+  if (![100,500,1000,5000].includes(amount)) return res.status(400).json({ error: 'Invalid bet amount.' });
+  if (requestKey.length < 12 || requestKey.length > 100) return res.status(400).json({ error: 'Invalid bet request.' });
+  try {
+    const { data, error } = await supabase.rpc('talkzy_royal_fruit_place_bet', {
+      p_user_id: req.talkzyUser.id,
+      p_fruit: fruit,
+      p_amount: amount,
+      p_request_key: requestKey
+    });
+    if (error) {
+      const message = String(error.message || '');
+      if (/INSUFFICIENT_COINS/i.test(message)) return res.status(409).json({ error: 'Not enough coins in your main balance.' });
+      if (/BETTING_CLOSED/i.test(message)) return res.status(409).json({ error: 'Betting has closed for this round.' });
+      if (/INVALID_BET_AMOUNT|INVALID_FRUIT|INVALID_REQUEST_KEY/i.test(message)) return res.status(400).json({ error: 'Invalid bet.' });
+      throw error;
+    }
+    res.set('Cache-Control', 'no-store').json(data || {});
+  } catch (error) {
+    console.error('Royal Fruit Crown bet error:', error.message);
+    res.status(503).json({ error: 'Your bet could not be processed. Please refresh and try again.' });
+  }
+});
 
 app.get('/api/health', (req, res) =>
   res.set('Cache-Control', 'no-store').json({
