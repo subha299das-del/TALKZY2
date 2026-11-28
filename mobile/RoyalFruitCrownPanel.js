@@ -19,33 +19,6 @@ const FRUITS = [
 const STAKES = [100, 500, 1000, 5000];
 
 
-function CrownMark({ size = 72 }) {
-  const scale = size / 72;
-  return (
-    <View style={{ width: size, height: size * 0.72, alignItems: 'center', justifyContent: 'flex-end' }}>
-      <View style={{ position: 'absolute', bottom: 10 * scale, left: 5 * scale, right: 5 * scale, height: 29 * scale, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-        {[0, 1, 2, 3, 4].map((point, i) => (
-          <View key={point} style={{
-            width: 0, height: 0,
-            borderLeftWidth: (i === 2 ? 10 : 8) * scale,
-            borderRightWidth: (i === 2 ? 10 : 8) * scale,
-            borderBottomWidth: (i === 2 ? 31 : 23) * scale,
-            borderLeftColor: 'transparent', borderRightColor: 'transparent',
-            borderBottomColor: i % 2 ? '#D58A20' : '#FFD96B',
-            marginBottom: 0,
-            transform: [{ rotate: i % 2 ? '8deg' : '-8deg' }],
-            shadowColor: '#FFDF7A', shadowOpacity: 0.9, shadowRadius: 5 * scale, elevation: 7
-          }} />
-        ))}
-      </View>
-      <View style={{ width: size * 0.88, height: 15 * scale, borderRadius: 5 * scale, backgroundColor: '#E6A52E', borderWidth: 1.5 * scale, borderColor: '#FFF0A7', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly', shadowColor: '#FFB52E', shadowOpacity: 0.95, shadowRadius: 8 * scale, shadowOffset: { width: 0, height: 3 * scale }, elevation: 9 }}>
-        {[0, 1, 2].map(n => <View key={n} style={{ width: 6 * scale, height: 6 * scale, borderRadius: 3 * scale, backgroundColor: n === 1 ? '#E83C65' : '#42D9E8', borderWidth: 1, borderColor: '#FFF4C4' }} />)}
-      </View>
-      <View style={{ position: 'absolute', bottom: 0, width: size * 0.98, height: 5 * scale, borderRadius: 4 * scale, backgroundColor: '#9B5415', borderWidth: 1, borderColor: '#F9D77C' }} />
-    </View>
-  );
-}
-
 function FruitTile({ fruit, selected, active, highlighted, betAmount, onPress }) {
   return (
     <TouchableOpacity key={fruit.name} activeOpacity={0.86} onPress={onPress}
@@ -169,7 +142,6 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
         </View>
         <ScrollView style={{ backgroundColor: 'transparent' }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 14, paddingTop: 8, paddingBottom: 22, backgroundColor: 'transparent' }}>
           <View style={{ alignItems: 'center', marginTop: 8, marginBottom: 18, paddingTop: 5, paddingBottom: 12, borderRadius: 24, borderWidth: 1, borderColor: 'rgba(226,177,91,0.42)', backgroundColor: '#26140F', shadowColor: '#D99636', shadowOpacity: 0.45, shadowRadius: 18, shadowOffset: { width: 0, height: 7 }, elevation: 10 }}>
-            <CrownMark size={78} />
             <Text style={{ color: '#FFF0B5', fontSize: 32, lineHeight: 38, fontWeight: '900', fontFamily: 'serif', textAlign: 'center', letterSpacing: 1.7, textShadowColor: '#8C4D16', textShadowRadius: 8, textShadowOffset: { width: 0, height: 4 }, includeFontPadding: false }}>ROYAL FRUIT</Text>
             <Text style={{ color: '#FFE1A0', fontSize: 35, lineHeight: 40, fontWeight: '900', fontFamily: 'serif', textAlign: 'center', letterSpacing: 1.5, textShadowColor: '#8C4D16', textShadowRadius: 8, textShadowOffset: { width: 0, height: 4 }, includeFontPadding: false }}>CROWN</Text>
             <Text style={{ color: '#D8B77C', fontSize: 13, fontWeight: '900', letterSpacing: 1.4, marginTop: 13 }}>ROUND {roundNumber}</Text>
