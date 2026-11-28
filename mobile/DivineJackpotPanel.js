@@ -5,7 +5,7 @@ import { WebView } from 'react-native-webview';
 // Standalone visual/playtest build. Uses a local demo balance only; it is not
 // connected to the TALKZY wallet or production game settlement.
 const GAME_HTML = String.raw`<!doctype html>
-<html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <style>
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#68438b,#24113c 48%,#090611);color:#fff;font-family:Georgia,serif}
 main{max-width:520px;margin:auto;padding:10px}.head{display:flex;justify-content:space-between;align-items:center}.logo{font-size:clamp(22px,6vw,32px);font-weight:bold;letter-spacing:1.5px;color:#ffe8a3;text-shadow:0 2px #713b12,0 0 15px #f6c65b}.sub{font:9px Arial;letter-spacing:2px;color:#d6b9ff}.wallet{border:1px solid #d8ad54;border-radius:22px;padding:8px 10px;background:#241333;color:#ffe39b;font:bold 12px Arial}
@@ -82,6 +82,48 @@ main{max-width:520px;margin:auto;padding:10px}.head{display:flex;justify-content
   padding:2px;
   mix-blend-mode:normal!important;
   filter:brightness(1.08) contrast(1.13) saturate(1.16) drop-shadow(0 2px 2px #49304b66)!important;
+}
+/* Android phone layout: keep the full game usable on short and narrow screens. */
+html{min-height:100%;background:#090611}
+body{min-height:100%;height:auto;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch}
+main{width:100%;max-width:520px;min-height:100vh;margin:0 auto;padding:7px 8px calc(18px + env(safe-area-inset-bottom))}
+.head{gap:6px}
+.logo{font-size:clamp(19px,5.8vw,29px);letter-spacing:1px}
+.wallet{white-space:nowrap;padding:7px 8px;font-size:11px}
+.options-btn{white-space:nowrap;padding:6px 9px;font-size:10px}
+.hero{margin:8px 0 7px}
+.hero h2{font-size:clamp(15px,4.4vw,18px)}
+.frame{padding:5px;border-radius:12px}
+.board{gap:3px;padding:5px}
+.cell{height:clamp(42px,14.5vw,66px);min-width:0;padding:1px;border-radius:7px}
+.panel{margin-top:7px;padding:9px}
+.bets{gap:4px;margin-top:7px}
+.bets button{min-width:0;padding:8px 0;font-size:12px}
+.actions{gap:7px;margin-top:8px}
+.spin{padding:11px 6px;font-size:17px}
+.auto{width:84px}
+.status{margin-top:7px}
+.foot{padding:8px 0;text-align:center;font:8px Arial;color:#a98fc1}
+@media(max-height:760px){
+  main{padding-top:5px}
+  .hero{margin:5px 0}
+  .cell{height:clamp(38px,12.5vw,52px)}
+  .panel{margin-top:6px;padding:8px}
+  .bets button{padding:7px 0}
+  .actions{margin-top:7px}
+}
+@media(max-height:650px){
+  .cell{height:clamp(34px,10.5vw,44px)}
+  .logo{font-size:19px}
+  .hero p{margin:3px 0}
+}
+@media(max-width:350px){
+  main{padding-left:5px;padding-right:5px}
+  .head{gap:4px}
+  .logo{font-size:18px}
+  .wallet{padding:6px;font-size:10px}
+  .options-btn{padding:6px;font-size:9px}
+  .bets button{font-size:10px}
 }
 </style></head><body><main><div class="head"><div><div class="logo">DIVINE JACKPOT</div><div class="sub">THE TEMPLE OF IMMORTALS</div></div><div style="display:flex;align-items:center;gap:7px"><button class="options-btn" id="optionsBtn">OPTIONS ☰</button><div class="wallet">◈ <span id="balance">10000</span></div></div></div>
 <section class="hero"><h2>✦ TEMPLE OF THE GODS ✦</h2><p>SPIN THE RELICS • CLAIM THE DIVINE TREASURE</p></section><div class="frame"><div class="board" id="board"><div class="cell"><span class="relic-image relic-0" role="img" aria-label="Emperor Crown"></span></div><div class="cell"><span class="relic-image relic-1" role="img" aria-label="Eternal Phoenix"></span></div><div class="cell"><span class="relic-image relic-2" role="img" aria-label="Dragon Emperor"></span></div><div class="cell"><span class="relic-image relic-3" role="img" aria-label="Time Relic"></span></div><div class="cell"><span class="relic-image relic-4" role="img" aria-label="Divine Treasure"></span></div><div class="cell"><span class="relic-image relic-5" role="img" aria-label="God’s Eye"></span></div><div class="cell"><span class="relic-image relic-6" role="img" aria-label="Celestial Lion"></span></div><div class="cell"><span class="relic-image relic-7" role="img" aria-label="Infinity Portal"></span></div><div class="cell"><span class="relic-image relic-0" role="img" aria-label="Emperor Crown"></span></div><div class="cell"><span class="relic-image relic-1" role="img" aria-label="Eternal Phoenix"></span></div><div class="cell"><span class="relic-image relic-2" role="img" aria-label="Dragon Emperor"></span></div><div class="cell"><span class="relic-image relic-3" role="img" aria-label="Time Relic"></span></div><div class="cell"><span class="relic-image relic-4" role="img" aria-label="Divine Treasure"></span></div><div class="cell"><span class="relic-image relic-5" role="img" aria-label="God’s Eye"></span></div><div class="cell"><span class="relic-image relic-6" role="img" aria-label="Celestial Lion"></span></div><div class="cell"><span class="relic-image relic-7" role="img" aria-label="Infinity Portal"></span></div><div class="cell"><span class="relic-image relic-0" role="img" aria-label="Emperor Crown"></span></div><div class="cell"><span class="relic-image relic-1" role="img" aria-label="Eternal Phoenix"></span></div><div class="cell"><span class="relic-image relic-2" role="img" aria-label="Dragon Emperor"></span></div><div class="cell"><span class="relic-image relic-3" role="img" aria-label="Time Relic"></span></div><div class="cell"><span class="relic-image relic-4" role="img" aria-label="Divine Treasure"></span></div><div class="cell"><span class="relic-image relic-5" role="img" aria-label="God’s Eye"></span></div><div class="cell"><span class="relic-image relic-6" role="img" aria-label="Celestial Lion"></span></div><div class="cell"><span class="relic-image relic-7" role="img" aria-label="Infinity Portal"></span></div><div class="cell"><span class="relic-image relic-0" role="img" aria-label="Emperor Crown"></span></div><div class="cell"><span class="relic-image relic-1" role="img" aria-label="Eternal Phoenix"></span></div><div class="cell"><span class="relic-image relic-2" role="img" aria-label="Dragon Emperor"></span></div><div class="cell"><span class="relic-image relic-3" role="img" aria-label="Time Relic"></span></div><div class="cell"><span class="relic-image relic-4" role="img" aria-label="Divine Treasure"></span></div><div class="cell"><span class="relic-image relic-5" role="img" aria-label="God’s Eye"></span></div></div></div>
