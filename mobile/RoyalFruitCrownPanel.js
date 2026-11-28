@@ -138,17 +138,12 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
           </View>
 
           <View style={{ marginTop: 11, borderWidth: 1.3, borderColor: '#D6A552', borderRadius: 18, backgroundColor: '#3A2016', padding: 10, shadowColor: '#D9973A', shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 6 }}>
-            <Text style={{ color: '#DDBB80', fontSize: 13, letterSpacing: 1.6, textAlign: 'center', marginBottom: 9 }}>SELECT COIN AMOUNT · TAP FRUIT TO BET</Text>
             <View style={{ flexDirection: 'row', gap: 6 }}>
               {STAKES.map(amount => (
                 <TouchableOpacity key={amount} onPress={() => setStake(amount)} style={{ flex: 1, height: 42, borderRadius: 11, borderWidth: 1.1, borderColor: GOLD_LINE, backgroundColor: stake === amount ? '#EAC77D' : '#48251B', alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ color: stake === amount ? '#35190D' : '#FFE3A3', fontSize: 16, fontWeight: '900' }}>{money(amount)}</Text>
                 </TouchableOpacity>
               ))}
-            </View>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
-              <Text style={{ color: '#FFE3A3', fontSize: 14 }}>ROUND BET: {money(roundBet)}</Text>
-              <Text style={{ color: '#FFE3A3', fontSize: 14 }}>PER TAP: {money(stake)}</Text>
             </View>
           </View>
 
