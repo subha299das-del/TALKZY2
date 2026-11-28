@@ -76,6 +76,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
   const [roundNumber, setRoundNumber] = useState(1);
   const [recent, setRecent] = useState([]);
   const [winningFruit, setWinningFruit] = useState(null);
+  const [roundWinners] = useState([]);
   const [todayWins] = useState(0);
   const [totalCoins] = useState(10000);
   const [selectedFruit, setSelectedFruit] = useState(null);
@@ -174,18 +175,24 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
               <Text style={{ fontSize: 76, textAlign: 'center', marginBottom: 8 }}>{winningFruit.emoji}</Text>
               <Text style={{ color: '#FFE4A6', fontSize: 17, fontWeight: '800', textAlign: 'center', marginBottom: 8 }}>{winningFruit.name} wins at {winningFruit.multiplier}×</Text>
               <Text style={{ color: '#F1D5A4', fontSize: 17, textAlign: 'center', marginBottom: 20 }}>Total bets: {money(roundBet)} coins</Text>
-              <Text style={{ color: '#D9B777', fontSize: 14, letterSpacing: 2.2, textAlign: 'center', marginBottom: 14 }}>TOP 3 WINNERS THIS ROUND</Text>
-              <View style={{ flexDirection: 'row', gap: 7, marginBottom: 20 }}>
-                {[1, 2, 3].map((place) => (
-                  <View key={place} style={{ flex: 1, minWidth: 0, borderWidth: 1, borderColor: '#8E6339', borderRadius: 13, backgroundColor: '#1D0D09', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 3 }}>
-                    <View style={{ width: 43, height: 43, borderRadius: 22, borderWidth: 2, borderColor: '#F3D17D', backgroundColor: '#E8C77D', alignItems: 'center', justifyContent: 'center', marginBottom: 7 }}>
-                      <Text style={{ color: '#3C210F', fontSize: 16, fontWeight: '900' }}>—</Text>
-                    </View>
-                    <Text numberOfLines={1} style={{ color: '#F6DDB0', fontSize: 12, marginBottom: 5 }}>Awaiting data</Text>
-                    <Text style={{ color: '#EFD18C', fontSize: 12, fontWeight: '900' }}>🪙 —</Text>
+              {roundWinners.length > 0 ? (
+                <>
+                  <Text style={{ color: '#D9B777', fontSize: 14, letterSpacing: 2.2, textAlign: 'center', marginBottom: 14 }}>TOP 3 WINNERS THIS ROUND</Text>
+                  <View style={{ flexDirection: 'row', gap: 7, marginBottom: 20 }}>
+                    {roundWinners.slice(0, 3).map((winner, index) => (
+                      <View key={winner.userId || index} style={{ flex: 1, minWidth: 0, borderWidth: 1, borderColor: '#8E6339', borderRadius: 13, backgroundColor: '#1D0D09', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 3 }}>
+                        <View style={{ width: 43, height: 43, borderRadius: 22, borderWidth: 2, borderColor: '#F3D17D', backgroundColor: '#E8C77D', alignItems: 'center', justifyContent: 'center', marginBottom: 7 }}>
+                          <Text style={{ color: '#3C210F', fontSize: 16, fontWeight: '900' }}>{winner.initials || '—'}</Text>
+                        </View>
+                        <Text numberOfLines={1} style={{ color: '#F6DDB0', fontSize: 12, marginBottom: 5 }}>{winner.name}</Text>
+                        <Text style={{ color: '#EFD18C', fontSize: 12, fontWeight: '900' }}>🪙 {money(winner.payout)}</Text>
+                      </View>
+                    ))}
                   </View>
-                ))}
-              </View>
+                </>
+              ) : (
+                <Text style={{ color: '#F1D5A4', fontSize: 17, fontWeight: '800', textAlign: 'center', marginTop: 10, marginBottom: 20 }}>NO ONE WINS IN THIS ROUND</Text>
+              )}
               <Text style={{ color: '#D9B777', fontSize: 14, textAlign: 'center' }}>Next round starts automatically in {timer} seconds</Text>
             </View>
           </View>
