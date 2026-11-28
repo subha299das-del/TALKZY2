@@ -18,6 +18,18 @@ const FRUITS = [
 ];
 const STAKES = [100, 500, 1000, 5000];
 
+// Keep historical results readable when rounds were recorded with legacy fruit names.
+const LEGACY_FRUITS = {
+  lemon: { name: 'Lemon', emoji: '🍋', multiplier: null },
+  cherry: { name: 'Cherry', emoji: '🍒', multiplier: null }
+};
+const getFruitByName = value => {
+  const key = String(value || '').trim().toLowerCase();
+  return FRUITS.find(fruit => fruit.name.toLowerCase() === key)
+    || LEGACY_FRUITS[key]
+    || null;
+};
+
 
 function FruitTile({ fruit, selected, active, highlighted, betAmount, onPress, tileHeight, emojiSize }) {
   const shine = useRef(new Animated.Value(0)).current;
@@ -128,7 +140,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
         setMyRoundBets(bets);
         setRoundBet(bets.reduce((sum, bet) => sum + bet.amount, 0));
         setRecent((Array.isArray(state?.history) ? state.history : [])
-          .map(item => FRUITS.find(fruit => fruit.name.toLowerCase() === String(item.fruit || '').toLowerCase())?.emoji)
+          .map(item => getFruitByName(item.fruit)?.emoji)
           .filter(Boolean).slice(0, 6));
         if (round) {
           if (lastRoundIdRef.current !== round.id) {
@@ -139,7 +151,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
           setRoundNumber(Number(state?.daily_round_number ?? round.number ?? 0));
           const serverPhase = round.phase;
           setPhase(serverPhase === 'betting' ? 'betting' : serverPhase === 'drawing' ? 'result' : 'winner');
-          const fruit = FRUITS.find(item => item.name.toLowerCase() === String(round.winning_fruit || '').toLowerCase()) || null;
+          const fruit = getFruitByName(round.winning_fruit);
           setWinningFruit(fruit);
           const deadline = serverPhase === 'betting' ? round.bet_closes_at
             : serverPhase === 'drawing' ? round.animation_ends_at : round.result_ends_at;
@@ -374,7 +386,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
                   <View style={{ height: 1, backgroundColor: '#75502F', marginBottom: 10 }} />
                   <Text style={{ color: '#DDBB80', fontSize: 11, fontWeight: '900', marginBottom: 8 }}>YOUR BETS</Text>
                   {(Array.isArray(item.bets) ? item.bets : []).map(bet => {
-                    const fruit = FRUITS.find(entry => entry.name.toLowerCase() === String(bet.fruit || '').toLowerCase());
+                    const fruit = getFruitByName(bet.fruit);
                     return (
                       <View key={bet.fruit} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 3 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -389,8 +401,8 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Text style={{ color: '#DDBB80', fontSize: 11, fontWeight: '900' }}>WINNING FRUIT</Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
-                      <Text style={{ fontSize: 23 }}>{FRUITS.find(fruit => fruit.name.toLowerCase() === String(item.winning_fruit || '').toLowerCase())?.emoji || '—'}</Text>
-                      <Text style={{ color: '#F3EBDD', fontSize: 13, fontWeight: '800' }}>{item.winning_fruit ? FRUITS.find(fruit => fruit.name.toLowerCase() === String(item.winning_fruit).toLowerCase())?.name || item.winning_fruit : '—'}</Text>
+                      <Text style={{ fontSize: 23 }}>{getFruitByName(item.winning_fruit)?.emoji || '—'}</Text>
+                      <Text style={{ color: '#F3EBDD', fontSize: 13, fontWeight: '800' }}>{getFruitByName(item.winning_fruit)?.name || item.winning_fruit || '—'}</Text>
                     </View>
                   </View>
                   {Number(item.winning_amount) > 0 && (
