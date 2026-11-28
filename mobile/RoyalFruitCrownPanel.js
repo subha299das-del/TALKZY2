@@ -85,6 +85,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
   const [myRoundBets, setMyRoundBets] = useState([]);
   const [winningAmount, setWinningAmount] = useState(null);
   const [timer, setTimer] = useState(37);
+  const [timerDeadline, setTimerDeadline] = useState(null);
   const [phase, setPhase] = useState('betting');
   const [roundNumber, setRoundNumber] = useState(0);
   const [recent, setRecent] = useState([]);
@@ -155,7 +156,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
           setWinningFruit(fruit);
           const deadline = serverPhase === 'betting' ? round.bet_closes_at
             : serverPhase === 'drawing' ? round.animation_ends_at : round.result_ends_at;
-          setTimer(deadline ? Math.max(0, Math.ceil((new Date(deadline).getTime() - Date.now()) / 1000)) : 0);
+          setTimerDeadline(deadline ? new Date(deadline).getTime() : null);
           if (serverPhase === 'result' && fruit) {
             setHighlightedFruitIndex(FRUITS.findIndex(item => item.name === fruit.name));
             setWinningAmount(Number.isFinite(Number(state?.my_winning_amount)) ? Number(state.my_winning_amount) : null);
@@ -180,6 +181,17 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
     const interval = setInterval(syncState, 1000);
     return () => { cancelled = true; clearInterval(interval); };
   }, [visible, api]);
+
+  useEffect(() => {
+    if (!visible || !timerDeadline) return;
+    const updateCountdown = () => {
+      const next = Math.max(0, Math.ceil((timerDeadline - Date.now()) / 1000));
+      setTimer(previous => previous === next ? previous : next);
+    };
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 100);
+    return () => clearInterval(interval);
+  }, [visible, timerDeadline]);
 
   useEffect(() => {
     if (!visible || phase !== 'result') return;
