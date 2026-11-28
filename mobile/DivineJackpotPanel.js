@@ -19,7 +19,7 @@ main{max-width:520px;margin:auto;padding:10px}.head{display:flex;justify-content
 <script>
 const symbolSprite='https://i.postimg.cc/3J2z8Nj7/file-00000000119082108a99a4d18cf201a3.png';
 const names=['Emperor Crown','Eternal Phoenix','Dragon Emperor','Time Relic','Divine Treasure',"God’s Eye",'Celestial Lion','Infinity Portal'],mult=[12,10,9,8,7,6,5,4],board=document.getElementById('board'),paybox=document.getElementById('pays'),historyList=document.getElementById('historyList');let balance=10000,bet=100,busy=false,auto=false,timer,spinNumber=0;const $=id=>document.getElementById(id);
-function svg(i){return '<span class="relic-image relic-'+i+'" role="img" aria-label="'+names[i]+'"></span>}'
+function svg(i){return '<span class="relic-image relic-'+i+'" role="img" aria-label="'+names[i]+'"></span>';}
 function draw(){board.innerHTML='';for(let i=0;i<30;i++){let n=Math.floor(Math.random()*8),e=document.createElement('div');e.className='cell';e.innerHTML=svg(n);board.append(e)}}
 names.forEach((n,i)=>{let e=document.createElement('div');e.className='pay';e.innerHTML=svg(i)+'<b>'+n+' ×'+mult[i]+'</b>';paybox.append(e)});
 function bal(){$('balance').textContent=balance.toLocaleString('en-IN')}function stop(){auto=false;clearTimeout(timer);$('auto').textContent='AUTO: OFF';$('auto').classList.remove('on')}
