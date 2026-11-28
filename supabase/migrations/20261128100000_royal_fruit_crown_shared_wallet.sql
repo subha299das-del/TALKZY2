@@ -133,5 +133,6 @@ revoke all on function public.talkzy_royal_fruit_set_forced_result(text) from pu
 grant execute on function public.talkzy_royal_fruit_set_forced_result(text) to service_role;
 
 -- Start the first round only when there is no live round.
-insert into public.talkzy_royal_fruit_rounds default values
+insert into public.talkzy_royal_fruit_rounds(phase,started_at,bet_closes_at)
+select 'betting',now(),now()+interval '37 seconds'
 where not exists (select 1 from public.talkzy_royal_fruit_rounds where phase in ('betting','drawing','result'));
