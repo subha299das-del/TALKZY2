@@ -46,23 +46,26 @@ function CrownMark({ size = 72 }) {
   );
 }
 
-function FruitTile({ fruit, selected, active, betAmount, onPress }) {
+function FruitTile({ fruit, selected, active, highlighted, betAmount, onPress }) {
   return (
     <TouchableOpacity key={fruit.name} activeOpacity={0.86} onPress={onPress}
       style={{
         width: '31.8%', height: 101, marginBottom: 8, borderRadius: 17,
-        borderWidth: selected ? 2 : 1.3,
-        borderColor: selected ? '#FFF0B4' : '#DDAA57',
-        backgroundColor: selected ? '#87501F' : '#512719',
+        borderWidth: highlighted || selected ? 2.5 : 1.3,
+        borderColor: highlighted ? '#FFF5C2' : selected ? '#FFF0B4' : '#DDAA57',
+        backgroundColor: highlighted ? '#9A6426' : selected ? '#87501F' : '#512719',
         alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
         opacity: active ? 1 : 0.66,
-        shadowColor: '#FFB84D', shadowOpacity: selected ? 0.72 : 0.38,
-        shadowRadius: selected ? 12 : 7, shadowOffset: { width: 0, height: 4 }, elevation: selected ? 10 : 6
+        shadowColor: '#FFD45E', shadowOpacity: highlighted ? 1 : selected ? 0.72 : 0.38,
+        shadowRadius: highlighted ? 20 : selected ? 12 : 7, shadowOffset: { width: 0, height: 4 }, elevation: highlighted ? 18 : selected ? 10 : 6
       }}>
       <View pointerEvents="none" style={{ position: 'absolute', top: 1, left: 3, right: 3, height: 34, borderTopLeftRadius: 15, borderTopRightRadius: 15, backgroundColor: 'rgba(255,238,190,0.13)' }} />
       <View pointerEvents="none" style={{ position: 'absolute', top: 7, left: 10, width: 25, height: 9, borderRadius: 9, backgroundColor: 'rgba(255,255,255,0.16)', transform: [{ rotate: '-24deg' }] }} />
       <Text style={{ fontSize: 47, lineHeight: 55, textShadowColor: '#120805', textShadowOffset: { width: 0, height: 5 }, textShadowRadius: 5, includeFontPadding: false }}>{fruit.emoji}</Text>
-      <Text style={{ color: '#FFF0B5', fontSize: 16, fontWeight: '900', marginTop: 0, textShadowColor: '#8B4A1C', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 3 }}>{fruit.multiplier}×</Text>\n      {betAmount > 0 && (\n        <Text style={{ color: '#FFE39A', fontSize: 12, lineHeight: 15, fontWeight: '900', marginTop: 1, textShadowColor: '#1A0904', textShadowRadius: 3 }}>🪙 {Number(betAmount).toLocaleString('en-IN')}</Text>\n      )}
+      <Text style={{ color: '#FFF0B5', fontSize: 16, fontWeight: '900', marginTop: 0, textShadowColor: '#8B4A1C', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 3 }}>{fruit.multiplier}×</Text>
+      {betAmount > 0 && (
+        <Text style={{ color: '#FFE39A', fontSize: 12, lineHeight: 15, fontWeight: '900', marginTop: 1, textShadowColor: '#1A0904', textShadowRadius: 3 }}>🪙 {Number(betAmount).toLocaleString('en-IN')}</Text>
+      )}
       <View pointerEvents="none" style={{ position: 'absolute', bottom: 0, left: 9, right: 9, height: 2, borderRadius: 2, backgroundColor: 'rgba(255,222,145,0.45)' }} />
     </TouchableOpacity>
   );
@@ -82,16 +85,24 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
   const [todayWins] = useState(0);
   const [totalCoins] = useState(10000);
   const [selectedFruit, setSelectedFruit] = useState(null);
+  const [highlightedFruitIndex, setHighlightedFruitIndex] = useState(-1);
+  const [animationStep, setAnimationStep] = useState(0);
 
   useEffect(() => {
     if (!visible) return;
     const tick = setInterval(() => {
       setTimer(current => {
         if (current > 1) return current - 1;
-        if (phase === 'betting') { setPhase('result'); return 10; }
-        if (phase === 'result') {
+        if (phase === 'betting') {
           const resultFruit = FRUITS[Math.floor(Math.random() * FRUITS.length)];
           setWinningFruit(resultFruit);
+          setHighlightedFruitIndex(0);
+          setAnimationStep(0);
+          setPhase('result');
+          return 10;
+        }
+        if (phase === 'result') {
+          const resultFruit = winningFruit || FRUITS[0];
           const payout = myRoundBets.reduce((total, bet) => total + (bet.fruitName === resultFruit.name ? bet.amount * resultFruit.multiplier : 0), 0);
           setWinningAmount(payout);
           setRecent(items => [resultFruit.emoji, ...items].slice(0, 6));
@@ -104,11 +115,32 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
         setMyRoundBets([]);
         setWinningAmount(0);
         setSelectedFruit(null);
+        setWinningFruit(null);
+        setHighlightedFruitIndex(-1);
+        setAnimationStep(0);
         return 37;
       });
     }, 1000);
     return () => clearInterval(tick);
-  }, [visible, phase, myRoundBets]);
+  }, [visible, phase, myRoundBets, winningFruit]);
+
+  useEffect(() => {
+    if (!visible || phase !== 'result' || !winningFruit) return;
+    if (animationStep >= 24) {
+      setHighlightedFruitIndex(FRUITS.findIndex(fruit => fruit.name === winningFruit.name));
+      return;
+    }
+    const delay = Math.round(80 + 1.85 * animationStep * animationStep);
+    const timeout = setTimeout(() => {
+      if (animationStep === 23) {
+        setHighlightedFruitIndex(FRUITS.findIndex(fruit => fruit.name === winningFruit.name));
+      } else {
+        setHighlightedFruitIndex(index => (index + 1) % FRUITS.length);
+      }
+      setAnimationStep(step => step + 1);
+    }, delay);
+    return () => clearTimeout(timeout);
+  }, [visible, phase, winningFruit, animationStep]);
 
   const placeBet = (fruit) => {
     if (phase !== 'betting') return;
@@ -117,7 +149,11 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
     setMyRoundBets(items => [...items, { fruitName: fruit.name, amount: stake }]);
   };
 
-  const money = value => Number(value).toLocaleString('en-IN');\n  const fruitBetTotals = myRoundBets.reduce((totals, bet) => {\n    totals[bet.fruitName] = (totals[bet.fruitName] || 0) + bet.amount;\n    return totals;\n  }, {});
+  const money = value => Number(value).toLocaleString('en-IN');
+  const fruitBetTotals = myRoundBets.reduce((totals, bet) => {
+    totals[bet.fruitName] = (totals[bet.fruitName] || 0) + bet.amount;
+    return totals;
+  }, {});
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onClose}>
@@ -143,7 +179,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
           <View style={{ borderWidth: 2, borderColor: '#E0B45E', borderRadius: 22, padding: 9, backgroundColor: '#32190F', shadowColor: '#F4B84F', shadowOpacity: 0.48, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 11 }}>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
               {FRUITS.slice(0,4).map((fruit, index) => (
-                <FruitTile key={fruit.name} fruit={fruit} selected={selectedFruit === fruit.name} active={phase === 'betting'} betAmount={fruitBetTotals[fruit.name] || 0} onPress={() => placeBet(fruit)} />
+                <FruitTile key={fruit.name} fruit={fruit} selected={selectedFruit === fruit.name} active={phase === 'betting'} highlighted={phase === 'result' && highlightedFruitIndex === FRUITS.findIndex(item => item.name === fruit.name)} betAmount={fruitBetTotals[fruit.name] || 0} onPress={() => placeBet(fruit)} />
               ))}
               <View style={{ width: '31.8%', height: 101, marginBottom: 8, borderRadius: 17, borderWidth: 1.2, borderColor: GOLD_LINE, backgroundColor: '#321B14', alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ color: '#FFE39B', fontSize: 32, fontWeight: '900', lineHeight: 36 }}>{timer}s</Text>
