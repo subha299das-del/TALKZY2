@@ -168,39 +168,46 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
           </View>
 
           <View style={{ flexDirection: 'row', gap: 9, marginBottom: 18 }}>
-            <View style={{ flex: 1, minHeight: 82, borderWidth: 1.4, borderColor: '#E0B45E', borderRadius: 17, backgroundColor: '#48271B', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, shadowColor: '#F6C66D', shadowOpacity: 0.34, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 8 }}>
+            <View style={{ flex: 1, minHeight: 82, borderWidth: 1.4, borderColor: '#E0B45E', borderRadius: 17, backgroundColor: '#56301D', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, shadowColor: '#F6C66D', shadowOpacity: 0.55, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 10 }}>
+              <View pointerEvents="none" style={{ position: 'absolute', top: 1, left: 5, right: 5, height: 24, borderTopLeftRadius: 14, borderTopRightRadius: 14, backgroundColor: 'rgba(255,238,190,0.12)' }} />
               <Text style={{ color: '#FFE8A4', fontSize: 20, fontWeight: '900', marginTop: 4 }}>{money(todayWins)} coins</Text>
             </View>
-            <View style={{ flex: 1, minHeight: 82, borderWidth: 1.3, borderColor: GOLD_LINE, borderRadius: 17, backgroundColor: '#2A1713', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5 }}>
+            <View style={{ flex: 1, minHeight: 82, borderWidth: 1.3, borderColor: GOLD_LINE, borderRadius: 17, backgroundColor: '#351B13', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, shadowColor: '#D99636', shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 8 }}>
+              <View pointerEvents="none" style={{ position: 'absolute', top: 1, left: 5, right: 5, height: 24, borderTopLeftRadius: 14, borderTopRightRadius: 14, backgroundColor: 'rgba(255,238,190,0.10)' }} />
               <Text style={{ color: '#FFE8A4', fontSize: 24, fontWeight: '900', marginTop: 6 }}>{money(totalCoins)}</Text>
             </View>
           </View>
 
-          <View style={{ borderWidth: 2, borderColor: '#E0B45E', borderRadius: 22, padding: 9, backgroundColor: '#32190F', shadowColor: '#F4B84F', shadowOpacity: 0.48, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 11 }}>
+          <View style={{ borderWidth: 2, borderColor: '#F0C66F', borderRadius: 24, padding: 10, backgroundColor: '#3B2014', shadowColor: '#F4B84F', shadowOpacity: 0.62, shadowRadius: 20, shadowOffset: { width: 0, height: 7 }, elevation: 14 }}>
+            <View pointerEvents="none" style={{ position: 'absolute', top: 3, left: 12, right: 12, height: 18, borderTopLeftRadius: 18, borderTopRightRadius: 18, backgroundColor: 'rgba(255,236,183,0.10)' }} />
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
               {FRUITS.slice(0,4).map((fruit, index) => (
                 <FruitTile key={fruit.name} fruit={fruit} selected={selectedFruit === fruit.name} active={phase === 'betting'} highlighted={phase === 'result' && highlightedFruitIndex === FRUITS.findIndex(item => item.name === fruit.name)} betAmount={fruitBetTotals[fruit.name] || 0} onPress={() => placeBet(fruit)} />
               ))}
-              <View style={{ width: '31.8%', height: 101, marginBottom: 8, borderRadius: 17, borderWidth: 1.2, borderColor: GOLD_LINE, backgroundColor: '#321B14', alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ width: '31.8%', height: 101, marginBottom: 8, borderRadius: 17, borderWidth: 1.5, borderColor: '#F0C875', backgroundColor: '#512B19', alignItems: 'center', justifyContent: 'center', shadowColor: '#FFD66E', shadowOpacity: 0.5, shadowRadius: 14, shadowOffset: { width: 0, height: 4 }, elevation: 9, overflow: 'hidden' }}>
+                <View pointerEvents="none" style={{ position: 'absolute', top: 1, left: 4, right: 4, height: 30, borderTopLeftRadius: 15, borderTopRightRadius: 15, backgroundColor: 'rgba(255,241,201,0.14)' }} />
                 <Text style={{ color: '#FFE39B', fontSize: 32, fontWeight: '900', lineHeight: 36 }}>{timer}s</Text>
               </View>
               {FRUITS.slice(4).map(fruit => (
-                <FruitTile key={fruit.name} fruit={fruit} selected={selectedFruit === fruit.name} active={phase === 'betting'} betAmount={fruitBetTotals[fruit.name] || 0} onPress={() => placeBet(fruit)} />
+                <FruitTile key={fruit.name} fruit={fruit} selected={selectedFruit === fruit.name} active={phase === 'betting'} highlighted={phase === 'result' && highlightedFruitIndex === FRUITS.findIndex(item => item.name === fruit.name)} betAmount={fruitBetTotals[fruit.name] || 0} onPress={() => placeBet(fruit)} />
               ))}
             </View>
           </View>
 
-          <View style={{ marginTop: 11, borderWidth: 1.3, borderColor: '#D6A552', borderRadius: 18, backgroundColor: '#3A2016', padding: 10, shadowColor: '#D9973A', shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 6 }}>
+          <View style={{ marginTop: 11, borderWidth: 1.5, borderColor: '#E5B963', borderRadius: 20, backgroundColor: '#4A2819', padding: 11, shadowColor: '#D9973A', shadowOpacity: 0.5, shadowRadius: 14, shadowOffset: { width: 0, height: 5 }, elevation: 9, overflow: 'hidden' }}>
+            <View pointerEvents="none" style={{ position: 'absolute', top: 1, left: 6, right: 6, height: 22, borderTopLeftRadius: 16, borderTopRightRadius: 16, backgroundColor: 'rgba(255,238,190,0.11)' }} />
             <View style={{ flexDirection: 'row', gap: 6 }}>
               {STAKES.map(amount => (
-                <TouchableOpacity key={amount} onPress={() => setStake(amount)} style={{ flex: 1, height: 42, borderRadius: 11, borderWidth: 1.1, borderColor: GOLD_LINE, backgroundColor: stake === amount ? '#EAC77D' : '#48251B', alignItems: 'center', justifyContent: 'center' }}>
+                <TouchableOpacity key={amount} onPress={() => setStake(amount)} style={{ flex: 1, height: 42, borderRadius: 11, borderWidth: 1.1, borderColor: GOLD_LINE, backgroundColor: stake === amount ? '#FFE29A' : '#60331E', alignItems: 'center', justifyContent: 'center', shadowColor: stake === amount ? '#FFE08A' : '#1B0904', shadowOpacity: stake === amount ? 0.8 : 0.45, shadowRadius: stake === amount ? 10 : 5, shadowOffset: { width: 0, height: 3 }, elevation: stake === amount ? 8 : 4 }}>
+                <View pointerEvents="none" style={{ position: 'absolute', top: 1, left: 3, right: 3, height: 10, borderTopLeftRadius: 8, borderTopRightRadius: 8, backgroundColor: 'rgba(255,255,255,0.16)' }} />
                   <Text style={{ color: stake === amount ? '#35190D' : '#FFE3A3', fontSize: 16, fontWeight: '900' }}>{money(amount)}</Text>
                 </TouchableOpacity>
               ))}
             </View>
           </View>
 
-          <View style={{ marginTop: 11, borderWidth: 1.2, borderColor: GOLD_LINE, borderRadius: 18, backgroundColor: '#28150F', padding: 10, minHeight: 72 }}>
+          <View style={{ marginTop: 11, borderWidth: 1.5, borderColor: '#DDB05F', borderRadius: 20, backgroundColor: '#321B13', padding: 11, minHeight: 76, shadowColor: '#D99636', shadowOpacity: 0.38, shadowRadius: 13, shadowOffset: { width: 0, height: 5 }, elevation: 8, overflow: 'hidden' }}>
+            <View pointerEvents="none" style={{ position: 'absolute', top: 1, left: 6, right: 6, height: 21, borderTopLeftRadius: 16, borderTopRightRadius: 16, backgroundColor: 'rgba(255,238,190,0.10)' }} />
             <Text style={{ color: '#DDBB80', fontSize: 13, fontWeight: '900', letterSpacing: 0.7 }}>RECENT WINNING FRUITS</Text>
             <Text style={{ color: '#A88A68', fontSize: 14, marginTop: 12 }}>{recent.length ? recent.map((fruit, index) => (
               <Text key={`${fruit}-${index}`} style={{ fontSize: 27, marginRight: 9 }}>{fruit}</Text>
@@ -212,7 +219,8 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
         </ScrollView>
         {phase === 'winner' && winningFruit && (
           <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.84)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 18 }}>
-            <View style={{ width: '100%', maxWidth: 560, borderRadius: 25, borderWidth: 2.5, borderColor: '#F2CF75', backgroundColor: '#2B130D', paddingHorizontal: 16, paddingTop: 20, paddingBottom: 22, shadowColor: '#F8C95E', shadowOpacity: 0.8, shadowRadius: 24, shadowOffset: { width: 0, height: 0 }, elevation: 22 }}>
+            <View style={{ width: '100%', maxWidth: 560, borderRadius: 27, borderWidth: 3, borderColor: '#FFE09A', backgroundColor: '#35190F', paddingHorizontal: 16, paddingTop: 20, paddingBottom: 22, shadowColor: '#F8C95E', shadowOpacity: 1, shadowRadius: 30, shadowOffset: { width: 0, height: 0 }, elevation: 26, overflow: 'hidden' }}>
+              <View pointerEvents="none" style={{ position: 'absolute', top: 2, left: 8, right: 8, height: 42, borderTopLeftRadius: 22, borderTopRightRadius: 22, backgroundColor: 'rgba(255,236,183,0.10)' }} />
               <Text style={{ color: '#D9B777', fontSize: 14, letterSpacing: 3, textAlign: 'center', marginBottom: 22 }}>ROUND RESULT</Text>
               <Text adjustsFontSizeToFit numberOfLines={1} style={{ color: '#FFE8A6', fontFamily: 'serif', fontWeight: '900', fontSize: 29, textAlign: 'center', marginBottom: 18 }}>👑 WINNING FRUIT</Text>
               <Text style={{ fontSize: 76, textAlign: 'center', marginBottom: 8 }}>{winningFruit.emoji}</Text>
