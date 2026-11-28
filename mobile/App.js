@@ -4963,7 +4963,7 @@ function renderRoomInterior() {
           )}
         </View>
       )}
-      <RoyalFruitCrownPanel visible={showRoyalFruitCrown && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowRoyalFruitCrown(false)} />
+      <RoyalFruitCrownPanel visible={showRoyalFruitCrown && screen === 'roomInterior' && !!selectedRoom} onClose={() => setShowRoyalFruitCrown(false)} api={api} />
       <RoomGames visible={showRoomGamePanel && screen === 'roomInterior' && !!selectedRoom} initialGameName={gameToOpenInRoom} onInitialGameOpened={() => setGameToOpenInRoom(null)} onClose={() => setShowRoomGamePanel(false)} onGameAvailable={() => setShowRoomGamePanel(true)} roomId={selectedRoom?.id} creatorName={profile?.display_name || displayName || session?.user?.user_metadata?.full_name || 'Player'} userId={session?.user?.id} supabase={supabase} isAuthorisedStarter={selectedRoom?.owner_id===session?.user?.id || roomPresence.some(person=>person.user_id===session?.user?.id && person.presence_role==='admin')} hasRoomSeat={micSeats.some(seat=>seat.user_id===session?.user?.id)} roomMembers={roomPresence} selfProfile={profile} />
 
 
