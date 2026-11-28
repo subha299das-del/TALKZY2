@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   Modal, SafeAreaView, ScrollView, View, Text, TouchableOpacity,
-  StatusBar, Dimensions
+  StatusBar, Dimensions, Alert
 } from 'react-native';
 
 const GOLD = '#F6D987';
@@ -44,9 +44,11 @@ function FruitTile({ fruit, selected, active, highlighted, betAmount, onPress })
   );
 }
 
-export default function RoyalFruitCrownPanel({ visible, onClose }) {
+export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
   const [stake, setStake] = useState(100);
   const [roundBet, setRoundBet] = useState(0);
+  const [balance, setBalance] = useState(0);
+  const [betBusy, setBetBusy] = useState(false);
   const [myRoundBets, setMyRoundBets] = useState([]);
   const [winningAmount, setWinningAmount] = useState(0);
   const [timer, setTimer] = useState(37);
@@ -54,72 +56,96 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
   const [roundNumber, setRoundNumber] = useState(1);
   const [recent, setRecent] = useState([]);
   const [winningFruit, setWinningFruit] = useState(null);
-  const [roundWinners] = useState([]);
+  const [roundWinners, setRoundWinners] = useState([]);
   const [todayWins] = useState(0);
-  const [totalCoins] = useState(10000);
   const [selectedFruit, setSelectedFruit] = useState(null);
   const [highlightedFruitIndex, setHighlightedFruitIndex] = useState(-1);
   const [animationStep, setAnimationStep] = useState(0);
 
   useEffect(() => {
-    if (!visible) return;
-    const tick = setInterval(() => {
-      setTimer(current => {
-        if (current > 1) return current - 1;
-        if (phase === 'betting') {
-          const resultFruit = FRUITS[Math.floor(Math.random() * FRUITS.length)];
-          setWinningFruit(resultFruit);
-          setHighlightedFruitIndex(0);
-          setAnimationStep(0);
-          setPhase('result');
-          return 10;
+    if (!visible || typeof api !== 'function') return;
+    let cancelled = false;
+    let inFlight = false;
+    const syncState = async () => {
+      if (inFlight || cancelled) return;
+      inFlight = true;
+      try {
+        const state = await api('/api/games/royal-fruit/state');
+        if (cancelled) return;
+        const round = state?.round;
+        setBalance(Number(state?.balance || 0));
+        const bets = Array.isArray(state?.my_bets) ? state.my_bets.map(bet => ({
+          fruitName: String(bet.fruit || ''),
+          amount: Number(bet.amount || 0)
+        })) : [];
+        setMyRoundBets(bets);
+        setRoundBet(bets.reduce((sum, bet) => sum + bet.amount, 0));
+        setRecent((Array.isArray(state?.history) ? state.history : [])
+          .map(item => FRUITS.find(fruit => fruit.name.toLowerCase() === String(item.fruit || '').toLowerCase())?.emoji)
+          .filter(Boolean).slice(0, 6));
+        if (round) {
+          setRoundNumber(Number(round.number || 1));
+          const serverPhase = round.phase;
+          setPhase(serverPhase === 'betting' ? 'betting' : serverPhase === 'drawing' ? 'result' : 'winner');
+          const fruit = FRUITS.find(item => item.name.toLowerCase() === String(round.winning_fruit || '').toLowerCase()) || null;
+          setWinningFruit(fruit);
+          const deadline = serverPhase === 'betting' ? round.bet_closes_at
+            : serverPhase === 'drawing' ? round.animation_ends_at : round.result_ends_at;
+          setTimer(deadline ? Math.max(0, Math.ceil((new Date(deadline).getTime() - Date.now()) / 1000)) : 0);
+          if (serverPhase === 'result' && fruit) {
+            setHighlightedFruitIndex(FRUITS.findIndex(item => item.name === fruit.name));
+            setWinningAmount(bets.reduce((sum, bet) => sum + (bet.fruitName === fruit.name ? bet.amount * fruit.multiplier : 0), 0));
+          } else if (serverPhase === 'betting') {
+            setWinningAmount(0);
+            setHighlightedFruitIndex(-1);
+          }
+          setRoundWinners(Array.isArray(state?.leaders) ? state.leaders.map(winner => ({
+            userId: winner.user_id,
+            name: winner.display_name || 'Player',
+            initials: String(winner.display_name || 'P').slice(0, 2).toUpperCase(),
+            payout: Number(winner.coins || 0)
+          })) : []);
         }
-        if (phase === 'result') {
-          const resultFruit = winningFruit || FRUITS[0];
-          const payout = myRoundBets.reduce((total, bet) => total + (bet.fruitName === resultFruit.name ? bet.amount * resultFruit.multiplier : 0), 0);
-          setWinningAmount(payout);
-          setRecent(items => [resultFruit.emoji, ...items].slice(0, 6));
-          setPhase('winner');
-          return 5;
-        }
-        setRoundNumber(value => value + 1);
-        setPhase('betting');
-        setRoundBet(0);
-        setMyRoundBets([]);
-        setWinningAmount(0);
-        setSelectedFruit(null);
-        setWinningFruit(null);
-        setHighlightedFruitIndex(-1);
-        setAnimationStep(0);
-        return 37;
-      });
-    }, 1000);
-    return () => clearInterval(tick);
-  }, [visible, phase, myRoundBets, winningFruit]);
+      } catch (error) {
+        if (!cancelled) console.log('Royal Fruit Crown sync:', error?.message || error);
+      } finally {
+        inFlight = false;
+      }
+    };
+    syncState();
+    const interval = setInterval(syncState, 1000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [visible, api]);
 
   useEffect(() => {
-    if (!visible || phase !== 'result' || !winningFruit) return;
-    if (animationStep >= 24) {
-      setHighlightedFruitIndex(FRUITS.findIndex(fruit => fruit.name === winningFruit.name));
-      return;
-    }
-    const delay = Math.round(80 + 1.85 * animationStep * animationStep);
+    if (!visible || phase !== 'result') return;
     const timeout = setTimeout(() => {
-      if (animationStep === 23) {
-        setHighlightedFruitIndex(FRUITS.findIndex(fruit => fruit.name === winningFruit.name));
-      } else {
-        setHighlightedFruitIndex(index => (index + 1) % FRUITS.length);
-      }
-      setAnimationStep(step => step + 1);
-    }, delay);
+      setHighlightedFruitIndex(index => (index + 1) % FRUITS.length);
+    }, 180);
     return () => clearTimeout(timeout);
-  }, [visible, phase, winningFruit, animationStep]);
+  }, [visible, phase, highlightedFruitIndex]);
 
-  const placeBet = (fruit) => {
-    if (phase !== 'betting') return;
-    setSelectedFruit(fruit.name);
-    setRoundBet(value => value + stake);
-    setMyRoundBets(items => [...items, { fruitName: fruit.name, amount: stake }]);
+  const placeBet = async (fruit) => {
+    if (phase !== 'betting' || betBusy) return;
+    setBetBusy(true);
+    try {
+      const result = await api('/api/games/royal-fruit/bet', {
+        method: 'POST',
+        body: JSON.stringify({
+          fruit: fruit.name.toLowerCase(),
+          amount: stake,
+          requestKey: `royal-fruit-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`
+        })
+      });
+      setBalance(Number(result?.balance || 0));
+      setSelectedFruit(fruit.name);
+      setRoundBet(value => value + stake);
+      setMyRoundBets(items => [...items, { fruitName: fruit.name, amount: stake }]);
+    } catch (error) {
+      Alert.alert('Bet not accepted', error?.message || 'Please try again.');
+    } finally {
+      setBetBusy(false);
+    }
   };
 
   const money = value => Number(value).toLocaleString('en-IN');
@@ -150,11 +176,13 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
           <View style={{ flexDirection: 'row', gap: 9, marginBottom: 18 }}>
             <View style={{ flex: 1, minHeight: 82, borderWidth: 1.4, borderColor: '#E0B45E', borderRadius: 17, backgroundColor: '#56301D', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, shadowColor: '#F6C66D', shadowOpacity: 0.55, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 10 }}>
               <View pointerEvents="none" style={{ position: 'absolute', top: 1, left: 5, right: 5, height: 24, borderTopLeftRadius: 14, borderTopRightRadius: 14, backgroundColor: 'rgba(255,238,190,0.12)' }} />
+              <Text style={{ color: '#DDBB80', fontSize: 11, fontWeight: '900', letterSpacing: 1 }}>TODAY WINS</Text>
               <Text style={{ color: '#FFE8A4', fontSize: 20, fontWeight: '900', marginTop: 4 }}>{money(todayWins)} coins</Text>
             </View>
             <View style={{ flex: 1, minHeight: 82, borderWidth: 1.3, borderColor: GOLD_LINE, borderRadius: 17, backgroundColor: '#351B13', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, shadowColor: '#D99636', shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 8 }}>
               <View pointerEvents="none" style={{ position: 'absolute', top: 1, left: 5, right: 5, height: 24, borderTopLeftRadius: 14, borderTopRightRadius: 14, backgroundColor: 'rgba(255,238,190,0.10)' }} />
-              <Text style={{ color: '#FFE8A4', fontSize: 24, fontWeight: '900', marginTop: 6 }}>{money(totalCoins)}</Text>
+              <Text style={{ color: '#DDBB80', fontSize: 11, fontWeight: '900', letterSpacing: 1 }}>MY COINS</Text>
+              <Text style={{ color: '#FFE8A4', fontSize: 24, fontWeight: '900', marginTop: 6 }}>{money(balance)}</Text>
             </View>
           </View>
 
