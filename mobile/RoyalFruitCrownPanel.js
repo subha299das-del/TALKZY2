@@ -130,7 +130,6 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
               ))}
               <View style={{ width: '31.8%', height: 101, marginBottom: 8, borderRadius: 17, borderWidth: 1.2, borderColor: GOLD_LINE, backgroundColor: '#321B14', alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ color: '#FFE39B', fontSize: 32, fontWeight: '900', lineHeight: 36 }}>{timer}s</Text>
-                <Text style={{ color: '#EACB87', fontSize: 10, fontWeight: '900', textAlign: 'center', letterSpacing: 0.6 }}>{phase === 'betting' ? 'BETTING CLOSES IN' : phase === 'result' ? 'REVEALING RESULT' : 'WINNERS'}</Text>
               </View>
               {FRUITS.slice(4).map(fruit => (
                 <FruitTile fruit={fruit} selected={selectedFruit === fruit.name} active={phase === 'betting'} onPress={() => placeBet(fruit)} />
