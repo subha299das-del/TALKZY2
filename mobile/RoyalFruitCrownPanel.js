@@ -141,7 +141,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
         setRoundBet(bets.reduce((sum, bet) => sum + bet.amount, 0));
         setRecent((Array.isArray(state?.history) ? state.history : [])
           .map(item => getFruitByName(item.fruit)?.emoji)
-          .filter(Boolean).slice(0, 6));
+          .filter(Boolean).slice(0, 9));
         if (round) {
           if (lastRoundIdRef.current !== round.id) {
             lastRoundIdRef.current = round.id;
