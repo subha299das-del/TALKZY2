@@ -11,6 +11,38 @@ const GAME_HTML = String.raw`<!doctype html>
 main{max-width:520px;margin:auto;padding:10px}.head{display:flex;justify-content:space-between;align-items:center}.logo{font-size:clamp(22px,6vw,32px);font-weight:bold;letter-spacing:1.5px;color:#ffe8a3;text-shadow:0 2px #713b12,0 0 15px #f6c65b}.sub{font:9px Arial;letter-spacing:2px;color:#d6b9ff}.wallet{border:1px solid #d8ad54;border-radius:22px;padding:8px 10px;background:#241333;color:#ffe39b;font:bold 12px Arial}
 .hero{text-align:center;margin:13px 0 9px;color:#ffe7a4}.hero h2{font-size:18px;margin:0}.hero p{font:9px Arial;letter-spacing:1.5px;color:#c7a9ed}
 .frame{padding:7px;border-radius:15px;background:linear-gradient(145deg,#ffe7a1,#9e641b 20%,#f4ce70 45%,#75420e 75%,#fbe4a4);box-shadow:0 8px 22px #000b}.board{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;padding:6px;border-radius:10px;background:#10091e}.cell{aspect-ratio:1;display:grid;place-items:center;border-radius:7px;background:radial-gradient(circle at 40% 22%,#594078,#1b102b 70%);border:1px solid #c99c4b88;box-shadow:inset 0 2px 5px #fff2,inset 0 -4px 8px #0008}.relic-image{display:block;width:100%;height:100%;mix-blend-mode:multiply;background-image:url('https://i.postimg.cc/3J2z8Nj7/file-00000000119082108a99a4d18cf201a3.png');background-repeat:no-repeat;background-size:400% 200%;filter:drop-shadow(0 3px 2px #000b)}.cell .relic-0{background-position:0 0}.cell .relic-1{background-position:33.333% 0}.cell .relic-2{background-position:66.666% 0}.cell .relic-3{background-position:100% 0}.cell .relic-4{background-position:0 100%}.cell .relic-5{background-position:33.333% 100%}.cell .relic-6{background-position:66.666% 100%}.cell .relic-7{background-position:100% 100%}.pay .relic-0{background-position:0 0}.pay .relic-1{background-position:33.333% 0}.pay .relic-2{background-position:66.666% 0}.pay .relic-3{background-position:100% 0}.pay .relic-4{background-position:0 100%}.pay .relic-5{background-position:33.333% 100%}.pay .relic-6{background-position:66.666% 100%}.pay .relic-7{background-position:100% 100%}.win{background:radial-gradient(circle,#fff0a8,#a96d21 45%,#44205b)!important;box-shadow:0 0 14px #ffe17b!important;outline:2px solid #fff0a8}
+/* Winning relics light up together as a clear horizontal line after the reels stop. */
+@keyframes divineLineWin{
+  0%,100%{transform:scale(1);filter:brightness(1);box-shadow:0 0 8px #ffe17b, inset 0 0 8px #fff7}
+  45%{transform:scale(1.045);filter:brightness(1.35);box-shadow:0 0 24px 7px #ffd75c, inset 0 0 14px #fff}
+}
+@keyframes divineLineSweep{
+  0%{opacity:0;transform:translateX(-120%)}
+  25%{opacity:.9}
+  75%{opacity:.9}
+  100%{opacity:0;transform:translateX(120%)}
+}
+.cell.win{
+  position:relative;
+  z-index:2;
+  outline:2px solid #fff1a8!important;
+  border:2px solid #ffe27b!important;
+  background:linear-gradient(145deg,#fff4bd,#f4c75d 48%,#9d5c18)!important;
+  animation:divineLineWin .85s ease-in-out 3;
+}
+.cell.win::after{
+  content:"";
+  position:absolute;
+  inset:3px;
+  border-radius:6px;
+  pointer-events:none;
+  background:linear-gradient(100deg,transparent 25%,#fffde8dd 50%,transparent 75%);
+  animation:divineLineSweep 1.1s ease-in-out 2;
+}
+.cell.win .relic-image{
+  filter:brightness(1.28) contrast(1.16) saturate(1.2) drop-shadow(0 0 5px #fff1a8)!important;
+}
+@media(prefers-reduced-motion:reduce){.cell.win,.cell.win::after{animation:none}}
 .panel{margin-top:10px;padding:11px;border-radius:14px;border:1px solid #d5aa5a;background:linear-gradient(145deg,#301747,#100a1b)}.row{display:flex;justify-content:space-between;align-items:center}.label{font:10px Arial;letter-spacing:1.4px;color:#cdb5e7}.amount{font:bold 20px Arial;color:#ffe6a1}.bets{display:flex;gap:5px;margin-top:8px}.bets button{flex:1;padding:8px 1px;border:1px solid #c49343;border-radius:7px;background:linear-gradient(#55326f,#21112f);color:#ffe5a1;font-weight:bold}.bets .active{background:linear-gradient(#f9d77c,#a66b1d);color:#281437}.actions{display:flex;gap:8px;margin-top:10px}.spin{flex:1;border:0;border-radius:11px;padding:13px;background:linear-gradient(#fff0a9,#e1a63e 45%,#9d5514);color:#32183a;font:bold 18px Georgia;letter-spacing:2px}.auto{width:95px;border:1px solid #d4a34d;border-radius:11px;background:#321c48;color:#ffe5a1;font-weight:bold}.auto.on{background:linear-gradient(#f4d77f,#b77a25);color:#271336}.status{text-align:center;min-height:17px;margin-top:10px;color:#ffe7a4;font:11px Arial}.paytitle{text-align:center;color:#e9c779;font:bold 10px Arial;letter-spacing:1.5px;margin-bottom:7px}.pays{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}.pay{font:8px Arial;color:#dfd0f1;text-align:center;background:#ffffff0b;border-radius:7px;padding:4px 1px}.pay .cell .relic-image{width:94%;height:94%;margin:auto;background-size:400% 200%;background-repeat:no-repeat;filter:drop-shadow(0 2px 2px #000d)}.pay .relic-image{width:42px;height:42px;flex:0 0 42px;margin:auto 7px auto 0;background-size:400% 200%;background-repeat:no-repeat}.pay b{display:block;color:#ffe5a1;margin-top:2px}.options-btn{border:1px solid #d8ad54;border-radius:18px;padding:7px 11px;background:#241333;color:#ffe39b;font:bold 11px Arial}.shortcut-menu,.info-popup{position:fixed;inset:0;background:#08040ddd;display:none;align-items:center;justify-content:center;padding:16px;z-index:20}.shortcut-menu.open,.info-popup.open{display:flex}.shortcut-card,.info-card{width:100%;max-width:440px;max-height:82vh;overflow:auto;padding:15px;border:1px solid #d8ad54;border-radius:16px;background:linear-gradient(145deg,#42245d,#130b20);box-shadow:0 12px 40px #000d}.shortcut-title{font:bold 15px Georgia;color:#ffe7a4;text-align:center;letter-spacing:1px;margin-bottom:13px}.shortcut-actions{display:flex;gap:9px}.shortcut-actions button,.popup-close{flex:1;padding:11px;border:1px solid #c49343;border-radius:9px;background:linear-gradient(#55326f,#21112f);color:#ffe5a1;font:bold 12px Arial}.popup-close{margin-top:10px;width:100%;background:#21112f}.info-card{background:linear-gradient(145deg,#301747,#100a1b);color:#eadcf8;font:12px/1.5 Arial}.info-card .pays{grid-template-columns:repeat(4,1fr)}.tab{flex:1;padding:9px;border:1px solid #c49343;border-radius:8px;background:#21112f;color:#e9d5ff;font:bold 11px Arial;letter-spacing:1px}.tab.active{background:linear-gradient(#f9d77c,#a66b1d);color:#281437}.rulecopy{font:11px/1.5 Arial;color:#eadcf8;margin-bottom:12px}.rulecopy p{margin:5px 0}.rulecopy b{color:#ffe5a1}.rule-note{color:#c5a8df;font-size:9px}.history-list{display:flex;flex-direction:column;gap:7px}.history-item{padding:9px;border:1px solid #ffffff22;border-radius:8px;background:#ffffff0b;font:10px Arial;color:#eadcf8}.history-top{display:flex;justify-content:space-between;gap:8px;margin-bottom:4px}.history-round{color:#ffe5a1;font-weight:bold}.history-win{color:#8ff0b2;font-weight:bold}.history-loss{color:#d9c5e9}.history-detail{color:#cdb5e7;line-height:1.4}.empty{text-align:center;padding:16px 5px;color:#bca8d2;font:11px Arial}
 /* Larger, clearer relic tiles: preserve the sprite's 3:4 artwork proportions. */
 .board{gap:5px;padding:7px}
