@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Modal, SafeAreaView, ScrollView, View, Text, TouchableOpacity,
+  Modal, SafeAreaView, ScrollView, View, Text, TouchableOpacity, Image,
   StatusBar, Dimensions, Alert
 } from 'react-native';
 
@@ -67,6 +67,13 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
   const [selectedFruit, setSelectedFruit] = useState(null);
   const [highlightedFruitIndex, setHighlightedFruitIndex] = useState(-1);
   const [animationStep, setAnimationStep] = useState(0);
+  const [activeSection, setActiveSection] = useState('game');
+  const [myHistory, setMyHistory] = useState([]);
+  const [historyOffset, setHistoryOffset] = useState(0);
+  const [historyHasMore, setHistoryHasMore] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [topWinners, setTopWinners] = useState([]);
+  const [topWinnersLoading, setTopWinnersLoading] = useState(false);
 
   useEffect(() => {
     if (!visible || typeof api !== 'function') return;
@@ -138,6 +145,54 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
     return () => clearTimeout(timeout);
   }, [visible, phase, highlightedFruitIndex]);
 
+  const loadHistory = async (reset = false) => {
+    if (historyLoading || typeof api !== 'function') return;
+    setHistoryLoading(true);
+    const offset = reset ? 0 : historyOffset;
+    try {
+      const result = await api(`/api/games/royal-fruit/history?limit=20&offset=${offset}`);
+      const rows = Array.isArray(result?.history) ? result.history : [];
+      setMyHistory(previous => reset ? rows : [...previous, ...rows]);
+      setHistoryOffset(offset + rows.length);
+      setHistoryHasMore(rows.length === 20);
+    } catch (error) {
+      Alert.alert('History unavailable', error?.message || 'Please try again.');
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const loadTopWinners = async () => {
+    if (topWinnersLoading || typeof api !== 'function') return;
+    setTopWinnersLoading(true);
+    try {
+      const result = await api('/api/games/royal-fruit/top-winners');
+      setTopWinners(Array.isArray(result?.winners) ? result.winners : []);
+    } catch (error) {
+      Alert.alert('Top winners unavailable', error?.message || 'Please try again.');
+    } finally {
+      setTopWinnersLoading(false);
+    }
+  };
+
+  const formatHistoryDate = value => {
+    if (!value) return '';
+    const date = new Date(value);
+    return `${date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })} · ${date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}`;
+  };
+
+  useEffect(() => {
+    if (!visible) return;
+    if (activeSection === 'history') {
+      setMyHistory([]);
+      setHistoryOffset(0);
+      setHistoryHasMore(false);
+      loadHistory(true);
+    } else if (activeSection === 'top') {
+      loadTopWinners();
+    }
+  }, [visible, activeSection, api]);
+
   const placeBet = async (fruit) => {
     if (phase !== 'betting' || betBusy) return;
     setBetBusy(true);
@@ -187,6 +242,22 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
             <Text style={{ color: '#D8B77C', fontSize: 13, fontWeight: '900', letterSpacing: 1.4, marginTop: 13 }}>ROUND {roundNumber}</Text>
           </View>
 
+          <View style={{ flexDirection: 'row', gap: 7, marginBottom: 15 }}>
+            {[
+              { key: 'game', label: 'GAME' },
+              { key: 'rules', label: 'RULES' },
+              { key: 'history', label: 'HISTORY' },
+              { key: 'top', label: 'TOP WINNER' }
+            ].map(tab => (
+              <TouchableOpacity key={tab.key} onPress={() => setActiveSection(tab.key)}
+                style={{ flex: 1, minHeight: 39, paddingHorizontal: 3, borderRadius: 11, borderWidth: 1.2, borderColor: activeSection === tab.key ? '#FFE29A' : '#956A3B', backgroundColor: activeSection === tab.key ? '#EAC477' : '#321B13', alignItems: 'center', justifyContent: 'center' }}>
+                <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: activeSection === tab.key ? '#35190D' : '#E8C78D', fontSize: 10, fontWeight: '900', letterSpacing: 0.5 }}>{tab.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {activeSection === 'game' && (
+          <>
           <View style={{ flexDirection: 'row', gap: 9, marginBottom: 18 }}>
             <View style={{ flex: 1, minHeight: 82, borderWidth: 1.4, borderColor: '#E0B45E', borderRadius: 17, backgroundColor: '#56301D', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, shadowColor: '#F6C66D', shadowOpacity: 0.55, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 10 }}>
               <View pointerEvents="none" style={{ position: 'absolute', top: 1, left: 5, right: 5, height: 24, borderTopLeftRadius: 14, borderTopRightRadius: 14, backgroundColor: 'rgba(255,238,190,0.12)' }} />
@@ -238,6 +309,121 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
           <TouchableOpacity onPress={onClose} style={{ alignSelf: 'center', marginTop: 14, paddingHorizontal: 24, paddingVertical: 8 }}>
             <Text style={{ color: '#C9A36C', fontSize: 13, fontWeight: '800' }}>CLOSE GAME</Text>
           </TouchableOpacity>
+          </>
+          )}
+
+          {activeSection === 'rules' && (
+            <View style={{ borderWidth: 1.5, borderColor: '#DDB05F', borderRadius: 19, backgroundColor: '#321B13', padding: 14, marginBottom: 18 }}>
+              <Text style={{ color: '#FFE3A3', fontSize: 17, fontWeight: '900', marginBottom: 12 }}>ROYAL FRUIT CROWN RULES</Text>
+              {[
+                'Each round has 37 seconds for betting.',
+                'You can bet on any or all eight fruits.',
+                'You can place multiple bets, including repeated bets on the same fruit.',
+                'Each accepted bet is deducted immediately from your main TALKZY wallet.',
+                'After betting closes, a 10-second result animation runs.',
+                'The winning fruit and round winners are shown for 5 seconds.',
+                'The next round starts automatically.',
+                'Winning payout includes the original stake.'
+              ].map((rule, index) => (
+                <View key={index} style={{ flexDirection: 'row', marginBottom: 10 }}>
+                  <Text style={{ color: '#E8C47D', width: 20, fontWeight: '900' }}>{index + 1}.</Text>
+                  <Text style={{ color: '#F3EBDD', flex: 1, fontSize: 13, lineHeight: 19 }}>{rule}</Text>
+                </View>
+              ))}
+              <View style={{ height: 1, backgroundColor: '#75502F', marginVertical: 8 }} />
+              <Text style={{ color: '#E8C47D', fontSize: 14, fontWeight: '900', marginBottom: 10 }}>FRUIT PAYOUTS</Text>
+              {FRUITS.map(fruit => (
+                <View key={fruit.name} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+                    <Text style={{ fontSize: 23 }}>{fruit.emoji}</Text>
+                    <Text style={{ color: '#F3EBDD', fontSize: 13, fontWeight: '700' }}>{fruit.name}</Text>
+                  </View>
+                  <Text style={{ color: '#FFE3A3', fontSize: 14, fontWeight: '900' }}>{fruit.multiplier}×</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {activeSection === 'history' && (
+            <View style={{ gap: 11, marginBottom: 18 }}>
+              {myHistory.map((item, index) => (
+                <View key={`${item.round_number}-${index}`} style={{ borderWidth: 1.4, borderColor: '#B98743', borderRadius: 17, backgroundColor: '#321B13', padding: 13 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                    <Text style={{ color: '#FFE3A3', fontSize: 14, fontWeight: '900' }}>ROUND NO. {item.round_number}</Text>
+                    <Text style={{ color: '#C9A982', fontSize: 10 }}>{formatHistoryDate(item.played_at)}</Text>
+                  </View>
+                  <View style={{ height: 1, backgroundColor: '#75502F', marginBottom: 10 }} />
+                  <Text style={{ color: '#DDBB80', fontSize: 11, fontWeight: '900', marginBottom: 8 }}>YOUR BETS</Text>
+                  {(Array.isArray(item.bets) ? item.bets : []).map(bet => {
+                    const fruit = FRUITS.find(entry => entry.name.toLowerCase() === String(bet.fruit || '').toLowerCase());
+                    return (
+                      <View key={bet.fruit} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 3 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                          <Text style={{ fontSize: 24 }}>{fruit?.emoji || '🍀'}</Text>
+                          <Text style={{ color: '#F3EBDD', fontSize: 13, fontWeight: '700' }}>{fruit?.name || bet.fruit}</Text>
+                        </View>
+                        <Text style={{ color: '#FFE3A3', fontSize: 13, fontWeight: '900' }}>{money(bet.amount)} coins</Text>
+                      </View>
+                    );
+                  })}
+                  <View style={{ height: 1, backgroundColor: '#75502F', marginVertical: 9 }} />
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ color: '#DDBB80', fontSize: 11, fontWeight: '900' }}>WINNING FRUIT</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+                      <Text style={{ fontSize: 23 }}>{FRUITS.find(fruit => fruit.name.toLowerCase() === String(item.winning_fruit || '').toLowerCase())?.emoji || '—'}</Text>
+                      <Text style={{ color: '#F3EBDD', fontSize: 13, fontWeight: '800' }}>{item.winning_fruit ? FRUITS.find(fruit => fruit.name.toLowerCase() === String(item.winning_fruit).toLowerCase())?.name || item.winning_fruit : '—'}</Text>
+                    </View>
+                  </View>
+                  {Number(item.winning_amount) > 0 && (
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
+                      <Text style={{ color: '#DDBB80', fontSize: 11, fontWeight: '900' }}>WINNING AMOUNT</Text>
+                      <Text style={{ color: '#62D89A', fontSize: 15, fontWeight: '900' }}>{money(item.winning_amount)} coins</Text>
+                    </View>
+                  )}
+                </View>
+              ))}
+              {myHistory.length === 0 && !historyLoading && (
+                <Text style={{ color: '#C9A982', textAlign: 'center', paddingVertical: 28 }}>No history yet</Text>
+              )}
+              {historyLoading && <Text style={{ color: '#DDBB80', textAlign: 'center', padding: 12 }}>Loading...</Text>}
+              {historyHasMore && !historyLoading && (
+                <TouchableOpacity onPress={() => loadHistory(false)} style={{ alignSelf: 'center', borderWidth: 1, borderColor: '#B98743', borderRadius: 12, paddingHorizontal: 22, paddingVertical: 10 }}>
+                  <Text style={{ color: '#FFE3A3', fontWeight: '900', fontSize: 12 }}>LOAD MORE</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+
+          {activeSection === 'top' && (
+            <View style={{ gap: 10, marginBottom: 18 }}>
+              <Text style={{ color: '#FFE3A3', fontSize: 17, fontWeight: '900', textAlign: 'center', marginBottom: 5 }}>TODAY'S TOP WINNERS</Text>
+              <Text style={{ color: '#C9A982', fontSize: 10, textAlign: 'center', marginBottom: 5 }}>DAILY RANKING · RESETS AT 00:00 IST</Text>
+              {topWinners.map((winner, index) => (
+                <View key={winner.user_id || index} style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1.2, borderColor: index === 0 ? '#E9C36D' : '#75502F', borderRadius: 15, backgroundColor: '#321B13', padding: 10 }}>
+                  <Text style={{ color: '#E9C36D', width: 27, fontSize: 16, fontWeight: '900' }}>{winner.rank || index + 1}</Text>
+                  {winner.avatar_url ? (
+                    <Image source={{ uri: winner.avatar_url }} style={{ width: 43, height: 43, borderRadius: 22, backgroundColor: '#65452D' }} />
+                  ) : (
+                    <View style={{ width: 43, height: 43, borderRadius: 22, backgroundColor: '#DDBB80', alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ color: '#321B13', fontWeight: '900' }}>{String(winner.display_name || 'P').slice(0, 2).toUpperCase()}</Text>
+                    </View>
+                  )}
+                  <View style={{ flex: 1, marginLeft: 10 }}>
+                    <Text numberOfLines={1} style={{ color: '#F3EBDD', fontSize: 13, fontWeight: '900' }}>{winner.display_name || 'Player'}</Text>
+                    <Text style={{ color: '#C9A982', fontSize: 10 }}>ID: {winner.talkzy_id || '—'}</Text>
+                  </View>
+                  <Text style={{ color: '#FFE3A3', fontSize: 12, fontWeight: '900' }}>{money(winner.coins)} coins</Text>
+                </View>
+              ))}
+              {topWinners.length === 0 && !topWinnersLoading && (
+                <Text style={{ color: '#C9A982', textAlign: 'center', paddingVertical: 28 }}>No winners yet today</Text>
+              )}
+              {topWinnersLoading && <Text style={{ color: '#DDBB80', textAlign: 'center', padding: 12 }}>Loading...</Text>}
+              <TouchableOpacity onPress={loadTopWinners} style={{ alignSelf: 'center', borderWidth: 1, borderColor: '#B98743', borderRadius: 12, paddingHorizontal: 22, paddingVertical: 10, marginTop: 4 }}>
+                <Text style={{ color: '#FFE3A3', fontWeight: '900', fontSize: 12 }}>REFRESH</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </ScrollView>
         {phase === 'winner' && winningFruit && (
           <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.84)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 18 }}>
