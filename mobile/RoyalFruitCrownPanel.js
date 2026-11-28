@@ -59,11 +59,11 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
   const [winningAmount, setWinningAmount] = useState(null);
   const [timer, setTimer] = useState(37);
   const [phase, setPhase] = useState('betting');
-  const [roundNumber, setRoundNumber] = useState(1);
+  const [roundNumber, setRoundNumber] = useState(0);
   const [recent, setRecent] = useState([]);
   const [winningFruit, setWinningFruit] = useState(null);
   const [roundWinners, setRoundWinners] = useState([]);
-  const [todayWins] = useState(0);
+  const [todayWins, setTodayWins] = useState(0);
   const [selectedFruit, setSelectedFruit] = useState(null);
   const [highlightedFruitIndex, setHighlightedFruitIndex] = useState(-1);
   const [animationStep, setAnimationStep] = useState(0);
@@ -80,6 +80,8 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
         if (cancelled) return;
         const round = state?.round;
         setBalance(Number(state?.balance || 0));
+        setTodayWins(Number(state?.today_wins || 0));
+        setRoundNumber(Number(state?.daily_round_number || 0));
         const bets = Array.isArray(state?.my_bets) ? state.my_bets.map(bet => ({
           fruitName: FRUITS.find(item => item.name.toLowerCase() === String(bet.fruit || '').toLowerCase())?.name || String(bet.fruit || ''),
           amount: Number(bet.amount || 0)
@@ -95,7 +97,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
             setSelectedFruit(null);
             setWinningAmount(null);
           }
-          setRoundNumber(Number(round.number || 1));
+          setRoundNumber(Number(state?.daily_round_number ?? round.number ?? 0));
           const serverPhase = round.phase;
           setPhase(serverPhase === 'betting' ? 'betting' : serverPhase === 'drawing' ? 'result' : 'winner');
           const fruit = FRUITS.find(item => item.name.toLowerCase() === String(round.winning_fruit || '').toLowerCase()) || null;
