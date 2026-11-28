@@ -53,7 +53,6 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
   const [stake, setStake] = useState(100);
   const [roundBet, setRoundBet] = useState(0);
   const [balance, setBalance] = useState(0);
-  const [betBusy, setBetBusy] = useState(false);
   const lastRoundIdRef = useRef(null);
   const [myRoundBets, setMyRoundBets] = useState([]);
   const [winningAmount, setWinningAmount] = useState(null);
@@ -194,25 +193,24 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
   }, [visible, activeSection, api]);
 
   const placeBet = async (fruit) => {
-    if (phase !== 'betting' || betBusy) return;
-    setBetBusy(true);
+    if (phase !== 'betting') return;
+    const betAmount = stake;
     try {
       const result = await api('/api/games/royal-fruit/bet', {
         method: 'POST',
         body: JSON.stringify({
           fruit: fruit.name.toLowerCase(),
-          amount: stake,
+          amount: betAmount,
           requestKey: `royal-fruit-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`
         })
       });
-      setBalance(Number(result?.balance || 0));
+      if (!result?.accepted) throw new Error('The server did not confirm this bet.');
+      setBalance(value => Math.max(0, Number(value || 0) - betAmount));
       setSelectedFruit(fruit.name);
-      setRoundBet(value => value + stake);
-      setMyRoundBets(items => [...items, { fruitName: fruit.name, amount: stake }]);
+      setRoundBet(value => value + betAmount);
+      setMyRoundBets(items => [...items, { fruitName: fruit.name, amount: betAmount }]);
     } catch (error) {
       Alert.alert('Bet not accepted', error?.message || 'Please try again.');
-    } finally {
-      setBetBusy(false);
     }
   };
 
