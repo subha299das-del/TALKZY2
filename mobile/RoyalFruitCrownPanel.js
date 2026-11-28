@@ -342,12 +342,16 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
             </View>
           </View>
 
-          <View style={{ marginTop: compactScreen ? 5 : 11, borderWidth: 1.5, borderColor: '#DDB05F', borderRadius: 20, backgroundColor: '#321B13', padding: compactScreen ? 7 : 11, minHeight: compactScreen ? 56 : 76, shadowColor: '#D99636', shadowOpacity: 0.38, shadowRadius: 13, shadowOffset: { width: 0, height: 5 }, elevation: 8, overflow: 'hidden' }}>
+          <View style={{ marginTop: compactScreen ? 5 : 11, borderWidth: 1.5, borderColor: '#DDB05F', borderRadius: 20, backgroundColor: '#321B13', paddingHorizontal: compactScreen ? 9 : 13, paddingTop: compactScreen ? 7 : 10, paddingBottom: compactScreen ? 9 : 12, minHeight: compactScreen ? 82 : 112, shadowColor: '#D99636', shadowOpacity: 0.38, shadowRadius: 13, shadowOffset: { width: 0, height: 5 }, elevation: 8, overflow: 'hidden' }}>
             <View pointerEvents="none" style={{ position: 'absolute', top: 1, left: 6, right: 6, height: 21, borderTopLeftRadius: 16, borderTopRightRadius: 16, backgroundColor: 'rgba(255,238,190,0.10)' }} />
             <Text style={{ color: '#DDBB80', fontSize: compactScreen ? 10 : 13, fontWeight: '900', letterSpacing: 0.7 }}>RECENT WINNING FRUITS</Text>
-            <Text style={{ color: '#A88A68', fontSize: 14, marginTop: 12 }}>{recent.length ? recent.map((fruit, index) => (
-              <Text key={`${fruit}-${index}`} style={{ fontSize: compactScreen ? 21 : 27, marginRight: 7 }}>{fruit}</Text>
-            )) : null}</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', marginTop: compactScreen ? 5 : 8, rowGap: compactScreen ? 3 : 5 }}>
+              {Array.from({ length: 9 }, (_, index) => (
+                <View key={index} style={{ width: '11.11%', minHeight: compactScreen ? 27 : 34, alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ fontSize: compactScreen ? 21 : 27, textAlign: 'center' }}>{recent[index] || '·'}</Text>
+                </View>
+              ))}
+            </View>
           </View>
           <TouchableOpacity onPress={onClose} style={{ alignSelf: 'center', marginTop: compactScreen ? 3 : 14, paddingHorizontal: 24, paddingVertical: compactScreen ? 3 : 8 }}>
             <Text style={{ color: '#C9A36C', fontSize: compactScreen ? 10 : 13, fontWeight: '800' }}>CLOSE GAME</Text>
