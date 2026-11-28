@@ -107,6 +107,14 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
       <StatusBar barStyle="light-content" backgroundColor="#160B08" />
       <SafeAreaView style={{ flex: 1, backgroundColor: '#100704' }}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 14, paddingTop: 8, paddingBottom: 22, backgroundColor: '#100704' }}>
+          <View style={{ alignItems: 'center', marginTop: 8, marginBottom: 18, paddingTop: 5, paddingBottom: 12, borderRadius: 24, borderWidth: 1, borderColor: 'rgba(226,177,91,0.42)', backgroundColor: '#26140F', shadowColor: '#D99636', shadowOpacity: 0.45, shadowRadius: 18, shadowOffset: { width: 0, height: 7 }, elevation: 10 }}>
+            <CrownMark size={78} />
+            <Text style={{ color: '#FFF0B5', fontSize: 32, lineHeight: 38, fontWeight: '900', fontFamily: 'serif', textAlign: 'center', letterSpacing: 1.7, textShadowColor: '#8C4D16', textShadowRadius: 8, textShadowOffset: { width: 0, height: 4 }, includeFontPadding: false }}>ROYAL FRUIT</Text>
+            <Text style={{ color: '#FFE1A0', fontSize: 35, lineHeight: 40, fontWeight: '900', fontFamily: 'serif', textAlign: 'center', letterSpacing: 1.5, textShadowColor: '#8C4D16', textShadowRadius: 8, textShadowOffset: { width: 0, height: 4 }, includeFontPadding: false }}>CROWN</Text>
+            <Text style={{ color: '#DDBB80', fontSize: 13, letterSpacing: 2.2, marginTop: 10, textAlign: 'center' }}>CHOOSE YOUR FRUIT · CLAIM THE CROWN</Text>
+            <Text style={{ color: '#D8B77C', fontSize: 13, fontWeight: '900', letterSpacing: 1.4, marginTop: 13 }}>DAILY ROUND · 0</Text>
+          </View>
+
           <View style={{ flexDirection: 'row', gap: 9, marginBottom: 18 }}>
             <View style={{ flex: 1, minHeight: 82, borderWidth: 1.4, borderColor: '#E0B45E', borderRadius: 17, backgroundColor: '#48271B', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, shadowColor: '#F6C66D', shadowOpacity: 0.34, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 8 }}>
               <Text style={{ color: GOLD, fontSize: 14, fontWeight: '900', textAlign: 'center', letterSpacing: 0.4 }}>TODAY'S TOTAL</Text>
@@ -117,14 +125,6 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
               <Text style={{ color: GOLD, fontSize: 14, fontWeight: '900', textAlign: 'center' }}>YOUR TOTAL COINS</Text>
               <Text style={{ color: '#FFE8A4', fontSize: 24, fontWeight: '900', marginTop: 6 }}>{money(totalCoins)}</Text>
             </View>
-          </View>
-
-          <View style={{ alignItems: 'center', marginTop: 8, marginBottom: 18, paddingTop: 5, paddingBottom: 12, borderRadius: 24, borderWidth: 1, borderColor: 'rgba(226,177,91,0.42)', backgroundColor: '#26140F', shadowColor: '#D99636', shadowOpacity: 0.45, shadowRadius: 18, shadowOffset: { width: 0, height: 7 }, elevation: 10 }}>
-            <CrownMark size={78} />
-            <Text style={{ color: '#FFF0B5', fontSize: 32, lineHeight: 38, fontWeight: '900', fontFamily: 'serif', textAlign: 'center', letterSpacing: 1.7, textShadowColor: '#8C4D16', textShadowRadius: 8, textShadowOffset: { width: 0, height: 4 }, includeFontPadding: false }}>ROYAL FRUIT</Text>
-            <Text style={{ color: '#FFE1A0', fontSize: 35, lineHeight: 40, fontWeight: '900', fontFamily: 'serif', textAlign: 'center', letterSpacing: 1.5, textShadowColor: '#8C4D16', textShadowRadius: 8, textShadowOffset: { width: 0, height: 4 }, includeFontPadding: false }}>CROWN</Text>
-            <Text style={{ color: '#DDBB80', fontSize: 13, letterSpacing: 2.2, marginTop: 10, textAlign: 'center' }}>CHOOSE YOUR FRUIT · CLAIM THE CROWN</Text>
-            <Text style={{ color: '#D8B77C', fontSize: 13, fontWeight: '900', letterSpacing: 1.4, marginTop: 13 }}>DAILY ROUND · 0</Text>
           </View>
 
           <View style={{ borderWidth: 2, borderColor: '#E0B45E', borderRadius: 22, padding: 9, backgroundColor: '#32190F', shadowColor: '#F4B84F', shadowOpacity: 0.48, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 11 }}>
