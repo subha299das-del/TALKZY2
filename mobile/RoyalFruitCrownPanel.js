@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Modal, SafeAreaView, ScrollView, View, Text, TouchableOpacity, Image,
-  StatusBar, useWindowDimensions, Alert
+  StatusBar, useWindowDimensions, Alert, Animated, Easing
 } from 'react-native';
 
 const GOLD = '#F6D987';
@@ -20,6 +20,18 @@ const STAKES = [100, 500, 1000, 5000];
 
 
 function FruitTile({ fruit, selected, active, highlighted, betAmount, onPress, tileHeight, emojiSize }) {
+  const shine = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const animation = Animated.loop(Animated.sequence([
+      Animated.timing(shine, { toValue: 1, duration: 1050, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      Animated.timing(shine, { toValue: 0, duration: 1050, easing: Easing.inOut(Easing.sin), useNativeDriver: true })
+    ]));
+    animation.start();
+    return () => animation.stop();
+  }, [shine]);
+  const glowOpacity = shine.interpolate({ inputRange: [0, 1], outputRange: [0.28, 0.95] });
+  const glintOpacity = shine.interpolate({ inputRange: [0, 1], outputRange: [0.45, 1] });
+  const glowScale = shine.interpolate({ inputRange: [0, 1], outputRange: [0.82, 1.18] });
   return (
     <TouchableOpacity key={fruit.name} activeOpacity={0.86} onPress={onPress}
       style={{
@@ -34,10 +46,10 @@ function FruitTile({ fruit, selected, active, highlighted, betAmount, onPress, t
       }}>
       <View pointerEvents="none" style={{ position: 'absolute', top: 2, left: 3, right: 3, bottom: 2, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,239,190,0.24)' }} />
       <View pointerEvents="none" style={{ position: 'absolute', top: 1, left: 3, right: 3, height: 48, borderTopLeftRadius: 17, borderTopRightRadius: 17, backgroundColor: 'rgba(255,245,214,0.19)' }} />
-      <View pointerEvents="none" style={{ position: 'absolute', top: 17, alignSelf: 'center', width: 70, height: 62, borderRadius: 35, backgroundColor: 'rgba(255,205,102,0.16)', shadowColor: '#FFD46B', shadowOpacity: 0.95, shadowRadius: 20, elevation: 6 }} />
+      <Animated.View pointerEvents="none" style={{ position: 'absolute', top: 12, alignSelf: 'center', width: tileHeight * 0.78, height: tileHeight * 0.72, borderRadius: tileHeight, backgroundColor: 'rgba(255,196,65,0.32)', opacity: glowOpacity, transform: [{ scale: glowScale }], shadowColor: '#FFF0A6', shadowOpacity: 1, shadowRadius: 30, elevation: 16 }} />
       <Text style={{ fontSize: emojiSize, lineHeight: emojiSize + 6, textShadowColor: '#1A0803', textShadowOffset: { width: 0, height: 5 }, textShadowRadius: 8, includeFontPadding: false }}>{fruit.emoji}</Text>
-      <View pointerEvents="none" style={{ position: 'absolute', top: Math.max(15, tileHeight * 0.24), left: '34%', width: 9, height: 22, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.72)', transform: [{ rotate: '27deg' }], shadowColor: '#FFFFFF', shadowOpacity: 0.8, shadowRadius: 5, elevation: 4 }} />
-      <View pointerEvents="none" style={{ position: 'absolute', top: Math.max(31, tileHeight * 0.44), left: '31%', width: 5, height: 8, borderRadius: 8, backgroundColor: 'rgba(255,248,225,0.58)', transform: [{ rotate: '20deg' }] }} />
+      <Animated.View pointerEvents="none" style={{ position: 'absolute', top: Math.max(12, tileHeight * 0.20), left: '33%', width: 11, height: 27, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.98)', opacity: glintOpacity, transform: [{ rotate: '27deg' }, { scale: glowScale }], shadowColor: '#FFFFFF', shadowOpacity: 1, shadowRadius: 11, elevation: 9 }} />
+      <Animated.View pointerEvents="none" style={{ position: 'absolute', top: Math.max(29, tileHeight * 0.42), left: '30%', width: 7, height: 11, borderRadius: 8, backgroundColor: '#FFFFFF', opacity: glintOpacity, transform: [{ rotate: '20deg' }] }} />
       <Text style={{ color: '#FFF0B5', fontSize: 15, fontWeight: '900', marginTop: 0, textShadowColor: '#8B4A1C', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 3 }}>{fruit.multiplier}×</Text>
       {Number(betAmount) > 0 && (
         <View pointerEvents="none" style={{ position: 'absolute', bottom: 4, alignSelf: 'center', minWidth: 48, maxWidth: '94%', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 10, backgroundColor: '#F5D27D', borderWidth: 1, borderColor: '#FFF0B4', zIndex: 5, elevation: 8 }}>
