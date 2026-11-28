@@ -52,6 +52,9 @@ test('private room and chat APIs reject requests without a user session', async 
     '/api/games/royal-fruit/state',
     '/api/games/royal-fruit/history',
     '/api/games/royal-fruit/top-winners',
+    '/api/games/divine-jackpot/state',
+    '/api/games/divine-jackpot/history',
+    '/api/games/divine-jackpot/top-winners',
   ];
 
   for (const path of paths) {
@@ -67,6 +70,7 @@ test('room mutations reject unauthenticated requests before processing data', as
     ['/api/rooms/test-room/music/me', 'PUT', { queue: [] }],
     ['/api/rooms/test-room/youtube', 'PUT', { video_id: null, queue: [] }],
     ['/api/games/royal-fruit/bet', 'POST', { fruit: 'apple', amount: 100, requestKey: 'royal-fruit-test-12345' }],
+    ['/api/games/divine-jackpot/spin', 'POST', { amount: 100, requestKey: 'divine-jackpot-test-12345' }],
   ];
 
   for (const [path, method, body] of requests) {
