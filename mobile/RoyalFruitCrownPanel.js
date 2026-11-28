@@ -75,6 +75,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
   const [phase, setPhase] = useState('betting');
   const [roundNumber, setRoundNumber] = useState(1);
   const [recent, setRecent] = useState([]);
+  const [winningFruit, setWinningFruit] = useState(null);
   const [todayWins] = useState(0);
   const [totalCoins] = useState(10000);
   const [selectedFruit, setSelectedFruit] = useState(null);
@@ -86,8 +87,9 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
         if (current > 1) return current - 1;
         if (phase === 'betting') { setPhase('result'); return 10; }
         if (phase === 'result') {
-          const winningFruit = FRUITS[Math.floor(Math.random() * FRUITS.length)];
-          setRecent(items => [winningFruit.emoji, ...items].slice(0, 6));
+          const resultFruit = FRUITS[Math.floor(Math.random() * FRUITS.length)];
+          setWinningFruit(resultFruit);
+          setRecent(items => [resultFruit.emoji, ...items].slice(0, 6));
           setPhase('winner');
           return 5;
         }
@@ -164,6 +166,30 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
             <Text style={{ color: '#C9A36C', fontSize: 13, fontWeight: '800' }}>CLOSE GAME</Text>
           </TouchableOpacity>
         </ScrollView>
+        {phase === 'winner' && winningFruit && (
+          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.84)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 18 }}>
+            <View style={{ width: '100%', maxWidth: 560, borderRadius: 25, borderWidth: 2.5, borderColor: '#F2CF75', backgroundColor: '#2B130D', paddingHorizontal: 16, paddingTop: 20, paddingBottom: 22, shadowColor: '#F8C95E', shadowOpacity: 0.8, shadowRadius: 24, shadowOffset: { width: 0, height: 0 }, elevation: 22 }}>
+              <Text style={{ color: '#D9B777', fontSize: 14, letterSpacing: 3, textAlign: 'center', marginBottom: 22 }}>ROUND RESULT</Text>
+              <Text adjustsFontSizeToFit numberOfLines={1} style={{ color: '#FFE8A6', fontFamily: 'serif', fontWeight: '900', fontSize: 29, textAlign: 'center', marginBottom: 18 }}>👑 WINNING FRUIT</Text>
+              <Text style={{ fontSize: 76, textAlign: 'center', marginBottom: 8 }}>{winningFruit.emoji}</Text>
+              <Text style={{ color: '#FFE4A6', fontSize: 17, fontWeight: '800', textAlign: 'center', marginBottom: 8 }}>{winningFruit.name} wins at {winningFruit.multiplier}×</Text>
+              <Text style={{ color: '#F1D5A4', fontSize: 17, textAlign: 'center', marginBottom: 20 }}>Total bets: {money(roundBet)} coins</Text>
+              <Text style={{ color: '#D9B777', fontSize: 14, letterSpacing: 2.2, textAlign: 'center', marginBottom: 14 }}>TOP 3 WINNERS THIS ROUND</Text>
+              <View style={{ flexDirection: 'row', gap: 7, marginBottom: 20 }}>
+                {[1, 2, 3].map((place) => (
+                  <View key={place} style={{ flex: 1, minWidth: 0, borderWidth: 1, borderColor: '#8E6339', borderRadius: 13, backgroundColor: '#1D0D09', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 3 }}>
+                    <View style={{ width: 43, height: 43, borderRadius: 22, borderWidth: 2, borderColor: '#F3D17D', backgroundColor: '#E8C77D', alignItems: 'center', justifyContent: 'center', marginBottom: 7 }}>
+                      <Text style={{ color: '#3C210F', fontSize: 16, fontWeight: '900' }}>—</Text>
+                    </View>
+                    <Text numberOfLines={1} style={{ color: '#F6DDB0', fontSize: 12, marginBottom: 5 }}>Awaiting data</Text>
+                    <Text style={{ color: '#EFD18C', fontSize: 12, fontWeight: '900' }}>🪙 —</Text>
+                  </View>
+                ))}
+              </View>
+              <Text style={{ color: '#D9B777', fontSize: 14, textAlign: 'center' }}>Next round starts automatically in {timer} seconds</Text>
+            </View>
+          </View>
+        )}
       </SafeAreaView>
     </Modal>
   );
