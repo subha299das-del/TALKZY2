@@ -347,6 +347,35 @@ app.get('/api/games/royal-fruit/state', userAuth, async (req, res) => {
   }
 });
 
+app.get('/api/games/royal-fruit/history', userAuth, async (req, res) => {
+  const limit = Math.max(1, Math.min(Number.parseInt(req.query.limit, 10) || 20, 100));
+  const offset = Math.max(0, Number.parseInt(req.query.offset, 10) || 0);
+  try {
+    const { data, error } = await supabase.rpc('talkzy_royal_fruit_get_history', {
+      p_user_id: req.talkzyUser.id,
+      p_limit: limit,
+      p_offset: offset
+    });
+    if (error) throw error;
+    const history = Array.isArray(data) ? data : [];
+    res.set('Cache-Control', 'no-store').json({ history, hasMore: history.length === limit });
+  } catch (error) {
+    console.error('Royal Fruit Crown history error:', error.message);
+    res.status(503).json({ error: 'Could not load your Royal Fruit Crown history.' });
+  }
+});
+
+app.get('/api/games/royal-fruit/top-winners', userAuth, async (req, res) => {
+  try {
+    const { data, error } = await supabase.rpc('talkzy_royal_fruit_get_daily_top_winners', { p_limit: 10 });
+    if (error) throw error;
+    res.set('Cache-Control', 'no-store').json({ winners: Array.isArray(data) ? data : [] });
+  } catch (error) {
+    console.error('Royal Fruit Crown daily leaderboard error:', error.message);
+    res.status(503).json({ error: 'Could not load today’s Royal Fruit Crown winners.' });
+  }
+});
+
 app.post('/api/games/royal-fruit/bet', userAuth, fruitBetLimiter, async (req, res) => {
   const fruit = String(req.body?.fruit || '').trim().toLowerCase();
   const amount = Number(req.body?.amount);
