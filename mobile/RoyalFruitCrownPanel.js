@@ -23,25 +23,28 @@ function FruitTile({ fruit, selected, active, highlighted, betAmount, onPress })
   return (
     <TouchableOpacity key={fruit.name} activeOpacity={0.86} onPress={onPress}
       style={{
-        width: '31.8%', height: 101, marginBottom: 8, borderRadius: 17,
-        borderWidth: highlighted || selected ? 2.5 : 1.3,
-        borderColor: highlighted ? '#FFF5C2' : selected ? '#FFF0B4' : '#DDAA57',
-        backgroundColor: highlighted ? '#9A6426' : selected ? '#87501F' : '#512719',
+        width: '31.8%', height: 108, marginBottom: 8, borderRadius: 19,
+        borderWidth: highlighted || selected ? 2.7 : 1.5,
+        borderColor: highlighted ? '#FFF9D9' : selected ? '#FFF0B4' : '#E7B969',
+        backgroundColor: highlighted ? '#A96B28' : selected ? '#925321' : '#63301A',
         alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-        opacity: active ? 1 : 0.66,
-        shadowColor: '#FFD45E', shadowOpacity: highlighted ? 1 : selected ? 0.72 : 0.38,
-        shadowRadius: highlighted ? 20 : selected ? 12 : 7, shadowOffset: { width: 0, height: 4 }, elevation: highlighted ? 18 : selected ? 10 : 6
+        opacity: active ? 1 : 0.82,
+        shadowColor: '#FFD45E', shadowOpacity: highlighted ? 1 : selected ? 0.9 : 0.62,
+        shadowRadius: highlighted ? 24 : selected ? 17 : 12, shadowOffset: { width: 0, height: 5 }, elevation: highlighted ? 22 : selected ? 14 : 9
       }}>
-      <View pointerEvents="none" style={{ position: 'absolute', top: 1, left: 3, right: 3, height: 34, borderTopLeftRadius: 15, borderTopRightRadius: 15, backgroundColor: 'rgba(255,238,190,0.13)' }} />
-      <View pointerEvents="none" style={{ position: 'absolute', top: 7, left: 10, width: 25, height: 9, borderRadius: 9, backgroundColor: 'rgba(255,255,255,0.16)', transform: [{ rotate: '-24deg' }] }} />
-      <Text style={{ fontSize: 43, lineHeight: 49, textShadowColor: '#120805', textShadowOffset: { width: 0, height: 5 }, textShadowRadius: 5, includeFontPadding: false }}>{fruit.emoji}</Text>
+      <View pointerEvents="none" style={{ position: 'absolute', top: 2, left: 3, right: 3, bottom: 2, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,239,190,0.24)' }} />
+      <View pointerEvents="none" style={{ position: 'absolute', top: 1, left: 3, right: 3, height: 48, borderTopLeftRadius: 17, borderTopRightRadius: 17, backgroundColor: 'rgba(255,245,214,0.19)' }} />
+      <View pointerEvents="none" style={{ position: 'absolute', top: 9, left: 12, width: 37, height: 12, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.25)', transform: [{ rotate: '-27deg' }] }} />
+      <View pointerEvents="none" style={{ position: 'absolute', top: 25, left: 9, width: 14, height: 34, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.07)', transform: [{ rotate: '18deg' }] }} />
+      <View pointerEvents="none" style={{ position: 'absolute', top: 17, alignSelf: 'center', width: 66, height: 62, borderRadius: 33, backgroundColor: 'rgba(255,205,102,0.13)', shadowColor: '#FFD46B', shadowOpacity: 0.85, shadowRadius: 18, elevation: 5 }} />
+      <Text style={{ fontSize: 51, lineHeight: 57, textShadowColor: '#1A0803', textShadowOffset: { width: 0, height: 5 }, textShadowRadius: 8, includeFontPadding: false }}>{fruit.emoji}</Text>
       <Text style={{ color: '#FFF0B5', fontSize: 15, fontWeight: '900', marginTop: 0, textShadowColor: '#8B4A1C', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 3 }}>{fruit.multiplier}×</Text>
       {Number(betAmount) > 0 && (
         <View pointerEvents="none" style={{ position: 'absolute', bottom: 4, alignSelf: 'center', minWidth: 48, maxWidth: '94%', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 10, backgroundColor: '#F5D27D', borderWidth: 1, borderColor: '#FFF0B4', zIndex: 5, elevation: 8 }}>
           <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: '#32170B', fontSize: 12, lineHeight: 15, fontWeight: '900', textAlign: 'center' }}>🪙 {Number(betAmount).toLocaleString('en-IN')}</Text>
         </View>
       )}
-      <View pointerEvents="none" style={{ position: 'absolute', bottom: 0, left: 9, right: 9, height: 2, borderRadius: 2, backgroundColor: 'rgba(255,222,145,0.45)' }} />
+      <View pointerEvents="none" style={{ position: 'absolute', bottom: 0, left: 9, right: 9, height: 2, borderRadius: 2, backgroundColor: 'rgba(255,232,170,0.72)' }} />
     </TouchableOpacity>
   );
 }
@@ -201,7 +204,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
               {FRUITS.slice(0,4).map((fruit, index) => (
                 <FruitTile key={fruit.name} fruit={fruit} selected={selectedFruit === fruit.name} active={phase === 'betting'} highlighted={phase === 'result' && highlightedFruitIndex === FRUITS.findIndex(item => item.name === fruit.name)} betAmount={fruitBetTotals[fruit.name.toLowerCase()] || 0} onPress={() => placeBet(fruit)} />
               ))}
-              <View style={{ width: '31.8%', height: 101, marginBottom: 8, borderRadius: 17, borderWidth: 1.5, borderColor: '#F0C875', backgroundColor: '#512B19', alignItems: 'center', justifyContent: 'center', shadowColor: '#FFD66E', shadowOpacity: 0.5, shadowRadius: 14, shadowOffset: { width: 0, height: 4 }, elevation: 9, overflow: 'hidden' }}>
+              <View style={{ width: '31.8%', height: 108, marginBottom: 8, borderRadius: 17, borderWidth: 1.5, borderColor: '#F0C875', backgroundColor: '#512B19', alignItems: 'center', justifyContent: 'center', shadowColor: '#FFD66E', shadowOpacity: 0.5, shadowRadius: 14, shadowOffset: { width: 0, height: 4 }, elevation: 9, overflow: 'hidden' }}>
                 <View pointerEvents="none" style={{ position: 'absolute', top: 1, left: 4, right: 4, height: 30, borderTopLeftRadius: 15, borderTopRightRadius: 15, backgroundColor: 'rgba(255,241,201,0.14)' }} />
                 <Text style={{ color: '#FFE39B', fontSize: 32, fontWeight: '900', lineHeight: 36 }}>{timer}s</Text>
               </View>
