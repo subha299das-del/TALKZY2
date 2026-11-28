@@ -142,7 +142,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
         setRoundBet(bets.reduce((sum, bet) => sum + bet.amount, 0));
         setRecent((Array.isArray(state?.history) ? state.history : [])
           .map(item => getFruitByName(item.fruit)?.emoji)
-          .filter(Boolean).slice(0, 9));
+          .filter(Boolean).slice(0, 8));
         if (round) {
           if (lastRoundIdRef.current !== round.id) {
             lastRoundIdRef.current = round.id;
@@ -346,7 +346,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
             <View pointerEvents="none" style={{ position: 'absolute', top: 1, left: 6, right: 6, height: 21, borderTopLeftRadius: 16, borderTopRightRadius: 16, backgroundColor: 'rgba(255,238,190,0.10)' }} />
             <Text style={{ color: '#DDBB80', fontSize: compactScreen ? 10 : 13, fontWeight: '900', letterSpacing: 0.7 }}>RECENT WINNING FRUITS</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', marginTop: compactScreen ? 5 : 8, rowGap: compactScreen ? 3 : 5 }}>
-              {Array.from({ length: 9 }, (_, index) => (
+              {Array.from({ length: 8 }, (_, index) => (
                 <View key={index} style={{ width: '11.11%', minHeight: compactScreen ? 27 : 34, alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ fontSize: compactScreen ? 21 : 27, textAlign: 'center' }}>{recent[index] || '·'}</Text>
                 </View>
