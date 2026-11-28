@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Modal, SafeAreaView, ScrollView, View, Text, TouchableOpacity, Image,
-  StatusBar, Dimensions, Alert
+  StatusBar, useWindowDimensions, Alert
 } from 'react-native';
 
 const GOLD = '#F6D987';
@@ -19,11 +19,11 @@ const FRUITS = [
 const STAKES = [100, 500, 1000, 5000];
 
 
-function FruitTile({ fruit, selected, active, highlighted, betAmount, onPress }) {
+function FruitTile({ fruit, selected, active, highlighted, betAmount, onPress, tileHeight, emojiSize }) {
   return (
     <TouchableOpacity key={fruit.name} activeOpacity={0.86} onPress={onPress}
       style={{
-        width: '31.8%', height: 108, marginBottom: 8, borderRadius: 19,
+        width: '31.8%', height: tileHeight, marginBottom: 4, borderRadius: 16,
         borderWidth: highlighted || selected ? 2.7 : 1.5,
         borderColor: highlighted ? '#FFF9D9' : selected ? '#FFF0B4' : '#E7B969',
         backgroundColor: highlighted ? '#A96B28' : selected ? '#925321' : '#63301A',
@@ -35,9 +35,9 @@ function FruitTile({ fruit, selected, active, highlighted, betAmount, onPress })
       <View pointerEvents="none" style={{ position: 'absolute', top: 2, left: 3, right: 3, bottom: 2, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,239,190,0.24)' }} />
       <View pointerEvents="none" style={{ position: 'absolute', top: 1, left: 3, right: 3, height: 48, borderTopLeftRadius: 17, borderTopRightRadius: 17, backgroundColor: 'rgba(255,245,214,0.19)' }} />
       <View pointerEvents="none" style={{ position: 'absolute', top: 17, alignSelf: 'center', width: 70, height: 62, borderRadius: 35, backgroundColor: 'rgba(255,205,102,0.16)', shadowColor: '#FFD46B', shadowOpacity: 0.95, shadowRadius: 20, elevation: 6 }} />
-      <Text style={{ fontSize: 53, lineHeight: 59, textShadowColor: '#1A0803', textShadowOffset: { width: 0, height: 5 }, textShadowRadius: 8, includeFontPadding: false }}>{fruit.emoji}</Text>
-      <View pointerEvents="none" style={{ position: 'absolute', top: 27, left: '34%', width: 9, height: 22, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.72)', transform: [{ rotate: '27deg' }], shadowColor: '#FFFFFF', shadowOpacity: 0.8, shadowRadius: 5, elevation: 4 }} />
-      <View pointerEvents="none" style={{ position: 'absolute', top: 48, left: '31%', width: 5, height: 8, borderRadius: 8, backgroundColor: 'rgba(255,248,225,0.58)', transform: [{ rotate: '20deg' }] }} />
+      <Text style={{ fontSize: emojiSize, lineHeight: emojiSize + 6, textShadowColor: '#1A0803', textShadowOffset: { width: 0, height: 5 }, textShadowRadius: 8, includeFontPadding: false }}>{fruit.emoji}</Text>
+      <View pointerEvents="none" style={{ position: 'absolute', top: Math.max(15, tileHeight * 0.24), left: '34%', width: 9, height: 22, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.72)', transform: [{ rotate: '27deg' }], shadowColor: '#FFFFFF', shadowOpacity: 0.8, shadowRadius: 5, elevation: 4 }} />
+      <View pointerEvents="none" style={{ position: 'absolute', top: Math.max(31, tileHeight * 0.44), left: '31%', width: 5, height: 8, borderRadius: 8, backgroundColor: 'rgba(255,248,225,0.58)', transform: [{ rotate: '20deg' }] }} />
       <Text style={{ color: '#FFF0B5', fontSize: 15, fontWeight: '900', marginTop: 0, textShadowColor: '#8B4A1C', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 3 }}>{fruit.multiplier}×</Text>
       {Number(betAmount) > 0 && (
         <View pointerEvents="none" style={{ position: 'absolute', bottom: 4, alignSelf: 'center', minWidth: 48, maxWidth: '94%', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 10, backgroundColor: '#F5D27D', borderWidth: 1, borderColor: '#FFF0B4', zIndex: 5, elevation: 8 }}>
@@ -50,6 +50,10 @@ function FruitTile({ fruit, selected, active, highlighted, betAmount, onPress })
 }
 
 export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
+  const { height: screenHeight } = useWindowDimensions();
+  const compactScreen = screenHeight < 780;
+  const tileHeight = Math.max(76, Math.min(108, Math.floor((screenHeight - 390) / 3)));
+  const emojiSize = Math.round(tileHeight * 0.47);
   const [stake, setStake] = useState(100);
   const [roundBet, setRoundBet] = useState(0);
   const [balance, setBalance] = useState(0);
@@ -233,14 +237,14 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
           <View style={{ position: 'absolute', top: '37%', left: 0, right: 0, height: 1, backgroundColor: 'rgba(225,163,81,0.07)' }} />
           <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, backgroundColor: 'rgba(255,218,145,0.10)' }} />
         </View>
-        <ScrollView style={{ backgroundColor: 'transparent' }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 14, paddingTop: 8, paddingBottom: 22, backgroundColor: 'transparent' }}>
-          <View style={{ alignItems: 'center', marginTop: 8, marginBottom: 18, paddingTop: 5, paddingBottom: 12, borderRadius: 24, borderWidth: 1, borderColor: 'rgba(226,177,91,0.42)', backgroundColor: '#26140F', shadowColor: '#D99636', shadowOpacity: 0.45, shadowRadius: 18, shadowOffset: { width: 0, height: 7 }, elevation: 10 }}>
-            <Text style={{ color: '#FFF0B5', fontSize: 32, lineHeight: 38, fontWeight: '900', fontFamily: 'serif', textAlign: 'center', letterSpacing: 1.7, textShadowColor: '#8C4D16', textShadowRadius: 8, textShadowOffset: { width: 0, height: 4 }, includeFontPadding: false }}>ROYAL FRUIT</Text>
-            <Text style={{ color: '#FFE1A0', fontSize: 35, lineHeight: 40, fontWeight: '900', fontFamily: 'serif', textAlign: 'center', letterSpacing: 1.5, textShadowColor: '#8C4D16', textShadowRadius: 8, textShadowOffset: { width: 0, height: 4 }, includeFontPadding: false }}>CROWN</Text>
-            <Text style={{ color: '#D8B77C', fontSize: 13, fontWeight: '900', letterSpacing: 1.4, marginTop: 13 }}>ROUND {roundNumber}</Text>
+        <ScrollView style={{ flex: 1, backgroundColor: 'transparent' }} scrollEnabled={activeSection !== 'game'} showsVerticalScrollIndicator={activeSection !== 'game'} contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 14, paddingTop: compactScreen ? 2 : 8, paddingBottom: compactScreen ? 4 : 22, backgroundColor: 'transparent' }}>
+          <View style={{ alignItems: 'center', marginTop: compactScreen ? 1 : 8, marginBottom: compactScreen ? 6 : 18, paddingTop: compactScreen ? 2 : 5, paddingBottom: compactScreen ? 5 : 12, borderRadius: 24, borderWidth: 1, borderColor: 'rgba(226,177,91,0.42)', backgroundColor: '#26140F', shadowColor: '#D99636', shadowOpacity: 0.45, shadowRadius: 18, shadowOffset: { width: 0, height: 7 }, elevation: 10 }}>
+            <Text style={{ color: '#FFF0B5', fontSize: compactScreen ? 25 : 32, lineHeight: compactScreen ? 29 : 38, fontWeight: '900', fontFamily: 'serif', textAlign: 'center', letterSpacing: 1.7, textShadowColor: '#8C4D16', textShadowRadius: 8, textShadowOffset: { width: 0, height: 4 }, includeFontPadding: false }}>ROYAL FRUIT</Text>
+            <Text style={{ color: '#FFE1A0', fontSize: compactScreen ? 27 : 35, lineHeight: compactScreen ? 31 : 40, fontWeight: '900', fontFamily: 'serif', textAlign: 'center', letterSpacing: 1.5, textShadowColor: '#8C4D16', textShadowRadius: 8, textShadowOffset: { width: 0, height: 4 }, includeFontPadding: false }}>CROWN</Text>
+            <Text style={{ color: '#D8B77C', fontSize: compactScreen ? 10 : 13, fontWeight: '900', letterSpacing: 1.4, marginTop: compactScreen ? 5 : 13 }}>ROUND {roundNumber}</Text>
           </View>
 
-          <View style={{ flexDirection: 'row', gap: 7, marginBottom: 15 }}>
+          <View style={{ flexDirection: 'row', gap: 6, marginBottom: compactScreen ? 7 : 15 }}>
             {[
               { key: 'game', label: 'GAME' },
               { key: 'rules', label: 'RULES' },
@@ -248,7 +252,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
               { key: 'top', label: 'TOP WINNER' }
             ].map(tab => (
               <TouchableOpacity key={tab.key} onPress={() => setActiveSection(tab.key)}
-                style={{ flex: 1, minHeight: 39, paddingHorizontal: 3, borderRadius: 11, borderWidth: 1.2, borderColor: activeSection === tab.key ? '#FFE29A' : '#956A3B', backgroundColor: activeSection === tab.key ? '#EAC477' : '#321B13', alignItems: 'center', justifyContent: 'center' }}>
+                style={{ flex: 1, minHeight: compactScreen ? 33 : 39, paddingHorizontal: 3, borderRadius: 11, borderWidth: 1.2, borderColor: activeSection === tab.key ? '#FFE29A' : '#956A3B', backgroundColor: activeSection === tab.key ? '#EAC477' : '#321B13', alignItems: 'center', justifyContent: 'center' }}>
                 <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: activeSection === tab.key ? '#35190D' : '#E8C78D', fontSize: 10, fontWeight: '900', letterSpacing: 0.5 }}>{tab.label}</Text>
               </TouchableOpacity>
             ))}
@@ -260,11 +264,11 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
             <View pointerEvents="none" style={{ position: 'absolute', top: 3, left: 12, right: 12, height: 18, borderTopLeftRadius: 18, borderTopRightRadius: 18, backgroundColor: 'rgba(255,236,183,0.10)' }} />
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
               {FRUITS.slice(0,4).map((fruit, index) => (
-                <FruitTile key={fruit.name} fruit={fruit} selected={selectedFruit === fruit.name} active={phase === 'betting'} highlighted={phase === 'result' && highlightedFruitIndex === FRUITS.findIndex(item => item.name === fruit.name)} betAmount={fruitBetTotals[fruit.name.toLowerCase()] || 0} onPress={() => placeBet(fruit)} />
+                <FruitTile key={fruit.name} fruit={fruit} selected={selectedFruit === fruit.name} active={phase === 'betting'} highlighted={phase === 'result' && highlightedFruitIndex === FRUITS.findIndex(item => item.name === fruit.name)} betAmount={fruitBetTotals[fruit.name.toLowerCase()] || 0} tileHeight={tileHeight} emojiSize={emojiSize} onPress={() => placeBet(fruit)} />
               ))}
-              <View style={{ width: '31.8%', height: 108, marginBottom: 8, borderRadius: 17, borderWidth: 1.5, borderColor: '#F0C875', backgroundColor: '#512B19', alignItems: 'center', justifyContent: 'center', shadowColor: '#FFD66E', shadowOpacity: 0.5, shadowRadius: 14, shadowOffset: { width: 0, height: 4 }, elevation: 9, overflow: 'hidden' }}>
+              <View style={{ width: '31.8%', height: tileHeight, marginBottom: 4, borderRadius: 17, borderWidth: 1.5, borderColor: '#F0C875', backgroundColor: '#512B19', alignItems: 'center', justifyContent: 'center', shadowColor: '#FFD66E', shadowOpacity: 0.5, shadowRadius: 14, shadowOffset: { width: 0, height: 4 }, elevation: 9, overflow: 'hidden' }}>
                 <View pointerEvents="none" style={{ position: 'absolute', top: 1, left: 4, right: 4, height: 30, borderTopLeftRadius: 15, borderTopRightRadius: 15, backgroundColor: 'rgba(255,241,201,0.14)' }} />
-                <Text style={{ color: '#FFE39B', fontSize: 32, fontWeight: '900', lineHeight: 36 }}>{timer}s</Text>
+                <Text style={{ color: '#FFE39B', fontSize: compactScreen ? 25 : 32, fontWeight: '900', lineHeight: compactScreen ? 29 : 36 }}>{timer}s</Text>
               </View>
               {FRUITS.slice(4).map(fruit => (
                 <FruitTile key={fruit.name} fruit={fruit} selected={selectedFruit === fruit.name} active={phase === 'betting'} highlighted={phase === 'result' && highlightedFruitIndex === FRUITS.findIndex(item => item.name === fruit.name)} betAmount={fruitBetTotals[fruit.name.toLowerCase()] || 0} onPress={() => placeBet(fruit)} />
@@ -272,27 +276,27 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
             </View>
           </View>
 
-          <View style={{ marginTop: 11, borderWidth: 1.5, borderColor: '#E5B963', borderRadius: 20, backgroundColor: '#4A2819', padding: 11, shadowColor: '#D9973A', shadowOpacity: 0.5, shadowRadius: 14, shadowOffset: { width: 0, height: 5 }, elevation: 9, overflow: 'hidden' }}>
+          <View style={{ marginTop: compactScreen ? 5 : 11, borderWidth: 1.5, borderColor: '#E5B963', borderRadius: 20, backgroundColor: '#4A2819', padding: compactScreen ? 7 : 11, shadowColor: '#D9973A', shadowOpacity: 0.5, shadowRadius: 14, shadowOffset: { width: 0, height: 5 }, elevation: 9, overflow: 'hidden' }}>
             <View pointerEvents="none" style={{ position: 'absolute', top: 1, left: 6, right: 6, height: 22, borderTopLeftRadius: 16, borderTopRightRadius: 16, backgroundColor: 'rgba(255,238,190,0.11)' }} />
             <View style={{ flexDirection: 'row', gap: 6 }}>
               {STAKES.map(amount => (
-                <TouchableOpacity key={amount} onPress={() => setStake(amount)} style={{ flex: 1, height: 42, borderRadius: 11, borderWidth: 1.1, borderColor: GOLD_LINE, backgroundColor: stake === amount ? '#FFE29A' : '#60331E', alignItems: 'center', justifyContent: 'center', shadowColor: stake === amount ? '#FFE08A' : '#1B0904', shadowOpacity: stake === amount ? 0.8 : 0.45, shadowRadius: stake === amount ? 10 : 5, shadowOffset: { width: 0, height: 3 }, elevation: stake === amount ? 8 : 4 }}>
+                <TouchableOpacity key={amount} onPress={() => setStake(amount)} style={{ flex: 1, height: compactScreen ? 34 : 42, borderRadius: 11, borderWidth: 1.1, borderColor: GOLD_LINE, backgroundColor: stake === amount ? '#FFE29A' : '#60331E', alignItems: 'center', justifyContent: 'center', shadowColor: stake === amount ? '#FFE08A' : '#1B0904', shadowOpacity: stake === amount ? 0.8 : 0.45, shadowRadius: stake === amount ? 10 : 5, shadowOffset: { width: 0, height: 3 }, elevation: stake === amount ? 8 : 4 }}>
                 <View pointerEvents="none" style={{ position: 'absolute', top: 1, left: 3, right: 3, height: 10, borderTopLeftRadius: 8, borderTopRightRadius: 8, backgroundColor: 'rgba(255,255,255,0.16)' }} />
-                  <Text style={{ color: stake === amount ? '#35190D' : '#FFE3A3', fontSize: 16, fontWeight: '900' }}>{money(amount)}</Text>
+                  <Text style={{ color: stake === amount ? '#35190D' : '#FFE3A3', fontSize: compactScreen ? 13 : 16, fontWeight: '900' }}>{money(amount)}</Text>
                 </TouchableOpacity>
               ))}
             </View>
           </View>
 
-          <View style={{ marginTop: 11, borderWidth: 1.5, borderColor: '#DDB05F', borderRadius: 20, backgroundColor: '#321B13', padding: 11, minHeight: 76, shadowColor: '#D99636', shadowOpacity: 0.38, shadowRadius: 13, shadowOffset: { width: 0, height: 5 }, elevation: 8, overflow: 'hidden' }}>
+          <View style={{ marginTop: compactScreen ? 5 : 11, borderWidth: 1.5, borderColor: '#DDB05F', borderRadius: 20, backgroundColor: '#321B13', padding: compactScreen ? 7 : 11, minHeight: compactScreen ? 56 : 76, shadowColor: '#D99636', shadowOpacity: 0.38, shadowRadius: 13, shadowOffset: { width: 0, height: 5 }, elevation: 8, overflow: 'hidden' }}>
             <View pointerEvents="none" style={{ position: 'absolute', top: 1, left: 6, right: 6, height: 21, borderTopLeftRadius: 16, borderTopRightRadius: 16, backgroundColor: 'rgba(255,238,190,0.10)' }} />
-            <Text style={{ color: '#DDBB80', fontSize: 13, fontWeight: '900', letterSpacing: 0.7 }}>RECENT WINNING FRUITS</Text>
+            <Text style={{ color: '#DDBB80', fontSize: compactScreen ? 10 : 13, fontWeight: '900', letterSpacing: 0.7 }}>RECENT WINNING FRUITS</Text>
             <Text style={{ color: '#A88A68', fontSize: 14, marginTop: 12 }}>{recent.length ? recent.map((fruit, index) => (
-              <Text key={`${fruit}-${index}`} style={{ fontSize: 27, marginRight: 9 }}>{fruit}</Text>
+              <Text key={`${fruit}-${index}`} style={{ fontSize: compactScreen ? 21 : 27, marginRight: 7 }}>{fruit}</Text>
             )) : null}</Text>
           </View>
-          <TouchableOpacity onPress={onClose} style={{ alignSelf: 'center', marginTop: 14, paddingHorizontal: 24, paddingVertical: 8 }}>
-            <Text style={{ color: '#C9A36C', fontSize: 13, fontWeight: '800' }}>CLOSE GAME</Text>
+          <TouchableOpacity onPress={onClose} style={{ alignSelf: 'center', marginTop: compactScreen ? 3 : 14, paddingHorizontal: 24, paddingVertical: compactScreen ? 3 : 8 }}>
+            <Text style={{ color: '#C9A36C', fontSize: compactScreen ? 10 : 13, fontWeight: '800' }}>CLOSE GAME</Text>
           </TouchableOpacity>
           </>
           )}
