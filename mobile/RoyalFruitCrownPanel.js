@@ -158,8 +158,16 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onClose}>
       <StatusBar barStyle="light-content" backgroundColor="#160B08" />
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#100704' }}>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 14, paddingTop: 8, paddingBottom: 22, backgroundColor: '#100704' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#080503', overflow: 'hidden' }}>
+        <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#080503' }}>
+          <View style={{ position: 'absolute', top: -135, left: -115, width: 330, height: 330, borderRadius: 165, backgroundColor: '#32170D', opacity: 0.72, shadowColor: '#C77A2C', shadowOpacity: 0.9, shadowRadius: 85, shadowOffset: { width: 0, height: 0 }, elevation: 20 }} />
+          <View style={{ position: 'absolute', top: 210, right: -165, width: 360, height: 430, borderRadius: 210, backgroundColor: '#241008', opacity: 0.86, shadowColor: '#B66A24', shadowOpacity: 0.75, shadowRadius: 90, shadowOffset: { width: 0, height: 0 }, elevation: 18 }} />
+          <View style={{ position: 'absolute', bottom: -170, left: -100, width: 360, height: 360, borderRadius: 180, backgroundColor: '#32180D', opacity: 0.56, shadowColor: '#D69A43', shadowOpacity: 0.7, shadowRadius: 90, shadowOffset: { width: 0, height: 0 }, elevation: 16 }} />
+          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, backgroundColor: 'rgba(255,218,145,0.18)' }} />
+          <View style={{ position: 'absolute', top: '37%', left: 0, right: 0, height: 1, backgroundColor: 'rgba(225,163,81,0.07)' }} />
+          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, backgroundColor: 'rgba(255,218,145,0.10)' }} />
+        </View>
+        <ScrollView style={{ backgroundColor: 'transparent' }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 14, paddingTop: 8, paddingBottom: 22, backgroundColor: 'transparent' }}>
           <View style={{ alignItems: 'center', marginTop: 8, marginBottom: 18, paddingTop: 5, paddingBottom: 12, borderRadius: 24, borderWidth: 1, borderColor: 'rgba(226,177,91,0.42)', backgroundColor: '#26140F', shadowColor: '#D99636', shadowOpacity: 0.45, shadowRadius: 18, shadowOffset: { width: 0, height: 7 }, elevation: 10 }}>
             <CrownMark size={78} />
             <Text style={{ color: '#FFF0B5', fontSize: 32, lineHeight: 38, fontWeight: '900', fontFamily: 'serif', textAlign: 'center', letterSpacing: 1.7, textShadowColor: '#8C4D16', textShadowRadius: 8, textShadowOffset: { width: 0, height: 4 }, includeFontPadding: false }}>ROYAL FRUIT</Text>
