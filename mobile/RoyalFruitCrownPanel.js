@@ -73,15 +73,13 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
   const [roundBet, setRoundBet] = useState(0);
   const [timer, setTimer] = useState(37);
   const [phase, setPhase] = useState('betting');
-  const [paused, setPaused] = useState(false);
-  const [audioOn, setAudioOn] = useState(false);
   const [recent, setRecent] = useState([]);
   const [todayWins] = useState(0);
   const [totalCoins] = useState(10000);
   const [selectedFruit, setSelectedFruit] = useState(null);
 
   useEffect(() => {
-    if (!visible || paused) return;
+    if (!visible) return;
     const tick = setInterval(() => {
       setTimer(current => {
         if (current > 1) return current - 1;
@@ -94,7 +92,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
       });
     }, 1000);
     return () => clearInterval(tick);
-  }, [visible, paused, phase]);
+  }, [visible, phase]);
 
   const placeBet = (fruit) => {
     if (phase !== 'betting') return;
@@ -119,17 +117,6 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
               <Text style={{ color: GOLD, fontSize: 14, fontWeight: '900', textAlign: 'center' }}>YOUR TOTAL COINS</Text>
               <Text style={{ color: '#FFE8A4', fontSize: 24, fontWeight: '900', marginTop: 6 }}>{money(totalCoins)}</Text>
             </View>
-          </View>
-
-          <View style={{ position: 'absolute', zIndex: 3, top: 2, left: 22, flexDirection: 'row', gap: 8 }}>
-            <TouchableOpacity onPress={() => setPaused(value => !value)} style={{ backgroundColor: '#383333', borderRadius: 22, paddingHorizontal: 13, paddingVertical: 7, borderWidth: 1, borderColor: '#75675D' }}>
-              <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '800' }}>{paused ? '▶ Resume' : 'Ⅱ Pause'}</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={{ position: 'absolute', zIndex: 3, top: 2, right: 22 }}>
-            <TouchableOpacity onPress={() => setAudioOn(value => !value)} style={{ backgroundColor: '#383333', borderRadius: 22, paddingHorizontal: 13, paddingVertical: 7, borderWidth: 1, borderColor: '#75675D' }}>
-              <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '800' }}>{audioOn ? '♫ Audio' : '🔇 Audio'}</Text>
-            </TouchableOpacity>
           </View>
 
           <View style={{ alignItems: 'center', marginTop: 8, marginBottom: 18, paddingTop: 5, paddingBottom: 12, borderRadius: 24, borderWidth: 1, borderColor: 'rgba(226,177,91,0.42)', backgroundColor: '#26140F', shadowColor: '#D99636', shadowOpacity: 0.45, shadowRadius: 18, shadowOffset: { width: 0, height: 7 }, elevation: 10 }}>
