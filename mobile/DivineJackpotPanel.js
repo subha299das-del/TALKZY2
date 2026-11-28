@@ -1,0 +1,69 @@
+import React from 'react';
+import { Modal, View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { WebView } from 'react-native-webview';
+
+// Standalone visual/playtest build. Uses a local demo balance only; it is not
+// connected to the TALKZY wallet or production game settlement.
+const GAME_HTML = String.raw`<!doctype html>
+<html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<style>
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#68438b,#24113c 48%,#090611);color:#fff;font-family:Georgia,serif}
+main{max-width:520px;margin:auto;padding:10px}.head{display:flex;justify-content:space-between;align-items:center}.logo{font-size:clamp(22px,6vw,32px);font-weight:bold;letter-spacing:1.5px;color:#ffe8a3;text-shadow:0 2px #713b12,0 0 15px #f6c65b}.sub{font:9px Arial;letter-spacing:2px;color:#d6b9ff}.wallet{border:1px solid #d8ad54;border-radius:22px;padding:8px 10px;background:#241333;color:#ffe39b;font:bold 12px Arial}
+.hero{text-align:center;margin:13px 0 9px;color:#ffe7a4}.hero h2{font-size:18px;margin:0}.hero p{font:9px Arial;letter-spacing:1.5px;color:#c7a9ed}
+.frame{padding:7px;border-radius:15px;background:linear-gradient(145deg,#ffe7a1,#9e641b 20%,#f4ce70 45%,#75420e 75%,#fbe4a4);box-shadow:0 8px 22px #000b}.board{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;padding:6px;border-radius:10px;background:#10091e}.cell{aspect-ratio:1;display:grid;place-items:center;border-radius:7px;background:radial-gradient(circle at 40% 22%,#594078,#1b102b 70%);border:1px solid #c99c4b88;box-shadow:inset 0 2px 5px #fff2,inset 0 -4px 8px #0008}.cell svg{width:95%;height:95%;filter:drop-shadow(0 3px 2px #000b)}.win{background:radial-gradient(circle,#fff0a8,#a96d21 45%,#44205b)!important;box-shadow:0 0 14px #ffe17b!important;outline:2px solid #fff0a8}
+.panel{margin-top:10px;padding:11px;border-radius:14px;border:1px solid #d5aa5a;background:linear-gradient(145deg,#301747,#100a1b)}.row{display:flex;justify-content:space-between;align-items:center}.label{font:10px Arial;letter-spacing:1.4px;color:#cdb5e7}.amount{font:bold 20px Arial;color:#ffe6a1}.bets{display:flex;gap:5px;margin-top:8px}.bets button{flex:1;padding:8px 1px;border:1px solid #c49343;border-radius:7px;background:linear-gradient(#55326f,#21112f);color:#ffe5a1;font-weight:bold}.bets .active{background:linear-gradient(#f9d77c,#a66b1d);color:#281437}.actions{display:flex;gap:8px;margin-top:10px}.spin{flex:1;border:0;border-radius:11px;padding:13px;background:linear-gradient(#fff0a9,#e1a63e 45%,#9d5514);color:#32183a;font:bold 18px Georgia;letter-spacing:2px}.auto{width:95px;border:1px solid #d4a34d;border-radius:11px;background:#321c48;color:#ffe5a1;font-weight:bold}.auto.on{background:linear-gradient(#f4d77f,#b77a25);color:#271336}.status{text-align:center;min-height:17px;margin-top:10px;color:#ffe7a4;font:11px Arial}.paytitle{text-align:center;color:#e9c779;font:bold 10px Arial;letter-spacing:1.5px;margin-bottom:7px}.pays{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}.pay{font:8px Arial;color:#dfd0f1;text-align:center;background:#ffffff0b;border-radius:7px;padding:4px 1px}.pay svg{width:29px;height:29px;display:block;margin:auto}.pay b{display:block;color:#ffe5a1;margin-top:2px}.foot{text-align:center;font:8px Arial;color:#9d89b7;margin:9px 0}
+</style></head><body><main><div class="head"><div><div class="logo">DIVINE JACKPOT</div><div class="sub">THE TEMPLE OF IMMORTALS</div></div><div class="wallet">◈ <span id="balance">10000</span></div></div>
+<section class="hero"><h2>✦ TEMPLE OF THE GODS ✦</h2><p>SPIN THE RELICS • CLAIM THE DIVINE TREASURE</p></section><div class="frame"><div class="board" id="board"></div></div>
+<section class="panel"><div class="row"><span class="label">DEMO BET</span><span class="amount">◈ <span id="bet">100</span></span></div><div class="bets"><button data-bet="50">50</button><button data-bet="100" class="active">100</button><button data-bet="250">250</button><button data-bet="500">500</button><button data-bet="1000">1K</button></div><div class="actions"><button class="spin" id="spin">✦ SPIN ✦</button><button class="auto" id="auto">AUTO: OFF</button></div><div class="status" id="status">Visual playtest · demo coins only.</div></section>
+<section class="panel"><div class="paytitle">THE EIGHT DIVINE RELICS</div><div class="pays" id="pays"></div></section><div class="foot">PLAYTEST PREVIEW • LOCAL DEMO COINS ONLY • NO REAL-MONEY PRIZES</div></main>
+<script>
+const art=[
+'<path d="M12 34 31 48 49 13 68 48 88 32 80 77 20 77Z" fill="url(#gold)" stroke="#fff0a5" stroke-width="3"/><path d="M20 77h60v10H20z" fill="#a85b12" stroke="#ffe9a0" stroke-width="3"/><path d="m50 28 10 15-10 15-10-15z" fill="url(#gem)" stroke="#fff" stroke-width="2"/><circle cx="31" cy="48" r="5" fill="#54e5ff"/><circle cx="68" cy="48" r="5" fill="#54e5ff"/>',
+'<path d="M50 90C8 69 8 39 31 14c-2 19 7 22 13 28C40 20 58 9 67 5c-4 23 5 29 15 39 13 15 1 34-32 46Z" fill="url(#fire)" stroke="#ffe7a0" stroke-width="3"/><path d="M50 79C27 62 34 44 48 34c-2 16 11 15 15 25 5 9-2 17-13 20Z" fill="#fff1b0"/><path d="m48 51-20-8 12 22-19 2 27 17 9-22 20-9-22 2 5-20Z" fill="#f5b63e" stroke="#fff0a5" stroke-width="2"/>',
+'<path d="M16 36 5 17l27 9 18-13 19 13 26-9-12 23 4 28-23 19-14-9-16 9-22-20Z" fill="url(#gold)" stroke="#ffe9a0" stroke-width="3"/><path d="m22 42 20 8-8 9-15-5m59-12-20 8 8 9 15-5" fill="#45171a"/><path d="m35 47 10 3-7 8zm30 0-10 3 7 8z" fill="#ff3b42"/><path d="m50 56-8 12 8 5 8-5z" fill="#9c171b" stroke="#ffe6a0" stroke-width="2"/>',
+'<path d="M28 12h44v9L60 39l12 31v9H28v-9l12-31-12-18Z" fill="url(#gold)" stroke="#fff0b0" stroke-width="3"/><path d="M38 25h24L50 42zm0 45h24L50 50z" fill="#62d8ff"/><path d="M50 42 40 64h20z" fill="#b64dff"/><path d="M23 10h54v7H23zm0 73h54v7H23z" fill="#f8d875" stroke="#fff0a8" stroke-width="2"/>',
+'<path d="M16 43 24 18h52l8 25-8 11H24Z" fill="url(#gold)" stroke="#ffe9a0" stroke-width="3"/><path d="M12 47h76v38H12Z" fill="url(#gold)" stroke="#ffe9a0" stroke-width="3"/><path d="M43 49h14v17H43z" fill="#7b2c9f" stroke="#fff0a8" stroke-width="2"/><path d="m50 7 8 16-8 11-8-11z" fill="#65f0ff" stroke="#fff" stroke-width="2"/><circle cx="25" cy="35" r="7" fill="#8bdb49"/><circle cx="74" cy="35" r="7" fill="#bd62ff"/>',
+'<path d="M50 5 60 22 79 14 78 34 96 43 82 57 91 76 69 77 60 96 47 80 28 91 26 70 6 60 21 45 12 26 34 26Z" fill="url(#gold)" stroke="#ffe9a0" stroke-width="3"/><path d="M15 50Q50 15 85 50Q50 85 15 50Z" fill="#fff1b3" stroke="#fff" stroke-width="2"/><circle cx="50" cy="50" r="17" fill="#54c6e8" stroke="#6a3199" stroke-width="4"/><circle cx="50" cy="50" r="8" fill="#211039"/><circle cx="55" cy="44" r="4" fill="#fff"/>',
+'<path d="M50 7 61 18 79 14 83 32 96 45 84 59 83 78 63 81 50 95 36 81 17 78 16 59 4 45 17 32 21 14 39 18Z" fill="url(#gold)" stroke="#ffe7a0" stroke-width="3"/><path d="M29 39 19 20l24 11m28 8 10-19-24 11" fill="#fff0a6" stroke="#ffe8a0" stroke-width="3"/><path d="M27 43 50 29 73 43 69 69 50 82 31 69Z" fill="#b86a19" stroke="#ffe9a0" stroke-width="2"/><path d="m35 50 10 2-6 7zm30 0-10 2 6 7z" fill="#fff2b1"/><path d="m50 57-8 9 8 5 8-5z" fill="#45152b"/>',
+'<circle cx="50" cy="50" r="39" fill="url(#portal)" stroke="#ffe9a0" stroke-width="7"/><circle cx="50" cy="50" r="28" fill="#170b32" stroke="#b68aff" stroke-width="3"/><path d="M50 20 57 42 80 50 57 58 50 81 43 58 20 50 43 42Z" fill="#fff4bd" stroke="#fff" stroke-width="2"/><circle cx="50" cy="50" r="8" fill="#ffe8a0"/>'
+];
+const names=['Emperor Crown','Eternal Phoenix','Dragon Emperor','Time Relic','Divine Treasure',"God’s Eye",'Celestial Lion','Infinity Portal'],mult=[12,10,9,8,7,6,5,4],board=document.getElementById('board'),paybox=document.getElementById('pays');let balance=10000,bet=100,busy=false,auto=false,timer;const $=id=>document.getElementById(id);
+function svg(i){return '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gold" x2="0" y2="1"><stop stop-color="#fff4b2"/><stop offset=".45" stop-color="#e5a52d"/><stop offset="1" stop-color="#71350f"/></linearGradient><linearGradient id="gem"><stop stop-color="#f7c5ff"/><stop offset="1" stop-color="#541078"/></linearGradient><linearGradient id="fire" x2="0" y2="1"><stop stop-color="#fff6a2"/><stop offset=".45" stop-color="#ff9a26"/><stop offset="1" stop-color="#b51c24"/></linearGradient><radialGradient id="portal"><stop stop-color="#fff"/><stop offset=".25" stop-color="#b8f8ff"/><stop offset=".6" stop-color="#8e42df"/><stop offset="1" stop-color="#25104c"/></radialGradient></defs>'+art[i]+'</svg>'}
+function draw(){board.innerHTML='';for(let i=0;i<30;i++){let n=Math.floor(Math.random()*8),e=document.createElement('div');e.className='cell';e.innerHTML=svg(n);board.append(e)}}
+names.forEach((n,i)=>{let e=document.createElement('div');e.className='pay';e.innerHTML=svg(i)+'<b>'+n+' ×'+mult[i]+'</b>';paybox.append(e)});
+function bal(){$('balance').textContent=balance.toLocaleString('en-IN')}function stop(){auto=false;clearTimeout(timer);$('auto').textContent='AUTO: OFF';$('auto').classList.remove('on')}
+function spin(){if(busy)return;if(balance<bet){$('status').textContent='Demo balance too low. Lower your bet.';stop();return}busy=true;balance-=bet;bal();$('spin').disabled=true;$('status').textContent='The divine reels are turning…';let cells=[...board.children];cells.forEach(e=>e.classList.remove('win'));let ticks=0,t=setInterval(()=>{cells.forEach(e=>e.innerHTML=svg(Math.floor(Math.random()*8)));if(++ticks===12){clearInterval(t);let a=Array.from({length:30},()=>Math.floor(Math.random()*8)),win=0;cells.forEach((e,i)=>e.innerHTML=svg(a[i]));for(let r=0;r<5;r++)for(let c=0;c<6;c++){let i=r*6+c,n=a[i],count=1;while(c+count<6&&a[r*6+c+count]===n)count++;if(count>=3){win+=bet*mult[n]*(count-2);for(let k=0;k<count;k++)cells[i+k].classList.add('win');c+=count-1}}if(win){balance+=win;bal();$('status').textContent='DIVINE WIN! +'+win.toLocaleString('en-IN')+' demo coins'}else $('status').textContent='The relics remain silent. Try another spin.';busy=false;$('spin').disabled=false;if(auto&&balance>=bet)timer=setTimeout(spin,900);else if(auto)stop()}},90)}
+$('spin').onclick=spin;document.querySelectorAll('[data-bet]').forEach(b=>b.onclick=()=>{if(busy)return;bet=+b.dataset.bet;$('bet').textContent=bet.toLocaleString('en-IN');document.querySelectorAll('[data-bet]').forEach(x=>x.classList.toggle('active',x===b))});$('auto').onclick=()=>{auto=!auto;$('auto').textContent=auto?'AUTO: ON':'AUTO: OFF';$('auto').classList.toggle('on',auto);if(auto&&!busy)spin();else if(!auto)clearTimeout(timer)};draw();bal();
+</script></body></html>`;
+
+export default function DivineJackpotPanel({ visible, onClose }) {
+  return (
+    <Modal visible={!!visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onClose}>
+      <View style={styles.root}>
+        <View style={styles.header}>
+          <Text style={styles.title}>DIVINE JACKPOT</Text>
+          <TouchableOpacity onPress={onClose} accessibilityRole="button" accessibilityLabel="Close Divine Jackpot" style={styles.close}>
+            <Text style={styles.closeText}>×</Text>
+          </TouchableOpacity>
+        </View>
+        <WebView
+          originWhitelist={['*']}
+          source={{ html: GAME_HTML, baseUrl: 'https://talkzy.local/' }}
+          javaScriptEnabled
+          domStorageEnabled={false}
+          setSupportMultipleWindows={false}
+          style={styles.web}
+          androidLayerType="hardware"
+        />
+      </View>
+    </Modal>
+  );
+}
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: '#090611' },
+  header: { height: 48, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#140c20', borderBottomWidth: 1, borderBottomColor: '#9e783f' },
+  title: { color: '#ffe3a0', fontSize: 15, fontWeight: '900', letterSpacing: 1.2 },
+  close: { width: 34, height: 34, borderRadius: 10, borderWidth: 1, borderColor: '#a78047', alignItems: 'center', justifyContent: 'center' },
+  closeText: { color: '#ffe3a0', fontSize: 24, lineHeight: 27 },
+  web: { flex: 1, backgroundColor: '#090611' }
+});
