@@ -134,8 +134,8 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
 
           <View style={{ alignItems: 'center', marginTop: 8, marginBottom: 18, paddingTop: 5, paddingBottom: 12, borderRadius: 24, borderWidth: 1, borderColor: 'rgba(226,177,91,0.42)', backgroundColor: '#26140F', shadowColor: '#D99636', shadowOpacity: 0.45, shadowRadius: 18, shadowOffset: { width: 0, height: 7 }, elevation: 10 }}>
             <CrownMark size={78} />
-            <Text style={{ color: '#FFF0B5', fontSize: 32, lineHeight: 37, fontWeight: '900', fontFamily: 'serif', textAlign: 'center', letterSpacing: 2.4, textShadowColor: '#B56B20', textShadowRadius: 10, textShadowOffset: { width: 0, height: 4 } }}>ROYAL FRUIT</Text>
-            <Text style={{ color: '#FFE1A0', fontSize: 35, lineHeight: 39, fontWeight: '900', textAlign: 'center', letterSpacing: 1.1, textShadowColor: '#8E4B20', textShadowRadius: 5, textShadowOffset: { width: 0, height: 3 } }}>CROWN</Text>
+            <Text style={{ color: '#FFF0B5', fontSize: 32, lineHeight: 38, fontWeight: '900', fontFamily: 'serif', textAlign: 'center', letterSpacing: 1.7, textShadowColor: '#8C4D16', textShadowRadius: 8, textShadowOffset: { width: 0, height: 4 }, includeFontPadding: false }}>ROYAL FRUIT</Text>
+            <Text style={{ color: '#FFE1A0', fontSize: 35, lineHeight: 40, fontWeight: '900', fontFamily: 'serif', textAlign: 'center', letterSpacing: 1.5, textShadowColor: '#8C4D16', textShadowRadius: 8, textShadowOffset: { width: 0, height: 4 }, includeFontPadding: false }}>CROWN</Text>
             <Text style={{ color: '#DDBB80', fontSize: 13, letterSpacing: 2.2, marginTop: 10, textAlign: 'center' }}>CHOOSE YOUR FRUIT · CLAIM THE CROWN</Text>
             <Text style={{ color: '#D8B77C', fontSize: 13, fontWeight: '900', letterSpacing: 1.4, marginTop: 13 }}>DAILY ROUND · 0</Text>
           </View>
