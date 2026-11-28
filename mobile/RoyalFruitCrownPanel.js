@@ -46,7 +46,7 @@ function CrownMark({ size = 72 }) {
   );
 }
 
-function FruitTile({ fruit, selected, active, onPress }) {
+function FruitTile({ fruit, selected, active, betAmount, onPress }) {
   return (
     <TouchableOpacity key={fruit.name} activeOpacity={0.86} onPress={onPress}
       style={{
@@ -62,7 +62,7 @@ function FruitTile({ fruit, selected, active, onPress }) {
       <View pointerEvents="none" style={{ position: 'absolute', top: 1, left: 3, right: 3, height: 34, borderTopLeftRadius: 15, borderTopRightRadius: 15, backgroundColor: 'rgba(255,238,190,0.13)' }} />
       <View pointerEvents="none" style={{ position: 'absolute', top: 7, left: 10, width: 25, height: 9, borderRadius: 9, backgroundColor: 'rgba(255,255,255,0.16)', transform: [{ rotate: '-24deg' }] }} />
       <Text style={{ fontSize: 47, lineHeight: 55, textShadowColor: '#120805', textShadowOffset: { width: 0, height: 5 }, textShadowRadius: 5, includeFontPadding: false }}>{fruit.emoji}</Text>
-      <Text style={{ color: '#FFF0B5', fontSize: 17, fontWeight: '900', marginTop: 0, textShadowColor: '#8B4A1C', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 3 }}>{fruit.multiplier}×</Text>
+      <Text style={{ color: '#FFF0B5', fontSize: 16, fontWeight: '900', marginTop: 0, textShadowColor: '#8B4A1C', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 3 }}>{fruit.multiplier}×</Text>\n      {betAmount > 0 && (\n        <Text style={{ color: '#FFE39A', fontSize: 12, lineHeight: 15, fontWeight: '900', marginTop: 1, textShadowColor: '#1A0904', textShadowRadius: 3 }}>🪙 {Number(betAmount).toLocaleString('en-IN')}</Text>\n      )}
       <View pointerEvents="none" style={{ position: 'absolute', bottom: 0, left: 9, right: 9, height: 2, borderRadius: 2, backgroundColor: 'rgba(255,222,145,0.45)' }} />
     </TouchableOpacity>
   );
@@ -117,7 +117,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
     setMyRoundBets(items => [...items, { fruitName: fruit.name, amount: stake }]);
   };
 
-  const money = value => Number(value).toLocaleString('en-IN');
+  const money = value => Number(value).toLocaleString('en-IN');\n  const fruitBetTotals = myRoundBets.reduce((totals, bet) => {\n    totals[bet.fruitName] = (totals[bet.fruitName] || 0) + bet.amount;\n    return totals;\n  }, {});
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onClose}>
@@ -143,13 +143,13 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
           <View style={{ borderWidth: 2, borderColor: '#E0B45E', borderRadius: 22, padding: 9, backgroundColor: '#32190F', shadowColor: '#F4B84F', shadowOpacity: 0.48, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 11 }}>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
               {FRUITS.slice(0,4).map((fruit, index) => (
-                <FruitTile fruit={fruit} selected={selectedFruit === fruit.name} active={phase === 'betting'} onPress={() => placeBet(fruit)} />
+                <FruitTile key={fruit.name} fruit={fruit} selected={selectedFruit === fruit.name} active={phase === 'betting'} betAmount={fruitBetTotals[fruit.name] || 0} onPress={() => placeBet(fruit)} />
               ))}
               <View style={{ width: '31.8%', height: 101, marginBottom: 8, borderRadius: 17, borderWidth: 1.2, borderColor: GOLD_LINE, backgroundColor: '#321B14', alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ color: '#FFE39B', fontSize: 32, fontWeight: '900', lineHeight: 36 }}>{timer}s</Text>
               </View>
               {FRUITS.slice(4).map(fruit => (
-                <FruitTile fruit={fruit} selected={selectedFruit === fruit.name} active={phase === 'betting'} onPress={() => placeBet(fruit)} />
+                <FruitTile key={fruit.name} fruit={fruit} selected={selectedFruit === fruit.name} active={phase === 'betting'} betAmount={fruitBetTotals[fruit.name] || 0} onPress={() => placeBet(fruit)} />
               ))}
             </View>
           </View>
