@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Modal, SafeAreaView, ScrollView, View, Text, TouchableOpacity,
   StatusBar, Dimensions, Alert
@@ -49,6 +49,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
   const [roundBet, setRoundBet] = useState(0);
   const [balance, setBalance] = useState(0);
   const [betBusy, setBetBusy] = useState(false);
+  const lastRoundIdRef = useRef(null);
   const [myRoundBets, setMyRoundBets] = useState([]);
   const [winningAmount, setWinningAmount] = useState(0);
   const [timer, setTimer] = useState(37);
@@ -75,7 +76,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
         const round = state?.round;
         setBalance(Number(state?.balance || 0));
         const bets = Array.isArray(state?.my_bets) ? state.my_bets.map(bet => ({
-          fruitName: String(bet.fruit || ''),
+          fruitName: FRUITS.find(item => item.name.toLowerCase() === String(bet.fruit || '').toLowerCase())?.name || String(bet.fruit || ''),
           amount: Number(bet.amount || 0)
         })) : [];
         setMyRoundBets(bets);
@@ -84,6 +85,11 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
           .map(item => FRUITS.find(fruit => fruit.name.toLowerCase() === String(item.fruit || '').toLowerCase())?.emoji)
           .filter(Boolean).slice(0, 6));
         if (round) {
+          if (lastRoundIdRef.current !== round.id) {
+            lastRoundIdRef.current = round.id;
+            setSelectedFruit(null);
+            setWinningAmount(0);
+          }
           setRoundNumber(Number(round.number || 1));
           const serverPhase = round.phase;
           setPhase(serverPhase === 'betting' ? 'betting' : serverPhase === 'drawing' ? 'result' : 'winner');
