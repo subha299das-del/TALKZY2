@@ -73,6 +73,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
   const [roundBet, setRoundBet] = useState(0);
   const [timer, setTimer] = useState(37);
   const [phase, setPhase] = useState('betting');
+  const [roundNumber, setRoundNumber] = useState(1);
   const [recent, setRecent] = useState([]);
   const [todayWins] = useState(0);
   const [totalCoins] = useState(10000);
@@ -84,7 +85,13 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
       setTimer(current => {
         if (current > 1) return current - 1;
         if (phase === 'betting') { setPhase('result'); return 10; }
-        if (phase === 'result') { setPhase('winner'); return 5; }
+        if (phase === 'result') {
+          const winningFruit = FRUITS[Math.floor(Math.random() * FRUITS.length)];
+          setRecent(items => [winningFruit.emoji, ...items].slice(0, 6));
+          setPhase('winner');
+          return 5;
+        }
+        setRoundNumber(value => value + 1);
         setPhase('betting');
         setRoundBet(0);
         setSelectedFruit(null);
@@ -111,7 +118,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
             <CrownMark size={78} />
             <Text style={{ color: '#FFF0B5', fontSize: 32, lineHeight: 38, fontWeight: '900', fontFamily: 'serif', textAlign: 'center', letterSpacing: 1.7, textShadowColor: '#8C4D16', textShadowRadius: 8, textShadowOffset: { width: 0, height: 4 }, includeFontPadding: false }}>ROYAL FRUIT</Text>
             <Text style={{ color: '#FFE1A0', fontSize: 35, lineHeight: 40, fontWeight: '900', fontFamily: 'serif', textAlign: 'center', letterSpacing: 1.5, textShadowColor: '#8C4D16', textShadowRadius: 8, textShadowOffset: { width: 0, height: 4 }, includeFontPadding: false }}>CROWN</Text>
-            <Text style={{ color: '#D8B77C', fontSize: 13, fontWeight: '900', letterSpacing: 1.4, marginTop: 13 }}>DAILY ROUND · 0</Text>
+            <Text style={{ color: '#D8B77C', fontSize: 13, fontWeight: '900', letterSpacing: 1.4, marginTop: 13 }}>ROUND {roundNumber}</Text>
           </View>
 
           <View style={{ flexDirection: 'row', gap: 9, marginBottom: 18 }}>
@@ -149,7 +156,9 @@ export default function RoyalFruitCrownPanel({ visible, onClose }) {
 
           <View style={{ marginTop: 11, borderWidth: 1.2, borderColor: GOLD_LINE, borderRadius: 18, backgroundColor: '#28150F', padding: 10, minHeight: 72 }}>
             <Text style={{ color: '#DDBB80', fontSize: 13, fontWeight: '900', letterSpacing: 0.7 }}>RECENT WINNING FRUITS</Text>
-            <Text style={{ color: '#A88A68', fontSize: 14, marginTop: 12 }}>{recent.length ? recent.join('   ·   ') : 'Results will appear here'}</Text>
+            <Text style={{ color: '#A88A68', fontSize: 14, marginTop: 12 }}>{recent.length ? recent.map((fruit, index) => (
+              <Text key={`${fruit}-${index}`} style={{ fontSize: 27, marginRight: 9 }}>{fruit}</Text>
+            )) : null}</Text>
           </View>
           <TouchableOpacity onPress={onClose} style={{ alignSelf: 'center', marginTop: 14, paddingHorizontal: 24, paddingVertical: 8 }}>
             <Text style={{ color: '#C9A36C', fontSize: 13, fontWeight: '800' }}>CLOSE GAME</Text>
