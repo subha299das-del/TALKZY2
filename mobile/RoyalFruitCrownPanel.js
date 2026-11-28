@@ -425,7 +425,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
             </View>
           )}
         </ScrollView>
-        {phase === 'winner' && winningFruit && (
+        {activeSection === 'game' && phase === 'winner' && winningFruit && (
           <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.84)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 18 }}>
             <View style={{ width: '100%', maxWidth: 560, borderRadius: 27, borderWidth: 3, borderColor: '#FFE09A', backgroundColor: '#35190F', paddingHorizontal: 16, paddingTop: 20, paddingBottom: 22, shadowColor: '#F8C95E', shadowOpacity: 1, shadowRadius: 30, shadowOffset: { width: 0, height: 0 }, elevation: 26, overflow: 'hidden' }}>
               <View pointerEvents="none" style={{ position: 'absolute', top: 2, left: 8, right: 8, height: 42, borderTopLeftRadius: 22, borderTopRightRadius: 22, backgroundColor: 'rgba(255,236,183,0.10)' }} />
