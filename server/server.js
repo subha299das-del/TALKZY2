@@ -181,6 +181,14 @@ const fruitBetLimiter = rateLimit({
   message: { error: 'Too many bets. Please wait before betting again.' }
 });
 
+const divineSpinLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 45,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { error: 'Too many spins. Please wait before spinning again.' }
+});
+
 function ownerAuth(req, res, next) {
   const header = req.get('authorization') || '';
   const match = /^Bearer\s+(.+)$/i.exec(header);
@@ -405,6 +413,62 @@ app.post('/api/games/royal-fruit/bet', userAuth, fruitBetLimiter, async (req, re
   }
 });
 
+// Divine Jackpot uses the authenticated TALKZY main wallet and coin ledger.
+app.get('/api/games/divine-jackpot/state', userAuth, async (req, res) => {
+  try {
+    const { data, error } = await supabase.rpc('talkzy_divine_jackpot_get_state_for_user', { p_user_id: req.talkzyUser.id });
+    if (error) throw error;
+    res.set('Cache-Control', 'no-store').json(data || {});
+  } catch (error) {
+    console.error('Divine Jackpot state error:', error.message);
+    res.status(503).json({ error: 'Divine Jackpot is temporarily unavailable.' });
+  }
+});
+
+app.get('/api/games/divine-jackpot/history', userAuth, async (req, res) => {
+  const limit = Math.max(1, Math.min(Number.parseInt(req.query.limit, 10) || 20, 100));
+  const offset = Math.max(0, Number.parseInt(req.query.offset, 10) || 0);
+  try {
+    const { data, error } = await supabase.rpc('talkzy_divine_jackpot_get_history', { p_user_id: req.talkzyUser.id, p_limit: limit, p_offset: offset });
+    if (error) throw error;
+    const history = Array.isArray(data) ? data : [];
+    res.set('Cache-Control', 'no-store').json({ history, hasMore: history.length === limit });
+  } catch (error) {
+    console.error('Divine Jackpot history error:', error.message);
+    res.status(503).json({ error: 'Could not load your Divine Jackpot history.' });
+  }
+});
+
+app.get('/api/games/divine-jackpot/top-winners', userAuth, async (req, res) => {
+  try {
+    const { data, error } = await supabase.rpc('talkzy_divine_jackpot_get_daily_top_winners', { p_limit: 10 });
+    if (error) throw error;
+    res.set('Cache-Control', 'no-store').json({ winners: Array.isArray(data) ? data : [] });
+  } catch (error) {
+    console.error('Divine Jackpot daily leaderboard error:', error.message);
+    res.status(503).json({ error: 'Could not load today’s Divine Jackpot winners.' });
+  }
+});
+
+app.post('/api/games/divine-jackpot/spin', userAuth, divineSpinLimiter, async (req, res) => {
+  const amount = Number(req.body?.amount);
+  const requestKey = String(req.body?.requestKey || '');
+  if (![50,100,250,500,1000].includes(amount)) return res.status(400).json({ error: 'Choose a valid bet amount.' });
+  if (requestKey.length < 12 || requestKey.length > 100) return res.status(400).json({ error: 'Invalid spin request.' });
+  try {
+    const { data, error } = await supabase.rpc('talkzy_divine_jackpot_spin', { p_user_id: req.talkzyUser.id, p_bet_amount: amount, p_request_key: requestKey });
+    if (error) {
+      const message = String(error.message || '');
+      if (/INSUFFICIENT_COINS/i.test(message)) return res.status(409).json({ error: 'Not enough coins in your main balance.' });
+      if (/INVALID_BET_AMOUNT|INVALID_REQUEST_KEY/i.test(message)) return res.status(400).json({ error: 'Invalid spin request.' });
+      throw error;
+    }
+    res.set('Cache-Control', 'no-store').json(data || {});
+  } catch (error) {
+    console.error('Divine Jackpot spin error:', error.message);
+    res.status(503).json({ error: 'Your spin could not be processed. Refresh and check your balance before trying again.' });
+  }
+});
 app.get('/api/health', (req, res) =>
   res.set('Cache-Control', 'no-store').json({
     ok: true,
