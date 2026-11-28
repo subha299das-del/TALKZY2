@@ -76,7 +76,7 @@ function FruitTile({ fruit, selected, active, highlighted, betAmount, onPress, t
 export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
   const { height: screenHeight } = useWindowDimensions();
   const compactScreen = screenHeight < 780;
-  const tileHeight = Math.max(76, Math.min(108, Math.floor((screenHeight - 390) / 3)));
+  const tileHeight = Math.max(68, Math.min(compactScreen ? 82 : 94, Math.floor((screenHeight - 470) / 3)));
   const emojiSize = Math.round(tileHeight * 0.47);
   const [stake, setStake] = useState(100);
   const [roundBet, setRoundBet] = useState(0);
@@ -290,7 +290,7 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
           <View style={{ position: 'absolute', top: '37%', left: 0, right: 0, height: 1, backgroundColor: 'rgba(225,163,81,0.07)' }} />
           <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, backgroundColor: 'rgba(255,218,145,0.10)' }} />
         </View>
-        <ScrollView style={{ flex: 1, backgroundColor: 'transparent' }} scrollEnabled={activeSection !== 'game'} showsVerticalScrollIndicator={activeSection !== 'game'} contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 14, paddingTop: compactScreen ? 2 : 8, paddingBottom: compactScreen ? 4 : 22, backgroundColor: 'transparent' }}>
+        <ScrollView style={{ flex: 1, backgroundColor: 'transparent' }} scrollEnabled={true} showsVerticalScrollIndicator={activeSection !== 'game'} contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 14, paddingTop: compactScreen ? 2 : 8, paddingBottom: compactScreen ? 4 : 22, backgroundColor: 'transparent' }}>
           <View style={{ alignItems: 'center', marginTop: compactScreen ? 1 : 8, marginBottom: compactScreen ? 6 : 18, paddingTop: compactScreen ? 2 : 5, paddingBottom: compactScreen ? 5 : 12, borderRadius: 24, borderWidth: 1, borderColor: 'rgba(226,177,91,0.42)', backgroundColor: '#26140F', shadowColor: '#D99636', shadowOpacity: 0.45, shadowRadius: 18, shadowOffset: { width: 0, height: 7 }, elevation: 10 }}>
             <Text style={{ color: '#FFF0B5', fontSize: compactScreen ? 25 : 32, lineHeight: compactScreen ? 29 : 38, fontWeight: '900', fontFamily: 'serif', textAlign: 'center', letterSpacing: 1.7, textShadowColor: '#8C4D16', textShadowRadius: 8, textShadowOffset: { width: 0, height: 4 }, includeFontPadding: false }}>ROYAL FRUIT</Text>
             <Text style={{ color: '#FFE1A0', fontSize: compactScreen ? 27 : 35, lineHeight: compactScreen ? 31 : 40, fontWeight: '900', fontFamily: 'serif', textAlign: 'center', letterSpacing: 1.5, textShadowColor: '#8C4D16', textShadowRadius: 8, textShadowOffset: { width: 0, height: 4 }, includeFontPadding: false }}>CROWN</Text>
@@ -315,11 +315,9 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
           <>
           <View style={{ flexDirection: 'row', gap: 8, marginBottom: compactScreen ? 7 : 12 }}>
             <View style={{ flex: 1, minWidth: 0, borderWidth: 1.4, borderColor: '#DDB05F', borderRadius: 14, backgroundColor: '#321B13', paddingVertical: compactScreen ? 7 : 10, paddingHorizontal: 9, alignItems: 'center', justifyContent: 'center', shadowColor: '#D99636', shadowOpacity: 0.28, shadowRadius: 9, shadowOffset: { width: 0, height: 3 }, elevation: 5 }}>
-              <Text style={{ color: '#DDBB80', fontSize: compactScreen ? 9 : 11, fontWeight: '900', letterSpacing: 0.45 }}>TOTAL COINS</Text>
               <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: '#FFE3A3', fontSize: compactScreen ? 15 : 19, fontWeight: '900', marginTop: 3 }}>🪙 {money(balance)}</Text>
             </View>
             <View style={{ flex: 1, minWidth: 0, borderWidth: 1.4, borderColor: '#DDB05F', borderRadius: 14, backgroundColor: '#321B13', paddingVertical: compactScreen ? 7 : 10, paddingHorizontal: 9, alignItems: 'center', justifyContent: 'center', shadowColor: '#D99636', shadowOpacity: 0.28, shadowRadius: 9, shadowOffset: { width: 0, height: 3 }, elevation: 5 }}>
-              <Text style={{ color: '#DDBB80', fontSize: compactScreen ? 9 : 11, fontWeight: '900', letterSpacing: 0.45 }}>TODAY'S TOTAL WINNING</Text>
               <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: '#62D89A', fontSize: compactScreen ? 15 : 19, fontWeight: '900', marginTop: 3 }}>🪙 {money(todayWins)}</Text>
             </View>
           </View>
