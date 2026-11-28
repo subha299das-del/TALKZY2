@@ -313,6 +313,16 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
 
           {activeSection === 'game' && (
           <>
+          <View style={{ flexDirection: 'row', gap: 8, marginBottom: compactScreen ? 7 : 12 }}>
+            <View style={{ flex: 1, minWidth: 0, borderWidth: 1.4, borderColor: '#DDB05F', borderRadius: 14, backgroundColor: '#321B13', paddingVertical: compactScreen ? 7 : 10, paddingHorizontal: 9, alignItems: 'center', justifyContent: 'center', shadowColor: '#D99636', shadowOpacity: 0.28, shadowRadius: 9, shadowOffset: { width: 0, height: 3 }, elevation: 5 }}>
+              <Text style={{ color: '#DDBB80', fontSize: compactScreen ? 9 : 11, fontWeight: '900', letterSpacing: 0.45 }}>TOTAL COINS</Text>
+              <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: '#FFE3A3', fontSize: compactScreen ? 15 : 19, fontWeight: '900', marginTop: 3 }}>🪙 {money(balance)}</Text>
+            </View>
+            <View style={{ flex: 1, minWidth: 0, borderWidth: 1.4, borderColor: '#DDB05F', borderRadius: 14, backgroundColor: '#321B13', paddingVertical: compactScreen ? 7 : 10, paddingHorizontal: 9, alignItems: 'center', justifyContent: 'center', shadowColor: '#D99636', shadowOpacity: 0.28, shadowRadius: 9, shadowOffset: { width: 0, height: 3 }, elevation: 5 }}>
+              <Text style={{ color: '#DDBB80', fontSize: compactScreen ? 9 : 11, fontWeight: '900', letterSpacing: 0.45 }}>TODAY'S TOTAL WINNING</Text>
+              <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: '#62D89A', fontSize: compactScreen ? 15 : 19, fontWeight: '900', marginTop: 3 }}>🪙 {money(todayWins)}</Text>
+            </View>
+          </View>
           <View style={{ borderWidth: 2, borderColor: '#F0C66F', borderRadius: 24, padding: 10, backgroundColor: '#3B2014', shadowColor: '#F4B84F', shadowOpacity: 0.62, shadowRadius: 20, shadowOffset: { width: 0, height: 7 }, elevation: 14 }}>
             <View pointerEvents="none" style={{ position: 'absolute', top: 3, left: 12, right: 12, height: 18, borderTopLeftRadius: 18, borderTopRightRadius: 18, backgroundColor: 'rgba(255,236,183,0.10)' }} />
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
