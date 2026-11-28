@@ -83,6 +83,23 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
   const [highlightedFruitIndex, setHighlightedFruitIndex] = useState(-1);
   const [animationStep, setAnimationStep] = useState(0);
   const [activeSection, setActiveSection] = useState('game');
+  const countdownPulse = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!visible || activeSection !== 'game' || (phase !== 'betting' && phase !== 'drawing')) {
+      countdownPulse.stopAnimation();
+      countdownPulse.setValue(0);
+      return;
+    }
+    const pulse = Animated.loop(Animated.sequence([
+      Animated.timing(countdownPulse, { toValue: 1, duration: 230, easing: Easing.linear, useNativeDriver: true }),
+      Animated.timing(countdownPulse, { toValue: 0, duration: 230, easing: Easing.linear, useNativeDriver: true })
+    ]));
+    pulse.start();
+    return () => pulse.stop();
+  }, [visible, activeSection, phase, countdownPulse]);
+  const countdownGlowOpacity = countdownPulse.interpolate({ inputRange: [0, 1], outputRange: [0.12, 0.92] });
+  const countdownTextOpacity = countdownPulse.interpolate({ inputRange: [0, 1], outputRange: [0.62, 1] });
+  const countdownScale = countdownPulse.interpolate({ inputRange: [0, 1], outputRange: [0.94, 1.08] });
   const [myHistory, setMyHistory] = useState([]);
   const [historyOffset, setHistoryOffset] = useState(0);
   const [historyHasMore, setHistoryHasMore] = useState(false);
@@ -278,9 +295,10 @@ export default function RoyalFruitCrownPanel({ visible, onClose, api }) {
               {FRUITS.slice(0,4).map((fruit, index) => (
                 <FruitTile key={fruit.name} fruit={fruit} selected={selectedFruit === fruit.name} active={phase === 'betting'} highlighted={phase === 'result' && highlightedFruitIndex === FRUITS.findIndex(item => item.name === fruit.name)} betAmount={fruitBetTotals[fruit.name.toLowerCase()] || 0} tileHeight={tileHeight} emojiSize={emojiSize} onPress={() => placeBet(fruit)} />
               ))}
-              <View style={{ width: '31.8%', height: tileHeight, marginBottom: 4, borderRadius: 17, borderWidth: 1.5, borderColor: '#F0C875', backgroundColor: '#512B19', alignItems: 'center', justifyContent: 'center', shadowColor: '#FFD66E', shadowOpacity: 0.5, shadowRadius: 14, shadowOffset: { width: 0, height: 4 }, elevation: 9, overflow: 'hidden' }}>
-                <View pointerEvents="none" style={{ position: 'absolute', top: 1, left: 4, right: 4, height: 30, borderTopLeftRadius: 15, borderTopRightRadius: 15, backgroundColor: 'rgba(255,241,201,0.14)' }} />
-                <Text style={{ color: '#FFE39B', fontSize: compactScreen ? 25 : 32, fontWeight: '900', lineHeight: compactScreen ? 29 : 36 }}>{timer}s</Text>
+              <View style={{ width: '31.8%', height: tileHeight, marginBottom: 4, borderRadius: 17, borderWidth: 1.8, borderColor: '#FFE08A', backgroundColor: '#512B19', alignItems: 'center', justifyContent: 'center', shadowColor: '#FFF0A6', shadowOpacity: 0.95, shadowRadius: 20, shadowOffset: { width: 0, height: 4 }, elevation: 14, overflow: 'hidden' }}>
+                <Animated.View pointerEvents="none" style={{ position: 'absolute', top: -5, left: -5, right: -5, bottom: -5, borderRadius: 22, backgroundColor: '#FFD45E', opacity: countdownGlowOpacity, transform: [{ scale: countdownScale }] }} />
+                <View pointerEvents="none" style={{ position: 'absolute', top: 1, left: 4, right: 4, height: 30, borderTopLeftRadius: 15, borderTopRightRadius: 15, backgroundColor: 'rgba(255,248,218,0.25)' }} />
+                <Animated.Text style={{ color: '#FFF2B8', fontSize: compactScreen ? 25 : 32, fontWeight: '900', lineHeight: compactScreen ? 29 : 36, opacity: countdownTextOpacity, textShadowColor: '#FFFFFF', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 13, transform: [{ scale: countdownScale }] }}>{timer}s</Animated.Text>
               </View>
               {FRUITS.slice(4).map(fruit => (
                 <FruitTile key={fruit.name} fruit={fruit} selected={selectedFruit === fruit.name} active={phase === 'betting'} highlighted={phase === 'result' && highlightedFruitIndex === FRUITS.findIndex(item => item.name === fruit.name)} betAmount={fruitBetTotals[fruit.name.toLowerCase()] || 0} tileHeight={tileHeight} emojiSize={emojiSize} onPress={() => placeBet(fruit)} />
